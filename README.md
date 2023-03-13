@@ -179,7 +179,7 @@ is spent by the reasoner. For more complex examples the reasoner may spend
 unlimited time, i.e. the question is rather how complex questions can be solved
 in a preconfigured time window. In case the size of the input problem is relatively
 small and a tiny world model suffices for the solution, the correct answer is found
-in ca 1-2 seconds. However, in case the system is given a large knowledge base
+in a range of ca 0.2 to 2 seconds. However, in case the system is given a large knowledge base
 with a size of roughly one gigabyte, and the answer actually depends on
 the KB, then the search space may explode and the system may fail to find
 answer in a reasonable time. Efficiently handling a very large knowledge base
