@@ -55,7 +55,8 @@ Before running nlpsolver you need to start
 
 The server initializes Stanza, reads relevant data to 3 gigabytes of shared memory for gk
 use and starts up a local server (default port 8080) used by the nlpsolver
-to call Stanza without the need to re-initialize it for each call. 
+to call Stanza without the need to re-initialize it for each call. The server will
+print "Server ready." when it is ready for use.
 
 Then call nlpsolver with a natural language text ending with a question, like
 
@@ -139,8 +140,27 @@ Adding a key -explain like
           Mike is probably an elephant. John is a young elephant. Who is big?"
           -explain
 
-will output
+will output an answer with an explanation constructed from the proof found by gk:
 
+    Answer:
+    Likely Mike. 
+
+    Explained:
+
+    Likely mike:
+    Confidence 76%.
+    Sentences used:
+    (1) Most elephants are big.
+    (2) Mike is probably an elephant.
+    (3) Who is big?
+    Statements inferred:
+    (1) If X is an elephant, then X is big. Confidence 85%. Why: sentence 1.
+    (2) Mike is an elephant. Confidence 90%. Why: sentence 2.
+    (3) Mike is big. Confidence 76%. Why: statements 1, 2.
+    (4) If X is a big Y, then X matches the query. Why: sentence 3.
+    (5) Mike matches the query. Confidence 76%. Why: statements 3, 4.
+    (6) If X matches the query, then X is an answer. Why: the question.
+    (7) Mike is an answer. Confidence 76%. Why: statements 5, 6.
 
 
 For other options and additional details in the output, see the keys
