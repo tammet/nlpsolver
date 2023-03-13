@@ -22,7 +22,7 @@ Installation
 The system requires Linux and has been developed using Python 3.8. 
 The only external dependencies except Python are:
 * The Stanford Stanza NLP package https://stanfordnlp.github.io/stanza/ 
-    converting English to a [Universal Dependencies](https://universaldependencies.org/) graph.
+    converting English to a [UD](https://universaldependencies.org/) graph.
 * The reasoner binary `gk`, included in the system.
 * Data files from the tarball http://logictools.org/data/nlpsolver_data.tar.gz
 
