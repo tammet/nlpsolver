@@ -22,7 +22,8 @@ Installation
 The system requires Linux and has been developed using Python 3.8. 
 The only external dependencies except Python are:
 * The Stanford Stanza NLP package https://stanfordnlp.github.io/stanza/ 
-* The reasoner binary gk, included in the system.
+    converting English to a [Universal Dependencies](https://universaldependencies.org/) graph.
+* The reasoner binary `gk`, included in the system.
 * Data files from the tarball http://logictools.org/data/nlpsolver_data.tar.gz
 
 You need to install Stanza to run nlpsolver. No other additional
@@ -45,7 +46,7 @@ and extends the latter with probabilistic and defeasible reasoning mechanisms, s
 [default logic reasoning paper](https://link.springer.com/chapter/10.1007/978-3-031-10769-6_18)
 along with the demo page https://logictools.org/gk/
 
-The data files tarball is ca 200 megabytes. Download, gunzip and untar it to same `nlpsolver`
+The data files tarball is ca 200 megabytes. Download, `gunzip` and `tar -xf` it to same `nlpsolver`
 folder: it contains four textual datafiles, altogether ca 600 megabytes. The files
 are used by the gk to assist in the semantic parsing process. In case they are missing,
 the nlpserver.py setup process will give an error like
