@@ -31,18 +31,21 @@ packages or special installation is necessary.
 Initially we used Stanza version 1.3.0, and later switched to Stanza 1.4.1.
 Both should be usable for the nlpsolver, although the results of
 the semantic parser depend on the Stanza output and may
-vary between Stanza versions.
+vary between Stanza versions. The simplest way to install Stanza 
+is to run
 
-The gk reasoner binary is included. It is based on the first order 
-reasoner gkc https://github.com/tammet/gkc 
+    pip install stanza
+    python -c 'import stanza; stanza.download("en")'
+
+The `gk` reasoner binary is included. It is based on the first order logic
+reasoner `gkc` https://github.com/tammet/gkc 
 (see the [paper](https://link.springer.com/chapter/10.1007%2F978-3-030-29436-6_32))
-and extends the latter
-with probabilistic and defeasible reasoning mechanisms, see the
+and extends the latter with probabilistic and defeasible reasoning mechanisms, see the
 [confidences paper](https://link.springer.com/chapter/10.1007/978-3-030-79876-5_29) and the
 [default logic reasoning paper](https://link.springer.com/chapter/10.1007/978-3-031-10769-6_18)
 along with the demo page https://logictools.org/gk/
 
-The data files tarball is ca 200 megabytes. gunzip and untar it to same nlpsolver
+The data files tarball is ca 200 megabytes. Download, gunzip and untar it to same `nlpsolver`
 folder: it contains four textual datafiles, altogether ca 600 megabytes. The files
 are used by the gk to assist in the semantic parsing process. In case they are missing,
 the nlpserver.py setup process will give an error like
@@ -64,7 +67,7 @@ Before running nlpsolver you need to start
 The server initializes Stanza, reads relevant data to 3 gigabytes of shared memory for gk
 use and starts up a local server (default port 8080) used by the nlpsolver
 to call Stanza without the need to re-initialize it for each call. The server will
-print "Server ready." when it is ready for use.
+print `Server ready.` when it is ready for use.
 
 Then call nlpsolver with a natural language text ending with a question, like
 
@@ -103,9 +106,9 @@ Run a large number of regression tests by calling
 
 The actual test files run are configured at the beginning of the python program.
 By default, the following test files are run sequentially:
-* tests_core.py  : core capabilities test
-* tests_hans.py : a subset of tests from the [HANS set](https://arxiv.org/abs/1902.01007)
-* tests_allen.py  : tests created from the [Allen ProofWriter demo](https://proofwriter.apps.allenai.org/)
+* `tests_core.py`  : core capabilities test
+* `tests_hans.py` : a subset of tests from the [HANS set](https://arxiv.org/abs/1902.01007)
+* `tests_allen.py`  : tests created from the [Allen ProofWriter demo](https://proofwriter.apps.allenai.org/)
 
 A few failures in the default regression test are acceptable: they may depend on the time resources
 given to the prover, the specifics of Stanza output or inability of the test system to correctly
@@ -114,13 +117,13 @@ interpret the answer given.
 Knowledge bases
 ---------------
 
-The default knowledge base used for regression tests is a tiny axioms_std.js. 
+The default knowledge base used for regression tests is a tiny `axioms_std.js`. 
 
 Large knowledge bases can be used by changing the nlpserver.py initialization line
 
     axiomfiles=None # "wnet_10k.js cnet_50k.js quasi_50k.js" # set to None to read no axioms
 
-The line above provides three experimental knowledge bases created from 
+The line above provides three relatively small experimental knowledge bases created from 
 WordNet, ConceptNet and Quasimodo, respectively
 (see [the paper](https://www.scitepress.org/Link.aspx?doi=10.5220/0011532200003335))
 
@@ -128,7 +131,58 @@ WordNet, ConceptNet and Quasimodo, respectively
 Configuration
 -------------
 
-The main configuration parameters are at the beginning of nlpglobals.py
+The main configuration parameters are at the beginning of `nlpglobals.py`.
+The server configuration parameters are at the beginning of `nlpserver.py`.
+
+Performance
+-----------
+
+The system has miserable performance on most well-known natural language inference 
+or question answering benchmarks, the majority of which are oriented towards 
+machine learning. As an exception, the performance on the anti-machine-
+learning question set [HANS](https://arxiv.org/abs/1902.01007) is ca 95%, 
+in contrast to the ca 60% performance of LLM systems before the GPT3 family 
+(random choice would give 50% performance). The loss of 5% of HANS is due 
+to the wrong UD parses chosen by Stanza.
+
+However, the system is able to solve almost all of the demonstration examples 
+of the [Allen ProofWriter demo](https://proofwriter.apps.allenai.org/)
+and is able to solve inference problems the current LLM systems cannot, like the
+following examples:
+* ChatGPT answers correctly the question 
+    `If an animal likes honey, then it is probably a bear.
+    Most bears are big, although young bears are not big. John is an animal who
+    likes honey. Mike is a young bear. Who is big?` 
+    but fails to answer the modification
+    `If a greezer likes foozers, then it is probably
+    a drimm. Greezers can eat frozen bread. Most drimms are red, although young
+    drimms are not red. John likes bread. John is a nice greezer who likes foozers.
+    Mike is a young drimm. Mike can eat a lot. Penguins are birds who cannot
+    fly. Who is red?`
+* Again, ChatGPT answers correctly the question 
+    `The length of the red car is 4 meters. The length
+    of the black car is 5 meters. The length of the red car is less than 5 meters?`
+    but fails to answer the modification
+    `The length of the barner is
+    200000000 meters. The length of the red foozer is 312435 meters. The length of
+    the black foozer is 512000 meters. The length of the yellow foozer is 1000000
+    meters. The length of the red foozer is less than 312546 meters.`
+
+Both these two original questions and their modified versions are answered
+correctly by the nlpsolver.
+
+The runtime for the small examples is ca 0.5 seconds
+on a Linux laptop with a graphics card usable by Stanza. Of this time, Stanza
+UD parsing takes ca 0.17 seconds, UD to logic takes ca 0.04 seconds, and the rest
+is spent by the reasoner. For more complex examples the reasoner may spend
+unlimited time, i.e. the question is rather how complex questions can be solved
+in a preconfigured time window. In case the size of the input problem is relatively
+small and a tiny world model suffices for the solution, the correct answer is found
+in ca 1-2 seconds. However, in case the system is given a large knowledge base
+with a size of roughly one gigabyte, and the answer actually depends on
+the KB, then the search space may explode and the system may fail to find
+answer in a reasonable time. Efficiently handling a very large knowledge base
+for complex questions is one direction of our current research.
 
 Examples
 ---------
@@ -175,7 +229,11 @@ For other options and additional details in the output, see the keys
 explained in the "Running nlpsolver" section above.
 
 Finally, adding a key -debug gives the following detailed output, interleaved
-by manual comments between *** asterisks ***:
+by manual comments between *** asterisks ***. 
+
+Notice that gk input and output is in the 
+(JSON-LD-LOGIC)https://github.com/tammet/json-ld-logic format:
+see the (paper)https://ieeexplore.ieee.org/abstract/document/9364411
 
 
 *** Initial input ***
