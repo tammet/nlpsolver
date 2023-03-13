@@ -9,11 +9,11 @@ The pipeline contains:
 * A first-order logic reasoner solving the problem expressed in extended logic.
 * A subsystem for converting the proof given by the reasoner to English.
 
-Nlpsolver is developed with a goal to be a backbone of our research in
+Nlpsolver is developed with a goal to be (a) a backbone of our research in
 combining machine learning and large language models with logic-based
-symbolic reasoning and using automated reasoner as an interface
+symbolic reasoning, (b) using automated reasoner as an interface
 between natural language and external tools like database systems and scientific 
-calculations. Nlpsolver itself does not contain or use large language models
+calculations. The current version of nlpsolver does not contain or use large language models
 or nontrivial machine learning, except for the components used internally by Stanza.
 
 Installation
