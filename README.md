@@ -229,11 +229,11 @@ For other options and additional details in the output, see the keys
 explained in the "Running nlpsolver" section above.
 
 Finally, adding a key -debug gives the following detailed output, interleaved
-by manual comments between *** asterisks ***. 
+by manually inserted comments between *** asterisks ***. 
 
 Notice that gk input and output is in the 
-(JSON-LD-LOGIC)https://github.com/tammet/json-ld-logic format:
-see the (paper)https://ieeexplore.ieee.org/abstract/document/9364411
+[JSON-LD-LOGIC](https://github.com/tammet/json-ld-logic) format:
+see the [paper](https://ieeexplore.ieee.org/abstract/document/9364411)
 
 
 *** Initial input ***
