@@ -17,7 +17,7 @@ The only external dependencies except Python are:
 * The reasoner binary gk, included in the system.
 
 You need to install Stanza to run nlpsolver. No other additional
-packages or special installation is necessary.
+packages or special installation is necessary. 
 
 Initially we used Stanza version 1.3.0, and later switched to Stanza 1.4.1.
 Both should be usable for the nlpsolver, although the results of
@@ -30,8 +30,12 @@ reasoner gkc https://github.com/tammet/gkc
 and extends the latter
 with probabilistic and defeasible reasoning mechanisms, see the
 [confidences paper](https://link.springer.com/chapter/10.1007/978-3-030-79876-5_29) and the
-[default logic reasoning paper] (https://link.springer.com/chapter/10.1007/978-3-031-10769-6_18)
+[default logic reasoning paper](https://link.springer.com/chapter/10.1007/978-3-031-10769-6_18)
 along with the demo page https://logictools.org/gk/
+
+About hardware:
+* In case your computer has a suitable graphics card, Stanza will run significantly faster.
+* Using gk in the pipeline requires at least 3 gigabytes of shared memory.
 
 
 Running nlpsolver
@@ -41,9 +45,9 @@ Before running nlpsolver you need to start
 
     ./nlpserver.py
 
-The server initializes Stanza, reads relevant data to shared memory for gk
+The server initializes Stanza, reads relevant data to 3 gigabytes of shared memory for gk
 use and starts up a local server (default port 8080) used by the nlpsolver
-to call Stanza without the need to re-initialize it for each call.
+to call Stanza without the need to re-initialize it for each call. 
 
 Then call nlpsolver with a natural language text ending with a question, like
 
@@ -51,27 +55,27 @@ Then call nlpsolver with a natural language text ending with a question, like
     
 and/or a filename as an argument, with optional keys:
 
-basic keys:
-    -explain   : give an English explanation/proof of the answer    
-    -logic     : show logic  
-    -usekb     : use background knowledge in a memory kb imported by the server
-    -debug     : show the details of the whole process
-    -simple    : use a very simplified representation: automatically switches on all the three following keys,
-                  which can be also switched on separately:
-        -nocontext : use a simplified representation without context (time, situation) when creating logic 
-        -noexceptions : use a simplified representation without exceptions (blockers) when creating logic
-        -simpleproperties: use simplified properties without strength and type parameters; also turns on -noexceptions
-    -nosolve   : convert to logic, show prover json input, but do not run the prover  
-    -help      : output this helptext 
+    basic keys:
+        -explain   : give an English explanation/proof of the answer    
+        -logic     : show logic  
+        -usekb     : use background knowledge in a memory kb imported by the server
+        -debug     : show the details of the whole process
+        -simple    : use a very simplified representation: automatically switches on all the three following keys,
+                      which can be also switched on separately:
+            -nocontext : use a simplified representation without context (time, situation) when creating logic 
+            -noexceptions : use a simplified representation without exceptions (blockers) when creating logic
+            -simpleproperties: use simplified properties without strength and type parameters; also turns on -noexceptions
+        -nosolve   : convert to logic, show prover json input, but do not run the prover  
+        -help      : output this helptext 
 
-controlling the prover:
-    -seconds N : give N seconds for proof search (default 1)
-    -prover    : show prover json input/output
-    -rawresult : output only the json result from the prover
-    -axioms file1.js ... fileN.js   : use these files as axioms instead of the axioms_std.js
-    -strategy file.js : use the given json strategy file instead of the default search strategy of the prover
-    -nokb      : do not use a shared memory knowledge base (NOT implemented yet)      
-    -printlevel N : use N>10 to see more of the search process of the prover (10 is default, try 12)
+    controlling the prover:
+        -seconds N : give N seconds for proof search (default 1)
+        -prover    : show prover json input/output
+        -rawresult : output only the json result from the prover
+        -axioms file1.js ... fileN.js   : use these files as axioms instead of the axioms_std.js
+        -strategy file.js : use the given json strategy file instead of the default search strategy of the prover
+        -nokb      : do not use a shared memory knowledge base (NOT implemented yet)      
+        -printlevel N : use N>10 to see more of the search process of the prover (10 is default, try 12)
 
 Testing
 --------
