@@ -15,6 +15,7 @@ The system requires Linux and has been developed using Python 3.8.
 The only external dependencies except Python are:
 * The Stanford Stanza NLP package https://stanfordnlp.github.io/stanza/ 
 * The reasoner binary gk, included in the system.
+* Data files from the tarball http://logictools.org/data/nlpsolver_data.tar.gz
 
 You need to install Stanza to run nlpsolver. No other additional
 packages or special installation is necessary. 
@@ -32,6 +33,13 @@ with probabilistic and defeasible reasoning mechanisms, see the
 [confidences paper](https://link.springer.com/chapter/10.1007/978-3-030-79876-5_29) and the
 [default logic reasoning paper](https://link.springer.com/chapter/10.1007/978-3-031-10769-6_18)
 along with the demo page https://logictools.org/gk/
+
+The data files tarball is ca 200 megabytes. gunzip and untar it to same nlpsolver
+folder: it contains four textual datafiles, altogether ca 600 megabytes. The files
+are used by the gk to assist in the semantic parsing process. In case they are missing,
+the nlpserver.py setup process will give an error like
+
+    {"error": "Failed to read taxonomy size  "}
 
 About hardware:
 * In case your computer has a suitable graphics card, Stanza will run significantly faster.
@@ -87,8 +95,8 @@ Run a large number of regression tests by calling
 The actual test files run are configured at the beginning of the python program.
 By default, the following test files are run sequentially:
 * tests_core.py  : core capabilities test
-* tests_hans.py : a subset of tests from the [HANS set] (https://arxiv.org/abs/1902.01007)
-* tests_allen.py  : tests created from the [Allen ProofWriter demo] (https://proofwriter.apps.allenai.org/)
+* tests_hans.py : a subset of tests from the [HANS set](https://arxiv.org/abs/1902.01007)
+* tests_allen.py  : tests created from the [Allen ProofWriter demo](https://proofwriter.apps.allenai.org/)
 
 A few failures in the default regression test are acceptable: they may depend on the time resources
 given to the prover, the specifics of Stanza output or inability of the test system to correctly
@@ -105,7 +113,7 @@ Large knowledge bases can be used by changing the nlpserver.py initialization li
 
 The line above provides three experimental knowledge bases created from 
 WordNet, ConceptNet and Quasimodo, respectively
-(see [the paper] (https://www.scitepress.org/Link.aspx?doi=10.5220/0011532200003335))
+(see [the paper](https://www.scitepress.org/Link.aspx?doi=10.5220/0011532200003335))
 
 
 Configuration
@@ -130,6 +138,10 @@ Adding a key -explain like
     ./nlpsolver.py "Most elephants are big. Young elephants are not big. 
           Mike is probably an elephant. John is a young elephant. Who is big?"
           -explain
+
+will output
+
+
 
 For other options and additional details in the output, see the keys
 explained in the "Running nlpsolver" section above.
