@@ -167,7 +167,7 @@ following examples:
     `The length of the barner is
     200000000 meters. The length of the red foozer is 312435 meters. The length of
     the black foozer is 512000 meters. The length of the yellow foozer is 1000000
-    meters. The length of the red foozer is less than 312546 meters.`
+    meters. The length of the red foozer is less than 312546 meters?`
 
 Both these two original questions and their modified versions are answered
 correctly by the nlpsolver.
