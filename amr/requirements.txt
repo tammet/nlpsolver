@@ -1,5 +1,3 @@
 amrlib
 nltk
-bottle
 penman
-pickle
