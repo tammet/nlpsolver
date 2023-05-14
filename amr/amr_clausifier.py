@@ -5,7 +5,6 @@ import penman
 import re
 from penman import Graph
 
-import amrconfig
 import pprint
 import types_util
 import propbank_api as pb
@@ -265,8 +264,8 @@ def extract_clauses(amr_str):
     # Edges don’t include terminal triples (concept_values or attributes).
     # debug_var(g.edges(), "Edges")
     for idx, e in enumerate(concept_edges):
-        if e.role in cfg.amr_dict.keys():
-            concept_edges[idx] = e._replace(role=cfg.amr_dict[e.role])
+        if e.role in cfg.amr_dict_roles.keys():
+            concept_edges[idx] = e._replace(role=cfg.amr_dict_roles[e.role])
 
     if cfg.debug_concept_edges:
         logger.info("Replaced Edge roles with AMR dictionary items")
