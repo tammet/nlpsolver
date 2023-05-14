@@ -1,1 +1,4 @@
-/amr/models/model_stog/*
+/amr/__pycache__
+/gui/__pycache__
+/.idea/
+/nlp/
