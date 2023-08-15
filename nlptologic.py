@@ -59,7 +59,7 @@ def parse_ud(doc,entities):
   objects=[]
   question_sentence=[]
   ctxt={"logic_sentence_map":{},"dummy_nr":1,"skolem_nr":1, "confidences":True,"varnum":1, "addctxt": True, "framenr":1,
-        "question_type": None, "question_dummification": True}
+        "question_type": None, "question_dummification": True, "llm_sentence_map":[], "passed_words":[]}
   if options["nocontext_flag"]:
     ctxt["addctxt"]=False
   else:
@@ -121,7 +121,8 @@ def parse_ud(doc,entities):
                    "skolem_nr": ctxt["skolem_nr"],"varobjects":[], "addctxt":ctxt["addctxt"],
                    "framenr":ctxt["framenr"],
                    "isquestion": questionsentence, "confidences": ctxt["confidences"],
-                   "question_type":ctxt["question_type"], "question_dummification":ctxt["question_dummification"]}
+                   "question_type":ctxt["question_type"], "question_dummification":ctxt["question_dummification"],
+                   "passed_words":ctxt["passed_words"]}
     if options["debug_print_flag"]:
       #print("before parse_sentence varnum",sentence_ctxt["varnum"])
       #print("before parse_sentence objects")
@@ -183,10 +184,12 @@ def parse_ud(doc,entities):
       oldaddctxt=sentence_ctxt["addctxt"]
       oldframenr=sentence_ctxt["framenr"]
       oldquestiontype=sentence_ctxt["question_type"]
+      oldpassedwords=sentence_ctxt["passed_words"]
       ctxt={"logic":logic,"objects":objects,"populated":[],"varobjects":oldvarobjects,
         "logic_sentence_map":oldmap, "dummy_nr":oldnr, "skolem_nr":latest_skolem_nr, "addctxt":oldaddctxt,
         "confidences": old_confidences,"varnum":oldvarnum, "framenr":oldframenr,"varnum":oldvarnum,
-        "question_type":oldquestiontype, "question_dummification":sentence_ctxt["question_dummification"]}        
+        "question_type":oldquestiontype, "question_dummification":sentence_ctxt["question_dummification"],
+        "passed_words":oldpassedwords}        
       #debug_print("sentenceres objects",objects) 
       #debug_print("sentenceres objects:\n")
 
@@ -519,7 +522,9 @@ def fix_capital_propn(ctxt,doc,entities):
   if not doc: return doc
   if type(doc)!=list: return doc
   for word in doc:
+    #debug_print("word",word)
     if (word["id"]==1 and word["upos"] in ["PROPN"] and word["lemma"][0].isupper() and
+        #"ner" in word and word["ner"] in [0,"0","O"]):
         "ner" in word and word["ner"] in [0,"0"]):
       word["upos"]="NOUN"   
     elif (word["id"]==1 and word["upos"] in ["NOUN"] and word["text"][0].isupper() and
@@ -575,6 +580,7 @@ def is_atom(term):
 
 def parse_sentence(ctxt,sentence,question_dummy_name=None): 
   debug_print("====== sentence ==========\n")  
+  #debug_print("passed_words",ctxt["passed_words"])
   #debug_print_sentence_tree(sentence)
   #if options["debug_print_flag"] or options["show_logic_flag"]:
   #  if options["debug_print_flag"]:
@@ -640,7 +646,9 @@ def parse_sentence(ctxt,sentence,question_dummy_name=None):
   debug_print("flat_props_tree")#,flat_props_tree)
   debug_print_logical_sentence_tree(flat_props_tree)
   
-  ctxt["passed_words"]=[]
+  if "passed_words" not in ctxt:
+    ctxt["passed_words"]=[]
+
   sentence_proper_logic_tree=build_sentence_proper_logic(ctxt,sentence,flat_props_tree)
 
   if (sentence_proper_logic_tree and type(sentence_proper_logic_tree)==list 
@@ -1666,7 +1674,9 @@ def build_object_logic(ctxt,sentence,tree,objectword,rootlist,issubject=False):
 # Single objects remain unchanged
 
 def build_subsentence_property_logic(ctxt,sentence,root,tree,rootlist,preferseq=False,isobject=False):
+  #debug_print("build_subsentence_property_logic root",root)
   #debug_print("build_subsentence_property_logic tree",tree)
+  #debug_print("build_subsentence_property_logic rootlist",rootlist)
   #debug_print("build_subsentence_property_logic preferseq",preferseq)
   if not tree: 
     return None  

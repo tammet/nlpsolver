@@ -405,6 +405,8 @@ def skolemize(ctxt,frm,freevars,varmap):
     #debug_print("ctxt",ctxt)
     newvarmap={} #varmap.copy()
     for var in frm[1]:
+      if no_skolem_var(var):
+        continue
       if unknownsubject in var:
         fun=make_skolem_constant(ctxt,unknownsubject)
       else:
@@ -452,7 +454,9 @@ def skolemize(ctxt,frm,freevars,varmap):
   else:
     return frm
 
-
+def no_skolem_var(var):
+  if var.startswith("?:Tense"): return True
+  else: return False
 
 def make_skolem_constant(ctxt,specialprefix=None):
   if specialprefix:

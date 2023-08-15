@@ -34,7 +34,7 @@ from nlpuncertain import *
 
 # ==== making a nice nlp result from the prover result ====
 
-def make_nlp_result(doc,rawresult,logic_objects,question_type):
+def make_nlp_result(doc,rawresult,logic_objects,question_type,llm_mapping):
   #debug_print("doc",doc)       
   explain=options["prover_explain_flag"]
   show_logic=options["show_logic_flag"]
@@ -228,7 +228,19 @@ def make_nlp_result(doc,rawresult,logic_objects,question_type):
   elif not res:
     res="Could not find an answer."  
   if explanations:    
-    exp="\n\nExplained:"           
+    exp="\n\nExplained:"   
+
+    if llm_mapping:
+      llmexp=""
+      for el in llm_mapping:
+        if el[0]!=el[1]:
+          line="\n  "+el[0]+" --> "+el[1]
+          llmexp+=line
+      if llmexp:
+        llmexp="\n\nSentences reformulated by the large language model:\n"+llmexp    
+    else:
+      llmexp=""  
+
     for el in explanations:
       if el[0] in ["True"]:
         s="\n\n"+el[0]+" (proof by contradiction):\n"
@@ -238,7 +250,7 @@ def make_nlp_result(doc,rawresult,logic_objects,question_type):
         s="\n\n"+el[0]+":\n"   
       s=s+str(el[1])
       exp+=s
-    res=res+exp  
+    res=res+llmexp+exp  
   return res
 
 def answer_goodness(ans):
@@ -1198,7 +1210,7 @@ def make_nlp_atom(doc,atom,logic_objects,positive,show_logic_details=None):
       s+=nicehead+" "+make_nice_nlp_term(doc,atom[2],objects)
     elif headstr in ["$greater","$less"]:
       nicehead=make_nice_nlp_head(headstr[1:],positive,atom) 
-      debug_print("nicehead",nicehead)   
+      #debug_print("nicehead",nicehead)   
       s=make_nice_nlp_term(doc,atom[1],objects)+" "
       s+=nicehead+" than "+make_nice_nlp_term(doc,atom[2],objects)  
     else:  
@@ -1247,7 +1259,7 @@ def get_ctxt_situation_nr(ctxt):
   else: return None
 
 def make_nice_nlp_head(headstr,positive,atom,type_word=None):
-  debug_print("headstr",headstr)
+  #debug_print("headstr",headstr)
   #debug_print("type_word",type_word)
   atom_time=get_ctxt_time(get_atom_ctxt(atom))
   if atom_time in ["Past"]: 

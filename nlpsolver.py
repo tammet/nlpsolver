@@ -42,6 +42,9 @@ from nlptologic import *
 # prover calling and prover result conversion parts are in nlpprover.py
 from nlpprover import *
 
+# optional llm simplifications are in nlpllm
+from nlpllm import *
+
 # small utilities are in nlputils.py
 from nlputils import *
 
@@ -76,6 +79,10 @@ basic keys:
  -nosolve   : convert to logic, show prover json input, but do not run the prover  
  -help      : output this helptext 
 
+optional parsing helpers:
+ -llm       : use a large language model (llm) to simplify the sentences
+ -amr       : use an amr parser to gain additional information for words/sentences 
+
 controlling the prover:
  -seconds N : give N seconds for proof search (default 1)
  -prover    : show prover json input/output
@@ -103,6 +110,12 @@ def main():
 def answer_question(text,newoptions=None):
   debug_print("answer_question text",text)    
   if newoptions: set_global_options(newoptions) 
+  # - - - make optional llm simplifications - - - -
+  llm_mapping=None
+  if options["llm_flag"]:
+    simpres=llm_simplify(text)
+    text=simpres[0]
+    llm_mapping=simpres[1]
   # - - - do basic text replacements - - - -
   text=prepare_text(text)     
   debug_print("answer_question prepared text",text)  
@@ -171,7 +184,7 @@ def answer_question(text,newoptions=None):
   elif rawresult and rawresult.startswith("Error"):
     return rawresult  
  
-  niceresult=make_nlp_result(doc,rawresult,logic_objects,question_type)
+  niceresult=make_nlp_result(doc,rawresult,logic_objects,question_type,llm_mapping)
   return niceresult
 
 # detect input strings, filenames and optional keys
@@ -230,6 +243,10 @@ def parse_cmd_line(helptext):
       options["backward_flag"]=True    
     elif el in ["-nokb","--nokb"]: 
       options["nokb_flag"]=True   
+    elif el in ["-llm","--llm"]: 
+      options["llm_flag"]=True   
+    elif el in ["-amr","--amr"]: 
+      options["amr_flag"]=True     
     elif el in ["-axioms","--axioms"]: 
       axiomfiles=[]
       fpos=1

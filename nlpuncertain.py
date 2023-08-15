@@ -431,7 +431,7 @@ def get_deepchild(ctxt,sentence,word,lemmas=[],deprels=[]):
   return False
 
 def get_lemma_confidence(ctxt,lemma):
-  debug_print("get_lemma_confidence lemma",lemma)
+  #debug_print("get_lemma_confidence lemma",lemma)
   if lemma in lemma_confidences:
     return lemma_confidences[lemma]
   else:

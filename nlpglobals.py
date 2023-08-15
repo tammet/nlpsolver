@@ -41,10 +41,14 @@ options={
   "prover_axiomfiles":False,  # if not False, use these as axioms instead of the default prover_axiomfile below
   "prover_print":False,  # if not False, use the argument integer for gk printout level, instead of the default
   "prover_strategy":False,  # if not False, use the argument as a gk strategy file, instead of the default
-  "prover_seconds":2  # give the prover this many seconds, instead of the default 1
+  "prover_seconds":2,  # give the prover this many seconds, instead of the default 1
+  "llm_flag": False, # perform LLM simplifications
+  "amr_flag": False  # perform AMR parsing  
 }
 
+# connecting to llm etc with secret keys
 
+secrets_file="secrets.js" # only needed for reading llm keys, if llm used
 
 # connecting to nlpserver.py
 server_name="localhost"

@@ -1024,7 +1024,7 @@ def remove_prop_extras_from_logic(lst):
 
 def doc_to_original_sentence(doc):
   lastpos=0 
-  for word in doc:   
+  for word in doc:       
     if word["end_char"]>lastpos: lastpos=word["end_char"]
   res=' '*lastpos+' '*lastpos
   for word in doc:

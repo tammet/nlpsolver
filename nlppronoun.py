@@ -187,7 +187,7 @@ def resolve_pronoun(ctxt,sentence,word,tree,verb=None,otherword=None):
           score+=1
       elif objword["deprel"] in ["subj","nsubj"]:
         score+=1 
-    #debug_print("object score",score)
+    debug_print("object score",score)
     if pronoun_debug:
       print("object, lemma, score",[object[0],object[1]["lemma"],score])
     if score>0-4:
@@ -238,7 +238,7 @@ def resolve_pronoun(ctxt,sentence,word,tree,verb=None,otherword=None):
       newscore+=related1
     newlist.append([newscore,el[1]])
   sortedres=sorted(newlist,key=lambda x : x[0],reverse=True)
-  #debug_print("sortedres2",sortedres)  
+  debug_print("sortedres2",sortedres)  
   if pronoun_debug:
     print("sortedres")
     for el in sortedres:
