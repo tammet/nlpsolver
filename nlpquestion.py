@@ -63,7 +63,9 @@ def prepare_question_sentence(ctxt,sentence,origsentence):
     else:
       return {"result": None}  
   #sys.exit(0)
-  text=make_text_from_doc(sentence) 
+  text=make_text_from_doc_sep(sentence) 
+  #text=make_text_from_doc(sentence)
+  #debug_print("prepare_question_sentence made text",text) 
   text2=text
   if which_question(ctxt,sentence):
     #debug_print("which-question")
@@ -183,16 +185,19 @@ def dummify_text(ctxt,text,orig_parsed_text):
   #      ("of" in sp)):
   #  ctxt["question_type"]="who_is_of"   
   else:
+    #debug_print("ckpt1")
     newsp=[]
     count=0
     #replaced=False
     for el in sp:  
+      #debug_print("el",el)
       count+=1      
       if ((count==1 and (el in ["who","whom","what","which"] or el.lower() in ["who","whom","what","which"])) or
           (((el in ["who","what","which"] or el.lower() in ["who","what","which"]) and 
             # What has the length 10 meters?" 
             el.lower()==orig_parsed_text[0]["lemma"].lower() )) or
-          el in ["who?","whom?","what?","which?"] or el.lower() in ["who?","whom?","what?","which?"]):
+          el in ["who?","whom?","what?","which?"] or el.lower() in ["who?","whom?","what?","which?"] or
+          ((el.lower() in ["who","whom","what","which"]) and len(sp)==count+1 and sp[count]=="?") ):
         dummy=nlpglobals.dummy_name+"_"+str(ctxt["dummy_nr"])
         ctxt["dummy_nr"]=ctxt["dummy_nr"]+1
         newsp.append(dummy)  

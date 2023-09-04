@@ -1,0 +1,138 @@
+# ========== textual replacements ======
+
+something ==> an object
+somebody ==> a person
+someone ==> a person
+
+everything ==> every object
+everybody ==> every person
+everyone ==> every person
+
+cannot ==> can not
+isnt ==> is not 
+wasnt ==> was not 
+doesnt ==> does not
+hasnt ==> has not
+
+isn't ==> is not 
+wasn't ==> was not 
+haven't ==> has not 
+hadn't ==> had not 
+doesn't ==> does not
+can't ==> can not
+won't ==> will not
+wouldn't ==> would not
+couldn't ==> could not
+
+is unable to ==> can not
+is unable of ==> can not
+is inable to ==> can not
+is inable of ==> can not 
+is incapable to ==> can not
+is incapable of ==> can not
+
+are unable to ==> can not
+are unable of ==> can not
+are inable to ==> can not
+are inable of ==> can not 
+are incapable to ==> can not
+are incapable of ==> can not
+
+were unable to ==> could not
+were unable of ==> could not
+were inable to ==> could not
+were inable of ==> could not 
+were incapable to ==> could not
+were incapable of ==> could not
+
+was unable to ==> could not
+was unable of ==> could not
+was inable to ==> could not
+was inable of ==> could not 
+was incapable to ==> could not
+was incapable of ==> could not
+
+
+unable ==> can not
+incapable ==> can not
+
+is capable of ==> can
+are capable of ==> can
+was capable of ==> could
+were capable of ==> could
+have been capable of ==> could
+had been capable of ==> could
+
+is able to ==> can
+are able to ==> can
+was able to ==> could
+were able to ==> could
+have been able to ==> could
+had been able to ==> could
+
+has a capability to ==> can
+have a capability to ==> can
+had a capability to ==> could
+have had a capability to ==> could
+
+has an ability to ==> can
+have an ability to ==> can
+had an ability to  ==> could
+have had an ability to  ==> could
+
+has a capacity to ==> can
+have a capacity to ==> can
+had a capacity to ==> could
+have had a capacity to ==> could
+
+has the capability to ==> can
+have the capability to ==> can
+had the capability to ==> could
+have had the capability to ==> could
+
+has the ability to ==> can
+have the ability to ==> can
+had the ability to ==> could
+have had the ability to ==> could
+
+has the capacity to ==> can
+have the capacity to ==> can
+had the capacity to ==> could
+have had the capacity to ==> could
+
+a large number of ==> many
+a great number of ==> many
+a lot of ==> many
+a majority of ==> most 
+  
+in case ==> if
+
+# ==================================  
+
+it [be] true that ==> $none
+it [be] $certaintyphrase [true] that ==> $2  
+it [be] [$opt $certaintyphrase] false that $nounphrase [be  is  was]==> $5 $6 $2 not
+it [be] [$opt $certaintyphrase] not true that $nounphrase [be  is  was]==> $6 $7 $2 not     
+it [be] not [$opt $certaintyphrase] that $nounphrase [be  is  was]==> $3 that $5 $6 not 
+
+[confidence probability likelihood plausibility chance] [$optdrop  of] $probnumber ==> $0 [$makepercentage  1] percent 
+
+$nounphrase [be is was] $number $unitword [long tall high wide heavy deep warm hot cold] ==> the [$measure_adv_to_noun -1] of $0 $1 $2 $3 
+$nounphrase [have] [$optdrop  $article] [length height width weight depth temperature cost price] [$optdrop  of] $number $unitword ==>  the [$measure_adv_to_noun 2] of $0 is $3 $4  
+$nounphrase [cost] $number $unitword ==> the price of $0 is $2 $3
+$nounphrase [costs cost] as much as $nounphrase ==> the price of $0 equals the price of $5       
+
+[be is] equal to ==> equals
+[be is] [$optdrop  $article] same as ==> equals
+[be is] not equal to ==> does not equal
+[be is] not [$optdrop $article] same as ==> does not equal
+
+# ================================
+  
+
+
+
+
+ 
+ 
+ 

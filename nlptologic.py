@@ -42,6 +42,8 @@ from nlpuncertain import *
 
 from nlpanswer import *
 
+from nlprewrite import *
+
 #from nlpsolver import server_parse
 
 # ======= globals used and changed during work ===
@@ -59,7 +61,7 @@ def parse_ud(doc,entities):
   objects=[]
   question_sentence=[]
   ctxt={"logic_sentence_map":{},"dummy_nr":1,"skolem_nr":1, "confidences":True,"varnum":1, "addctxt": True, "framenr":1,
-        "question_type": None, "question_dummification": True, "llm_sentence_map":[], "passed_words":[]}
+        "question_type": None, "question_dummification": True, "llm_sentence_map":[]} #, "passed_words":[]}
   if options["nocontext_flag"]:
     ctxt["addctxt"]=False
   else:
@@ -81,9 +83,10 @@ def parse_ud(doc,entities):
     #debug_print("sentence2",sentence2)
     sentence3=fix_capital_propn(ctxt,sentence2,entities)
     #debug_print("sentence3",sentence3)
-    sentence4=simplify_sentence(ctxt,sentence3)
+    #print("replacement_text_rules",nlpglobals.replacement_text_rules)
+    sentence4=rewrite_sentence(ctxt,sentence3)    
     #sentence4=fix_capital_propn(ctxt,sentence4)
-    #debug_print("simplify_sentence gave sentence4 1",sentence4)
+    #debug_print("rewrite_sentence gave sentence4 1",sentence4)
     if sentence4!=sentence3:
       sentence4=fix_capital_propn(ctxt,sentence4,entities)
       sentence4=fix_lemma_capitalization(ctxt,sentence4)
@@ -121,8 +124,8 @@ def parse_ud(doc,entities):
                    "skolem_nr": ctxt["skolem_nr"],"varobjects":[], "addctxt":ctxt["addctxt"],
                    "framenr":ctxt["framenr"],
                    "isquestion": questionsentence, "confidences": ctxt["confidences"],
-                   "question_type":ctxt["question_type"], "question_dummification":ctxt["question_dummification"],
-                   "passed_words":ctxt["passed_words"]}
+                   "question_type":ctxt["question_type"], "question_dummification":ctxt["question_dummification"] }
+                   # "passed_words":ctxt["passed_words"]}
     if options["debug_print_flag"]:
       #print("before parse_sentence varnum",sentence_ctxt["varnum"])
       #print("before parse_sentence objects")
@@ -184,12 +187,12 @@ def parse_ud(doc,entities):
       oldaddctxt=sentence_ctxt["addctxt"]
       oldframenr=sentence_ctxt["framenr"]
       oldquestiontype=sentence_ctxt["question_type"]
-      oldpassedwords=sentence_ctxt["passed_words"]
+      # oldpassedwords=sentence_ctxt["passed_words"]
       ctxt={"logic":logic,"objects":objects,"populated":[],"varobjects":oldvarobjects,
         "logic_sentence_map":oldmap, "dummy_nr":oldnr, "skolem_nr":latest_skolem_nr, "addctxt":oldaddctxt,
         "confidences": old_confidences,"varnum":oldvarnum, "framenr":oldframenr,"varnum":oldvarnum,
-        "question_type":oldquestiontype, "question_dummification":sentence_ctxt["question_dummification"],
-        "passed_words":oldpassedwords}        
+        "question_type":oldquestiontype, "question_dummification":sentence_ctxt["question_dummification"] }
+        # "passed_words":oldpassedwords}        
       #debug_print("sentenceres objects",objects) 
       #debug_print("sentenceres objects:\n")
 
@@ -367,73 +370,6 @@ def parse_ud(doc,entities):
           "question_definition": question_definition,
           "question_type": ctxt["question_type"],
           "logic_sentence_map": ctxt["logic_sentence_map"]}
-
-
-def simplify_sentence(ctxt,sentence):
-  text=make_text_from_doc(sentence)  
-  newtext=text 
-  newsentence=sentence
-
-  (newtext,newsentence)=parsed_sentence_rewrite(ctxt,newtext,newsentence,
-       [["it"],["be"],["true"],["that"]],  [])   
-  (newtext,newsentence)=parsed_sentence_rewrite(ctxt,newtext,newsentence,
-       [["it"],["be"],"$certaintyphrase",["true"],["that"]],
-       [["$",2]])
-  (newtext,newsentence)=parsed_sentence_rewrite(ctxt,newtext,newsentence,
-       [["it"],["be"],["$opt","$certaintyphrase"],["false"],["that"],"$nounphrase",["be","is","was"]],
-       [["$",5],["$",6],["$",2],"not"] ) 
-  (newtext,newsentence)=parsed_sentence_rewrite(ctxt,newtext,newsentence,
-       [["it"],["be"],["$opt","$certaintyphrase"],["not"],["true"],["that"],"$nounphrase",["be","is","was"]],
-       [["$",6],["$",7],["$",2],"not"]) 
-  #newtext=parsed_sentence_rewrite(ctxt,sentence,
-  #     [["it"],["be"],"$certaintyphrase",["that"]],
-  #     [["$",2]]) 
-  (newtext,newsentence)=parsed_sentence_rewrite(ctxt,newtext,newsentence,
-       [["it"],["be"],["not"],"$certaintyphrase",["that"],"$nounphrase",["be","is","was"]],
-       [["$",3],"that",["$",5],["$",6],"not"]) 
-  (newtext,newsentence)=parsed_sentence_rewrite(ctxt,newtext,newsentence,
-       [["in"],["case"]],
-       ["if"]) 
-  (newtext,newsentence)=parsed_sentence_rewrite(ctxt,newtext,newsentence,
-       [["confidence","probability","likelihood","plausibility","chance"],["$optdrop", ["of"]],"$probnumber"],
-       [["$",0],["$makepercentage",1],"percent"]) 
-  (newtext,newsentence)=parsed_sentence_rewrite(ctxt,newtext,newsentence,
-    ["$nounphrase",["be","is","was"],"$number","$unitword", # "$measureword"])
-           ["long","tall","high","wide","heavy","deep","warm","hot","cold"]],
-    ["the",["$measure_adv_to_noun",-1],"of",["$",0],["$",1],["$",2],["$",3]]) 
-  (newtext,newsentence)=parsed_sentence_rewrite(ctxt,newtext,newsentence,
-       ["$nounphrase",["have"],["$optdrop", "$article"],
-         ["length","height","width","weight","depth","temperature","cost","price"],["$optdrop", ["of"]],"$number","$unitword"],
-       ["the",["$measure_adv_to_noun",2],"of",["$",0],"is",["$",3],["$",4]])
-  (newtext,newsentence)=parsed_sentence_rewrite(ctxt,newtext,newsentence,
-       ["$nounphrase",["cost"],"$number","$unitword"],
-       ["the","price","of",["$",0],"is",["$",2],["$",3]])   
-  (newtext,newsentence)=parsed_sentence_rewrite(ctxt,newtext,newsentence,
-       [["be","is"],["equal"],["to"]],
-       ["equals"])    
-  (newtext,newsentence)=parsed_sentence_rewrite(ctxt,newtext,newsentence,
-       [["be","is"],["$optdrop", "$article"],["same"],["as"]],
-       ["equals"])       
-  (newtext,newsentence)=parsed_sentence_rewrite(ctxt,newtext,newsentence,
-       [["be","is"],["not"],["equal"],["to"]],
-       ["does","not","equal"])      
-  (newtext,newsentence)=parsed_sentence_rewrite(ctxt,newtext,newsentence,
-       [["be","is"],["not"],["$optdrop", "$article"],["same"],["as"]],
-       ["does","not","equal"])     
-    
-  debug_print("final newtext",newtext)
-  for replacement in string_replacements:
-    newtext=newtext.replace(replacement[0],replacement[1])  
-  if newtext!=text:      
-    data = server_parse(newtext)
-    newsentence=data["doc"][0] 
-  return newsentence
-  # "Nile is 10 kilometers long" -> "The length of Nile is 10 kilometers"
-  # "NPHRASE be NUM MEASUREWORD [long,tall,..]"  ->  
-  # "The red car costs 10 dollars" -> ""The price of the red car is 10 dollars."
-  # "The red car did cost 10 dollars" -> ""The price of the red car was 10 dollars."
-  # "NPHRASE costs NUM PRICEWORD " 
-
 
 
 def make_logic_list_sentence_map(ctxt,logic_list,sentencename):
@@ -646,8 +582,9 @@ def parse_sentence(ctxt,sentence,question_dummy_name=None):
   debug_print("flat_props_tree")#,flat_props_tree)
   debug_print_logical_sentence_tree(flat_props_tree)
   
-  if "passed_words" not in ctxt:
-    ctxt["passed_words"]=[]
+  #if "passed_words" not in ctxt:
+  #  ctxt["passed_words"]=[]
+  ctxt["passed_words"]=[]
 
   sentence_proper_logic_tree=build_sentence_proper_logic(ctxt,sentence,flat_props_tree)
 

@@ -18,6 +18,10 @@
 
 import sys
 
+replacement_text_rules=None
+replacement_complex_rules=None
+
+
 # ======= configuration globals ======
 
 # global vars changed by command line options
@@ -147,6 +151,9 @@ def set_global_options(newoptions):
     else:
       print("Error: option",key,"is not recognized.")  
       sys.exit(0)
+
+
+
 
 # ========= data globals ==========
 

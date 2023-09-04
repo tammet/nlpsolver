@@ -1051,20 +1051,16 @@ def make_text_from_doc(doc):
     s=s[0:(word["start_char"]-firstpos)] + word["text"] + s[(word["end_char"]-firstpos) :]
   return s.strip()  
 
+def make_text_from_doc_sep(doc):
+  if not doc: return ""
+  lst=[]
+  for word in doc:
+    lst.append(word["text"])
+  res=" ".join(lst)
+  return res.strip()
 
-# ===== text replacements ==================
 
-def replace_text_word(text,what,to):
-  sp=text.split(" ")
-  newsp=[]
-  for el in sp:  
-    if el==what:
-      newsp.append(to)
-    elif el.lower()==what:
-      newsp.append(to)
-    else:
-      newsp.append(el)
-  return " ".join(newsp)   
+# ===== split sentence utils used by nlpquestion ===
 
 def split_sentence_startswith_pos(sp,chunk):
   if not sp or not chunk: return 0
@@ -1082,192 +1078,11 @@ def split_sentence_startswith_pos(sp,chunk):
         return 0  
   return len(chunk)   
 
-def parsed_sentence_rewrite(ctxt,text,sentence,chunk,matched):
-  matchdata=parsed_sentence_match_sequence(sentence,chunk)
-  if not matchdata: return (text,sentence)
-  #debug_print("sentence",sentence)  
-  #debug_print("matchdata",matchdata)  
-  firstpos=matchdata[0]
-  lastpos=matchdata[1]
-  match=matchdata[2]
-  newmatched=[]
-  for el in matched:
-    if type(el)!=list: newmatched.append(el)
-    elif el[0]=="$": newmatched.append(match[el[1]])
-    elif el[0]=="$makepercentage": newmatched.append(int(float(match[el[1]]["text"])*100))
-    elif el[0]=="$measure_adv_to_noun": newmatched.append(measure_adv_to_noun(match[el[1]]["lemma"]))
-  #debug_print("newmatched",newmatched)  
-  newtext=make_sentence_from_sequence_match(sentence,firstpos,lastpos,newmatched)
-  #debug_print("newtext",newtext)    
-  data = server_parse(newtext)
-  newsentence=data["doc"][0] 
-  return (newtext,newsentence)
-
-def parsed_sentence_match_sequence(sp,chunk):
-  #debug_print("sp",sp)
-  if not sp or not chunk: return None
-  spx=0
-  while spx<len(sp):        
-    reslst=[]
-    found=True
-    sptmp=spx
-    firstpos=None
-    lastpos=None
-    for chunkx in range(0,len(chunk)):
-      if len(sp)<=sptmp: return False
-      chunkel=chunk[chunkx]
-      spel=sp[sptmp]
-      #debug_print("chunkel",chunkel)
-      #debug_print("spel",spel)
-      optdrop=False
-      opt=False
-      onematch=False
-      if type(chunkel)==list and chunkel[0]=="$optdrop":
-        chunkel=chunkel[1]
-        optdrop=True
-      if type(chunkel)==list and chunkel[0]=="$opt":
-        chunkel=chunkel[1]
-        opt=True  
-      if type(chunkel)==list:
-        if spel["lemma"] in chunkel:
-          onematch=True
-          if not optdrop: reslst.append(spel)
-        elif not (optdrop or opt):  
-          found=False
-          break
-        elif opt: reslst.append(None)
-      elif chunkel=="$number":
-        if spel["upos"]=="NUM":
-          onematch=True
-          if not optdrop: reslst.append(spel)
-        elif not (optdrop or opt):
-          found=False
-          break
-        elif opt: reslst.append(None)
-      elif chunkel=="$probnumber":
-        if spel["upos"]=="NUM" and probfloat_str(spel["text"]):
-          onematch=True
-          if not optdrop: reslst.append(spel)
-        elif not (optdrop or opt):
-          found=False
-          break
-        elif opt: reslst.append(None)  
-      elif chunkel=="$unitword":
-        if is_unitword(spel["lemma"]): # in ["kilometer","meter"]:
-          onematch=True
-          if not optdrop: reslst.append(spel)
-        elif not (optdrop or opt):
-          found=False
-          break
-        elif opt: reslst.append(None)
-      elif chunkel=="$article":
-        if spel["lemma"] in ["a","the","an"]:
-          onematch=True
-          if not optdrop: reslst.append(spel)
-        elif not (optdrop or opt):
-          found=False
-          break  
-        elif opt: reslst.append(None)
-      elif chunkel=="$certaintyphrase":
-        if spel["lemma"] in nlpglobals.lemma_confidences:
-          onematch=True
-          if not optdrop: reslst.append(spel)
-        elif not (optdrop or opt):
-          found=False
-          break   
-        elif opt: reslst.append(None)
-      elif chunkel=="$nounphrase":    
-        phraselst=[]               
-        for i in range(sptmp,len(sp)):
-          word=sp[i]
-          if (word["upos"] in ["NOUN","PROPN","ADJ","DET"] or
-              word["lemma"] in nlpglobals.complex_question_words):
-            phraselst.append(word)
-            if firstpos==None: firstpos=i
-          else:            
-            break  
-        if phraselst:
-          onematch=True
-          if not optdrop: reslst.append(phraselst)
-          sptmp+=len(phraselst)-1
-        elif not (optdrop or opt):
-          found=False          
-          break               
-        elif opt: reslst.append(None)
-      # last actions inside chunkel loop:  
-      if onematch:
-        #debug_print("cp1 chunkx",chunkx)
-        #debug_print("cp1 chunk",chunk)
-        if firstpos==None: firstpos=sptmp
-        if chunkx==len(chunk)-1: lastpos=sptmp
-        sptmp+=1     
-
-    # all chunkels have been looped over
-      
-    if found:
-      #debug_print("Found!!!!")
-      return [firstpos,lastpos,reslst]
-    else:
-      #debug_print("chunkel failed, chunkx spel",[chunkx,spel])
-      spx+=1     
-  #debug_print("not found!!!")  
-  return None
-
-def probfloat_str(s):
-  try:
-    n=float(s)
-    if n<1 and n>0: return True
-    else: return False
-  except:
-    return False  
-
-def make_sentence_from_sequence_match(sentence,firstpos,lastpos,matched):
-  #debug_print("matched",matched)
-  lst=[]
-  firstword=None
-  lastword=None
-  lm=len(matched)
-  for i in range(0,lm):
-    el=matched[i]
-    if not el: 
-      continue
-    elif type(el)==str:
-      lst.append(el)
-    elif type(el)==int:
-      lst.append(str(el))
-    elif type(el)==dict:
-      lst.append(el["text"])  
-      if not firstword: firstword=el
-      if i==lm-1: lastword=el
-    #elif type(el)==list and el[0]=="$drop":
-    #  
-    elif type(el)==list:
-      for subel in el:
-        lst.append(subel["text"])
-        if not firstword: firstword=subel
-        if i==lm-1 and subel==el[-1]: lastword=subel
-  prelist=list(map(lambda x: x["text"],sentence[0:firstpos]))
-  
-  #debug_print("lastpos",lastpos)
-  postlist=list(map(lambda x: x["text"],sentence[lastpos+1:]))
-  #debug_print("prelist",prelist)
-  #debug_print("postlist",postlist) 
-  res=" ".join(prelist+lst+postlist)
-  #debug_print("res",res)      
-  return res     
-
-#newtext=make_sentence_from_sequence_match(sentence,
-#      ["the",measure_adv_to_noun(match[-1]["lemma"]),"of",match[0],match[1],match[2],match[3]])      
-#  else: 
-#split_sentence_contains_sequence(sp,["$nounphrase",["is","was"],"$number","$measureword",
-#         ["long","tall","wide","heavy"]])  
-
 def split_sentence_remove_trailingchar(sp,c):
   if not sp or not c: return sp
   if sp[-1]==c: return sp[:-1]
   if sp[-1][-1]==c: return sp[:-1]+[sp[-1][:-1]]
   return sp
-
 
 
 # ======== text conversions ======================

@@ -93,7 +93,7 @@ controlling the prover:
  -printlevel N : use N>10 to see more of the search process of the prover (10 is default, try 12)
 """
 
-def main():   
+def main():    
   # - - - parse cmd line - - -
   text,newoptions=parse_cmd_line(helptext) 
   if not text:
@@ -110,6 +110,13 @@ def main():
 def answer_question(text,newoptions=None):
   debug_print("answer_question text",text)    
   if newoptions: set_global_options(newoptions) 
+  # --- read textual replacement rules ---
+  global replacement_complex_rules
+  rules=read_replacement_data()
+  nlpglobals.replacement_text_rules=rules[0]
+  nlpglobals.replacement_complex_rules=rules[1]
+  #print(nlpglobals.replacement_text_rules)
+  #return
   # - - - make optional llm simplifications - - - -
   llm_mapping=None
   if options["llm_flag"]:
