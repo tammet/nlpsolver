@@ -170,7 +170,7 @@ def build_single_subsentence_proper_logic(ctxt,sentence,tree,
   #debug_print("build_single_subsentence_proper_logic iscondition",iscondition)
 
   svo=tree[1][1:]
-  #debug_print("svo",svo)
+  #debug_print("build_single_subsentence_proper_logic svo",svo)
   subjpart=svo[0]
   verbpart=svo[1]
   if len(svo)>2:  
@@ -878,7 +878,7 @@ def build_single_subsentence_proper_logic(ctxt,sentence,tree,
           # Elephants are afraid of mice
           thingparam=relation_word
         else:
-          thingparam=verb
+          thingparam=verb          
         if objrepr:          
           if subjrepr and is_var(subjrepr):
             relation=make_atom_2(ctxt,sentence,verb,thingparam,True,subjrepr,objrepr,confidence,act_type,actionrepr,blocker_preferred=True)
@@ -1379,21 +1379,25 @@ def make_action_prop_logic(ctxt,sentence,verb,actionvar,subject,subjrepr,tree,ve
 
 
 
-def make_qualified_atom_1(ctxt,sentence,verb,thing,positive,var,confidence=1,act_type=None,actionrepr=None,propclass=None,blocker_preferred=None): 
-  res1=make_atom_1(ctxt,sentence,verb,thing,positive,var,confidence,act_type,actionrepr,propclass,blocker_preferred)
+def make_qualified_atom_1(ctxt,sentence,verb,thing,positive,var,confidence=1,
+                           act_type=None,actionrepr=None,propclass=None,blocker_preferred=None,subjpart=None): 
+  res1=make_atom_1(ctxt,sentence,verb,thing,positive,var,confidence,act_type,actionrepr,propclass,blocker_preferred,subjpart)
   return res1
 
 
-def make_atom_1(ctxt,sentence,verb,thing,positive,var,confidence=1,act_type=None,actionrepr=None,propclass=None,blocker_preferred=None):
+def make_atom_1(ctxt,sentence,verb,thing,positive,var,confidence=1,act_type=None,actionrepr=None,propclass=None,blocker_preferred=None,subjpart=None):
   #debug_print("make_atom_1 thing",thing)
   #debug_print("make_atom_1 var",var)
   #debug_print("make_atom_1 type(var)",type(var))
   #debug_print("make_atom_1 thing",thing)
   #debug_print("make_atom_1 type(thing)",type(thing))
   #debug_print("make_atom_1 propclass",propclass)
+  #debug_print("make_atom_1 verb",verb)
   #debug_print("make_atom_1 ctxt",ctxt)
   #debug_print("make_atom_1 blocker_preferred",blocker_preferred)
-  if not thing: return None
+  #debug_print("make_atom_1 sentence",sentence)
+
+  if not thing: return None   
   if type(thing)==list:
     # John has three nice or big cars.
     # not OK!!! Just a temporary hack for or!!
@@ -1401,6 +1405,9 @@ def make_atom_1(ctxt,sentence,verb,thing,positive,var,confidence=1,act_type=None
     lemma=thing["lemma"] 
   else:    
     lemma=thing["lemma"]
+
+  if lemma in ["where"]:
+    return None  
 
   if ("isquestion" in ctxt and ctxt["isquestion"] and 
       thing["lemma"] in question_words or (propclass and propclass["lemma"] in question_words)):
@@ -1420,6 +1427,10 @@ def make_atom_1(ctxt,sentence,verb,thing,positive,var,confidence=1,act_type=None
   elif ((thing["upos"] in ["NOUN"]) or
         ((thing["upos"] in ["PROPN"]) and ("ner" in thing ) and (thing["ner"] in ["S-NORP"]))):
     pred="isa"  
+  elif ( (thing["upos"] in ["ADJ"]) and ("ner" in thing ) and (thing["ner"] in ["S-NORP"]) and 
+          subjpart and type(subjpart)==dict and "ner" in subjpart and subjpart["upos"]=="PROPN" and subjpart["ner"] in ["S-PERSON","PERSON"] ):
+    # Mr Dursley is an American. # for version 1.5
+    pred="isa"   
   elif thing["upos"] in ["NUM"]:
     pred="count"      
   else:
@@ -1500,7 +1511,7 @@ def make_atom_2(ctxt,sentence,verb,thing,positive,var1,var2,confidence=1,act_typ
   #debug_print("make_atom_2 verb",verb)
   #debug_print("make_atom_2 thing",thing)
   #debug_print("make_atom_2 positive",positive)
-  #ebug_print("make_atom_2 var1 var2",[var1,var2])
+  #debug_print("make_atom_2 var1 var2",[var1,var2])
   reversepos=False
   lemma=thing["lemma"]
   if "relation" in thing:

@@ -152,10 +152,13 @@ def dummify_text(ctxt,text,orig_parsed_text):
   tmp3=split_sentence_startswith_pos(sp,["when",["is","was","are","were"]])
   tmp4=split_sentence_startswith_pos(sp,["when",["does","did"]])  
   #debug_print("tmp",tmp)
+  #debug_print("tmp2",tmp2)
+  #debug_print("firstpart",sp[:tmp2])
   if tmp>0:
     dummy=nlpglobals.dummy_name+"_"+str(ctxt["dummy_nr"])
     ctxt["dummy_nr"]=ctxt["dummy_nr"]+1
-    newsp=split_sentence_remove_trailingchar(sp[tmp:],"?")+["is","on","a",dummy+"?"]
+    newsp=split_sentence_remove_trailingchar(sp[tmp:],"?")
+    newsp=newsp+[make_question_beword(sp,tmp,["is","was","are","were"]),"on","a",dummy+"?"]
     #print("newsp",newsp)
     ctxt["question_type"]="where_is"
     #debug_print("dummify sets question_type")
@@ -163,13 +166,15 @@ def dummify_text(ctxt,text,orig_parsed_text):
     dummy=nlpglobals.dummy_name+"_"+str(ctxt["dummy_nr"])
     ctxt["dummy_nr"]=ctxt["dummy_nr"]+1
     newsp=split_sentence_remove_trailingchar(sp[tmp2:],"?")+["on","a",dummy+"?"]
+    newsp=[make_question_beword(sp,tmp2,["does","did"])]+newsp
     #print("newsp",newsp)
     ctxt["question_type"]="where_does"
     #debug_print("dummify sets question_type")  
   elif tmp3>0:
     dummy=nlpglobals.dummy_name+"_"+str(ctxt["dummy_nr"])
     ctxt["dummy_nr"]=ctxt["dummy_nr"]+1
-    newsp=split_sentence_remove_trailingchar(sp[tmp3:],"?")+["is","during","a",dummy+"?"]
+    newsp=split_sentence_remove_trailingchar(sp[tmp3:],"?")
+    newsp=newsp+[make_question_beword(sp,tmp3,["is","was","are","were"]),"during","a",dummy+"?"]
     #print("newsp",newsp)
     ctxt["question_type"]="when_is"
     #debug_print("dummify sets question_type")
@@ -177,6 +182,7 @@ def dummify_text(ctxt,text,orig_parsed_text):
     dummy=nlpglobals.dummy_name+"_"+str(ctxt["dummy_nr"])
     ctxt["dummy_nr"]=ctxt["dummy_nr"]+1
     newsp=split_sentence_remove_trailingchar(sp[tmp4:],"?")+["during","a",dummy+"?"]
+    newsp=[make_question_beword(sp,tmp4,["does","did"])]+newsp
     #print("newsp",newsp)
     ctxt["question_type"]="when_does"
     #debug_print("dummify sets question_type") 
@@ -184,14 +190,21 @@ def dummify_text(ctxt,text,orig_parsed_text):
   #      ("is" in sp or "are" in sp or "was" in sp or "were" in sp) and 
   #      ("of" in sp)):
   #  ctxt["question_type"]="who_is_of"   
+  elif ((sp[0] in ["who","whom","what","which"] or sp[0].lower() in ["who","whom","what","which"]) and 
+        sp[1].lower() in ["is","was","where"] and
+        sp[-2] in ["of","about"]):
+    #debug_print("ckpt0")
+    dummy=nlpglobals.dummy_name+"_"+str(ctxt["dummy_nr"])
+    ctxt["dummy_nr"]=ctxt["dummy_nr"]+1
+    newsp=[sp[1].capitalize()]+sp[2:-1]+[dummy+"?"]
   else:
     #debug_print("ckpt1")
     newsp=[]
     count=0
-    #replaced=False
+    #replaced=False   
     for el in sp:  
       #debug_print("el",el)
-      count+=1      
+      count+=1  
       if ((count==1 and (el in ["who","whom","what","which"] or el.lower() in ["who","whom","what","which"])) or
           (((el in ["who","what","which"] or el.lower() in ["who","what","which"]) and 
             # What has the length 10 meters?" 
@@ -225,6 +238,17 @@ def dummify_text(ctxt,text,orig_parsed_text):
   res=" ".join(newsp)      
   #debug_print("dummify_text returns",res)
   return res
+
+def make_question_beword(sp,index,candidates):
+  if index<1: return ""
+  if not sp: return ""
+  if index>=len(sp): return ""
+  part=sp[:index]
+  for el in candidates:
+    if el in part:
+      return el
+  return ""
+
 
 def sentence_is_name(ctxt,sentence):
   for el in sentence:

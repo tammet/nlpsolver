@@ -29,8 +29,8 @@ The only external dependencies except Python are:
 You need to install Stanza to run nlpsolver. No other additional
 packages or special installation is necessary. 
 
-Initially we used Stanza version 1.3.0, and later switched to Stanza 1.4.1.
-Both should be usable for the nlpsolver, although the results of
+Initially we used Stanza versions 1.3.0 and 1.4.1, and later switched to 1.5.
+All of these Stanza versions should be usable for the nlpsolver, although the results of
 the semantic parser depend on the Stanza output and may
 vary between Stanza versions. The simplest way to install Stanza 
 is to run

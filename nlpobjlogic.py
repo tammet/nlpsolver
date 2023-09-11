@@ -327,7 +327,7 @@ def make_obj_logic(ctxt,sentence,var,subjpart,verbpart,objpart,
     elif thing and thing["lemma"] in ["who","which","that"]: propclass=thing
     else: propclass=None
     if issubject:   
-      proplogic=nlpproperlogic.make_qualified_atom_1(ctxt,sentence,verbpart,prop,positive,thisvar,propclass=propclass)    
+      proplogic=nlpproperlogic.make_qualified_atom_1(ctxt,sentence,verbpart,prop,positive,thisvar,propclass=propclass,subjpart=subjpart)    
     elif prop["upos"]=="VERB" and word_has_feat(prop,"VerbForm","Part"):
       # John is a defeated politician    
       uvar="?:"+unknownsubject+str(ctxt["varnum"])
@@ -338,7 +338,7 @@ def make_obj_logic(ctxt,sentence,var,subjpart,verbpart,objpart,
       proplogic=["exists",[uvar], proplogic]
     else:     
       proplogic=nlpproperlogic.make_qualified_atom_1(ctxt,sentence,verbpart,prop,positive,thisvar,confidence,
-        propclass=propclass,blocker_preferred=blocker_preferred)
+        propclass=propclass,blocker_preferred=blocker_preferred,subjpart=subjpart)
     
     if proplogic:      
       sublist.append(proplogic)
@@ -372,7 +372,7 @@ def make_obj_logic(ctxt,sentence,var,subjpart,verbpart,objpart,
 
     if issubject:
       thingatom=nlpproperlogic.make_qualified_atom_1(ctxt,sentence,verbpart,thing,
-        positive,thisvar,propclass=propclass)
+        positive,thisvar,propclass=propclass,subjpart=subjpart)
     else:        
       if not propclass and verbpart and type(verbpart)==dict and verbpart["lemma"] in ["be"]:         
         #"The stone was heavy."
@@ -387,7 +387,7 @@ def make_obj_logic(ctxt,sentence,var,subjpart,verbpart,objpart,
               (not word_has_feat(subjthing,"Number","Plur"))):
             propclass=subjthing          
       thingatom=nlpproperlogic.make_qualified_atom_1(ctxt,sentence,verbpart,thing,positive,thisvar,
-        confidence,propclass=propclass,blocker_preferred=blocker_preferred) 
+        confidence,propclass=propclass,blocker_preferred=blocker_preferred,subjpart=subjpart) 
     if thingatom:
       #if deco:
       #  andlist.append(["logic",thing,thingatom])
@@ -535,7 +535,7 @@ def make_simple_obj_logic(ctxt,sentence,var,subjpart,verbpart,objpart,actionvar,
     elif thing and thing["lemma"] in ["who","which","that"]: propclass=thing
     else: propclass=None 
     #proplogic=make_qualified_atom_1(ctxt,sentence,prop,positive,thisvar,confidence,None,None,propclass)
-    proplogic=nlpproperlogic.make_qualified_atom_1(ctxt,sentence,verbpart,prop,positive,thisvar,confidence,propclass=propclass)    
+    proplogic=nlpproperlogic.make_qualified_atom_1(ctxt,sentence,verbpart,prop,positive,thisvar,confidence,propclass=propclass,subjpart=subjpart)    
     if proplogic:      
       sublist.append(proplogic)
 
@@ -736,7 +736,7 @@ def make_have_logic(ctxt,sentence,var,subjpart,verbpart,objpart,actionvar):
     #have_logic=["exists",[term],have_logic]   
     #having_atom=["exists",[ovar],]
     if not(ctxt["isquestion"]) and not(object_det and object_det["lemma"] in ["the"]):
-      tmp_atom=nlpproperlogic.make_qualified_atom_1(ctxt,sentence,verbpart,thing,True,var)
+      tmp_atom=nlpproperlogic.make_qualified_atom_1(ctxt,sentence,verbpart,thing,True,var,subjpart=subjpart)
       blocker=["$block",0,["$not",have_logic_atom]]
       extra_have_logic=["forall",[term],[arglogic,"=>",["or",blocker,["exists",[var],["and",tmp_atom,have_logic_atom]]]]]
       extra_have_logic=["forall",[term],[arglogic,"=>",["exists",[var],["and",tmp_atom,["or",blocker,have_logic_atom]]]]]

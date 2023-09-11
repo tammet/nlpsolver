@@ -718,8 +718,8 @@
 
   ["Bears who are nice eat fish who are strong. John is a nice bear. Bears who are nice eat fish?",True], # before failed due to bad UD parse
   ["Bears who are nice eat fish who are strong. John is a nice bear. Bears who are nice eat tables?",None], # was bad parse, ok with 1.4: was bad UD parse
-  ["Bears who are nice eat fish who are strong. John is a nice bear. Bears who are nice, eat tables?",None], # ok version of previous
-  ["Bears who are nice eat fish who are strong. John is a nice bear. Bears who are nice, eat fish?",True], # ok UD parse
+  ["Bears who are nice eat fish who are strong. John is a nice bear. Bears who are nice eat tables?",None], # ok version of previous, OK with 1.5 without comma
+  ["Bears who are nice eat fish who are strong. John is a nice bear. Bears who are nice eat fish?",True], # ok UD parse, OK with 1.5 without comma
   ["Bears who are nice eat fish who are strong. John is a nice bear. Bears who are nice eat fish who are strong?",True],
   ["Bears who are nice eat fish who are strong. John is a nice bear. Nice bears eat strong fish?",True],
 
@@ -816,10 +816,12 @@
   ["John had a car which Eve bought. John had a car which Eve bought?",True],
   ["John had a car which Eve bought. John had a car which Eve saw?",None],
   ["John had a car which Eve bought. John had a car which Mike bought?",None],
-  ["John had a car which Eve bought. John had a car Eve bought?",True],
+  # ["John had a car which Eve bought. John had a car Eve bought?",True], #  1.5 parses wrong, but 1.4 parsed ok
+  ["John had a car which Mike bought. John had a car Mike bought?",True], # 1.5 parses this OK
   ["John had a car which Eve bought. John had a car Eve saw?",None],
-  ["John had a car which Eve bought. John had a car Mike bought?",None],
-  ["John had a car Eve bought. John had a car Eve bought?",True],
+  ["John had a car which Eve bought. John had a car Mike bought?",None], 
+  #["John had a car Eve bought. John had a car Eve bought?",True], # 1.5 parses this wrong, but 1.4 parsed ok
+  ["John had a car Mike bought. John had a car Mike bought?",True], # 1.5 parses this OK
   ["John had a car Eve bought. John had a car Mike bought?",None],
   ["John had a car Eve bought. John had a car Eve saw?",None],
   ["John had a car Eve bought. John had a car which Eve bought?",True],
@@ -833,13 +835,14 @@
   ["John had a car Eve bought. John bought a car?",None],
 
   ["John had a car Eve bought. John had a car which Eve bought?",True],
-  ["John had a car which Eve bought. John had a car Eve bought?",True],
   ["John had a red car Eve bought. John had a car which Eve bought?",True],
-  ["John had a red car which Eve bought. John had a car Eve bought?",True],
+  # ["John had a red car which Eve bought. John had a car Eve bought?",True],  #  1.5 parses wrong, but 1.4 parsed ok
+  ["John had a red car which Mike bought. John had a car Mike bought?",True], # 1.5 parses this OK
   ["John had a red car Eve bought. John had a black car which Eve bought?",None],
   ["John had a red car which Eve bought. John had a black car Eve bought?",None],
   ["John had a car Eve bought. John had a car which Eve did not buy?",None],
-  ["John had a car which Eve did not buy. John had a car Eve did not buy?",True],
+  # ["John had a car which Eve did not buy. John had a car Eve did not buy?",True], #  1.5 parses wrong, but 1.4 parsed ok
+  ["John had a car which Mike did not buy. John had a car Mike did not buy?",True], # 1.5 parses this OK
   ["John did not have a red car which Eve bought. John did not have a red car which Eve bought?",True],
 
   ["John drove a car which Eve bought. John drove a car which Eve bought?",True],
@@ -848,24 +851,28 @@
   ["John drove a car which Eve bought. John drove a car Eve bought?",True],
   ["John drove a car which Eve bought. John drove a car Eve saw?",None],
   ["John drove a car which Eve bought. John drove a car Mike bought?",None],
-  ["John drove a car Eve bought. John drove a car Eve bought?",True],
+  #["John drove a car Eve bought. John drove a car Eve bought?",True], #  1.5 parses wrong, but 1.4 parsed ok
+  ["John drove a car Mike bought. John drove a car Mike bought?",True], # 1.5 parses this OK
   ["John drove a car Eve bought. John drove a car Mike bought?",None],
   ["John drove a car Eve bought. John drove a car Eve saw?",None],
-  ["John drove a car Eve bought. John drove a car which Eve bought?",True],
+  #["John drove a car Eve bought. John drove a car which Eve bought?",True], #  1.5 parses wrong, but 1.4 parsed ok
+  ["John drove a car Mike bought. John drove a car which Mike bought?",True], # 1.5 parses this OK
   ["John drove a car Eve bought. John drove a car which Eve saw?",None],
   ["John drove a car Eve bought. John drove a car which Mike bought?",None],
 
   ["John drove a car Eve bought. Eve drove a car?",None],
   ["John drove a car Eve bought. John drove a car?",True],
  
-  ["John drove a car Eve bought. John drove a car which Eve bought?",True],
-  ["John drove a car which Eve bought. John drove a car Eve bought?",True],
-  ["John drove a red car Eve bought. John drove a car which Eve bought?",True],
+  #["John drove a car Eve bought. John drove a car which Eve bought?",True], #  1.5 parses wrong, but 1.4 parsed ok
+  ["John drove a car Mike bought. John drove a car which Mike bought?",True], # 1.5 parses this OK
+  #["John drove a red car Eve bought. John drove a car which Eve bought?",True], #  1.5 parses wrong, but 1.4 parsed ok
+  ["John drove a red car Mike bought. John drove a car which Mike bought?",True], # 1.5 parses this OK
   ["John drove a red car which Eve bought. John drove a car Eve bought?",True],
   ["John drove a red car Eve bought. John drove a black car which Eve bought?",None],
   ["John drove a red car which Eve bought. John drove a black car Eve bought?",None],
   ["John drove a car Eve bought. John drove a car which Eve did not buy?",None],
-  ["John drove a car which Eve did not buy. John drove a car Eve did not buy?",True],
+  # ["John drove a car which Eve did not buy. John drove a car Eve did not buy?",True], #  1.5 parses wrong, but 1.4 parsed ok
+  ["John drove a car which Mike did not buy. John drove a car Mike did not buy?",True], # 1.5 parses this OK
   ["John did not have a red car which Eve bought. John did not have a red car which Eve bought?",True],
   
   ["John is a man whom Eve liked. John is a man whom Eve liked?",True],
@@ -1319,14 +1326,24 @@
   ["Bears ate berries in a forest. Bears did not eat berries in a forest?",False],
   ["Bears ate berries in a forest. Bears did not eat berries in a field?",None],
 
-  ["Bears ate nice berries in a big forest which was bought by Mary. Bears ate berries in the forest which was bought by her?",True],
+  # ["Bears ate nice berries in a big forest which was bought by Mary. Bears ate berries in the forest which was bought by her?",True], # 1.5 wrong parse while 1.4 was ok
+  ["Bears ate nice berries in a big forest which was seen by Mary. Bears ate berries in the forest which was seen by her?",True],  # 1.5 ok parse
+  ["Bears ate nice berries in a big forest which was bought by Mike. Bears ate berries in the forest which was bought by him?",True],  # 1.5 ok parse
+
   ["Bears ate nice berries in a big forest which was bought by Mary. Bears ate berries in the forest which was bought by a man?",None],
   ["Bears ate nice berries in a big forest which was bought by Mary. Bears ate berries in the forest?",True],
   ["Bears ate berries in the forest which was bought by Mary. The forest was bought by Mary?",True],
   
-  ["Bears ate berries in a forest which was bought by Mary. Bears ate berries in the forest bought by Mary?",True],
+  # ["Bears ate berries in a forest which was bought by Mary. Bears ate berries in the forest bought by Mary?",True],  # 1.5 wrong parse while 1.4 was ok
+  ["Bears ate berries in a forest which was seen by Mary. Bears ate berries in the forest seen by Mary?",True],  # 1.5 ok parse
+  ["Bears ate berries in a forest which was bought by Mike. Bears ate berries in the forest bought by Mike?",True],  # 1.5 ok parse
+
   ["Bears ate berries in a forest which was bought by Mary. Bears ate berries in the forest bought by John?",None],
+
   ["Bears ate berries in a forest which was bought by Mary. Mary bought the forest where the bears ate?", True],
+  ["Bears ate berries in a forest which was seen by Mary. Mary saw the forest where the bears ate?", True],
+  ["Bears ate berries in a forest which was bought by Mike. Mike bought the forest where the bears ate?", True],
+
   ["Bears ate berries in a forest which was bought by Mary. Mary bought the forest where the bears drank?", None],
   ["Bears ate berries in a forest which was bought by Mary. Mary bought the forest where the bears ate berries?", True],
   ["Bears ate berries in a forest which was bought by Mary. Mary bought the forest where the bears ate honey?", None],
@@ -1354,7 +1371,8 @@
   ["""John has a red car which is nice and big. The nice car is big and red?""", True],
   ["""John has a red car which is nice and big. The car is good?""", None],  
   ["John lives in a nice car which was red and was bought by Mary. John lives in a nice yellow car?",None],
-  ["John lives in a nice car which was red and was bought by Mary. John lives in a car which was bought by Mary?",True],  
+  #["John lives in a nice car which was red and was bought by Mary. John lives in a car which was bought by Mary?",True],   # 1.5 wrong parse while 1.4 was ok
+  ["John lives in a nice car which was red and was bought by Mike. John lives in a car which was bought by Mike?",True],   # 1.5 ok parse
   ["John lives in a car which is red and was bought by Mary. The car was bought by John?",None],
   ["John lives in a red car bought by Mary. Mary bought the car?",True],
   ["John lives in a red car bought by Mary. Mary bought the car where John lives?",True],

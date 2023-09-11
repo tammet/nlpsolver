@@ -262,7 +262,7 @@
     If something is round and not green then it is not big.
     Fiona is not big.
     Fiona is cold.
-    Fiona is not furry?""",None],  
+    Fiona is not furry?""",True],  
 
   ["""Fiona is round.
     All green things are rough.

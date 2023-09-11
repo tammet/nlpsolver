@@ -787,16 +787,26 @@ def build_subsentence_logic(ctxt,sentence,root,parentsubj=None,prefer_parentsubj
       subj=word    
     elif word==root and (upos in ["VERB"]):
       verb=word     
-    elif deprel in ["obl:agent"]:
-      #debug_print("cp1 obj",obj)
+    elif (deprel in ["obl:agent"]) and not (parentsubj and subj and (not obj) and (subj["upos"] in ["PRON"])):
+      # not-condition for eliminating obl:agent Mary in "Bears slept in a forest which was bought by Mary"
+      #debug_print("cp11 obj",obj)
+      #debug_print("cp11 subj",subj)
+      #debug_print("cp11 parentsubj",parentsubj)
+      #debug_print("cp11 word",word)
       #debug_print("cp1 subj",subj)
       if (subj or parentsubj) and not obj:
         if ((not subj) and parentsubj):
           # John lives in a red car bought by Mary.  : car in subsentence comes from parent
           #oldsubjects.append(parentsubj)
           obj=parentsubj
-          subj=word
+          subj=word     
+        elif "deprel" in subj and subj["upos"] in ["PRON"] and subj["deprel"]=="nsubj:pass": # 
+          #debug_print("cp2 subj",subj)
+          pass
         else:  
+          #debug_print("cp1 word",word)
+          #debug_print("cp1 subj",subj)
+          #debug_print("cp1 parentsubj",parentsubj)
           oldsubjects.append(subj) #??
           obj=subj
           subj=word
@@ -871,13 +881,13 @@ def build_subsentence_logic(ctxt,sentence,root,parentsubj=None,prefer_parentsubj
       # "Spoons are made of iron."
       # but not "The authors were supported by the tourist"
       obj=word    
-    elif (deprel in ["obl"] or 
+    elif (deprel in ["obl","obl:agent"] or
           (deprel in ["obj"] and word["lemma"] in ["who","whom"] and 
            word_has_child_in_deprel_upos(ctxt,sentence,word,"case","ADP") and
            word_has_child_in_deprel_upos(ctxt,sentence,word,"case","ADP")["lemma"]=="of")):
       # John eats in Tallinn with a fork
       # Who is Ellen afraid of?
-      #debug_print("cp1 word",word) 
+      #debug_print("cpx to obl_list word",word) 
       obl_list.append(word)
     elif (not obj) and (deprel in ["xcomp"]) and (upos in ["VERB"]):
       # "John drives home and he goes to sleep."
@@ -921,9 +931,19 @@ def build_subsentence_logic(ctxt,sentence,root,parentsubj=None,prefer_parentsubj
       #debug_print("case found for verb",verb)
       #debug_print("case found for subj",subj)
       #debug_print("case found for parentsubj",parentsubj)
+      objparent=get_parent(sentence,obj)
+      if objparent: 
+        parentchildren=get_children(sentence,objparent)
+      else:
+        parentchildren=[]
+      feats='Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin'  
+      for el in parentchildren:
+        if el["deprel"] in ["cop"] and el["lemma"] in ["be"]:
+          feats=el["feats"]
+          break
       subj=parentsubj
       verb={'id': 100000, 'text': 'is', 'lemma': 'be', 'upos': 'AUX', 'xpos': 'VBZ', 
-        'feats': 'Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin', 
+        'feats': feats, 
         'head': 100000, 'deprel': 'cop', 'start_char': 100000, 'end_char': 100000, 
         'ner': 'O', 'sentence_nr': root["sentence_nr"], 'relation': word["lemma"]}
 
@@ -1102,14 +1122,40 @@ def build_subsentence_logic(ctxt,sentence,root,parentsubj=None,prefer_parentsubj
       subj=root
   elif  (subj and verb and
          (not obj) and parentsubj and verb and verb["deprel"]!="acl" and
+         not (subj["lemma"] in ["who","that","which","what"]) and        
+         ((parentsubj["deprel"] in ["obj"]) or 
+          ((parentsubj["deprel"] in ["root"]) and (parentsubj["upos"] in ["NOUN","PROPN"])) )):
+    if word_has_child_in_deprel_lemma(ctxt,sentence,verb,["advmod"],["where"]):
+      # "Mary bought the forest where the bears ate?"
+      obl_list.append(parentsubj)
+    else:
+      # John had a car Eve bought   
+      # John is a man Eve liked
+      # use parent "subject" as object
+      obj=parentsubj      
+
+  """
+  elif  (subj and verb and
+         (not obj) and parentsubj and verb and verb["deprel"]!="acl" and
          not (subj["lemma"] in ["who","that","which","what"]) and
+         word_has_child_in_deprel_lemma(ctxt,sentence,verb,["advmod"],["where"]) and
+         ((parentsubj["deprel"] in ["obj"]) or 
+          ((parentsubj["deprel"] in ["root"]) and (parentsubj["upos"] in ["NOUN","PROPN"])) )):
+    # "Mary bought the forest where the bears ate?"
+    obl_list.append(parentsubj)
+  elif  (subj and verb and
+         (not obj) and parentsubj and verb and verb["deprel"]!="acl" and
+         not (subj["lemma"] in ["who","that","which","what"]) and
+         not word_has_child_in_deprel_lemma(ctxt,sentence,verb,["advmod"],["where"]) and
          ((parentsubj["deprel"] in ["obj"]) or 
           ((parentsubj["deprel"] in ["root"]) and (parentsubj["upos"] in ["NOUN","PROPN"])) )):
     # John had a car Eve bought   
     # John is a man Eve liked
     # use parent "subject" as object
-    obj=parentsubj    
+    obj=parentsubj  
   
+  """
+    
   #debug_print("cp1 subj verb obj",[subj,verb,obj])  
   #debug_print("cp1 subsentences",subsentences)
   #debug_print("cp1 obl_list",obl_list)
@@ -1148,6 +1194,7 @@ def build_subsentence_logic(ctxt,sentence,root,parentsubj=None,prefer_parentsubj
         argtmp["preposition"]="of"   
       elif not obj:
         argtmp=obl_case_child(ctxt,sentence,verb,["by"]) 
+        #debug_print("cp",argtmp)
         if argtmp:
           # reverse obj and subj
           obj=subj
@@ -1266,10 +1313,31 @@ def build_subsentence_logic(ctxt,sentence,root,parentsubj=None,prefer_parentsubj
                 break
     
   # - - - build result - - - -
-
+  
   if verb and subj and obl_list:
     for oblword in obl_list:
-      argtmp=word_has_child_in_deprel_upos(ctxt,sentence,oblword,"case","ADP") 
+      argtmp=word_has_child_in_deprel_upos(ctxt,sentence,oblword,"case","ADP") ## should be word_has_child_in_deprel_upos(ctxt,sentence,oblword,["case"],["ADP"])  ??
+      # "John eats in Tallinn with a fork."
+      argtmp2=word_has_child_in_deprel_lemma(ctxt,sentence,verb,["advmod"],["where"])
+      # "Mike saw the forest where the bears ate?"  
+      if word_has_child_in_lemma(ctxt,sentence,oblword,probability_words): continue
+      if argtmp:
+        thisrelation={"case": argtmp, "obj": oblword}
+        if "relatedobjects" in verb:
+          verb["relatedobjects"]=verb["relatedobjects"]+[thisrelation]
+        else:
+          verb["relatedobjects"]=[thisrelation] 
+      if argtmp2:
+        thisrelation={"case": argtmp2, "obj": oblword}
+        if "relatedobjects" in verb:
+          verb["relatedobjects"]=verb["relatedobjects"]+[thisrelation]
+        else:
+          verb["relatedobjects"]=[thisrelation]    
+
+  """
+  if verb and subj and obl_list:
+    for oblword in obl_list:
+      argtmp=word_has_child_in_deprel_upos(ctxt,sentence,oblword,"case","ADP") ## should be word_has_child_in_deprel_upos(ctxt,sentence,oblword,["case"],["ADP"])  ??
       # "John eats in Tallinn with a fork."
       if argtmp and not word_has_child_in_lemma(ctxt,sentence,oblword,probability_words):
         thisrelation={"case": argtmp, "obj": oblword}
@@ -1277,6 +1345,17 @@ def build_subsentence_logic(ctxt,sentence,root,parentsubj=None,prefer_parentsubj
           verb["relatedobjects"]=verb["relatedobjects"]+[thisrelation]
         else:
           verb["relatedobjects"]=[thisrelation]    
+  if verb and subj and obl_list:
+    for oblword in obl_list:   
+      argtmp=word_has_child_in_deprel_lemma(ctxt,sentence,verb,["advmod"],["where"]) 
+      # "Mike saw the forest where the bears ate?"  
+      if argtmp and not word_has_child_in_lemma(ctxt,sentence,oblword,probability_words):        
+        thisrelation={"case": argtmp, "obj": oblword}
+        if "relatedobjects" in verb:
+          verb["relatedobjects"]=verb["relatedobjects"]+[thisrelation]
+        else:
+          verb["relatedobjects"]=[thisrelation]     
+  """
 
   #debug_print("cp3 subj verb obj",[subj,verb,obj]) 
   #debug_print("subsentences",subsentences)
@@ -1736,6 +1815,7 @@ def object_tree_words(tree):
 
 def build_property_logic(ctxt,sentence,tree,objectword,rootlist,preferseq=False):
   #debug_print("!!! build_property_logic objectword",objectword)
+  #debug_print("!!! build_property_logic tree",tree)
   #debug_print("build_property_logic preferseq",preferseq)
   if not objectword: return objectword  
   children=get_children(sentence,objectword)
