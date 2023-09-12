@@ -127,6 +127,21 @@ $nounphrase [costs cost] as much as $nounphrase ==> the price of $0 equals the p
 [be is] not equal to ==> does not equal
 [be is] not [$optdrop $article] same as ==> does not equal
 
+$nounphrase [be is was] as [expensive pricey cheap] as $nounphrase ==> the price of $0 equals the price of $5 
+$nounphrase [be is was] not as [expensive pricey cheap] as $nounphrase ==> the price of $0 does not equal the price of $6
+
+$nounphrase [has have] the same [price cost] as $nounphrase ==> the price of $0 equals the price of $6
+$nounphrase [do] not [has have] the same [price cost] as $nounphrase ==> the price of $0 equals the price of $8
+
+$nounphrase [be is was] as [long tall high wide heavy deep warm hot cold] as $nounphrase ==> the [$measure_adv_to_noun 3] of $0 equals the [$measure_adv_to_noun 3] of $5 
+$nounphrase [be is was] not as [long tall high wide heavy deep warm hot cold] as $nounphrase ==> the [$measure_adv_to_noun 4] of $0 equals the [$measure_adv_to_noun 4] of $6 
+
+$nounphrase [has have] the same [length height width weight depth temperature warmth hotness coldness] as $nounphrase ==> the $4 of $0 equals the $4 of $6
+$nounphrase [do] not [has have] the same [length height width weight depth temperature warmth hotness coldness] as $nounphrase ==> the $6 of $0 does not equal the $6 of $8
+
+[is be was were] [under below] $number $unitword ==> $0 less than $2 $3
+[is be was were] [over above] $number $unitword ==> $0 more than $2 $3
+
 # ================================
   
 

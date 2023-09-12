@@ -67,7 +67,7 @@ def rewrite_sentence(ctxt,sentence):
     loopcount+=1
     if loopcount>10: break
   #debug_print("loopcount ",loopcount)  
-  #debug_print("new rewrite_sentence gave wordlist",wordlist)
+  debug_print("rewrite_sentence gave wordlist"," ".join(wordlist))
   #debug_print("new rewrite_sentence gave sentence",sentence)
   #sys.exit(0)  
   return sentence
@@ -124,7 +124,7 @@ def rewrite_with_complex_rules_once(ctxt,sentence):
       wordlist.append(el["lemma"])
   rule_candidates=collect_rule_candidates(ctxt,wordlist,nlpglobals.replacement_complex_rules)    
   if not rule_candidates:
-    debug_print("rewrite_with_complex_rules_once found no usable complex rules")
+    #debug_print("rewrite_with_complex_rules_once found no usable complex rules")
     return sentence
   # --- run over candidate rules --- 
   text=" ".join(wordlist)
@@ -203,7 +203,11 @@ def parsed_sentence_rewrite(ctxt,text,sentence,chunk,matched):
     #elif el[0]=="$none": continue
     elif el[0]=="$": newmatched.append(match[el[1]])
     elif el[0]=="$makepercentage": newmatched.append(int(float(match[el[1]]["text"])*100))
-    elif el[0]=="$measure_adv_to_noun": newmatched.append(measure_adv_to_noun(match[el[1]]["lemma"]))  
+    elif el[0]=="$measure_adv_to_noun": 
+      #debug_print("match",match)
+      #debug_print("el",el)
+      #debug_print("type el 1",type(el[1]))
+      newmatched.append(measure_adv_to_noun(match[el[1]]["lemma"]))  
   newtext=make_sentence_from_sequence_match(sentence,firstpos,lastpos,newmatched)  
   data = server_parse(newtext)
   newsentence=data["doc"][0] 

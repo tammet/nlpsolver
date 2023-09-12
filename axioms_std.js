@@ -126,4 +126,11 @@
   {"@logic": ["or", ["rel2","where","?:X","?:Y","?:Z"], ["-rel2","under","?:X","?:Y","?:Z"]]},  
   {"@logic": ["or", ["rel2","where","?:X","?:Y","?:Z"], ["-rel2","over","?:X","?:Y","?:Z"]]}
 
+  /* 
+  {"@logic": ["or",  ["-$greater","?:X","?:Y"], ["-$greater","?:Y","?:Z"], ["$greater","?:X","?:Z"]]},
+  {"@logic": ["or",  ["-$less","?:X","?:Y"], ["-$less","?:Y","?:Z"], ["$less","?:X","?:Z"]]},  
+  
+  {"@logic": ["or",  ["-$greater","?:X","?:Y"], ["$less","?:Z","?:Y"]]},
+  {"@logic": ["or",  ["$greater","?:X","?:Y"], ["-$less","?:Z","?:Y"]]}
+  */
 ]

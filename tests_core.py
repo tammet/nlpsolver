@@ -1727,6 +1727,114 @@
   ["The red car has the price two dollars. The red car costs two dollars?",True],
   ["The red car has the price two dollars. The red car costs three dollars?",False],
   ["The red car has the price two dollars. The blue car costs three dollars. What costs 3 dollars?","The blue car"],
-  ["The red car has the price two dollars. The blue car costs three dollars. What has the price 2 dollars?","The red car"]  
+  ["The red car has the price two dollars. The blue car costs three dollars. What has the price 2 dollars?","The red car"],
+
+
+  ["The red car has the price two dollars. The blue car costs three dollars. What has the price 3 dollars?","The blue car"],
+  ["The red car has the price two dollars. The blue car costs three dollars. The red car costs 3 dollars?",False],
+  ["The red car has the price two dollars. The blue car costs three dollars. The blue car costs 2 dollars?",False],
+  ["The red car has the price two dollars. The blue car costs three dollars. The car costs three dollars?",True],
+
+  ["The red car has the price two dollars. The blue car costs three dollars. The price of the red car equals the price of the blue car?",False],
+  ["The red car has the price two dollars. The blue car costs three dollars. The price of the red car equals the price of the red car?",True],
+
+  ["The red car has the price three dollars. The blue car costs three dollars. The price of the red car is the same as the price of the blue car?",True],
+  ["The red car has the price three dollars. The blue car costs two dollars. The price of the red car is the same as the price of the blue car?",False],
+
+  ["The red car has the price three dollars. The blue car costs three dollars. The red car costs as much as the blue car?",True],
+  ["The red car has the price three dollars. The blue car costs two dollars. The red car costs as much as the blue car?",False],
+
+  ["The red car has the price three dollars. The blue car costs three dollars. The red car is as expensive as the blue car?",True],
+  ["The red car has the price three dollars. The blue car costs two dollars. The red car is as expensive as the blue car?",False],
+
+  ["The red car has the price three dollars. The blue car costs three dollars. The red car is as cheap as the blue car?",True],
+  ["The red car has the price three dollars. The blue car costs two dollars. The red car is as cheap as the blue car?",False],
+
+  ["The red car has the price three dollars. The blue car costs three dollars. The red car has the same price as the blue car?",True],
+  ["The red car has the price three dollars. The blue car costs two dollars. The red car has the same price as the blue car?",False],
+
+  ["The length of the red car is three meters. The blue car is 2 meters long. The red car has the same length as the blue car?",False],
+  ["The length of the red car is three meters. The blue car is 2 meters long. The red car does not have the same length as the blue car?",True],
+  ["The length of the red car is three meters. The blue car is 3 meters long. The red car has the same length as the blue car?",True],
+  ["The length of the red car is three meters. The blue car is 3 meters long. The red car does not have the same length as the blue car?",False],
+  
+  ["""The length of the red car is 3 meters. The length of the black car is 5 meters. 
+      The length of the red car is more than the length of the black car?""",False],
+  ["""The length of the red car is 3 meters. The length of the black car is 5 meters. 
+      The length of the red car is less than the length of the black car?""",True],    
+  ["""The length of the red car is 3 meters. The length of the black car is 5 meters. 
+      The length of the red car is less than 2 meters?""",False],   
+  ["""The length of the red car is 3 meters. The length of the black car is 5 meters. 
+      The length of the red car is over 2 meters?""",True],    
+  
+  ["""The length of the red car is 3 meters. The length of the black car is 5 meters.   
+      The length of the red car is more than 2 meters?""",True],      
+  ["""The length of the red car is 3 meters. The length of the black car is 5 meters.   
+      The length of the red car is under 4 meters?""",True],        
+      
+  #["""The length of the red car is 3 meters. The length of the black car equals the length of the red car. 
+  #    The length of the black car is over 2 meters?""",True],    # requires measure equality unit fix to var
+  
+  # next two require these axioms:
+  #
+  #{"@logic": ["or",  ["-$greater","?:X","?:Y"], ["-$greater","?:Y","?:Z"], ["$greater","?:X","?:Z"]]},
+  #{"@logic": ["or",  ["-$less","?:X","?:Y"], ["-$less","?:Y","?:Z"], ["$less","?:X","?:Z"]]},  
+  #
+  #{"@logic": ["or",  ["-$greater","?:X","?:Y"], ["$less","?:Z","?:Y"]]},
+  #{"@logic": ["or",  ["$greater","?:X","?:Y"], ["-$less","?:Z","?:Y"]]}
+  #
+  # ["""The length of the red car is more than 3 meters. The length of the black car is 5 meters. 
+  #    The length of the red car is over 2 meters?""",True],   
+  #["""The length of the red car is more than 3 meters. The length of the black car is 5 meters. 
+  #    The length of the red car is less than 2 meters?""",False],       
+
+  
+  #["During 1800, John jumped in a house. During 1800, John jumped?",True],
+  #["During 1800, John jumped in a house. During 1801, John jumped?",None],
+  #["During 1800, John jumped in a house. When did John jump?","During the year 1800"],
+  #["During 1800, John jumped in a house. Where did John jump?","In a house"],
+  #["Before 1900, John jumped in a house. When did John jump?","Before the year 1900"],
+  #["Before 1900, John jumped in a house. After 1902, John ate in a house. When did John jump?","Before the year 1900"],
+  #["Before 1900, John jumped in a house. After 1902, John sat in a house. When did John sat?","After the year 1902"],
+  #["On Monday, John jumped in a house. Where did John jump?","In a house"],
+  #["On Monday, John jumped in a house. When did John jump?","On Monday"],
+ 
+
+   ["""Wolves are afraid of mice.
+    Sheep are afraid of mice.
+    Winona is a sheep.
+    Mice are afraid of cats.
+    Cats are afraid of wolves.
+    Jessica is a mouse.
+    Emily is a cat.
+    Gertrude is a wolf.
+    What is Emily afraid of?""","Probably a wolf"],
+  ["""Wolves are afraid of mice.
+    Sheep are afraid of mice.
+    Winona is a sheep.
+    Mice are afraid of cats.
+    Cats are afraid of wolves.
+    Jessica is a mouse.
+    Emily is a cat.
+    Gertrude is a wolf.
+    Who is Emily afraid of?""","Probably Gertrude"],
+  ["""Wolves are afraid of mice.
+    Sheep are afraid of mice.
+    Winona is a sheep.
+    Mice are afraid of cats.
+    Cats are afraid of wolves.
+    Jessica is a mouse.
+    Emily is a cat.
+    Gertrude is a wolf.
+    What are cats afraid of?""","Probably a wolf"],
+  ["""Wolves are afraid of mice.
+    Sheep are afraid of mice.
+    Winona is a sheep.
+    Mice are afraid of cats.
+    Cats are afraid of wolves.
+    Jessica is a mouse.
+    Emily is a cat.
+    Gertrude is a wolf.
+    What is Winona afraid of?""","Probably a mouse"]     
 
 ]
