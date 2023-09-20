@@ -239,6 +239,9 @@ def parsed_sentence_match_sequence(sp,chunk):
         if spel["lemma"] in chunkel:
           onematch=True
           if not optdrop: reslst.append(spel)
+        elif spel["text"] in chunkel:
+          onematch=True
+          if not optdrop: reslst.append(spel)  
         elif not (optdrop or opt):  
           found=False
           break
@@ -305,6 +308,9 @@ def parsed_sentence_match_sequence(sp,chunk):
         if spel["lemma"] in chunkel:
           onematch=True
           if not optdrop: reslst.append(spel)
+        elif spel["text"] in chunkel:
+          onematch=True
+          if not optdrop: reslst.append(spel)  
         elif not (optdrop or opt):  
           found=False
           break

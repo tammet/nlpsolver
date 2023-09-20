@@ -836,7 +836,7 @@ def build_single_subsentence_proper_logic(ctxt,sentence,tree,
           #objsetrepr=[set_function,obj_logic_function[1],subjrepr]
           objsetrepr=[set_function,sorted_substituted_function,subjrepr]
           countatom=logic_replace_el(obj_logic_function[0],objrepr,objsetrepr)
-          debug_print("objsetrepr 1",objsetrepr)
+          #debug_print("objsetrepr 1",objsetrepr)
           #debug_print("substituted_function",substituted_function)
           #debug_print("sorted_substituted_function",sorted_substituted_function)
           #debug_print("countatom",countatom)
@@ -1584,6 +1584,7 @@ def make_atom_2(ctxt,sentence,verb,thing,positive,var1,var2,confidence=1,act_typ
   if (pred in ["rel2_than"] and comp and
        (type(var1)==list and var1[0] in [measure_function+"1"] or
         type(var2)==list and var2[0] in [measure_function+"1"])):
+    #debug_print("comparison measure detected, res",res)
     if var1[1] in ["length"]:
       #debug_print("length detected")
       newpred=comp

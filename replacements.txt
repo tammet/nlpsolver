@@ -142,6 +142,35 @@ $nounphrase [do] not [has have] the same [length height width weight depth tempe
 [is be was were] [under below] $number $unitword ==> $0 less than $2 $3
 [is be was were] [over above] $number $unitword ==> $0 more than $2 $3
 
+$nounphrase [is was be] cheaper than $nounphrase ==> the price of $0 is less than the price of $4
+$nounphrase [is was be] [pricy pricier costly costlier] than $nounphrase ==> the price of $0 is more than the price of $4
+
+$nounphrase [costs cost] less than $number $unitword ==> the price of $0 is less than $4 $5
+$nounphrase [costs cost] less than $nounphrase ==> the price of $0 is less than the price of $4 
+$nounphrase [costs cost] more than $number $unitword ==> the price of $0 is more than $4 $5
+$nounphrase [costs cost] more than $nounphrase ==> the price of $0 is more than the price of $4 
+
+$nounphrase [weigh weighs] as much as $nounphrase ==> the weight of $0 equals the weight of $5
+$nounphrase [weigh weighs] less than $number $unitword ==> the weight of $0 is less than $4 $5
+$nounphrase [weigh weighs] less than $nounphrase ==> the weight of $0 is less than the weight of $4 
+$nounphrase [weigh weighs] more than $number $unitword ==> the weight of $0 is more than $4 $5
+$nounphrase [weigh weighs] more than $nounphrase ==> the weight of $0 is more than the weight of $4 
+
+$nounphrase [is was be] shorter than $nounphrase ==> the length of $0 $1 less than the length of $4
+$nounphrase [is was be] longer than $nounphrase ==> the length of $0 $1 more than the length of $4
+$nounphrase [is was be] taller than $nounphrase ==> the height of $0 $1 more than the height of $4
+$nounphrase [is was be] lower than $nounphrase ==> the height of $0 $1 less than the height of $4
+$nounphrase [is was be] heavier than $nounphrase ==> the weight of $0 $1 more than the weight of $4
+$nounphrase [is was be] lighter than $nounphrase ==> the weight of $0 $1 less than the weight of $4
+$nounphrase [is was be] wider than $nounphrase ==> the width of $0 $1 more than the width of $4
+$nounphrase [is was be] narrower than $nounphrase ==> the width of $0 $1 less than the width of $4
+$nounphrase [is was be] deeper than $nounphrase ==> the depth of $0 $1 more than the depth of $4
+$nounphrase [is was be] shallower than $nounphrase ==> the depth of $0 $1 less than the depth of $4
+$nounphrase [is was be] warmer than $nounphrase ==> the temperature of $0 $1 more than the temperature of $4
+$nounphrase [is was be] colder than $nounphrase ==> the temperature of $0 $1 less than the temperature of $4
+
+
+
 # ================================
   
 

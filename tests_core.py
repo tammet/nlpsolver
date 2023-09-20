@@ -1326,7 +1326,7 @@
   ["Bears ate berries in a forest. Bears did not eat berries in a forest?",False],
   ["Bears ate berries in a forest. Bears did not eat berries in a field?",None],
 
-  # ["Bears ate nice berries in a big forest which was bought by Mary. Bears ate berries in the forest which was bought by her?",True], # 1.5 wrong parse while 1.4 was ok
+  ["Bears ate nice berries in a big forest which was bought by Mary. Bears ate berries in the forest which was bought by her?",True], # 1.5 parse fixed, while 1.4 was ok
   ["Bears ate nice berries in a big forest which was seen by Mary. Bears ate berries in the forest which was seen by her?",True],  # 1.5 ok parse
   ["Bears ate nice berries in a big forest which was bought by Mike. Bears ate berries in the forest which was bought by him?",True],  # 1.5 ok parse
 
@@ -1334,7 +1334,7 @@
   ["Bears ate nice berries in a big forest which was bought by Mary. Bears ate berries in the forest?",True],
   ["Bears ate berries in the forest which was bought by Mary. The forest was bought by Mary?",True],
   
-  # ["Bears ate berries in a forest which was bought by Mary. Bears ate berries in the forest bought by Mary?",True],  # 1.5 wrong parse while 1.4 was ok
+  ["Bears ate berries in a forest which was bought by Mary. Bears ate berries in the forest bought by Mary?",True],  # 1.5 parse fixed, while 1.4 was ok
   ["Bears ate berries in a forest which was seen by Mary. Bears ate berries in the forest seen by Mary?",True],  # 1.5 ok parse
   ["Bears ate berries in a forest which was bought by Mike. Bears ate berries in the forest bought by Mike?",True],  # 1.5 ok parse
 
@@ -1454,7 +1454,7 @@
   ["If someone is a bird and wounded then they are abnormal. John is a bird. John is abnormal?",None],
   # ["John was nice and defeated. John was defeated?",True], # Fails with stanza 1.4
   # ["John was nice and defeated. John was defeated and nice?",True], # first part of parse goes wrong: needs fixing: see next sentence
-  #["John was nice and defeated. John was nice and defeated?",True], # Fails with stanza 1.4
+  ["John was nice and defeated. John was nice and defeated?",True], # Works with stanza 1.5, fails with stanza 1.4
   ["John was nice and defeated. John was nice?",True],
   ["John was defeated. John was defeated?",True],
   ["John is defeated. John was defeated?",None],
@@ -1770,10 +1770,36 @@
   ["""The length of the red car is 3 meters. The length of the black car is 5 meters.   
       The length of the red car is more than 2 meters?""",True],      
   ["""The length of the red car is 3 meters. The length of the black car is 5 meters.   
-      The length of the red car is under 4 meters?""",True],        
+      The length of the red car is under 4 meters?""",True],  
+
+  ["The length of the car is 3 meters. The bike has the same length as the car. The length of the bike is 3 meters?", True], 
+  ["The price of the car is 3 dollars. The bike has the same price as the car.  The price of the bike is 3 dollars?", True],
+  ["The price of the car is 3 dollars. The bike is as expensive as the car. The price of the bike is 3 dollars?", True],
+  ["The price of the car is 3 dollars. The bike is as expensive as the car. The price of the bike is 2 dollars?", False],
+  ["The price of the car is 3 dollars. The bike is as expensive as the car. The price of the bike is 3 drahms?", None],
+  ["The price of the car is 3 dollars. The bike costs as much as the car. The bike costs 3 dollars?", True],
+  ["The price of the car is 3 dollars. The bike costs as much as the car. The price of the bike is less than 20 dollars?", True],
+  ["The price of the car is 3 dollars. The bike costs as much as the car. The price of the bike is more than 20 dollars?", False],
+  ["The price of the car is 3 dollars. The bike costs as much as the car. The bike costs less than 20 dollars?", True],
+  ["The price of the car is 3 dollars. The bike costs as much as the car. The bike costs more than 20 dollars?", False],
+
+  ["The weight of the car is 3 tons. The bike weighs as much as the car. The bike weighs less than 20 tons?", True],
+  ["The weight of the car is 3 tons. The bike weighs as much as the car. The bike weighs more than 2 tons?", True],
+  ["The weight of the car is 3 tons. The bike weighs as much as the car. The bike weighs more than 20 tons?", False],
+  
+  ["The price of the car is below 20 dollars. The car costs less than 20 dollars?", True],
+  ["The weight of the car is below 20 tons. The car weighs less than 20 tons?", True],
+  ["The price of the car is above 20 dollars. The car costs more than 20 dollars?", True],
+  ["The weight of the car is above 20 tons. The car weighs more than 20 tons?", True],
+
+  # functional vs nonfunctional properties
+  #["The color of the car is red. The car is red?", True],          
+
+
       
+  # the following requires measure equality unit fix to var    
   #["""The length of the red car is 3 meters. The length of the black car equals the length of the red car. 
-  #    The length of the black car is over 2 meters?""",True],    # requires measure equality unit fix to var
+  #    The length of the black car is over 2 meters?""",True],    
   
   # next two require these axioms:
   #
@@ -1788,16 +1814,6 @@
   #["""The length of the red car is more than 3 meters. The length of the black car is 5 meters. 
   #    The length of the red car is less than 2 meters?""",False],       
 
-  
-  #["During 1800, John jumped in a house. During 1800, John jumped?",True],
-  #["During 1800, John jumped in a house. During 1801, John jumped?",None],
-  #["During 1800, John jumped in a house. When did John jump?","During the year 1800"],
-  #["During 1800, John jumped in a house. Where did John jump?","In a house"],
-  #["Before 1900, John jumped in a house. When did John jump?","Before the year 1900"],
-  #["Before 1900, John jumped in a house. After 1902, John ate in a house. When did John jump?","Before the year 1900"],
-  #["Before 1900, John jumped in a house. After 1902, John sat in a house. When did John sat?","After the year 1902"],
-  #["On Monday, John jumped in a house. Where did John jump?","In a house"],
-  #["On Monday, John jumped in a house. When did John jump?","On Monday"],
  
 
    ["""Wolves are afraid of mice.

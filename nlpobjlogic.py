@@ -1329,10 +1329,18 @@ def make_the_or_measure_term(ctxt,sentence,word,argrepr,verb,tmp_isquestion=Fals
   if ctxt["addctxt"]:
     ctxtargument=nlpproperlogic.make_ctxt_argument(ctxt,sentence,verb)
   else:
-    ctxtargument=None       
+    ctxtargument=None  
+
+  #if word["lemma"] in ["color"]:
+  #  term=[measure_function+"1",word["lemma"],argrepr]
+  #  if ctxtargument: term.append(ctxtargument)
+  #  debug_print("! make_the_or_measure_term resulting term",term)
+  #  return term
+
   if word["lemma"] not in measure_words or not parent:
     term=[theof_function+"1",word["lemma"],argrepr]
     if ctxtargument: term.append(ctxtargument)
+    #debug_print("+ make_the_or_measure_term resulting term",term)
     return term
   if tmp_isquestion or ("isquestion" in ctxt and ctxt["isquestion"]):
     unit=unit_var_prefix
@@ -1341,9 +1349,11 @@ def make_the_or_measure_term(ctxt,sentence,word,argrepr,verb,tmp_isquestion=Fals
   mword=measure_words[word["lemma"]]  
   if parent["upos"] in ["NOUN"] and parent["lemma"] in mword["units"]:
     unit=parent["lemma"]
+  if unit=="$generic":
+    unit="?:Unit"+word["lemma"]
   term=[measure_function+"1",word["lemma"],argrepr,unit]  
   if ctxtargument: term.append(ctxtargument)
-  #debug_print("+++ make_the_or_measure_term resulting term",term)
+  debug_print("+++ make_the_or_measure_term resulting term",term)
   return term
 
 def is_theof_or_measure_function(s):
