@@ -123,6 +123,8 @@ complex_question_words=["who","what","which","who?","what?","which?"]
 
 logic_ops=["forall","exists","and","or","not","&","|","=>","<=","then","if","<=>","nor","xor"]
 
+comparison_preds=["=","!=","-=","$greater","$less","-$greater","-$less"]
+
 # ========= setting some globals from other files ======
 
 def set_globals(g1,g2,g3,g4,g5,g6,g7,g8,g9,g10,g11):

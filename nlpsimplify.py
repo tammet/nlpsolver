@@ -614,6 +614,64 @@ def default_to_confidence_augment_logic_list(ctxt,logic):
       newlogic.append(newel)
   return newlogic        
 
+
+# ==== logic generalization ==========================
+
+
+def generalize_logic_list(ctxt,logic):
+
+  if not logic: return logic
+  if type(logic)!=list: return logic
+  newlogic=[]
+  for el in logic:
+    debug_print("el",el)
+    if type(el)!=dict:
+      newlogic.append(el)
+      continue     
+    elif not ("@logic" in el): 
+      newlogic.append(el)
+      continue 
+    elif (not el["@logic"]) or type(el["@logic"])!=list:
+      newlogic.append(el)
+      continue
+    ellogic=el["@logic"]
+    if type(ellogic[0])!=list and ellogic[0]!="or":
+      elres=generalize_atom(ctxt,ellogic)
+    else:
+      elres=[generalize_atom(ctxt,x) for x in ellogic]  
+    if elres!=ellogic:
+      res=el.copy()
+      res["@logic"]=elres
+      newlogic.append(res)
+    else:
+      newlogic.append(el)  
+  return newlogic
+
+
+def generalize_atom(ctxt,atom):
+  if (not atom) or type(atom)!=list: return atom
+  if atom[0] not in nlpglobals.comparison_preds: return atom
+  res=[generalize_term(ctxt,x) for x in atom] 
+  return res
+
+def generalize_term(ctxt,term):
+  if (not term) or type(term)!=list: return term
+  if not(term[0] and type(term[0])==str and term[0].startswith("$measure")): 
+    return [generalize_term(ctxt,x) for x in term] 
+  # here a term like ["$measure1","length","the_c2_bike","$generic",["$ctxt","Pres",1]]]
+  res=[]
+  for el in term:
+    if el!="$generic": 
+      res.append(el)
+    else:
+      res.append("?:Measureunit")
+  return res
+
+
+  if atom[0] not in nlpglobals.comparison_preds: return atom
+  res=[generalize_term(ctxt,x) for x in atom] 
+  return res
+
 # ==== logic unit derivation and subsumption ========
 
 def subsume_simplify_clause_list(ctxt,logiclist):

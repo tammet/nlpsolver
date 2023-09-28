@@ -124,7 +124,21 @@
   {"@logic": ["or", ["rel2","where","?:X","?:Y","?:Z"], ["-rel2","on","?:X","?:Y","?:Z"]]},   
   {"@logic": ["or", ["rel2","where","?:X","?:Y","?:Z"], ["-rel2","at","?:X","?:Y","?:Z"]]},  
   {"@logic": ["or", ["rel2","where","?:X","?:Y","?:Z"], ["-rel2","under","?:X","?:Y","?:Z"]]},  
-  {"@logic": ["or", ["rel2","where","?:X","?:Y","?:Z"], ["-rel2","over","?:X","?:Y","?:Z"]]}
+  {"@logic": ["or", ["rel2","where","?:X","?:Y","?:Z"], ["-rel2","over","?:X","?:Y","?:Z"]]},
+
+  ["isa","meter",["$measure1","?:W","?:O","meter","?:C"]], // the unit X of the measure is X
+  ["isa","dollar",["$measure1","?:W","?:O","dollar","?:C"]],
+  ["isa","ton",["$measure1","?:W","?:O","ton","?:C"]],
+  ["isa","color",["$theof1","color","?:O","?:C"]], // the color of an object is a color
+  ["isa","weight",["$theof1","weight","?:O","?:C"]],
+  ["isa","price",["$theof1","price","?:O","?:C"]]
+
+  // if smth has the color property (like the color of smth is red) X, then it has a property X (like is red)  
+  //[["-prop","?:X",["$theof1","color","?:O","?:C"],"?:U","?:W","?:C"],
+  // ["prop","?:X","?:O","$generic","$generic","?:C"]]
+  // inverse holds for real colors  ???
+  // [["prop","red",["$theof1","color","?:O","?:C"],"?:U","?:W","?:C"],
+  //  ["-prop","red","?:O","$generic","$generic","?:C"]] 
 
   /* 
   {"@logic": ["or",  ["-$greater","?:X","?:Y"], ["-$greater","?:Y","?:Z"], ["$greater","?:X","?:Z"]]},

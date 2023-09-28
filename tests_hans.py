@@ -82,7 +82,7 @@
   ['The presidents who stopped the scientist ran . The scientist ran ?', None], #temp39_non-entailment_sn_relative_clause_on_subject_subsequence
   ['The scientist presented in the school stopped the artists . The scientist presented in the school ?', None], #temp40_non-entailment_sn_past_participle_subsequence
   ['The athletes presented in the library mentioned the secretary . The athletes presented in the library ?', None], #temp40_non-entailment_sn_past_participle_subsequence
-  # ['The scientist contacted the manager investigated in the office . The manager investigated in the office ?', None], #temp41_non-entailment_sn_past_participle_subsequence
+  ['The scientist contacted the manager investigated in the office . The manager investigated in the office ?', None], # ok with stanza 1.5, #temp41_non-entailment_sn_past_participle_subsequence
   ['The actor helped the managers presented in the laboratory . The managers presented in the laboratory ?', None], #temp41_non-entailment_sn_past_participle_subsequence
   #['Since the athlete hid the secretaries introduced the president . The athlete hid the secretaries ?', None], #temp42_non-entailment_sn_NP/Z_subsequence
   #['Before the actors presented the professors advised the manager . The actors presented the professors ?', None], #temp42_non-entailment_sn_NP/Z_subsequence

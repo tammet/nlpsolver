@@ -240,8 +240,9 @@ def parse_ud(doc,entities):
   elif questionlogic:
     simplified_question_data=build_simplified_logic_list(ctxt,sentence,logic+[questionlogic])
     questionlogic=simplified_question_data[-1]
+    #debug_print("questionlogic1",questionlogic)  
     questionlogic=remove_confidence_annotations_top_logic(ctxt,questionlogic)
-    #debug_print("questionlogic",questionlogic)  
+    #debug_print("questionlogic2",questionlogic)  
     #debug_print("question_type",ctxt["question_type"])
 
     if ctxt["question_type"] not in ["where_is","where_does"] and suitable_question_logic(ctxt,questionlogic):
@@ -349,7 +350,10 @@ def parse_ud(doc,entities):
   if options["noproptypes_flag"]: uncertain_clauses=remove_prop_extras(uncertain_clauses)
   default_to_confidence_augmented_logic=default_to_confidence_augment_logic_list(ctxt,uncertain_clauses)
   uncertain_clauses=default_to_confidence_augmented_logic
-  #debug_print("clauses before subsume_simplify_clause_list")
+  debug_print("clauses before subsume_simplify_clause_list")
+  debug_print_logic_list(uncertain_clauses)
+  #uncertain_clauses=generalize_logic_list(ctxt,uncertain_clauses)
+  #debug_print("clauses after generalize_logic_list")
   #debug_print_logic_list(uncertain_clauses)
   uncertain_clauses=subsume_simplify_clause_list(ctxt,uncertain_clauses)
   #debug_print("clauses after subsume_simplify")
@@ -2243,7 +2247,7 @@ def bad_clause(cl):
   #debug_print("cl",cl)
   if None in cl: return True
   collected=collect_count_suspicious_free_vars(cl,[],{})
-  okvars=["Fv","A","Q","Ignore","Tense","Rel","$unknown"]
+  okvars=["Fv","A","Q","Ignore","Tense","Rel","$unknown","Unit"]
   isbad=False
   for el in collected:
     if collected[el]==1:
