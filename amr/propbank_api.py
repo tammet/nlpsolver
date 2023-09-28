@@ -18,9 +18,9 @@ NOTE: Modifiers are present in Propbank release 3.4 but not in release 1.0
 that is available via nltk.download()
 """
 
-import amrconfig
+import amrconfig as cfg
 
-modifiers = amrconfig.pb_role_modifiers
+modifiers = cfg.pb_role_modifiers
 
 
 def load_data():
@@ -146,7 +146,7 @@ def init_propbank():
 
     from nltk.corpus.reader.propbank import PropbankCorpusReader
     propbank = PropbankCorpusReader = LazyCorpusLoader(
-        "propbank-3.1",
+        cfg.propbank_corpus,
         PropbankCorpusReader,
         "prop.txt",
         framefiles=r"frames/.*\.xml",

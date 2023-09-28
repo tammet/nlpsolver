@@ -4,6 +4,7 @@ import sys
 import json
 import bottle
 from bottle import run, request
+import amrconfig as cfg
 
 try: 
   import amrlib
@@ -16,7 +17,7 @@ except:
 
 
 host_name="localhost"
-server_port=9000
+server_port=cfg.amr_server_port
 logfile="/dev/null"
 
 # ====== globals used during work ========
