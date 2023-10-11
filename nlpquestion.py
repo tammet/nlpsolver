@@ -106,6 +106,7 @@ def prepare_question_sentence(ctxt,sentence,origsentence):
    
   #debug_print("text from question doc",text)
   newtext=dummify_text(ctxt,text2,origsentence)
+  #newtext=dummify_text(ctxt,text2,sentence)
   #debug_print("newtext from text",newtext)
   #if newtext!=text:
   #  debug_print("replacement text for question:",newtext)
@@ -416,9 +417,11 @@ def suitable_question_logic(ctxt,logic):
   head=logic[0]
   if logic_contains_el(logic,unknown_value): return False
   if logic_contains_fully_free_variable(logic): return False
+  if collect_frame_vars(logic): return False  
   if type(head)!=list and not logic_connective(head):
     return True   
-  if collect_frame_vars(logic): return False  
+  #debug_print("framevars",collect_frame_vars(logic))
+  #if collect_frame_vars(logic): return False 
   for el in logic:
     if not el: return False
     if logic_connective(el) and not el in ["and","&"]:

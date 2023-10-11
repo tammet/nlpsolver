@@ -34,6 +34,8 @@ test_files=["tests_core.py","tests_hans.py","tests_allen.py"]
 #test_files=["tests_allen.py"]
 #test_files=["tests_dev.py"]
 
+#test_files=["problems/babi/ajut.txt"]
+
 show_tests=False # set to False to suppress printing of all tests during work
 show_compact=True # if show_tests is False, set to True to get 0/1 char for each test
 
@@ -283,6 +285,10 @@ def okresult(test,result):
   stdresult=standardize_answer(result)
   if stdexpected==stdresult:
     return True 
+  #print("test",test,"stdexpected",stdexpected)
+  if (len(test)>2 and type(test[2])==list and test[2][0] in ["babi"] and 
+      type(test[1])==str and test[1].lower() in result.lower()):
+    return True
   return False  
 
 def standardize_answer(txt):

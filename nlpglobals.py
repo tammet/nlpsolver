@@ -546,6 +546,11 @@ is_location_relations=[
 ]
 """
 
+abstract_verbs={"afraid":True,"fond":True,"like":True,"dislike":True,"love":True,"hate":True,
+ "prefer":True,"know":True,"think":True}
+
+plural_to_singular={"mice":"mouse"}
+
 first_names={
 "Liam":"m","Noah":"m","Oliver":"m","Elijah":"m","James":"m","William":"m",
 "Benjamin":"m","Lucas":"m","Henry":"m","Theodore":"m","Jack":"m",
@@ -761,7 +766,9 @@ first_names={
 "Mathilda":"f","Frieda":"f","Frida":"f","Nele":"f","Marlene":"f",
 "Merle":"f","Agathe":"f","Ambre":"f","Ines":"f",
 "Harry":"m","Imelia":"f","Mickey":"m","Minnie":"f",
-"Dave": "m","Colin": "m", "Bill":"m"}
+"Dave": "m","Colin": "m", "Bill":"m",
+"Winona": "f", "Jessica":"f", "Gertrude":"f"
+}
 
 pseudo_names={"Mr":"m","Mrs":"f","Ms":"f"}
 

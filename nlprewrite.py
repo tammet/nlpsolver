@@ -75,8 +75,14 @@ def rewrite_sentence(ctxt,sentence):
 def make_namified_replacement_wordlist(sentence):
   wordlist=[]
   for el in sentence:
+    txt=el["text"]
     if el["upos"]=="PROPN" and el["ner"]!='O':
       wordlist.append("#name#"+el["text"])
+    elif ((el["upos"]=="PROPN" or word_has_feat(el,"PronType","Prs")) and 
+          el["ner"]=='O' and 
+          el["text"].islower() and txt[0].upper()+txt[1:] in nlpglobals.first_names):
+      wordlist.append("#name#"+txt[0].upper()+txt[1:])      
+      #el["text"]=txt[0].upper()+txt[1:]
     else:  
       wordlist.append(el["text"].lower())  
   return wordlist

@@ -1612,6 +1612,7 @@ def make_logic_counted_function(ctxt,sentence,logic,objrepr,object,verb,subject,
   #debug_print("make_logic_counted_function logic",logic)
   #debug_print("make_logic_counted_function object",object)
   #debug_print("make_logic_counted_function subject",subject)
+  #debug_print("make_logic_counted_function verb",verb)
   if (not logic) or type(logic)!=list: 
     return None
   #if type(objrepr) in [int,float]:
@@ -1680,12 +1681,14 @@ def make_logic_counted_function(ctxt,sentence,logic,objrepr,object,verb,subject,
             countatom=["=", ["$count",objrepr],1]
             break
       if countatom:    
+        #debug_print("countatom0",countatom)
         None
       elif "isquestion" in ctxt and ctxt["isquestion"]:
         countatom=None
       elif not noplural:
+        #debug_print("not noplural",not noplural)
         countatom=["$greatereq", ["$count",objrepr],2, [confidence_function,0.9]]
-
+  #debug_print("countatom",countatom) 
   return [countatom,term] 
   
 

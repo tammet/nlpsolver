@@ -405,6 +405,7 @@ def build_single_subsentence_proper_logic(ctxt,sentence,tree,
   update_ctxt_objects(ctxt,subjconst,subject,subj_logic)
   #debug_print("ctxt x ctxt[objects]",ctxt["objects"])  
   #debug_print("subjrepr",subjrepr)
+  #debug_print("objpart 2",objpart)
 
   # - - - - - verb is be - - - - - -
 
@@ -635,8 +636,10 @@ def build_single_subsentence_proper_logic(ctxt,sentence,tree,
     #debug_print("subject",subject)  
     #debug_print("subj_logic",subj_logic)     
     #debug_print("verb_is_positive",verb_is_positive)  
+    #debug_print("verb",verb)
     #debug_print("object",object)
     obj_logic=None
+    #debug_print("object_quant",object_quant)
     if object:
       if not(type(object_data)==list and object_data[0] in ["and","or","nor","xor"]):
         object_data=["single",object_data]
@@ -662,6 +665,12 @@ def build_single_subsentence_proper_logic(ctxt,sentence,tree,
         if not is_concrete_thing(ctxt,sentence,object,object_det,verb,iscondition,isconsequence,isobject=True):
           #debug_print("cp3 is_of")
           if obj_quant_confidence==1: obj_quant_confidence=0.95   
+      elif (verb and verb["lemma"] in nlpglobals.abstract_verbs and object and 
+            word_has_feat(object,"Number","Plur")):
+           #(word_has_feat(object,"Number","Plur") or 
+           # not is_concrete_thing(ctxt,sentence,object,object_det,verb,iscondition,isconsequence,isobject=True))):
+        # Mary hates dogs    
+        object_quantifier="forall" 
       else:
         # Animals have legs
         # Nails are made of iron.
@@ -824,8 +833,21 @@ def build_single_subsentence_proper_logic(ctxt,sentence,tree,
 
         #debug_print("obj_logic",obj_logic)
         #debug_print("objrepr",objrepr)
-        obj_logic_function=make_logic_counted_function(ctxt,sentence,obj_logic,objrepr,
-          object,verb,subject,isobject=True,noplural=(iscondition or not verb_is_positive))
+        #debug_print("object",object)
+        #debug_print("objpart",objpart)
+        #debug_print("original_objpart",original_objpart)
+        #debug_print("verb",verb)
+        #debug_print("actionrepr",actionrepr)
+        #debug_print("relation_word",relation_word)
+        
+        if ((verb and verb["lemma"] in nlpglobals.abstract_verbs) or
+            (relation_word and relation_word["lemma"] in nlpglobals.abstract_verbs)):
+          # "Mary likes mice"
+          # "Mary is afraid of mice"
+          obj_logic_function=None
+        else:  
+          obj_logic_function=make_logic_counted_function(ctxt,sentence,obj_logic,objrepr,
+            object,verb,subject,isobject=True,noplural=(iscondition or not verb_is_positive))      
         #debug_print("obj_logic_function",obj_logic_function)
         #debug_print("subjrepr",subjrepr)
         #debug_print("objrepr",objrepr)
@@ -1547,7 +1569,8 @@ def make_atom_2(ctxt,sentence,verb,thing,positive,var1,var2,confidence=1,act_typ
 
   #debug_print("make_atom_2 translated relation_type", relation_type)   
  
-  if relation_type or lemma in ["have"]:
+  if (relation_type or lemma in ["have"] or
+       (verb and verb["lemma"] in nlpglobals.abstract_verbs)):
     pred="rel2"
   elif act_type:
     pred=act_type  

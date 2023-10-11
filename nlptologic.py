@@ -80,6 +80,9 @@ def parse_ud(doc,entities):
     sentence=fix_ner(ctxt,sentence)   
     #debug_print("sentence1",sentence)   
     sentence2=fix_lemma_capitalization(ctxt,sentence)
+    #debug_print("sentence2a",sentence2)
+    sentence2=fix_plural_to_singular(ctxt,sentence)
+    #debug_print("sentence2b",sentence2)
     #debug_print("sentence2",sentence2)
     sentence3=fix_capital_propn(ctxt,sentence2,entities)
     #debug_print("sentence3",sentence3)
@@ -97,6 +100,7 @@ def parse_ud(doc,entities):
     questionsentence=False
     directresult=None
     if is_question_sentence(sentence):
+      #debug_print("is question sentence",sentence)
       # modify question sentence before processing
       # possibly by changing text and ud-parsing again
       questionsentence=True
@@ -104,13 +108,14 @@ def parse_ud(doc,entities):
       #debug_print("question detected",sentence)
       sentence=prepare_question_sentence(ctxt,sentence,origsentence) 
       if sentence and type(sentence)==dict and "result" in sentence:
-        #debug_print("sentence!!!",sentence)
+        #debug_print("sentence 1 !!!",sentence)
         directresult=sentence
       else:  
-        #debug_print("question sentence",sentence)
+        #debug_print("question sentence 2 !!!",sentence)
         sentence=fix_ner(ctxt,sentence) 
         sentence=fix_lemma_capitalization(ctxt,sentence)
         sentence=fix_capital_propn(ctxt,sentence,entities)
+        #debug_print("question sentence 3 !!!",sentence)
         for word in sentence:
           word["sentence_nr"]=sentencenr
       #debug_print("question sentence2",sentence) 
@@ -262,7 +267,7 @@ def parse_ud(doc,entities):
       mainparts=logic
       logic=mainparts+[question]       
     else:        
-      # debug_print("not suitable_question_logic",questionlogic)
+      #debug_print("not suitable_question_logic",questionlogic)
       var="?:U"
       negated=False
       #debug_print("questionlogic",questionlogic)  
@@ -457,6 +462,17 @@ def fix_lemma_capitalization(ctxt,doc):
   #debug_print("fix_lemma_capitalization result doc",doc) 
   return doc
 
+def fix_plural_to_singular(ctxt,doc):
+  #debug_print("fix_plural_to_singular doc",doc)
+  if not doc: return doc
+  if type(doc)!=list: return doc
+  for word in doc:
+    if (word["lemma"] and word["upos"] in ["NOUN"] and 
+        word_has_feat(word,"Number","Plur") and word["lemma"] in nlpglobals.plural_to_singular):
+      word["lemma"]=nlpglobals.plural_to_singular[word["lemma"]]     
+  #debug_print("fix_plural_to_singular result doc",doc) 
+  return doc
+
 def fix_capital_propn(ctxt,doc,entities):
   #debug_print("fix_capital_propn doc",doc)
   if not doc: return doc
@@ -475,6 +491,11 @@ def fix_capital_propn(ctxt,doc,entities):
         if word["text"]==entity["text"] or word["text"]==entity["text"]+"s":
           word["lemma"]=entity["text"].lower()
           break
+    elif (word["id"]!=1 and word["upos"]=="PROPN" and word["text"]==word["lemma"] and 
+          word["text"][0].islower() and word["text"][0].upper()+word["text"][1:] in nlpglobals.first_names):
+      #debug_print("found word",word)
+      word["text"]=word["text"][0].upper()+word["text"][1:]
+      word["lemma"]=word["text"]      
   #debug_print("fix_capital_propn result doc",doc) 
   return doc
 
