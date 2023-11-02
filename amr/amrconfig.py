@@ -1,3 +1,6 @@
+v=9000
+propbank_corpus="propbank-3.4"
+
 pb_role_modifiers = {
     "COM": "Comitative",
     "LOC": "Locative",
