@@ -74,6 +74,16 @@
 
   [["-prop", "?:R", "?:X", "?:A", "?:B", ["$ctxt", "?:T", 2]],["prop", "?:R", "?:X", "?:A", "?:B", ["$ctxt", "?:T", 3]],
    ["$block",0,["$not",["prop", "?:R", "?:X", "?:A", "?:B", ["$ctxt", "?:T", 3]]]]],  
+  
+  // added two new persistence
+
+  [["-prop", "?:R", "?:X", "?:A", "?:B", ["$ctxt", "?:T", 2]],["prop", "?:R", "?:X", "?:A", "?:B", ["$ctxt", "?:T", 1]],
+   ["$block",0,["$not",["prop", "?:R", "?:X", "?:A", "?:B", ["$ctxt", "?:T", 1]]]]], 
+
+  [["-prop", "?:R", "?:X", "?:A", "?:B", ["$ctxt", "?:T", 3]],["prop", "?:R", "?:X", "?:A", "?:B", ["$ctxt", "?:T", 2]],
+   ["$block",0,["$not",["prop", "?:R", "?:X", "?:A", "?:B", ["$ctxt", "?:T", 2]]]]], 
+
+  // end of added persistence 
 
   [["-prop", "?:R", "?:X", "?:A", "?:B", ["$ctxt", "Past", 1]],["prop", "?:R", "?:X", "?:A", "?:B", ["$ctxt", "Pres", 2]],
    ["$block",0,["$not",["prop", "?:R", "?:X", "?:A", "?:B", ["$ctxt", "Pres", 2]]]]],  
@@ -131,8 +141,125 @@
   ["isa","ton",["$measure1","?:W","?:O","ton","?:C"]],
   ["isa","color",["$theof1","color","?:O","?:C"]], // the color of an object is a color
   ["isa","weight",["$theof1","weight","?:O","?:C"]],
-  ["isa","price",["$theof1","price","?:O","?:C"]]
+  ["isa","price",["$theof1","price","?:O","?:C"]],
 
+  //  axioms for babi
+
+  [
+  ["-act1","go","?:S","?:A",["$ctxt","?:T","?:F"]], 
+  ["-rel2","to","?:A","?:D",["$ctxt","?:T","?:F"]], 
+  ["rel2","at","?:S","?:D",["$ctxt","?:T",["$afteract",["act1","go","?:S","?:A","?:F"],"?:F"]]]
+  ],
+
+  [
+  ["-act1","go","?:S","?:A",["$ctxt","?:T","?:F"]], 
+  ["-rel2","from","?:A","?:D",["$ctxt","?:T","?:F"]], 
+  ["-rel2","at","?:S","?:D",["$ctxt","?:T",["$afteract",["act1","go","?:S","?:A","?:F"],"?:F"]]]
+  ],
+
+  {"@logic":  [
+      ["-rel2", "at", "?:S","?:D", ["$ctxt", "Past", "?:F1"]],
+      ["rel2", "at", "?:S","?:D", ["$ctxt", "Pres", "?:F2"]],
+      ["$block",0,["$not",["rel2", "at", "?:S","?:D", ["$ctxt", "Pres", "?:F2"]]]]
+    ],
+    "@confidence": 0.85},
+
+  {"@logic":  [
+      ["rel2", "at", "?:S","?:D", ["$ctxt", "Past", "?:F1"]],
+      ["-rel2", "at", "?:S","?:D", ["$ctxt", "Pres", "?:F2"]],
+      ["$block",0,["rel2", "at", "?:S","?:D", ["$ctxt", "Pres", "?:F2"]]]
+    ],
+    "@confidence": 0.85},  
+
+    [
+      ["-act1","travel","?:S","?:A",["$ctxt","?:T","?:F"]], 
+      ["act1","go","?:S","?:A",["$ctxt","?:T","?:F"]]      
+    ],
+    [
+      ["-act1","journey","?:S","?:A",["$ctxt","?:T","?:F"]], 
+      ["act1","go","?:S","?:A",["$ctxt","?:T","?:F"]]      
+    ],
+    [
+      ["-act1","move","?:S","?:A",["$ctxt","?:T","?:F"]], 
+      ["act1","go","?:S","?:A",["$ctxt","?:T","?:F"]]      
+    ],
+
+  // taking and putting stuff away
+  /*
+  {"@logic":  ["or",
+    ["-act2", "take", "?:S","?:O","?:A",["$ctxt", "Past", "?:F1"]],
+    ["rel2", "have", "?:S","?:O", ["$ctxt", "Past", ["$afteract",["act2","take","?:S","?:O","?:A","?:F1"],"?:F1"]]] //,
+    //["$block",0,["$not",["rel2", "have", "?:S","?:O", ["$ctxt", "Past", "?:F2"]]]]
+  ],
+  "@confidence": 0.85},
+
+  {"@logic":  ["or",
+    ["-act2", "discard", "?:S","?:O","?:A",["$ctxt", "Past", "?:F1"]],
+    ["-rel2", "have", "?:S","?:O", ["$ctxt", "Past", ["$afteract",["act2","discard","?:S","?:O","?:A","?:F1"],"?:F1"]]] //,
+    //["$block",0,["$not",["rel2", "have", "?:S","?:O", ["$ctxt", "Past", "?:F2"]]]]
+  ],
+  "@confidence": 0.85},
+ */
+  {"@logic":  ["or",   
+    ["-rel2", "have", "?:S","?:O", ["$ctxt", "Past", "?:F1"]],
+    ["rel2", "have", "?:S","?:O", ["$ctxt", "Pres", "?:F2"]], //,
+    ["$block",0,["$not",["rel2", "have", "?:S","?:O", ["$ctxt", "Pres", "?:F2"]]]]
+  ],
+  "@confidence": 0.85},
+
+  // - nrs
+  
+  {"@logic":  ["or",
+    ["-act2", "take", "?:S","?:O","?:A",["$ctxt", "Past", 1]],
+    ["rel2", "have", "?:S","?:O", ["$ctxt", "Past", 2]], //,
+    ["$block",0,["$not",["rel2", "have", "?:S","?:O", ["$ctxt", "Past", 2]]]]
+  ],
+  "@confidence": 0.85},
+  
+  {"@logic":  ["or",
+    ["-act2", "take", "?:S","?:O","?:A",["$ctxt", "Past", 2]],
+    ["rel2", "have", "?:S","?:O", ["$ctxt", "Past", 3]], //,
+    ["$block",0,["$not",["rel2", "have", "?:S","?:O", ["$ctxt", "Past", 3]]]]
+  ],
+  "@confidence": 0.85},
+ 
+  {"@logic":  ["or",
+    ["-act2", "discard", "?:S","?:O","?:A",["$ctxt", "?:T", 1]],
+    ["-rel2", "have", "?:S","?:O", ["$ctxt", "?:T", 2]] //,
+    //["$block",0,["$not",["rel2", "have", "?:S","?:O", ["$ctxt", "Past", "?:F2"]]]]
+  ],
+  "@confidence": 0.85},
+
+  {"@logic":  ["or",
+    ["-act2", "discard", "?:S","?:O","?:A",["$ctxt", "?:T", 2]],
+    ["-rel2", "have", "?:S","?:O", ["$ctxt", "?:T", 3]] //,
+    //["$block",0,["$not",["rel2", "have", "?:S","?:O", ["$ctxt", "Past", "?:F2"]]]]
+  ],
+  "@confidence": 0.85},
+
+  {"@logic":  ["or",   
+    ["-rel2", "have", "?:S","?:O", ["$ctxt", "Past", "?:F1"]],
+    ["rel2", "have", "?:S","?:O", ["$ctxt", "Pres", "?:F2"]], //,
+    ["$block",0,["$not",["rel2", "have", "?:S","?:O", ["$ctxt", "Pres", "?:F2"]]]]
+  ],
+  "@confidence": 0.85},
+
+  {"@logic":  ["or",   
+    ["rel2", "have", "?:S","?:O", ["$ctxt", "Past", "?:F1"]],
+    ["-rel2", "have", "?:S","?:O", ["$ctxt", "Pres", "?:F2"]], //,
+    ["$block",0,["rel2", "have", "?:S","?:O", ["$ctxt", "Pres", "?:F2"]]]
+  ],
+  "@confidence": 0.85}
+  
+
+  /*
+  {"@logic":  ["or",
+    ["-act2", "take", "?:S","?:O","?:A",["$ctxt", "Past", 1]],
+    ["rel2", "have", "?:S","?:O", ["$ctxt", "Past", 2]] //,
+    //["$block",0,["$not",["rel2", "have", "?:S","?:O", ["$ctxt", "Past", "?:F2"]]]]
+  ],
+  "@confidence": 0.85}
+  */
   // if smth has the color property (like the color of smth is red) X, then it has a property X (like is red)  
   //[["-prop","?:X",["$theof1","color","?:O","?:C"],"?:U","?:W","?:C"],
   // ["prop","?:X","?:O","$generic","$generic","?:C"]]

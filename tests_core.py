@@ -1792,6 +1792,30 @@
   ["The price of the car is above 20 dollars. The car costs more than 20 dollars?", True],
   ["The weight of the car is above 20 tons. The car weighs more than 20 tons?", True],
 
+
+  # babi qa15_basic-deduction_test.txt
+
+  ['Wolves are afraid of mice. Sheep are afraid of mice. Winona is a sheep. Mice are afraid of cats. Cats are afraid of wolves. Jessica is a mouse. Emily is a cat. Gertrude is a wolf. What is emily afraid of?', 'wolf', ['babi', 6, 4]],
+  ['Wolves are afraid of mice. Sheep are afraid of mice. Winona is a sheep. Mice are afraid of cats. Cats are afraid of wolves. Jessica is a mouse. Emily is a cat. Gertrude is a wolf. What is winona afraid of?', 'mouse', ['babi', 2, 1]],
+  ['Wolves are afraid of mice. Sheep are afraid of mice. Winona is a sheep. Mice are afraid of cats. Cats are afraid of wolves. Jessica is a mouse. Emily is a cat. Gertrude is a wolf. What is gertrude afraid of?', 'mouse', ['babi', 7, 0]],
+  ['Wolves are afraid of mice. Sheep are afraid of mice. Winona is a sheep. Mice are afraid of cats. Cats are afraid of wolves. Jessica is a mouse. Emily is a cat. Gertrude is a wolf. What is jessica afraid of?', 'cat', ['babi', 5, 3]],
+  ['Cats are afraid of wolves. Mice are afraid of cats. Sheep are afraid of mice. Gertrude is a cat. Wolves are afraid of sheep. Jessica is a mouse. Emily is a wolf. Winona is a cat. What is emily afraid of?', 'sheep', ['babi', 6, 4]],
+  ['Cats are afraid of wolves. Mice are afraid of cats. Sheep are afraid of mice. Gertrude is a cat. Wolves are afraid of sheep. Jessica is a mouse. Emily is a wolf. Winona is a cat. What is jessica afraid of?', 'cat', ['babi', 5, 1]],
+  ['Cats are afraid of wolves. Mice are afraid of cats. Sheep are afraid of mice. Gertrude is a cat. Wolves are afraid of sheep. Jessica is a mouse. Emily is a wolf. Winona is a cat. What is gertrude afraid of?', 'wolf', ['babi', 3, 0]],
+
+  # babi qa1_single-supporting-fact_test.txt
+  
+  ['John travelled to the hallway. Mary journeyed to the bathroom. Where is John?', 'hallway', ['babi', 0]],
+  ['John travelled to the hallway. Mary journeyed to the bathroom. Daniel went back to the bathroom. John moved to the bedroom. Where is Mary?', 'bathroom', ['babi', 1]],
+  ['John travelled to the hallway. Mary journeyed to the bathroom. Daniel went back to the bathroom. John moved to the bedroom. John went to the hallway. Sandra journeyed to the kitchen. Where is Sandra?', 'kitchen', ['babi', 5]],
+  ['John travelled to the hallway. Mary journeyed to the bathroom. Daniel went back to the bathroom. John moved to the bedroom. John went to the hallway. Sandra journeyed to the kitchen. Sandra travelled to the hallway. John went to the garden. Where is Sandra?', 'hallway', ['babi', 6]],
+  ['John travelled to the hallway. Mary journeyed to the bathroom. Daniel went back to the bathroom. John moved to the bedroom. John went to the hallway. Sandra journeyed to the kitchen. Sandra travelled to the hallway. John went to the garden. Sandra went back to the bathroom. Sandra moved to the kitchen. Where is Sandra?', 'kitchen', ['babi', 9]],
+  ['Sandra travelled to the kitchen. Sandra travelled to the hallway. Where is Sandra?', 'hallway', ['babi', 1]],
+  ['Sandra travelled to the kitchen. Sandra travelled to the hallway. Mary went to the bathroom. Sandra moved to the garden. Where is Sandra?', 'garden', ['babi', 3]],
+  ['Sandra travelled to the kitchen. Sandra travelled to the hallway. Mary went to the bathroom. Sandra moved to the garden. Sandra travelled to the office. Daniel journeyed to the hallway. Where is Daniel?', 'hallway', ['babi', 5]],
+  ['Sandra travelled to the kitchen. Sandra travelled to the hallway. Mary went to the bathroom. Sandra moved to the garden. Sandra travelled to the office. Daniel journeyed to the hallway. Daniel journeyed to the office. John moved to the hallway. Where is Sandra?', 'office', ['babi', 4]],
+  ['Sandra travelled to the kitchen. Sandra travelled to the hallway. Mary went to the bathroom. Sandra moved to the garden. Sandra travelled to the office. Daniel journeyed to the hallway. Daniel journeyed to the office. John moved to the hallway. John travelled to the bathroom. John journeyed to the office. Where is Daniel?', 'office', ['babi', 6]],
+  
   # functional vs nonfunctional properties
   #["The color of the car is red. The car is red?", True],          
 
@@ -1813,6 +1837,8 @@
   #    The length of the red car is over 2 meters?""",True],   
   #["""The length of the red car is more than 3 meters. The length of the black car is 5 meters. 
   #    The length of the red car is less than 2 meters?""",False],       
+   
+  # modified babi qa15_basic-deduction_test.txt
 
  
 

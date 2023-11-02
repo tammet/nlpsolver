@@ -49,7 +49,7 @@ definition_nr=0 # new definitions created add a numeric suffic, incremented
 
 noframes=False # set True for debugging: no new frames generated, no frame vars
 noframevars=False # if true, instead of framevar we use number 1
-nonewframes=True # if true, no new frames generated
+nonewframes=False # if true, no new frames generated
 
 # ===== tips for development =====
 
@@ -84,6 +84,7 @@ def build_sentence_proper_logic(ctxt,sentence,tree,iscondition=False,isconsequen
     sys.exit(0) 
   elif tree[0] in ["if"]:
     res=[tree[0]]
+    ctxt["isrule"]=True
     tmp1=build_sentence_proper_logic(ctxt,sentence,tree[1],True,False)
     tmp2=build_sentence_proper_logic(ctxt,sentence,tree[2],False,True)
     
@@ -118,6 +119,8 @@ def build_sentence_proper_logic(ctxt,sentence,tree,iscondition=False,isconsequen
     res=["logic",tree,res]    
     return res   
   elif tree[0] in ["and","or","if","unless","nor","xor", "seq"]:
+    if tree[0] in ["if","unless"]:
+      ctxt["isrule"]=True
     res=[tree[0]]
     for el in tree[1:]:
       tmp=build_sentence_proper_logic(ctxt,sentence,el,iscondition,isconsequence)
@@ -1655,7 +1658,15 @@ def make_atom_2(ctxt,sentence,verb,thing,positive,var1,var2,confidence=1,act_typ
       res.append(ctxtargument)  
   if (pred=="act2" and positive and confidence>0.9 and 
       (not noframes) and (not nonewframes) and (not noframevars)):
-    ctxt["framenr"]=ctxt["framenr"]+1  
+    if var2!=dummysubject:
+      ctxt["framenr"]=ctxt["framenr"]+1
+      #debug_print("CP framenr increased to !!!",ctxt["framenr"])
+      #debug_print("res was ",res)
+      #debug_print("thing was ",thing)
+      #debug_print("pred",pred)
+      #debug_print("var1",var1)
+      #debug_print("var2",var2)
+
   return res  
 
 def get_comparison_indicator(ctxt,sentence,thing):
@@ -1694,10 +1705,12 @@ def is_smaller_word(ctxt,sentence,word):
 
 
 def make_ctxt_argument(ctxt,sentence,verb,thing=None):
-  #debug_print("make_ctxt_argument thing",thing)
-  #debug_print("make_ctxt_argument verb",verb)
+  debug_print("make_ctxt_argument thing",thing)
+  debug_print("make_ctxt_argument verb",verb)
   beword=find_related_be_word(ctxt,sentence,verb)
-  #debug_print("make_ctxt_argument beword",beword)
+  debug_print("make_ctxt_argument beword",beword)
+  debug_print("ctxt[framenr]",ctxt["framenr"])
+  debug_print("make_ctxt_argument ctxt",ctxt)
   if (thing and verb==thing and type(verb)==dict and beword and
       word_has_feat(verb,"VerbForm","Part")): # and word_has_feat(verb,"Voice","Pass")):
     #debug_print("cp be case 1")
@@ -1738,10 +1751,18 @@ def make_ctxt_argument(ctxt,sentence,verb,thing=None):
 
   framenr=ctxt["framenr"]
   if noframes or noframevars:    
-    None  
+    None    
   elif tensevalue=="Past" and ("isquestion" in ctxt) and ctxt["isquestion"]:
     framenr=frame_var_prefix+str(ctxt["varnum"])
     ctxt["varnum"]+=1
+  elif "isrule" in ctxt and ctxt["isrule"]:
+    #framenr=frame_var_prefix+str(ctxt["varnum"])
+    #ctxt["varnum"]+=1
+    framenr=frame_var_prefix
+    framenr="$free_variable"
+  elif thing and thing["deprel"] in ["case"]:    
+    framenr=ctxt["framenr"]
+    debug_print("CP framenr in case!!!",framenr)
   ctargument=[ctxt_function,tensevalue,framenr]
   #debug_print("ctargument",ctargument)
   return ctargument

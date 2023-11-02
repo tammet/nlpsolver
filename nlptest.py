@@ -36,6 +36,8 @@ test_files=["tests_core.py","tests_hans.py","tests_allen.py"]
 
 #test_files=["problems/babi/ajut.txt"]
 
+#test_files=["problems/babi/ajut2.py"]
+
 show_tests=False # set to False to suppress printing of all tests during work
 show_compact=True # if show_tests is False, set to True to get 0/1 char for each test
 

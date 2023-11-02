@@ -128,6 +128,7 @@ def parse_ud(doc,entities):
                    "sentence_extralogic":[],
                    "skolem_nr": ctxt["skolem_nr"],"varobjects":[], "addctxt":ctxt["addctxt"],
                    "framenr":ctxt["framenr"],
+                   "isrule": False,
                    "isquestion": questionsentence, "confidences": ctxt["confidences"],
                    "question_type":ctxt["question_type"], "question_dummification":ctxt["question_dummification"] }
                    # "passed_words":ctxt["passed_words"]}
