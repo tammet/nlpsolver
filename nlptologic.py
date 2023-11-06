@@ -310,8 +310,8 @@ def parse_ud(doc,entities):
           if whenquestion:
             defn0=[defn0[0],"?:Rel"]+defn0[1:]
             question0=whenquestion    
-        question0_mapped=make_logic_sentence_map(ctxt,question0,sentencename)         
-        defn0_mapped=make_logic_sentence_map(ctxt,defn0,sentencename)
+        question0_mapped=make_logic_sentence_map(ctxt,question0,sentencename,"question")         
+        defn0_mapped=make_logic_sentence_map(ctxt,defn0,sentencename,"question")
         if defn0_mapped and "@name" in defn0_mapped:
           question={"@question": defn0,"@name": defn0_mapped["@name"]}
         else:
@@ -323,14 +323,14 @@ def parse_ud(doc,entities):
         else:
           logic=mainparts+[question0_mapped,question]
       elif question1 and is_simple_clause(question1["@question"]):
-        question1_mapped=make_logic_sentence_map(ctxt,question1,sentencename)          
+        question1_mapped=make_logic_sentence_map(ctxt,question1,sentencename,"question")          
         logic=mainparts+[question1_mapped]
       else:
         newdef=[["def0","dummy"],"<=>",questionlogic]
-        newdef_mapped=make_logic_sentence_map(ctxt,newdef,sentencename)
+        newdef_mapped=make_logic_sentence_map(ctxt,newdef,sentencename,"question")
         question={"@question": ["def0","dummy"]}
         logic=mainparts+[newdef_mapped,question]  
-  
+  #debug_print("logic before xxxx:\n",logic)
   if created_defs and (options["debug_print_flag"] or options["show_logic_flag"]):
     #print("\n=== definitions created: ===\n")
     print("\ndefinitions created:\n")
@@ -375,6 +375,7 @@ def parse_ud(doc,entities):
   #debug_print_logic_list(uncertain_clauses)
   final_result=uncertain_clauses 
   final_result=check_logic(ctxt,final_result)
+  #debug_print("logic_sentence_map",ctxt["logic_sentence_map"])
   return {"logic": final_result, "objects": objects, 
           "question_sentence": question_sentence,
           "question_definition": question_definition,
@@ -390,12 +391,14 @@ def make_logic_list_sentence_map(ctxt,logic_list,sentencename):
   return res
     
 
-def make_logic_sentence_map(ctxt,logic,sentencename):
+def make_logic_sentence_map(ctxt,logic,sentencename,sourcetype=None):
+  #debug_print("make_logic_sentence_map logic",logic) 
+  #debug_print("make_logic_sentence_map sourcetype",sourcetype) 
   if not logic: return logic
-  if not (options["prover_explain_flag"] or options["show_logic_flag"]): return logic
+  #if not (options["prover_explain_flag"] or options["show_logic_flag"]): return logic
   #debug_print("make_logic_sentence_map logic",logic) 
   if type(logic)==dict: 
-    logic["@name"]=sentencename
+    logic["@name"]=sentencename   
   elif False: # logic[0]=="and":
     res=[]
     for el in logic[1:]:
@@ -404,6 +407,8 @@ def make_logic_sentence_map(ctxt,logic,sentencename):
     logic=res
   else: 
     logic={"@name": sentencename, "@logic": logic}
+  if sourcetype=="question":      
+    logic["@sourcetype"]="question"  
   return logic
 
 
@@ -807,7 +812,7 @@ def build_subsentence_logic(ctxt,sentence,root,parentsubj=None,prefer_parentsubj
 
     if deprel in ["cc"] and upos in ["CCONJ"]:
       op=lemma
-    if (deprel in ["nsubj","nsubj:pass"]) and (not subj) and (not (parentsubj and prefer_parentsubj)) :
+    if (deprel in ["nsubj","nsubj:pass"]) and (not subj) and (not (parentsubj and prefer_parentsubj)) and upos not in ["DET"]:
       if subj:
         oldsubjects.append(subj)
       subj=word    
@@ -915,8 +920,19 @@ def build_subsentence_logic(ctxt,sentence,root,parentsubj=None,prefer_parentsubj
       # Who is Ellen afraid of?
       #debug_print("cpx to obl_list word",word) 
       obl_list.append(word)
+    elif ((not obj) and (deprel in ["xcomp"]) and (upos in ["VERB"]) and
+          subj and verb and 
+          word_has_child_in_deprel_upos(ctxt,sentence,word,"mark",["PART"]) and 
+          word_has_child_in_deprel_upos(ctxt,sentence,word,"obj",["NOUN","PROPN"])):
+      # "Snails want to eat plants. "
+      thisrelation={"case": word_has_child_in_deprel_upos(ctxt,sentence,word,"mark",["PART"]), "obj": word}
+      if "relatedverbs" in verb:
+        verb["relatedverbs"]=verb["relatedverbs"]+[thisrelation]
+      else:
+        verb["relatedverbs"]=[thisrelation]
+      obj=word_has_child_in_deprel_upos(ctxt,sentence,word,"obj",["NOUN","PROPN"])  
     elif (not obj) and (deprel in ["xcomp"]) and (upos in ["VERB"]):
-      # "John drives home and he goes to sleep."
+      # ???? "John drives home and he goes to sleep."
       obj=word   
     elif (not obj) and (deprel in ["csubj"]) and (upos in ["NOUN","ADJ"]):     
       # "It is likely that John is an animal and nice"
@@ -2245,13 +2261,16 @@ def check_logic(ctxt,logic):
   good_clauses=[]
   bad_clauses=[]
   bad_sentences=[]
-  for clause in logic:
+  for clause in logic:     
+    isquestion=False
     if type(clause)==dict:
       if "@logic" in clause: pureclause=clause["@logic"]
       if "@question" in clause: pureclause=clause["@question"]
+      if "@sourcetype" in clause and clause["@sourcetype"]=="question":
+        isquestion=True     
     else:
       pureclause=clause
-    if bad_clause(pureclause):
+    if (not isquestion) and bad_clause(pureclause):
       bad_clauses.append(clause)
       if "@name" in clause: 
         if clause["@name"] not in  bad_sentences:

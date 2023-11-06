@@ -58,6 +58,8 @@ def encode_uncertainty_top_logic(ctxt,frm):
     newfrm=frm.copy()
     if "@logic" in newfrm:
       logic=newfrm["@logic"]
+    if "@sourcetype" in frm:
+      newfrm["@sourcetype"]=frm["@sourcetype"]
     elif "@question" in newfrm:
       return [frm]
   else:
@@ -130,6 +132,8 @@ def encode_uncertainty_top_logic(ctxt,frm):
       wrappedclause["@name"]=name
     if confidence<1:
       wrappedclause["@confidence"]=confidence
+    if "@sourcetype" in frm:
+      wrappedclause["@sourcetype"]=frm["@sourcetype"]  
     wrappedclauses.append(wrappedclause)
   #debug_print("wrappedclauses",wrappedclauses)  
   return wrappedclauses  

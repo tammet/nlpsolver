@@ -156,6 +156,8 @@ def clausify_top_logic(ctxt,frm):
       newfrm["@logic"]=logic5
     elif "@question" in frm:
       newfrm["@question"]=logic5
+    if "@sourcetype" in frm:
+      newfrm["@sourcetype"]=frm["@sourcetype"]
     return newfrm  
   else:
     return logic5

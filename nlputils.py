@@ -769,6 +769,27 @@ def object_list_to_str(obj,commas=True):
       res="("+res+")"  
       res=obj["lemma"]+res
       return res 
+    elif "relatedverbs" in obj:
+      objs=obj["relatedverbs"]
+      slst=[]      
+      for sobj in objs:
+        #debug_print("sobj",sobj)
+        oslst=[]        
+        objs=sobj["case"]["lemma"]+"_"+sobj["obj"]["lemma"]
+        oslst.append(str(sobj["case"]["lemma"]))
+        if "proplogic" in sobj and sobj["proplogic"]:
+          logic=sobj["proplogic"]
+          slogic=object_list_to_str(logic)         
+          oslst.append(slogic)   
+        else:
+          oslst.append(str(sobj["obj"]["lemma"]))      
+        ostr="_".join(oslst)
+        ostr="_"+ostr+"_"
+        slst.append(ostr)
+      res=",".join(slst)      
+      res="("+res+")"  
+      res=obj["lemma"]+res
+      return res   
     else:
       return obj["lemma"]  
 

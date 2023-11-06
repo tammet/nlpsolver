@@ -1009,6 +1009,14 @@ def make_nlp_atom(doc,atom,logic_objects,positive,show_logic_details=None):
     if action_id: 
       tmp=make_nice_nlp_term(doc,action_id,None)
       action_suffix=" (action "+tmp+")"
+  elif (atom[0] in ["attitude_act1","attitude_act2","attitude_do1","attitude_do2","-attitude_act1","-attitude_act2","-attitude_do1","-attitude_do2"]): # and 
+      #show_logic_details in ["full","time","situation"]):
+    action_id=None  
+    if atom[0] in ["attitude_act1","attitude_do1","-attitude_act1","-attitude_do1"]: action_id=atom[4]  
+    elif atom[0] in ["attitude_act2","attitude_do2","-attitude_act2","-attitude_do2"]: action_id=atom[5] 
+    if action_id: 
+      tmp=make_nice_nlp_term(doc,action_id,None)
+      action_suffix=" (action "+tmp+")"    
   if situation_nr and show_logic_details in ["full","time","situation"]: 
     if atom_time=="Pres":
       situation_suffix=" in a present situation "+str(situation_nr)
@@ -1178,6 +1186,36 @@ def make_nlp_atom(doc,atom,logic_objects,positive,show_logic_details=None):
       s+="not "
     s+=make_nice_nlp_term(doc,atom[1],objects)   
     s+=" "+make_nice_nlp_term(doc,atom[3],objects)
+    return s+situation_suffix+action_suffix  
+  elif headstr.startswith("attitude_act1"):
+    s=make_nice_nlp_term(doc,atom[2],objects)
+    s+=" "+make_nice_nlp_term(doc,atom[1],objects)+"s"
+    return s+situation_suffix+action_suffix   
+  elif headstr.startswith("attitude_act2"):
+    s=make_nice_nlp_term(doc,atom[2],objects)
+    s+=" "+make_nice_nlp_term(doc,atom[1],objects)+"s"
+    s+=" "+make_nice_nlp_term(doc,atom[3],objects)
+    return s+situation_suffix+action_suffix  
+  elif headstr.startswith("attitude_do1") or headstr.startswith("attitude_can1"):
+    s=make_nice_nlp_term(doc,atom[2],objects)
+    if headstr.startswith("attitude_do1"):
+      s+=" "+doesverb+" "
+    else:
+      s+=" "+canverb+" "  
+    if not positive:
+      s+="not "
+    s+=make_nice_nlp_term(doc,atom[1],objects)     
+    return s+situation_suffix+action_suffix      
+  elif headstr.startswith("attitude_do2") or headstr.startswith("attitude_can2"):
+    s=make_nice_nlp_term(doc,atom[3],objects)
+    if headstr.startswith("attitude_do2"): 
+      s+=" "+doesverb+" "+atom[1]+" to "
+    else:
+      s+=" "+canverb+" "+atom[1]+" to "  
+    if not positive:
+      s+="not "
+    s+=make_nice_nlp_term(doc,atom[2],objects)   
+    s+=" "+make_nice_nlp_term(doc,atom[4],objects)
     return s+situation_suffix+action_suffix    
   elif headstr=="prop":
     nicehead=make_nice_nlp_head(headstr,positive,atom)
@@ -1260,6 +1298,7 @@ def get_ctxt_situation_nr(ctxt):
 
 def make_nice_nlp_head(headstr,positive,atom,type_word=None):
   #debug_print("headstr",headstr)
+  #debug_print("atom",atom)
   #debug_print("type_word",type_word)
   atom_time=get_ctxt_time(get_atom_ctxt(atom))
   if atom_time in ["Past"]: 
@@ -1303,6 +1342,11 @@ def make_nice_nlp_head(headstr,positive,atom,type_word=None):
       return isverb+" "+headstr
     else:
       return isverb+" not "+headstr
+  elif headstr.startswith("attitude_"):
+    if positive:
+      return atom[1]+" to "+atom[2]
+    else:
+      return " not "+atom[1]+" to "+atom[2]
   if headstr.startswith("?:"): headstr=headstr[2:]            
   headstr=headstr.replace("_"," ")    
   if type_word in ["than"]:

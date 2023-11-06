@@ -429,7 +429,8 @@ def build_single_subsentence_proper_logic(ctxt,sentence,tree,
     #debug_print("checkpoint a subjrepr",subjrepr)  
     #debug_print("checkpoint a subj_logic",subj_logic)
     #debug_print("checkpoint a subj_confidence",subj_confidence)
-   
+    #debug_print("checkpoint a objpart",objpart)
+    #debug_print("checkpoint a object_data",object_data)
     obj_logic=make_obj_data_logic(ctxt,sentence,var,subjpart,verbpart,objpart,object_data,False,False,reversepolarity,[abs(subj_confidence),True],subjrepr)
     #debug_print("checkpoint b obj_logic",obj_logic)
     framevars=collect_frame_vars(obj_logic)
@@ -538,7 +539,16 @@ def build_single_subsentence_proper_logic(ctxt,sentence,tree,
         
         logic=["logic",tree,["and",subj_logic,obj_logic]] 
         #debug_print("logic end 2",logic[2]) 
+    elif not objpart:
+      #debug_print("CP1!")
+      quantifier="exists"  
+      if ctxt["isquestion"]:
+        logic=["logic",tree,[quantifier,[var],subj_logic]]
+      else: 
+        obj_logic=["isreal",var]
+        logic=["logic",tree,[quantifier,[var],[subj_logic,"&",obj_logic]]]    
     else:
+      #debug_print("CP2!")
       quantifier="forall"  
       logic=["logic",tree,[quantifier,[var],[subj_logic,"=>",obj_logic]]]
   
@@ -1533,25 +1543,35 @@ def make_atom_1(ctxt,sentence,verb,thing,positive,var,confidence=1,act_type=None
   return res
 
 def make_atom_2(ctxt,sentence,verb,thing,positive,var1,var2,confidence=1,act_type=None,actionrepr=None,blocker_preferred=None):  
-  #debug_print("make_atom_2 verb",verb)
-  #debug_print("make_atom_2 thing",thing)
+  debug_print("make_atom_2 verb",verb)
+  debug_print("make_atom_2 thing",thing)
+  debug_print("make_atom_2 act_type",act_type)
   #debug_print("make_atom_2 positive",positive)
   #debug_print("make_atom_2 var1 var2",[var1,var2])
   reversepos=False
   lemma=thing["lemma"]
+  origverb=verb
+  targetverblemma=None
   if "relation" in thing:
     relation_type=thing["relation"]
   elif (verb["lemma"]=="be" and "relatedobjects" in verb and 
         verb["relatedobjects"][0]["case"]["lemma"]=="of"):
     # Elephants are afraid of mice    
     relation_type="of"    
-    lemma=thing["lemma"] #"afraid" #verb["relatedobjects"][0]["case"]["lemma"]
+    lemma=thing["lemma"] #"afraid" #verb["relatedobjects"][0]["case"]["lemma"] 
   else:
     relation_type=""    
+
+  if (verb["lemma"]!="be" and "relatedverbs" in verb and 
+        verb["relatedverbs"][0]["case"]["lemma"]=="to" and
+        "obj" in verb["relatedverbs"][0]):
+    # "Snails want to eat plants. "      
+    targetverblemma=verb["relatedverbs"][0]["obj"]["lemma"] #"afraid" #verb["relatedobjects"][0]["case"]["lemma"]    
   
+  debug_print("make_atom_2 targetverblemma",targetverblemma)
   #debug_print("make_atom_2 thing",thing)
   #debug_print("make_atom_2 lemma",lemma)  
-  #debug_print("make_atom_2 raw relation_type", relation_type) 
+  debug_print("make_atom_2 raw relation_type", relation_type) 
   
   if relation_type and relation_type in nlpglobals.relation_type_translate:
     relation_type=nlpglobals.relation_type_translate[relation_type]
@@ -1571,14 +1591,25 @@ def make_atom_2(ctxt,sentence,verb,thing,positive,var1,var2,confidence=1,act_typ
     positive=not positive
 
   #debug_print("make_atom_2 translated relation_type", relation_type)   
- 
-  if (relation_type or lemma in ["have"] or
+
+  if targetverblemma:
+    if (relation_type or lemma in ["have"] or
+       (targetverblemma in nlpglobals.abstract_verbs)):
+      pred="rel2"
+    elif act_type:
+      pred=act_type  
+    else:
+      pred="act2"  
+  elif (relation_type or lemma in ["have"] or
        (verb and verb["lemma"] in nlpglobals.abstract_verbs)):
     pred="rel2"
   elif act_type:
     pred=act_type  
   else:
     pred="act2"  
+
+  if targetverblemma:
+    pred="attitude_"+pred
 
   if positive:
     None #pred="rel2"
@@ -1590,6 +1621,8 @@ def make_atom_2(ctxt,sentence,verb,thing,positive,var1,var2,confidence=1,act_typ
   elif relation_type:
     lemma=relation_type  
 
+  debug_print("make_atom_2 pred",pred)  
+
   if blocker_preferred==None: blocker_preferred=False
 
   if reversepos:    
@@ -1597,6 +1630,9 @@ def make_atom_2(ctxt,sentence,verb,thing,positive,var1,var2,confidence=1,act_typ
   else:       
     res=[pred,lemma,var1,var2]  
   #("res2",res)
+
+  if targetverblemma:
+    res=[res[0],res[1],targetverblemma]+res[2:]
   comparison_pred=False
 
   comp=get_comparison_indicator(ctxt,sentence,thing)
@@ -1705,12 +1741,12 @@ def is_smaller_word(ctxt,sentence,word):
 
 
 def make_ctxt_argument(ctxt,sentence,verb,thing=None):
-  debug_print("make_ctxt_argument thing",thing)
-  debug_print("make_ctxt_argument verb",verb)
+  #debug_print("make_ctxt_argument thing",thing)
+  #debug_print("make_ctxt_argument verb",verb)
   beword=find_related_be_word(ctxt,sentence,verb)
-  debug_print("make_ctxt_argument beword",beword)
-  debug_print("ctxt[framenr]",ctxt["framenr"])
-  debug_print("make_ctxt_argument ctxt",ctxt)
+  #debug_print("make_ctxt_argument beword",beword)
+  #debug_print("ctxt[framenr]",ctxt["framenr"])
+  #debug_print("make_ctxt_argument ctxt",ctxt)
   if (thing and verb==thing and type(verb)==dict and beword and
       word_has_feat(verb,"VerbForm","Part")): # and word_has_feat(verb,"Voice","Pass")):
     #debug_print("cp be case 1")
@@ -1762,7 +1798,7 @@ def make_ctxt_argument(ctxt,sentence,verb,thing=None):
     framenr="$free_variable"
   elif thing and thing["deprel"] in ["case"]:    
     framenr=ctxt["framenr"]
-    debug_print("CP framenr in case!!!",framenr)
+    #debug_print("CP framenr in case!!!",framenr)
   ctargument=[ctxt_function,tensevalue,framenr]
   #debug_print("ctargument",ctargument)
   return ctargument
