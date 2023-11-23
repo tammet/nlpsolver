@@ -28,8 +28,11 @@ The only external dependencies except Python are:
 * The reasoner binary `gk`, included in the system.
 * Data files from the tarball http://logictools.org/data/nlpsolver_data.tar.gz
 
-You need to install Stanza to run nlpsolver. No other additional
-packages or special installation is necessary. 
+To run nlpsolver, you need to install Stanza and download and unpack the data files 
+from the url above. No other additional packages or special installation is necessary. 
+
+The subfolders `gui` and `amr` contain experimental code in development, and
+are not currently used by the nlpsolver pipeline.
 
 Initially we used Stanza versions 1.3.0 and 1.4.1, currently using 1.5.
 All of these Stanza versions should be usable for the nlpsolver, although the results of
