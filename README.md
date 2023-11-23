@@ -107,8 +107,8 @@ and/or a filename as an argument, with optional keys:
 Concerning the -cache key above: the cache file is the sqlite database nlpcache.db created automatically.
 In order to clear the cache, simply delete the file nlpcache.db.
 
-Testing
---------
+Testing and capabilities
+------------------------
 
 Run a large number of regression tests by calling
 
@@ -125,6 +125,9 @@ given to the prover, the specifics of Stanza output or inability of the test sys
 interpret the answer given.
 
 By default the testing program uses the -cache key explained before.
+
+Look at the test files above to gain insights about the semantic parsing capabilities
+of the system.
 
 Knowledge bases
 ---------------
