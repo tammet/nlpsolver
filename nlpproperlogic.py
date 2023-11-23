@@ -615,7 +615,7 @@ def build_single_subsentence_proper_logic(ctxt,sentence,tree,
       verb_is_past=False      
     
     #debug_print("subject_quant",subject_quant)
-    #debug_print("subject_quantifier",subject_quantifier)
+    #debug_print("subject_quantifier 1",subject_quantifier)
     if subject_quantifier:
       None
     elif subject_quant and subject_quant["lemma"] in ["some","exists"]:
@@ -650,6 +650,7 @@ def build_single_subsentence_proper_logic(ctxt,sentence,tree,
     #debug_print("subj_logic",subj_logic)     
     #debug_print("verb_is_positive",verb_is_positive)  
     #debug_print("verb",verb)
+    #debug_print("subject_quantifier 2",subject_quantifier)
     #debug_print("object",object)
     obj_logic=None
     #debug_print("object_quant",object_quant)
@@ -684,7 +685,16 @@ def build_single_subsentence_proper_logic(ctxt,sentence,tree,
            # not is_concrete_thing(ctxt,sentence,object,object_det,verb,iscondition,isconsequence,isobject=True))):
         # Mary hates dogs    
         object_quantifier="forall" 
+      elif (verb and object and 
+            word_has_feat(object,"Number","Plur") and
+            ("relation" in verb) and verb["relation"] and
+            subject_quantifier=="forall"):
+           #(word_has_feat(object,"Number","Plur") or 
+           # not is_concrete_thing(ctxt,sentence,object,object_det,verb,iscondition,isconsequence,isobject=True))):
+        # Mary hates dogs    
+        object_quantifier="forall"   
       else:
+        #debug_print("cpx")
         # Animals have legs
         # Nails are made of iron.
         object_quantifier="exists"   
@@ -1543,9 +1553,9 @@ def make_atom_1(ctxt,sentence,verb,thing,positive,var,confidence=1,act_type=None
   return res
 
 def make_atom_2(ctxt,sentence,verb,thing,positive,var1,var2,confidence=1,act_type=None,actionrepr=None,blocker_preferred=None):  
-  debug_print("make_atom_2 verb",verb)
-  debug_print("make_atom_2 thing",thing)
-  debug_print("make_atom_2 act_type",act_type)
+  #debug_print("make_atom_2 verb",verb)
+  #debug_print("make_atom_2 thing",thing)
+  #debug_print("make_atom_2 act_type",act_type)
   #debug_print("make_atom_2 positive",positive)
   #debug_print("make_atom_2 var1 var2",[var1,var2])
   reversepos=False
@@ -1568,10 +1578,10 @@ def make_atom_2(ctxt,sentence,verb,thing,positive,var1,var2,confidence=1,act_typ
     # "Snails want to eat plants. "      
     targetverblemma=verb["relatedverbs"][0]["obj"]["lemma"] #"afraid" #verb["relatedobjects"][0]["case"]["lemma"]    
   
-  debug_print("make_atom_2 targetverblemma",targetverblemma)
+  #debug_print("make_atom_2 targetverblemma",targetverblemma)
   #debug_print("make_atom_2 thing",thing)
   #debug_print("make_atom_2 lemma",lemma)  
-  debug_print("make_atom_2 raw relation_type", relation_type) 
+  #debug_print("make_atom_2 raw relation_type", relation_type) 
   
   if relation_type and relation_type in nlpglobals.relation_type_translate:
     relation_type=nlpglobals.relation_type_translate[relation_type]
@@ -1621,7 +1631,7 @@ def make_atom_2(ctxt,sentence,verb,thing,positive,var1,var2,confidence=1,act_typ
   elif relation_type:
     lemma=relation_type  
 
-  debug_print("make_atom_2 pred",pred)  
+  #debug_print("make_atom_2 pred",pred)  
 
   if blocker_preferred==None: blocker_preferred=False
 

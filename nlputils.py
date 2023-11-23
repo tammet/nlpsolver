@@ -29,9 +29,15 @@ import urllib.parse
 # configuration and other globals are in nlpglobals.py
 import nlpglobals
 
+import nlpcache
+
 # ========= calling the server ====
 
 def server_parse(text):
+  cached=nlpcache.get_parse_from_cache(None,text)
+  if cached:
+    return cached
+
   conn = http.client.HTTPConnection(nlpglobals.server_name,nlpglobals.server_port,timeout=nlpglobals.server_timeout)
   encoded=urllib.parse.quote(text)
   # -- check that the server gave a usable answer --
@@ -62,6 +68,7 @@ def server_parse(text):
   except:
     show_error("nlpserver response is not a correct json: "+  str(rawdata))
     sys.exit(0)
+  nlpcache.add_parse_to_cache(None,text,data)
   return data
 
 

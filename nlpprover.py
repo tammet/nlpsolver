@@ -36,6 +36,8 @@ from nlpanswer import *
 # small utilities are in nlputils.py
 from nlputils import *
 
+from nlpcache import *
+
 # === calling the prover ===
  
 def call_prover(logic):   
@@ -89,17 +91,21 @@ def call_prover(logic):
   else: params=params+nlpglobals.prover_params        
   if options["prover_print_flag"] or options["show_prover_flag"]:
     print("\n=== prover params: === \n\n"," ".join(params))
-  try:  
-    calc=subprocess.Popen(params, stdout=subprocess.PIPE).communicate()[0]
-  except KeyboardInterrupt:
-    raise  
-  except:
-    return "Error: prover gk is not available or crashed: check nlpgobals.py for gk path."  
-  sres=calc.decode('ascii') 
+
+  sres=get_proof_from_cache(None,params)
+  if not sres:
+    try:  
+      calc=subprocess.Popen(params, stdout=subprocess.PIPE).communicate()[0]
+    except KeyboardInterrupt:
+      raise  
+    except:
+      return "Error: prover gk is not available or crashed: check nlpgobals.py for gk path."  
+    sres=calc.decode('ascii') 
+    add_proof_to_cache(params,sres)  
   os.remove(infilename)
   if options["prover_print_flag"] or options["show_prover_flag"]:  
     print("\n=== prover output: === \n\n",sres)
-    print("\n=== end of prover output === \n\n") 
+    print("\n=== end of prover output === \n\n")   
   return sres
 
 

@@ -8,6 +8,13 @@ everything ==> every object
 everybody ==> every person
 everyone ==> every person
 
+nobody else ==> no person except them
+nobody ==> no person
+no one else ==> no person except them 
+no one ==> no person
+nothing else ==> no object except these
+nothing ==> no object
+
 cannot ==> can not
 isnt ==> is not 
 wasnt ==> was not 

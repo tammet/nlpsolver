@@ -211,7 +211,7 @@ def single_run_tests(tests, lower=0, upper=0):
     realtestcount+=1
     if show_tests: print("Input:",test[0])
     try:
-      result=answer_question(test[0])
+      result=answer_question(test[0],{"use_cache_flag":True})
     except KeyboardInterrupt:
       return  
     except:

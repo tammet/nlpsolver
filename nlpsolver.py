@@ -48,6 +48,8 @@ from nlpllm import *
 # small utilities are in nlputils.py
 from nlputils import *
 
+from nlpcache import *
+
 # ====== main is used for calling on command line ======
 
 # main is used for calling from command line: use like
@@ -71,6 +73,7 @@ basic keys:
  -logic     : show logic  
  -usekb     : use background knowledge in a memory kb imported by the server
  -debug     : show the details of the whole process
+ -cache     : cache results from external tools: Stanza and GK
  -simple    : use a very simplified representation: automatically switches on all the three following keys,
               which can be also switched on separately:
     -nocontext : use a simplified representation without context (time, situation) when creating logic 
@@ -99,7 +102,6 @@ def main():
   if not text:
     show_error("No text given: \n"+helptext)
     sys.exit(0)  
-  #debug_print("text",text)  
   result=answer_question(text,newoptions)
   #debug_print("Answer:")
   print(result)
@@ -219,6 +221,8 @@ def parse_cmd_line(helptext):
     elif el in ["-nosolve","--nosolve"]: 
       options["prover_nosolve_flag"]=True      
       options["prover_rawresult_flag"]
+    elif el in ["-cache","--cache"]: 
+      options["use_cache_flag"]=True      
     elif el in ["-postprocess","--postprocess"]: 
       options["prover_postprocess_flag"]=True  
     elif el in ["-rawresult","--rawresult"]: 
