@@ -3,6 +3,8 @@ nlpsolver
 
 Nlpsolver is an experimental pipeline for automated reasoning in natural language,
 capable of performing both natural language inference (NLI) and question answering.
+The pipeline is described in the paper 
+[An Experimental Pipeline for Automated Reasoning in Natural Language](https://link.springer.com/chapter/10.1007/978-3-031-38499-8_29).
 
 The pipeline contains:
 * A semantic parser from English to extended first order logic.
@@ -29,7 +31,7 @@ The only external dependencies except Python are:
 You need to install Stanza to run nlpsolver. No other additional
 packages or special installation is necessary. 
 
-Initially we used Stanza versions 1.3.0 and 1.4.1, and later switched to 1.5.
+Initially we used Stanza versions 1.3.0 and 1.4.1, currently using 1.5.
 All of these Stanza versions should be usable for the nlpsolver, although the results of
 the semantic parser depend on the Stanza output and may
 vary between Stanza versions. The simplest way to install Stanza 
@@ -78,6 +80,7 @@ and/or a filename as an argument, with optional keys:
 
     basic keys:
         -explain   : give an English explanation/proof of the answer    
+        -cache     : store and fetch Stanza and gk input/output to/from the cache 
         -logic     : show logic  
         -usekb     : use background knowledge in a memory kb imported by the server
         -debug     : show the details of the whole process
@@ -98,6 +101,9 @@ and/or a filename as an argument, with optional keys:
         -nokb      : do not use a shared memory knowledge base (NOT implemented yet)      
         -printlevel N : use N>10 to see more of the search process of the prover (10 is default, try 12)
 
+Concerning the -cache key above: the cache file is the sqlite database nlpcache.db created automatically.
+In order to clear the cache, simply delete the file nlpcache.db.
+
 Testing
 --------
 
@@ -114,6 +120,8 @@ By default, the following test files are run sequentially:
 A few failures in the default regression test are acceptable: they may depend on the time resources
 given to the prover, the specifics of Stanza output or inability of the test system to correctly
 interpret the answer given.
+
+By default the testing program uses the -cache key explained before.
 
 Knowledge bases
 ---------------
