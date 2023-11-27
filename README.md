@@ -8,8 +8,13 @@ The pipeline is described in the paper
 
 The pipeline contains:
 * A semantic parser from English to extended first order logic.
-* A first-order logic reasoner solving the problem expressed in extended logic.
+* A first-order logic commonsense reasoner solving the problem expressed in extended logic.
 * A subsystem for converting the proof given by the reasoner to English.
+
+The commonsense reasoner is built on top of 
+a [high-performance FOL reasoner](https://link.springer.com/chapter/10.1007/978-3-030-29436-6_32),
+extended to use [numeric confidences](https://link.springer.com/chapter/10.1007/978-3-030-79876-5_29) 
+and [defeasible rules](https://link.springer.com/chapter/10.1007/978-3-031-10769-6_18).
 
 Nlpsolver is developed with a goal to be (a) a backbone of our research in
 combining machine learning and large language models with logic-based
