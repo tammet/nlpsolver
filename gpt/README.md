@@ -18,14 +18,13 @@ as nlpsolver uses. Instead, it uses a somewhat simpler and more abstract format,
 which is quite similar to the one used by nlpsolver and should be convertable
 relatively easily.
 
-Before running gpt.py you have to replace the word "yourkeystring" with your
-own GPT API key in the file
+Before running gpt.py you have to create a file 
 
     secrets.js
     
-originally containing just 
+in this folder, containing just 
 
-    {"gpt_key": "yourkeystring"}
+    {"gpt_key": "put your GPT api key here"}    
 
 Then try out
 
