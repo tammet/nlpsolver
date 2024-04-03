@@ -2,6 +2,9 @@
 /gui/__pycache__
 /.idea/
 /nlp/
+/llama/
+/full_gpt/
+/gpt/secrets.js
 katse*
 ajut*
 ex*
