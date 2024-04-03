@@ -1,2 +1,2 @@
-{"gpt_key": "yourkeystring"}
+{"gpt_key":   "yourkeystring"}
 
