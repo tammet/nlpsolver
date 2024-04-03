@@ -1,0 +1,37 @@
+You preprocess sentences for a semantic parser to logic and have to solve coreference resolution. 
+Rewrite input sentences by solving the coreference resolution in the following manner:
+* To each pronoun (it, they, this, etc) append the noun phrases present in the sentences this pronoun stands for, putting curly braces around them like {Mary} or {John Smith, Mary}.
+* If a noun refers to another noun phrase in the in the sentences, append the other noun phrase to the current one, putting curly braces around them like {Steve} or {elephant, young tiger}.
+
+Do not make any other changes in the input text, except adding the phrases in curly braces!
+
+Examples:
+Mary was in a room. She was in the room? => Mary was in a room. She {Mary} was in the room?
+Maryam has a theorem. She is exciting. => Maryam has a theorem. She {Maryam} is exciting.
+If John is in a box, he is in the house. => If John is in a box, he {John} is in the house. 
+A baby was in a bed. She liked the place. => A baby was in a bed. She {A baby} liked the place {a bed}.
+A spade is a tool for digging. It is often made of metal. => A spade is a tool for digging. It {A spade} is often made of metal.
+An elephant was strong. The animal lifted a stone. => An elephant was strong. The animal {An elephant} lifted a stone. 
+A nice elephant was strong. A flower was white. The animal lifted the stone. => A nice elephant was strong. A flower was white. The animal {A nice elephant} lifted the stone.
+An apple was bad and she was in a room. An apple was in a room? => An apple was bad and she was in a room. An apple was in a room?
+John went to visit some friends. On the way he bought some wine. => John went to visit some friends. On the way he {John} bought some wine.
+IBM announced a new machine translation product. They have been working on it for 20 years. => IBM announced a new machine translation product. They {IBM} have been working on it {a new machine translation product} for 20 years.
+I went to a superb restaurant yesterday. The chef had just opened it. => I went to a superb restaurant yesterday. The chef had just opened it {a superb restaurant}
+It was Emma Goldman who founded Mother Earth. => It {Emma Goldman} was Emma Goldman who founded Mother Earth.
+Even before she saw it, Dorothy had been thinking about the Emerald City. => Even before she {Dorothy} saw it {the Emerald City}, Dorothy had been thinking about the Emerald City.
+If an animal has a trunk, it is an elephant. => If an animal has a trunk, it {an animal} is an elephant.
+If a big bear is nice, it has a tail. => If a big bear is nice, it {a big bear} has a tail. 
+Janet bought herself a bottle of fish sauce. => Janet bought herself {Janet} a bottle of fish sauce.
+Janet bought her a bottle of fish sauce. => Janet bought her a bottle of fish sauce.
+I ate the soup in my new bowl after cooking it for hours. => I ate the soup in my new bowl after cooking it {the soup} for hours.
+Billy Bones went to the bar with Jim Hawkins. He asked for a glass of rum. => Billy Bones went to the bar with Jim Hawkins. He {Billy Bones} asked for a glass of rum. 
+The trophy didn't fit into the suitcase because it was too small. => The trophy didn't fit into the suitcase because it {the suitcase} was too small.
+The trophy didn't fit into the suitcase because it was too big. => The trophy didn't fit into the suitcase because it {The trophy} was too big.
+I love mangos. They are very tasty. => I love mangos. They {mangos} are very tasty.
+John, Mike and a small elephant went to swim. They were happy. => John, Mike and a small elephant went to swim. They {John, Mike, a small elephant} were happy.
+John, Mike and a small elephant went to swim. Eve sat on the shore. Everybody was happy. => John, Mike and a small elephant went to swim. Eve sat on the shore. Everybody {John, Mike, a small elephant, Eve} was happy.
+John, Mike and a small elephant went to swim. Eve sat on the shore. Everybody except the animal was happy. => John, Mike and a small elephant went to swim. Eve sat on the shore. Everybody {John, Mike, a small elephant, Eve} except the animal {a small elephant} was happy.
+If animal or bird is nice and simple, it is cute. John is cute? => If animal or bird is nice and simple, it {animal or bird} is cute. John is cute?
+John criticized Bill. He lost the laptop. => John criticized Bill. He {Bill} lost the laptop.
+Every dancer brought her left arm forward. => Every dancer brought her {dancer} left arm forward.
+

@@ -1,0 +1,11 @@
+You preprocess sentences for a semantic parser to logic. 
+Add a Wikipedia url to each proper name which is present in English Wikipedia and surround the corresponding proper noun with curly braces.
+Examples:
+Barack Obama is a president of USA => {Barack Obama} https://en.wikipedia.org/wiki/Barack_Obama is a president of {USA} https://en.wikipedia.org/wiki/United_States
+John worked at Apple => John worked at {Apple} https://en.wikipedia.org/wiki/Apple_Inc.
+Mike ate an apple => Mike ate an apple 
+A brown dog ate a cake => A brown dog ate a cake
+President Barack visited the sunshine state => {President Barack} https://en.wikipedia.org/wiki/Barack_Obama visited the {sunshine state} https://en.wikipedia.org/wiki/Florida
+Situated on a bay in north Estonia, on the shore of the Gulf of Finland of the Baltic Sea, Tallinn has a population of about 461,000 (as of 2024)[3] and administratively lies in the Harju maakond (county) => Situated on a bay in north {Estonia} https://en.wikipedia.org/wiki/Estonia, on the shore of the {Gulf of Finland} https://en.wikipedia.org/wiki/Gulf_of_Finland of the {Baltic Sea} https://en.wikipedia.org/wiki/Baltic_Sea, {Tallinn} https://en.wikipedia.org/wiki/Tallinn has a population of about 461,000 (as of 2024) and administratively lies in the {Harju maakond (county)} https://en.wikipedia.org/wiki/Harju_County
+Päts was one of the most influential politicians of the independent democratic Republic of Estonia, and during the two decades prior to World War he also served five times as the country's prime minister => {Päts} https://en.wikipedia.org/wiki/Konstantin_P%C3%A4ts was one of the most influential politicians of the independent democratic {Republic of Estonia} https://en.wikipedia.org/wiki/Estonia, and during the two decades prior to {World War} https://en.wikipedia.org/wiki/World_War_II he also served five times as the country's prime minister.
+

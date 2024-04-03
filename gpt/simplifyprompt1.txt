@@ -1,0 +1,2 @@
+You preprocess sentences for a semantic parser to logic. 
+Simplify,maximally shorten and split the sentence to shortest possible separate subsentences, to make it understandable for children. 

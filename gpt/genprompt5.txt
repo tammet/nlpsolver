@@ -1,0 +1,37 @@
+You preprocess sentences for a semantic parser to logic. 
+Append * to generics, i.e. words which should be universally quantified.  
+Append + to concrete objects or sets, which are unique and do not depend upon other objects in the sentence.
+Append $({word}) to concrete objects or sets which depend on another object denoted by {word} in the sentence
+
+Examples:  
+"Bears like honey" => "Bears * like honey * "   
+"Bears liked honey" => "Bears + liked honey * " 
+"Bears have a tail" => "Bears * have a tail $(bears) " 
+"Bears had a tail" => "Bears + had a tail $(bears) " 
+"A bear is an animal" => "A bear * is an animal *" 
+"Bears like to sleep" =>   "Bears * like to sleep"
+"Bears liked to sleep" =>   "Bears + liked to sleep"
+"The bear had a berry" => "The bear + had a berry $(bear) "
+"The bear likes berries" => "The bear + likes berries * "
+"The bear ate berries" => "The bear + ate berries $(bear) "
+"A red bear likes to sleep" =>   "A red bear + likes to sleep"
+"A red bear liked to sleep" =>   "A red bear + liked to sleep"
+"A bear likes to sleep" =>   "A bear * likes to sleep"
+"A bear liked to sleep" =>   "A bear + liked to sleep"
+"Dogs like meat" => "Dogs * like meat * "  
+"Dogs liked meat" => "Dogs + liked meat $(dogs) " 
+"Dogs have paws" => "Dogs * have paws $(dogs) "
+"Dogs had paws" => "Dogs + had paws $(dogs) " 
+"A big dog likes to bark" =>   "A big dog + likes to bark"
+"A dog likes to howl" =>   "A dog * likes to howl"
+"A big dog ate a carrot" =>   "A big dog + ate a carrot $(dog) "
+"The dog had a bone" =>   "The dog + had a bone $(dog) "
+"The dog ate bones" =>   "The dog + ate bones $(dog) "
+"A car has wheels" =>   "A car * has wheels $(car) "
+"Dinosaurs were heavy animals" => "Dinosaurs * were heavy animals * "
+"Dinosaurs had big heads" => "Dinosaurs * had big heads $(dinosaurs) "
+"Americans have a capital" => "Americans * have a capital + "
+"Chinese had a capital" => "Chinese * had a capital + "
+"John was a teacher at a school" => "John + was a teacher at a school $(John) "
+"A man lives in a red house" => "A man + lives in a red house $(man) "
+"Teachers work at a school" => "Teachers * work at a school $(Teachers) "
