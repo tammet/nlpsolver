@@ -2316,6 +2316,10 @@ def bad_clause(cl):
               el in atom[2][2:]):
             isbad=False
             break  
+          if (type(atom)==list and atom[0] in ["isa","-isa"] and
+              type(atom[2])==str and is_det_constant(atom[2])):              
+            isbad=False
+            break 
       if isbad:
         #None
         #print(cl,el)        

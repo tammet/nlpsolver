@@ -1691,7 +1691,8 @@ def make_atom_2(ctxt,sentence,verb,thing,positive,var1,var2,confidence=1,act_typ
   elif blocker_preferred:
     res.append([confidence_function,1,blocker_preferred])
 
-  if actionrepr and not comparison_pred and not (pred in ["rel2","-rel2"]): #,"rel2_of","-rel2_of","rel2_than","-rel2_than"]):
+  #if actionrepr and not comparison_pred and not (pred in ["rel2","-rel2"]): #,"rel2_of","-rel2_of","rel2_than","-rel2_than"]):
+  if actionrepr and not comparison_pred and not (pred in ["rel2","-rel2","rel2_of","-rel2_of","rel2_than","-rel2_than"]):
     res.append(actionrepr)
 
   #debug_print("res4",res)  
@@ -1787,6 +1788,8 @@ def make_ctxt_argument(ctxt,sentence,verb,thing=None):
       tvar="?:Tense"+str(ctxt["varnum"])     
       ctxt["varnum"]+=1
       tensevalue=tvar
+  elif beword:
+    tensevalue=get_word_feat(beword,"Tense")    
   else:
     tvar="?:Tense"+str(ctxt["varnum"])
     ctxt["varnum"]+=1

@@ -1361,6 +1361,12 @@ def is_theof_or_measure_function(s):
     return True
   else:
     return False
+  
+def is_det_constant(s):
+  if type(s)==str and s.startswith(det_constant_prefix):
+    return True
+  else:
+    return False  
 
 def word_ctxt_object_const(ctxt,sentence,word,logic):
   #debug_print("word",word)

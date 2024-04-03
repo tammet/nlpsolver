@@ -1160,6 +1160,25 @@
   ["Animals have legs. Animal has a leg?", True],
   ["Animals have legs. Animal has one leg?", None],
 
+  # qualifiers of do-actions
+
+  ["Penguins live in the water. Penguins live in the water?", True],
+  ["Penguins live in the water. Penguins live in water?", True],
+  #["Penguins live in water. Penguins live in the water?", True],
+  ["Penguins live in the water. Penguins live?", True],
+  ["Penguins live in the water. Penguins live in stone?", None],
+  ["Penguins live in the water. Penguins live in the stone?", None],
+  ["Penguins live in water. Penguins live in water?", True],
+  ["Penguins live in water. Penguins live in stone?", None],
+  ["Penguins live in water. Penguins live in the stone?", None],
+  ["Penguins happily live in water. Penguins happily live in water?", True],
+  ["Penguins happily live in water. Penguins live?", True],
+  ["Penguins happily live in water. Penguins badly live in water?", None],
+  ["Penguins happily live in cold water. Penguins happily live in cold water?", True],
+  ["Penguins happily live in cold water. Penguins live in water?", True],
+  ["Penguins happily live in cold water. Penguins live in cold water?", True],
+  ["Penguins happily live in cold water. Penguins live in hot water?", None],
+  
   # .. of .. and ... the ... of ... examples
 
   ["The head of Mary is clean. The head of Mary is clean?",True],
