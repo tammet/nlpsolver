@@ -1,0 +1,99 @@
+
+== testing hans with llmsolve gpt3 (gpt-3.5-turbo-0125) ==
+
+prompt example:
+
+"You have to check whether a question is logically derivable from the assumption.
+Answer True, False or Unknown, without any additional explanations or information. 
+Assume the following: The senators supported the secretary in front of the doctor . 
+Based on only this knowledge, is it true, false or unknown that the doctor supported the senators ?"
+
+Starting to run 113 tests
+11111111111111101011011111010111111111001011001111110101011111111111110011110100011111101111111010000011011111111
+Testing finished in 63.069 seconds
+Tests run: 113
+OK tests: 86
+Failed tests: 27
+
+Tests which failed:
+Input: The student who the senators thanked stopped the scientist . The scientist stopped the student ?
+Expected: None
+Received: False
+Input: The authors contacted the tourist that saw the professor . The professor contacted the authors ?
+Expected: None
+Received: False
+Input: The manager who the tourists advised introduced the judge . The tourists introduced the manager ?
+Expected: None
+Received: False
+Input: The scientists believed the athlete that the actor introduced . The athlete believed the actor ?
+Expected: None
+Received: True
+Input: The secretaries helped the managers who the lawyers recommended . The lawyers helped the secretaries ?
+Expected: None
+Received: False
+Input: The managers were advised by the athlete . The managers advised the athlete ?
+Expected: None
+Received: False
+Input: The lawyers were recommended by the doctor . The lawyers recommended the doctor ?
+Expected: None
+Received: False
+Input: The scientist was recommended by the doctor . The scientist recommended the doctor ?
+Expected: None
+Received: False
+Input: The authors recognized the president and the judges . The judges recognized the president ?
+Expected: None
+Received: True
+Input: The students and the lawyer recommended the secretary . The students recommended the lawyer ?
+Expected: None
+Received: False
+Input: The actors that the students contacted admired the lawyer . The students contacted the actors ?
+Expected: True
+Received: Unknown
+Input: The secretary advised the managers who the actors introduced . The actors introduced the managers ?
+Expected: True
+Received: Unknown
+Input: The actors who avoided the senators encouraged the professor . The actors avoided the senators ?
+Expected: True
+Received: False
+Input: The manager knew the tourists supported the author . The manager knew the tourists ?
+Expected: None
+Received: False
+Input: The manager knew the athlete mentioned the actor . The manager knew the athlete ?
+Expected: None
+Received: True
+Input: The scientist presented in the school stopped the artists . The scientist presented in the school ?
+Expected: None
+Received: True
+Input: The scientist contacted the manager investigated in the office . The manager investigated in the office ?
+Expected: None
+Received: True
+Input: The actor helped the managers presented in the laboratory . The managers presented in the laboratory ?
+Expected: None
+Received: True
+Input: When the students fought the secretary ran . The students fought the secretary ?
+Expected: None
+Received: True
+Input: The presidents paid the scientists . The presidents paid ?
+Expected: True
+Received: Unknown
+Input: Unless the professor slept , the tourist saw the scientist . The tourist saw the scientist ?
+Expected: None
+Received: True
+Input: The actor recommended the lawyers , or the managers stopped the author . The actor recommended the lawyers ?
+Expected: None
+Received: True
+Input: The student mentioned the artist , or the athletes helped the judges . The athletes helped the judges ?
+Expected: None
+Received: True
+Input: The senator admired the authors , or the tourists avoided the student . The tourists avoided the student ?
+Expected: None
+Received: True
+Input: The tourists avoided the doctors , or the scientist resigned . The tourists avoided the doctors ?
+Expected: None
+Received: True
+Input: Before the presidents ran , the tourist shouted . The presidents ran ?
+Expected: True
+Received: Unknown
+Input: After the manager encouraged the secretaries , the senator danced . The senator danced ?
+Expected: True
+Received: Unknown
