@@ -1,0 +1,57 @@
+
+== testing hans with llmsolve gpt4 (gpt-4o-2024-05-13) ==
+
+prompt example:
+
+"You have to check whether a question is logically derivable from the assumption.
+Answer True, False or Unknown, without any additional explanations or information. 
+Assume the following: The senators supported the secretary in front of the doctor . 
+Based on only this knowledge, is it true, false or unknown that the doctor supported the senators ?"
+
+Starting to run 113 tests
+11011111111111101111111111111111111111000111111111111101110111111111111111110100011111101111111111111011111111111
+Testing finished in 67.777 seconds
+Tests run: 113
+OK tests: 100
+Failed tests: 13
+
+Tests which failed:
+Input: The professors supported the tourists in front of the secretary . The tourists supported the professors ?
+Expected: None
+Received: False
+Input: The student who the senators thanked stopped the scientist . The scientist stopped the student ?
+Expected: None
+Received: False
+Input: The managers were advised by the athlete . The managers advised the athlete ?
+Expected: None
+Received: False
+Input: The lawyers were recommended by the doctor . The lawyers recommended the doctor ?
+Expected: None
+Received: False
+Input: The professor was helped by the doctors . The professor helped the doctors ?
+Expected: None
+Received: False
+Input: The secretary advised the managers who the actors introduced . The actors introduced the managers ?
+Expected: True
+Received: Unknown
+Input: The bankers near the secretary called the doctor . The bankers called the doctor ?
+Expected: True
+Received: Unknown
+Input: The scientist presented in the school stopped the artists . The scientist presented in the school ?
+Expected: None
+Received: True
+Input: The scientist contacted the manager investigated in the office . The manager investigated in the office ?
+Expected: None
+Received: True
+Input: The actor helped the managers presented in the laboratory . The managers presented in the laboratory ?
+Expected: None
+Received: True
+Input: When the students fought the secretary ran . The students fought the secretary ?
+Expected: None
+Received: False
+Input: The presidents paid the scientists . The presidents paid ?
+Expected: True
+Received: Unknown
+Input: Before the presidents ran , the tourist shouted . The presidents ran ?
+Expected: True
+Received: Unknown

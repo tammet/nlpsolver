@@ -1,0 +1,73 @@
+
+== testing llm_tests_allen with llmsolve gpt4 (gpt-4o-2024-05-13) ==
+
+Starting to run 38 tests
+11111101111011111111101111111111101001
+Testing finished in 21.09 seconds
+Tests run: 38
+OK tests: 32
+Failed tests: 6
+
+Tests which failed:
+Input: Harry can do magic. Muggles cannot do magic. If a person can do magic then they can vanish.
+    If a person cannot do magic then they cannot vanish. Mr Dursley is a Muggle. Muggles can vanish?
+Expected: None
+Received: False
+Input: If someone is not a UK resident and they do not have a UK civil service pension then they do not pay UK pension tax. 
+    If someone has a UK civil service pension then they pay pension tax in the UK. 
+    If someone is a UK resident then they pay pension tax in the UK. 
+    If someone's home country is UK then they are a UK resident. 
+    If someone's home country is France then they are a French resident. 
+    John's home country is UK. 
+    Pierre's home country is France. 
+    Pierre is not a UK resident.    
+    Alan's home country is France. 
+    Alan has a UK civil service pension. 
+    Pierre pays UK pension tax?
+Expected: None
+Received: False
+Input: The circuit has a switch. The circuit has a bell. The switch is off. 
+      If the circuit has the switch and the switch is on then the circuit is complete.
+      If the circuit does not have the switch then the circuit is complete. 
+      If the circuit is complete and the circuit has the light bulb then the light bulb is glowing.
+      If the circuit is complete and the circuit has the bell then the bell is ringing.
+      If the circuit is complete and the circuit has the radio then the radio is playing. 
+      The bell is ringing?
+Expected: None
+Received: False
+Input: Fiona is round.
+    All green things are rough.
+    White things are not cold.
+    If Fiona is rough and Fiona is furry then Fiona is not big.
+    If Fiona is cold and Fiona is rough then Fiona is not furry.
+ 
+    If something is round and furry then it is not big.
+    All furry things are big.
+    If something is round and not green then it is not big.
+    
+    Fiona is cold.
+    Fiona is big?
+Expected: None
+Received: False
+Input: The bald eagle chases the bear.
+    The bear needs the bald eagle.
+    If something chases the bald eagle then they do not chase the bear.
+    If something needs the bald eagle then the bald eagle eats the bear.
+    If something needs the bear then the bear is red.
+    If something eats the bear then they are cold.
+    If something is cold then they are not kind.
+    If something eats the bear and they are not cold then the bear is not round.
+    The bear is red?
+Expected: None
+Received: True
+Input: The bald eagle chases the bear.
+    The bear needs the bald eagle.
+    If something chases the bald eagle then they do not chase the bear.
+    If something needs the bald eagle then the bald eagle eats the bear.
+    If something needs the bear then the bear is red.
+    If something eats the bear then they are cold.
+    If something is cold then they are not kind.
+    If something eats the bear and they are not cold then the bear is not round.
+    The bear is round?
+Expected: None
+Received: False
