@@ -35,15 +35,16 @@ secrets_file="secrets.js"
 gpt2="davinci-002"         # text-davinci-002 code-davinci-002 babbage-002 
 gpt3="gpt-3.5-turbo-0125"  # 
 gpt4="gpt-4-0125-preview"  # gpt-4  gpt-4-32k 
+gpt4="gpt-4o-2024-05-13"
 gpt3_instruct="gpt-3.5-turbo-instruct-0914"  # "gpt-3.5-turbo-instruct" 
 
 temperature=0
 seed=1234
-max_tokens=200
+max_tokens=2000
 
 # ======= other configuration globals ===
 
-gpt_model=gpt3 # default
+gpt_model=gpt4 # default
 
 debug=False # set to True to get a printout of data, call and result
 
@@ -160,7 +161,8 @@ def call_gpt(gptversion,sentences,sysprompt,max_tokens):
        "model": gptversion,
        "messages": messages,
        "seed": seed,
-       "logprobs": True,
+       #"logprobs": True,
+       "logprobs": False,
        "temperature": temperature
     }
   if max_tokens:
