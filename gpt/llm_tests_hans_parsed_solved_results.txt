@@ -1,0 +1,65 @@
+
+=== running test llm_tests_hans_resultsa_converted.py ===
+
+Starting to run 106 tests
+1111111111111111111111111111110111111111111111111010001011100111010111110110000011111101110111111111111111
+Testing finished in 12.79 seconds
+Tests run: 106
+OK tests: 88
+Failed tests: 18
+
+Tests which failed:
+Input: The professor that helped the students contacted the athletes . The athletes contacted the professor ?
+Expected: None
+Received: True
+Input: The judges recommended the tourist that believed the authors . The tourist believed the authors ?
+Expected: True
+Received: Unknown
+Input: The actors that the students contacted admired the lawyer . The students contacted the actors ?
+Expected: True
+Received: Unknown
+Input: The judge admired the professor who the authors avoided . The authors avoided the professor ?
+Expected: True
+Received: Unknown
+Input: The secretary advised the managers who the actors introduced . The actors introduced the managers ?
+Expected: True
+Received: Unknown
+Input: The actors who avoided the senators encouraged the professor . The actors avoided the senators ?
+Expected: True
+Received: Unknown
+Input: The professors who introduced the lawyers admired the managers . The professors admired the managers ?
+Expected: True
+Received: Unknown
+Input: The actors that danced saw the author . The actors saw the author ?
+Expected: True
+Received: Unknown
+Input: The managers encouraged the senator and the lawyer . The managers encouraged the lawyer ?
+Expected: True
+Received: Unknown
+Input: The tourists were contacted by the athlete . The athlete contacted the tourists ?
+Expected: True
+Received: Unknown
+Input: The actors behind the doctors supported the authors . The doctors supported the authors ?
+Expected: None
+Received: True
+Input: The scientist presented in the school stopped the artists . The scientist presented in the school ?
+Expected: None
+Received: True
+Input: The athletes presented in the library mentioned the secretary . The athletes presented in the library ?
+Expected: None
+Received: True
+Input: The scientist contacted the manager investigated in the office . The manager investigated in the office ?
+Expected: None
+Received: True
+Input: The actor helped the managers presented in the laboratory . The managers presented in the laboratory ?
+Expected: None
+Received: True
+Input: When the students fought the secretary ran . The students fought the secretary ?
+Expected: None
+Received: True
+Input: The authors ate the rice . The authors ate ?
+Expected: True
+Received: Unknown
+Input: The authors thanked the athletes in front of the lawyers . The authors thanked the athletes ?
+Expected: True
+Received: Unknown
