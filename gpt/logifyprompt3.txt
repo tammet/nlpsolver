@@ -30,14 +30,14 @@ Examples:
 
 "John is a person" => ["isa","person","John"]
 "There was a car." => ["exists","X", ["isa","car","X"]]
-"A bear is an animal" => ["forall","X", ["implies",["isa","bear","X"], ["isa","X","animal]]]
+"A bear is an animal" => ["forall","X", ["implies",["isa","bear","X"], ["isa","X","animal"]]]
 
 "All green things are rough" => ["forall","X", ["implies",["and",["has property","X","green"], ["isa","thing","X"]],["has property","X","rough"]]]
 "Some animals are small" =>   ["exists","X",["and",["isa","animal","X"], ["has property","X","small"]]] 
 "Dinosaurs were heavy animals" =>   ["forall","X", ["implies",["isa","dinosaur","X"], ["has property","X","heavy"]]] 
 
 "Dogs have paws" =>  ["forall","X", ["implies",["isa","dog","X"], ["exists","Y",["and",["isa","paws","Y"],["have","X","Y"]]]]]
-"Dogs had paws" =>  ["exists","X", ["and",["isa","dogs","X"], ["exists","Y",["and",["isa","paws","Y"],["had","X","Y"]]]]
+"Dogs had paws" =>  ["exists","X", ["and",["isa","dogs","X"], ["exists","Y",["and",["isa","paws","Y"],["had","X","Y"]]]]]
 "A car has wheels" =>   ["forall","X", ["implies",["isa","car","X"], ["exists","Y",["and",["isa","wheels","Y"],["has","X","Y"]]]]]
 "Bears have a tail" => ["forall","X", ["implies",["isa","bear","X"], ["exists","Y",["and",["isa","tail","Y"],["have","X","Y"]]]]]
 "Bears had a tail" => ["exists","X", ["and",["isa","bears","X"],["exists","Y",["and",["isa","tail","Y"],["had","X","Y"]]]]]
@@ -62,8 +62,8 @@ Examples:
 "USA's president was Obama" =>  ["rel2","president","USA https://en.wikipedia.org/wiki/United_States","Obama https://en.wikipedia.org/wiki/Barack_Obama"]
 "Tallinn is north of Riga" => ["rel2","north","Tallinn https://en.wikipedia.org/wiki/Tallinn","Riga https://en.wikipedia.org/wiki/Riga"]
 "Tallinn is near Riga" => ["rel2","near","Tallinn https://en.wikipedia.org/wiki/Tallinn","Riga https://en.wikipedia.org/wiki/Riga"]
-"Point A is connected to point B." ["rel2","connected","A","B"]
-"Tallinn is on the seacoast" => ["exists","X",["and",["isa","seacoast","X"]["rel2","on","Tallinn https://en.wikipedia.org/wiki/Tallinn","X"]]]
+"Point A is connected to point B." => ["rel2","connected","A","B"]
+"Tallinn is on the seacoast" => ["exists","X",["and",["isa","seacoast","X"],["rel2","on","Tallinn https://en.wikipedia.org/wiki/Tallinn","X"]]]
 "John and Mike are in a small room" => ["exists","X",["and",["isa","room","X"],["has property","X","small"],["rel2","in","John","X"],["rel2","in","Mike","X"]]]
 "Ceilings are above doors" => ["forall","X",["forall","Y",["implies",["and",["isa","ceiling","X"],["isa","door","Y"]],["rel2","above","X","Y"]]]]
 "Dole was defeated by Clinton" => ["rel2","defeated","Clinton https://en.wikipedia.org/wiki/Bill_Clinton","Dole https://en.wikipedia.org/wiki/Bob_Dole"]
@@ -83,7 +83,7 @@ Examples:
 
 "Mike notices Eve" => ["exists","A",["and",["isa","activity","A"],["has type","A","notice"],["has time","A","present"],["has actor","A","John"],["has target","A","Eve"]]]
 "John ran quickly" => ["exists","A",["and",["isa","activity","A"],["has type","A","run"],["has time","A","past"],["has manner","A","quickly"],["has actor","A","John"]]]
-"John ate a sandwich" => ["exists","A",["exists","Y",["and",["isa","activity","A"],["isa","sandwitch","Y"]["has type","A","eat"],["has time","A","past"],["has actor","A","John"],["has target","A","Y"]]]]
+"John ate a sandwich" => ["exists","A",["exists","Y",["and",["isa","activity","A"],["isa","sandwitch","Y"],["has type","A","eat"],["has time","A","past"],["has actor","A","John"],["has target","A","Y"]]]]
 "The bear ate berries" =>  ["exists","X", ["and",["isa","bear","X"],["exists","Y",["and",["isa","Y","berries"],["exists","A",["and",["isa","activity","A"],["has type","A","eat"],["has time","A","past"],["has actor","A","X"],["has target","A","Y"]]]]]]]
 "Titanic sank in the Atlantic" => ["exists","A",["and",["isa","activity","A"],["has type","A","sink"],["has time","A","past"],["has location","A","Atlantic https://en.wikipedia.org/wiki/Atlantic_Ocean"],["has actor","A","Titanic https://en.wikipedia.org/wiki/RMS_Titanic"]]]
 
@@ -92,8 +92,8 @@ Examples:
 "A big dog ate a carrot" =>   ["exists","X", ["and",["isa","dog","X"],["has property","X","big"],["exists","Y",["and",["isa","carrot","Y"],["exists","A",["and",["isa","activity","A"],["has type","A","eat"],["has time","A","past"],["has actor","A","X"],["has target","A","Y"]]]]]]]
 "The dog ate bones" =>  ["exists","X",["and",["isa","dog","X"],["exists","Y",["and",["isa","bones","Y"],["exists","A",["and",["isa","activity","A"],["has type","A","eat"],["has time","A","past"],["has actor","A","X"],["has target","A","Y"]]]]]]]
 "A red bear likes to sleep" =>  ["exists","X", ["and",["isa","bear","X"], ["has property","X","red"], ["forall","A",["implies",["and",["isa","activity","A"],["has type","A","sleep"],["has actor","A","X"]],["has attitude","like","X","A"]]]]]
-"A bear likes to sleep" =>  ["forall","X", ["implies",["isa","bear","X"], ["forall","A",["implies",["and",["isa","activity","A"],["has type","A","sleep"],["has actor","A","X"]],["has attitude","like","X","A"]]]]   
-"A bear liked to sleep" =>  ["exists","X", ["implies",["isa","bear","X"], ["forall","A",["implies",["and",["isa","activity","A"],["has type","A","sleep"],["has actor","A","X"]],["had attitude","like","X","A"]]]]
+"A bear likes to sleep" =>  ["forall","X", ["implies",["isa","bear","X"], ["forall","A",["implies",["and",["isa","activity","A"],["has type","A","sleep"],["has actor","A","X"]],["has attitude","like","X","A"]]]]]   
+"A bear liked to sleep" =>  ["exists","X", ["implies",["isa","bear","X"], ["forall","A",["implies",["and",["isa","activity","A"],["has type","A","sleep"],["has actor","A","X"]],["had attitude","like","X","A"]]]]]
 "Bears liked to sleep" => ["exists","X", ["and",["isa","bears","X"],["forall","A",["implies",["and",["isa","activity","A"],["has type","A","sleep"],["has actor","A","X"]],["had attitude","like","X","A"]]]]]
 
 "John was a teacher at a school" =>   ["exists","Y", ["and",["isa","school","Y"], ["exists","X",["isa","job","X"], ["had","John","X"],["has location","X","Y"],["has type","X","teacher"]]]]
@@ -108,13 +108,13 @@ Examples:
 "Dogs bark" => ["forall","X", ["implies",["isa","dog","X"], ["and",["exists","Y",["and",["isa","activity","Y"],["has type","Y","barking"],["has actor","Y","X"]]],["typical activity","X","Y"]]]]
 "Penguins cannot fly" => ["forall","X", ["implies",["isa","bird","X"], ["forall","Y",["implies",["and",["isa","activity","Y"],["has type","Y","flying"],["has actor","Y","X"]],["not",["is able","X","Y"]]]]]]
 
-"John has five apples" => ["exist","X",["and",["is set of","apple","X"],["=",5,["$count","X"]],["has","John","X"],["forall","Y",["implies",["and",["isa","apple","Y"],["has","John","Y"]],["member","Y","X"]]]]]
-"John has several apples" => ["exist","X",["and",["is set of","apple","X"],[">",["$count","X"],1],["has","John","X"]]]
-"John has two red and three green apples" => ["and",["exist","X",["and",["is set of",["and",["isa","apple","X"],["has property","X","red"]]],["=",["$count","X"],2],["has","John","X"]]],["exist","Y",["and",["is set of",["and",["isa","apple","Y"],["has property","Y","green"]]],["=",["$count","X"],3],["has","John","Y"]]]]
+"John has five apples" => ["exists","X",["and",["is set of","apple","X"],["=",5,["$count","X"]],["has","John","X"],["forall","Y",["implies",["and",["isa","apple","Y"],["has","John","Y"]],["member","Y","X"]]]]]
+"John has several apples" => ["exists","X",["and",["is set of","apple","X"],[">",["$count","X"],1],["has","John","X"]]]
+"John has two red and three green apples" => ["and",["exists","X",["and",["is set of",["and",["isa","apple","X"],["has property","X","red"]]],["=",["$count","X"],2],["has","John","X"]]],["exists","Y",["and",["is set of",["and",["isa","apple","Y"],["has property","Y","green"]]],["=",["$count","X"],3],["has","John","Y"]]]]
 
 "The length of Emajogi is 80 kilometers" => ["and",["has property","Emajogi https://en.wikipedia.org/wiki/Emaj%C3%B5gi",["$measure1","length","Emajogi","kilometer"]],["=",80,["$value",["$measure1","length","Emajogi","kilometer"]]]]
-"The price of the red car is 2 dollars" => ["exists","X",["and",["isa","car,"X"],["has property","X","red"],["=",2,["$value",["$measure1","price","X","dollar"]]]]]
-"Bikes are lighter than cars" => ["forall","X",["forall","Y",["implies",["and",["isa","bike,"X"],["isa","car","Y"]],["<",["$value",["$measure1","weight","X","kilograms"]],["$value",["$measure1","weight","Y","kilograms"]]]]]]
+"The price of the red car is 2 dollars" => ["exists","X",["and",["isa","car","X"],["has property","X","red"],["=",2,["$value",["$measure1","price","X","dollar"]]]]]
+"Bikes are lighter than cars" => ["forall","X",["forall","Y",["implies",["and",["isa","bike","X"],["isa","car","Y"]],["<",["$value",["$measure1","weight","X","kilograms"]],["$value",["$measure1","weight","Y","kilograms"]]]]]]
 
 "John is nice. Eve is a woman. He has a car." => ["and",["has property","John","nice"],["isa","woman","Eve"],["exists","X",["isa","car","X"],["has","John","X"]]]
 "The bear is big. The animal is thirsty." => ["exists","X",["and",["isa","bear","X"],["has property","X","big"],["has property","X","thirsty"]]]
@@ -123,6 +123,6 @@ Examples:
 "Is John strong?" => ["question",["has property","John","strong"]]
 "Five is not smaller than three?" => ["question",["not",["<",5,3]]]
 "Who likes Mike?" => ["ask","Y",["has attitude","like","Mike","Y"]]
-"Which man is big?" => ["ask","X",["and"["isa","man","X"],["has property","X","big"]]]
-"Where did John go?" => ["ask","Y",["exists","X",["and",["isa","activity","X"],["has type","X","go"],["has actor","X","John"]["has target","X","Y"]]]]
+"Which man is big?" => ["ask","X",["and",["isa","man","X"],["has property","X","big"]]]
+"Where did John go?" => ["ask","Y",["exists","X",["and",["isa","activity","X"],["has type","X","go"],["has actor","X","John"],["has target","X","Y"]]]]
 "Mike is an elephant. Mary is a cat. Who is an elephant?" => ["and",["isa","elephant","Mike"],["isa","cat","Mary"], ["ask","X",["isa","elephant","X"]]]
