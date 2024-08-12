@@ -1,0 +1,16 @@
+
+=== running test tests_wikipedia.py ===
+
+Starting to run 90 tests
+111111111111111101111111111111111111111111111111111111111111111111111111111111111111111111
+Testing finished in 55.611 seconds
+Tests run: 90
+OK tests: 89
+Failed tests: 1
+
+Tests which failed:
+Input: Seleston, often called Seleston City or simply SC, is the most populous city in the Steisen States, located at the southern tip of Seleston State on one of the world's largest natural harbors. 
+The city comprises five boroughs, each of which is coextensive with a respective county. 
+Seleston is not red. Kermakon is not black. Melisse has a cucumber festival. There is an airport in Melisse. Seleston has a cucumber festival?
+Expected: None
+Received: False
