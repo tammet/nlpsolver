@@ -37,7 +37,11 @@ on these:
 * tests_wikipedia_result.txt : GPT4 results on the test set tests_wikipedia.py
 
 Parsing results of running GPT4 (gpt-4o-2024-05-13) as a parser on the same regression tests,
-plus programmatically fixing the json and running the reasoner on the fixed versions:
+plus programmatically fixing the json and running the reasoner on the fixed versions.
+The following small program is used for fixing (input/output should be set at the
+initial part of the program):
+
+    nlpconvcollected.py
 
 * llm_tests_core1_results.txt - GPT4 raw parsing results on llm_core_test.py
 * llm_tests_core1_results_converted.py - programmatically fixed json version of the parsing results above
