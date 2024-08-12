@@ -1,0 +1,810 @@
+
+=== running test llm_tests_core1_resultsa_converted.py ===
+
+Starting to run 969 tests
+111111111011111111011110111010110111110110101011101111111111111111111110011001111111110111110101111111011111111101110111111111111110111111111101101101111111111111110011101001111010101100110011010011100011001000011110111010101011111101011110010111111100001011111111111111100111111111111011010100110111111111011111011111010110111111111111110111111111001001110011101010001111110000100111111111011111111011111111111110111111111101111010111101111111111111111110111111101110110111011111111100101111111111110111001101010001100010011010110010110011100010111010100001111101101100001011101100000010000001011101111110111011111101101111111011011111011111111110011101111101111110111111111111011111111111111111111101010011111011111111001111111111111011100101111111111111101111111011000111001110011101111111111110011111110111101111111110111110111111110111011111111111111011111111111111111111111111110111111101111010101010101010100000010110110001000000000000000000000000001000000001110
+Testing finished in 107.926 seconds
+Tests run: 969
+OK tests: 708
+Failed tests: 261
+
+Tests which failed:
+Input: John is a tall man or not a tall man?
+Expected: None
+Received: True
+Input: John was yellow. A man was nice?
+Expected: None
+Received: Software error.
+Input: Crenkils are animals. All crenkils are animals?
+Expected: True
+Received: Unknown
+Input: Crenkils are animals. All crenkils are not animals?
+Expected: False
+Received: Unknown
+Input: All crenkils are animals. Some crenkil is an animal?
+Expected: True
+Received: Unknown
+Input: All crenkils are animals. All crenkils are not animals?
+Expected: False
+Received: Unknown
+Input: Some crenkils are animals. All crenkils are not animals?
+Expected: None
+Received: False
+Input: No crenkil is an animal. No crenkil is an animal?
+Expected: True
+Received: Unknown
+Input: It is not true that all big yellow cats are strong. Some yellow cats are not strong?
+Expected: True
+Received: Unknown
+Input: It is not true that some big yellow cats are strong. All big yellow cats are not strong?
+Expected: True
+Received: Software error.
+Input: Bears eat all boxers. Mike is a boxer. Bears eat boxers?
+Expected: True
+Received: Unknown
+Input: Elephants and sparrows are crenkils or birds. John is a sparrow. John is a bird. John is a crenkil?
+Expected: False
+Received: Unknown
+Input: Elephants and sparrows are crenkils or birds. John is a sparrow. Sparrows are birds. John is not a crenkil?
+Expected: True
+Received: Unknown
+Input: Elephants or sparrows are crenkils. John is a sparrow. John is a crenkil?
+Expected: None
+Received: True
+Input: Elephants or sparrows are crenkils. John is an elephant. Sparrows are not crenkils. John is a crenkil?
+Expected: True
+Received: Unknown
+Input: John is a red or black crenkil. John is a crenkil. John is red. John is black?
+Expected: False
+Received: Unknown
+Input: Big and not strong crenkils are nice. John is a big crenkil. John is a not strong crenkil. John is nice?
+Expected: True
+Received: Software error.
+Input: No elephant has crenkils. No elephant has crenkils?
+Expected: True
+Received: Unknown
+Input: No elephants have crenkils. All elephants do not have crenkils?
+Expected: True
+Received: Unknown
+Input: Elephants have long trunks and no crenkils. John is an elephant. John has a long trunk and no crenkil?
+Expected: True
+Received: Unknown
+Input: Elephants have crenkils or tails. John is an elephant. John has a tail and a crenkil?
+Expected: False
+Received: Unknown
+Input: Elephants have long not big crenkils. John is an elephant. John has a long crenkil?
+Expected: True
+Received: Unknown
+Input: If an animal or bird has a tail, it is cute. John is a bird or an animal. John has a tail. John is cute?
+Expected: True
+Received: Unknown
+Input: If a bear is nice and has a crenkil, it has a tail. John is a nice bear. John has a crenkil. John has a tail?
+Expected: True
+Received: Unknown
+Input: If cars are green, elephants are nice. If elephants are nice, squirrels are red. Cars are green. Squirrels are red?
+Expected: True
+Received: Unknown
+Input: It is false that elephants are crenkils. John is an elephant. John is a crenkil?
+Expected: False
+Received: Unknown
+Input: It is not true that elephants are crenkils. John is an elephant. John is a crenkil?
+Expected: False
+Received: Unknown
+Input: It is true that Crenkil is in Estonia. Crenkil is in Estonia?
+Expected: True
+Received: Unknown
+Input: John is an elephant with a probability 100 percent. John is an elephant?
+Expected: True
+Received: Unknown
+Input: John is an elephant with a probability 0 percent. John is an elephant?
+Expected: False
+Received: Unknown
+Input: Elephants are big. Young elephants are not big. 
+      Mike is an elephant. John is a young elephant. John is big?
+Expected: False
+Received: Unknown
+Input: Strepsters are crenkils. Strepsters do not fly. Crenkils fly. John is a strepster. John flies?
+Expected: False
+Received: Unknown
+Input: Strepsters are crenkils. Strepsters do not fly. Crenkils fly. John is a crenkil. John flies?
+Expected: True
+Received: Unknown
+Input: Red cars are not nice. Cars are nice. Cars are not nice?
+Expected: False
+Received: Unknown
+Input: Red cars are not nice. Cars are nice. Red cars are nice?
+Expected: False
+Received: True
+Input: Red cars do not have crenkils. Cars have crenkils. Red cars have crenkils?
+Expected: False
+Received: True
+Input: Red cars do not have crenkils. Cars have crenkils. Cars have a crenkil?
+Expected: True
+Received: Unknown
+Input: Red cars do not have crenkils. Cars have a crenkil. Red cars have a crenkil?
+Expected: False
+Received: True
+Input: Red cars do not have crenkils. Cars have crenkils. John is a red car. John has a crenkil?
+Expected: False
+Received: Unknown
+Input: Strepsters are crenkils. Strepsters do not fly. Crenkils fly. Strepsters fly?
+Expected: False
+Received: Unknown
+Input: Bears eat berries. John is a bear. John eats berries?
+Expected: True
+Received: Unknown
+Input: Bears eat berries. John is a bear. John eats some berries?
+Expected: True
+Received: Unknown
+Input: Bears eat berries. John is a bear. John eats all berries?
+Expected: None
+Received: True
+Input: Some bears eat all berries. Some bears eat berries?
+Expected: True
+Received: Unknown
+Input: Crenkils fly or swim. John is a crenkil. John does not fly. John swims?
+Expected: True
+Received: Unknown
+Input: Crenkils fly or do not swim. John is a crenkil. John does not fly. John swims?
+Expected: False
+Received: Unknown
+Input: Crenkils fly or do not swim. John is a crenkil. John never flies. John swims?
+Expected: False
+Received: Unknown
+Input: Crenkils do not fly and swim. John is a crenkil. John swims?
+Expected: False
+Received: Unknown
+Input: Crenkils do not fly and swim. John is a crenkil. John swims or flies?
+Expected: False
+Received: Unknown
+Input: Bears eat berries. Baby bears do not eat berries. John is a bear. 
+     John eats berries?
+Expected: True
+Received: Unknown
+Input: Crenkils fly. No penguin can fly. Penguins are crenkils. John is a penguin. John flies?
+Expected: False
+Received: True
+Input: Crenkils fly. No penguin can fly. Penguins are crenkils. John is a crenkil. John can fly?
+Expected: True
+Received: Unknown
+Input: Crenkils can fly. No penguin can fly. Penguins are crenkils. John is a crenkil. John can fly?
+Expected: True
+Received: Unknown
+Input: Bears eat berries in a forest. Bears do not eat berries in forest?
+Expected: False
+Received: Unknown
+Input: Bears eat red berries in a forest. Bears eat berries in forest?
+Expected: True
+Received: Unknown
+Input: Bears do not eat red berries in a forest. Bears eat red berries in forest?
+Expected: False
+Received: Unknown
+Input: Bears eat red berries in a deep forest. John is a bear. John eats red berries in a deep forest?
+Expected: True
+Received: Unknown
+Input: Bears eat red berries in a deep forest. John is a bear. John eats no berries?
+Expected: False
+Received: Unknown
+Input: Bears quickly eat berries in a deep forest. John is a bear. John quickly eats berries in a deep forest?
+Expected: True
+Received: Unknown
+Input: Big bears who have a crenkil have a tail. John is a big bear. John has a crenkil. John has a tail?
+Expected: True
+Received: Software error.
+Input: Big bears who have a crenkil have a tail. John is a big bear. John has a nose. John has a tail?
+Expected: None
+Received: True
+Input: Big bears who have a crenkil have a tail. John is a bear. John has a crenkil. John has a tail?
+Expected: None
+Received: True
+Input: Big bears who are nice and have a crenkil have a tail. John is a big bear. John has a crenkil. John has a tail?
+Expected: None
+Received: True
+Input: Big bears who are nice and who have a crenkil have a tail. John is a big bear. John has a crenkil. John has a tail?
+Expected: None
+Received: True
+Input: Nice crenkils who have tails are strong. John is a nice crenkil. John has a tail. John is strong?
+Expected: True
+Received: Software error.
+Input: Nice crenkils who have tails are strong. John is a crenkil. John has a tail. John is strong?
+Expected: None
+Received: Software error.
+Input: Bears eat fish who are strong. John is a bear. John eats strong fish?
+Expected: True
+Received: Unknown
+Input: Bears eat red fish who are strong. John is a bear. John eats red strong fish?
+Expected: True
+Received: Unknown
+Input: Bears eat red fish who are strong. John is a bear. John eats red fish?
+Expected: True
+Received: Unknown
+Input: Bears eat red fish who are strong. John is a bear. John eats strong fish?
+Expected: True
+Received: Unknown
+Input: Bears who are nice eat fish who are strong. John is a nice bear. John eats strong fish?
+Expected: True
+Received: Unknown
+Input: Bears who are nice and white eat fish who are strong and red. John is a nice white bear. John eats red strong fish?
+Expected: True
+Received: Unknown
+Input: The big mouse is strong. The mouse is a big mouse?
+Expected: True
+Received: Unknown
+Input: The big mouse is strong. The mouse is a big mouse?
+Expected: True
+Received: Unknown
+Input: Bears who were nice ate. Nice bears ate?
+Expected: True
+Received: Unknown
+Input: Bears who are nice eat fish who are strong. John is a nice bear. Bears who are nice eat fish?
+Expected: True
+Received: Unknown
+Input: Bears who are nice eat fish who are strong. John is a nice bear. Bears who are nice eat fish?
+Expected: True
+Received: Unknown
+Input: The nice bear who was white and ate a big fish also ate berries. The white nice bear who ate a big fish also ate berries?
+Expected: True
+Received: Unknown
+Input: John is very big. John is extremely big?
+Expected: True
+Received: Unknown
+Input: John is somewhat big. John is slightly big?
+Expected: True
+Received: Unknown
+Input: John is very big. John is big?
+Expected: True
+Received: Unknown
+Input: John is very big. John is somewhat big?
+Expected: False
+Received: Unknown
+Input: John is somewhat big. John is very big?
+Expected: False
+Received: Unknown
+Input: John is somewhat big. John is big?
+Expected: True
+Received: Unknown
+Input: John is very big. John is not big?
+Expected: False
+Received: Unknown
+Input: John is somewhat big. John is not big?
+Expected: False
+Received: Unknown
+Input: John is not very big. John is big?
+Expected: True
+Received: Unknown
+Input: A not very big bear is nice. The bear is a very big bear?
+Expected: False
+Received: Unknown
+Input: A not very big bear is nice. The bear is a big bear?
+Expected: True
+Received: Unknown
+Input: If John is not very big, John is nice. John is somewhat big. John is nice?
+Expected: True
+Received: Unknown
+Input: A very big mouse is nice. The mouse is a very big mouse?
+Expected: True
+Received: Unknown
+Input: A very big mouse is nice. The mouse is a big mouse?
+Expected: True
+Received: Unknown
+Input: A very big mouse is nice. The mouse is a somewhat big mouse?
+Expected: False
+Received: Unknown
+Input: A very big mouse is nice. The mouse is big?
+Expected: True
+Received: Unknown
+Input: A very big mouse is nice. The mouse is somewhat big?
+Expected: False
+Received: Unknown
+Input: John had a car which Eve bought. John had a car which Eve bought?
+Expected: True
+Received: Unknown
+Input: John had a car Eve bought. John had a car which Eve bought?
+Expected: True
+Received: Unknown
+Input: John had a car which Mike did not buy. John had a car Mike did not buy?
+Expected: True
+Received: Unknown
+Input: John drove a car Mike bought. John drove a car which Mike bought?
+Expected: True
+Received: Unknown
+Input: John drove a car Mike bought. John drove a car which Mike bought?
+Expected: True
+Received: Unknown
+Input: John drove a red car which Eve bought. John drove a car Eve bought?
+Expected: True
+Received: Unknown
+Input: John did not have a red car which Eve bought. John did not have a red car which Eve bought?
+Expected: True
+Received: Unknown
+Input: John is a man Eve liked. John is a man whom Eve did not like?
+Expected: False
+Received: Unknown
+Input: A man had a car which a woman bought. A man had a car which a woman bought?
+Expected: True
+Received: Unknown
+Input: A man had a car a woman bought. A man had a car which a woman bought?
+Expected: True
+Received: Unknown
+Input: A man had a car a woman bought. The woman did not buy a car?
+Expected: False
+Received: Unknown
+Input: A man had a car a woman bought. The man did not have a car?
+Expected: False
+Received: Unknown
+Input: A man had a car which a woman bought. A man had a car?
+Expected: True
+Received: Unknown
+Input: A man had a car which a woman bought. A man had the car?
+Expected: True
+Received: Unknown
+Input: A man had a car which a woman bought. A woman bought the car?
+Expected: True
+Received: Unknown
+Input: A red car is big. The car is strong. The car is red and strong?
+Expected: True
+Received: Unknown
+Input: A man had a car which a woman bought. The car was red. The man had the car?
+Expected: True
+Received: Unknown
+Input: A man had a car which a woman bought. The car was red. The man had a red car?
+Expected: True
+Received: Unknown
+Input: A man had a car which a woman bought. The car was red. The man had the red car?
+Expected: True
+Received: Unknown
+Input: A man had a car which a woman bought. The car was red. The man had the red car which a woman bought?
+Expected: True
+Received: Unknown
+Input: A man had a car which a woman bought. The car was red. A man had a red car which a woman bought?
+Expected: True
+Received: Unknown
+Input: A man had a car which a woman bought. The car was red. The man did not have the red car which a woman bought?
+Expected: False
+Received: Unknown
+Input: A man had a car which he bought. The car was red. The man bought the red car?
+Expected: True
+Received: Unknown
+Input: A man who ate breakfast had a car which a woman bought. The car was red. 
+     The man who ate breakfast had the red car which the woman bought?
+Expected: True
+Received: Unknown
+Input: A man who ate breakfast had a car which a woman bought. The car was red.
+     The man who ate breakfast had the red car which a woman bought?
+Expected: True
+Received: Unknown
+Input: A man liked a car. The man did not like the car?
+Expected: False
+Received: Unknown
+Input: A man liked a car which a woman bought. The car was red. The man liked the car?
+Expected: True
+Received: Unknown
+Input: A man liked a car which a woman bought. The car was red. The man liked a red car?
+Expected: True
+Received: Unknown
+Input: A man liked a car which a woman bought. The car was red. The man liked the red car?
+Expected: True
+Received: Unknown
+Input: A man liked a car which a woman bought. The car was red. The man liked the red car which a woman bought?
+Expected: True
+Received: Unknown
+Input: A man liked a car which a woman bought. The car was red. The man did not like the red car which the woman bought?
+Expected: False
+Received: Unknown
+Input: A man liked a car which a woman bought. The car was red. The man did not like the red car which a woman bought?
+Expected: False
+Received: Unknown
+Input: A man liked a car which he bought. The car was red. The man bought the red car?
+Expected: True
+Received: Unknown
+Input: A man who ate breakfast liked a car which a woman bought. The car was red. 
+     The man who ate breakfast liked the red car which the woman bought?
+Expected: True
+Received: Unknown
+Input: A man who ate breakfast liked a car which a woman bought. The car was red.
+     The man who ate breakfast liked the red car which a woman bought?
+Expected: True
+Received: Unknown
+Input: A man had a car. A man has a car?
+Expected: True
+Received: Unknown
+Input: A man had a car. The man has a car?
+Expected: True
+Received: Unknown
+Input: The elephants saw a fox. They were nice. The elephants were nice?
+Expected: True
+Received: Unknown
+Input: The elephants saw a fox. It was nice.  The fox was nice?
+Expected: True
+Received: Unknown
+Input: The fox saw the elephants. It was nice.  The fox was nice?
+Expected: True
+Received: Unknown
+Input: A gray elephant was nice. A white elephant was nice. The elephant was cool. The white elephant was cool?
+Expected: True
+Received: Unknown
+Input: A gray elephant was nice. A white elephant was nice. It was cool. The white elephant was cool?
+Expected: True
+Received: Unknown
+Input: A gray elephant was nice. A white elephant was nice. It was cool. The gray elephant was cool?
+Expected: None
+Received: True
+Input: A big old grey elephant was strong. The big animal lifted a stone. The stone was red. The old animal lifted a red stone?
+Expected: True
+Received: Unknown
+Input: A big old grey elephant was strong. The big animal lifted a stone. The stone was heavy. The old animal lifted a heavy stone?
+Expected: True
+Received: Unknown
+Input: An apple was bad. She was in a room. She was in the room?
+Expected: True
+Received: Unknown
+Input: An apple was bad and she was in a room. An apple was in a room?
+Expected: None
+Received: True
+Input: If John has three cars, John has three cars?
+Expected: True
+Received: Unknown
+Input: John has three cars. John has two cars?
+Expected: False
+Received: Unknown
+Input: If John has three cars, John has two cars?
+Expected: None
+Received: Software error.
+Input: John has three nice cars. John has three nice cars?
+Expected: True
+Received: Unknown
+Input: Animals have two crenkils. Animals have three crenkils?
+Expected: False
+Received: Unknown
+Input: An animal had two crenkils. The animal had three crenkils?
+Expected: False
+Received: Unknown
+Input: If John has three cars, John has three cars?
+Expected: True
+Received: Unknown
+Input: John has three cars. John has two cars?
+Expected: False
+Received: Unknown
+Input: If John has three cars, John has two cars?
+Expected: None
+Received: Software error.
+Input: John has three nice cars. John has three nice cars?
+Expected: True
+Received: Unknown
+Input: John has three cars which are nice. John has three nice cars?
+Expected: True
+Received: Unknown
+Input: John has three nice cars. John has three cars?
+Expected: None
+Received: True
+Input: John has three nice big cars. John has three nice big cars?
+Expected: True
+Received: Unknown
+Input: John has three nice big cars. John has three big nice cars?
+Expected: True
+Received: Unknown
+Input: John has three nice cars. John has two cars?
+Expected: False
+Received: Unknown
+Input: John has three big nice cars. John has two nice cars?
+Expected: False
+Received: Unknown
+Input: John has three big nice cars. John has two big cars?
+Expected: False
+Received: Unknown
+Input: If John has three big nice cars, he is rich. John has three nice big cars. John is rich?
+Expected: True
+Received: Unknown
+Input: If a person has three big nice cars, he is rich. John has three nice big cars. John is rich?
+Expected: True
+Received: Unknown
+Input: An animal had two crenkils. The animal had a crenkil?
+Expected: True
+Received: Unknown
+Input: Animals have crenkils. Animal has a crenkil?
+Expected: True
+Received: Unknown
+Input: Crenkils live in the water. Crenkils live?
+Expected: True
+Received: Unknown
+Input: Crenkils happily live in water. Crenkils live?
+Expected: True
+Received: Unknown
+Input: Crenkils happily live in cold water. Crenkils live in water?
+Expected: True
+Received: Unknown
+Input: The car of Mary is clean. Mary has a car?
+Expected: True
+Received: Unknown
+Input: The car of Mary is clean. Mary has a clean car?
+Expected: True
+Received: Unknown
+Input: Mary's head is clean. Mary's head is clean?
+Expected: True
+Received: Unknown
+Input: Elephant's head is green. John is an elephant. John has a head. John has a green head?
+Expected: True
+Received: Unknown
+Input: Big elephant's head is green. John is a big elephant. John has a head. John has a green head?
+Expected: True
+Received: Unknown
+Input: A head of an elephant is green. Elephants have a head. John is an elephant. John has a green head?
+Expected: True
+Received: Unknown
+Input: John saw the car of Mary. Mary had a car?
+Expected: True
+Received: Unknown
+Input: John saw a head of an elephant. John saw the head of the elephant?
+Expected: None
+Received: True
+Input: John saw Mary's car. Mary had a car?
+Expected: True
+Received: Unknown
+Input: John saw a twig of an elephant. The elephant had a twig?
+Expected: True
+Received: Unknown
+Input: John saw a twig of an elephant. An elephant had a twig?
+Expected: True
+Received: Unknown
+Input: John saw the twig of an elephant. The elephant had a twig?
+Expected: True
+Received: Unknown
+Input: John saw the twig of an elephant. The elephant had the twig?
+Expected: True
+Received: Unknown
+Input: John saw a blue head of a red elephant. John saw a blue head?
+Expected: True
+Received: Unknown
+Input: The hand of a man moved a wheel. The man had a hand?
+Expected: True
+Received: Unknown
+Input: The hand of a man moved a wheel. A man had a hand?
+Expected: True
+Received: Unknown
+Input: A blue hand of a man moved a wheel of a large wheelbarrow. The man had a hand?
+Expected: True
+Received: Unknown
+Input: A blue hand of a man moved a crenkil of a large wheelbarrow. The wheelbarrow had a crenkil?
+Expected: True
+Received: Unknown
+Input: A blue hand of a man moved a crenkil of a large wheelbarrow. A large wheelbarrow had the crenkil?
+Expected: True
+Received: Unknown
+Input: A blue hand of a man moved a crenkil of a large wheelbarrow. The large wheelbarrow had a crenkil?
+Expected: True
+Received: Unknown
+Input: John ate berries with the edge of the crenkil. The crenkil had the edge?
+Expected: True
+Received: Unknown
+Input: Bears do not eat berries in a forest. Bears eat berries in a forest?
+Expected: False
+Received: Unknown
+Input: Bears ate nice berries in a big forest which was bought by Mary. Bears ate berries in the forest which was bought by her?
+Expected: True
+Received: Unknown
+Input: Bears ate nice berries in a big forest which was seen by Mary. Bears ate berries in the forest which was seen by her?
+Expected: True
+Received: Unknown
+Input: Bears ate nice berries in a big forest which was bought by Mike. Bears ate berries in the forest which was bought by him?
+Expected: True
+Received: Unknown
+Input: Bears ate berries in a forest which was bought by Mary. Bears ate berries in the forest bought by Mary?
+Expected: True
+Received: Unknown
+Input: Bears ate berries in a forest which was seen by Mary. Bears ate berries in the forest seen by Mary?
+Expected: True
+Received: Unknown
+Input: Bears ate berries in a forest which was seen by Mary. Mary saw the forest where the bears ate?
+Expected: True
+Received: Unknown
+Input: Bears ate berries in a forest which was bought by Mike. Mike bought the forest where the bears ate?
+Expected: True
+Received: Unknown
+Input: John ate berries in a forest with a spoon. John ate berries in a forest with a spoon?
+Expected: True
+Received: Unknown
+Input: John has a car which is nice and red. The car is red and nice?
+Expected: True
+Received: Unknown
+Input: John has a car which is nice and red. The red car is nice?
+Expected: True
+Received: Unknown
+Input: John lives in a red car bought by Mary. Mary bought the car where John lives?
+Expected: True
+Received: Unknown
+Input: Mike ate berries in the forest bought by Mary. Mike ate berries in the forest bought by Mary?
+Expected: True
+Received: Unknown
+Input: Bears ate berries in the forest which was bought by Mary. Bears ate berries in the forest bought by Mary?
+Expected: True
+Received: Unknown
+Input: Cars are red and cool and have crenkils. Cars have crenkils and are red and cool?
+Expected: True
+Received: Unknown
+Input: If an animal is cool and defeated then it is nice. 
+   John is an animal. John is cool. 
+   Mike is an animal. Mike is cool. John is defeated. John is nice?
+Expected: True
+Received: Unknown
+Input: If an animal is cool and defeated then it is nice. 
+   John is a cool defeated animal. 
+   Mike is an animal. Mike is cool. John is not nice?
+Expected: False
+Received: Unknown
+Input: Americans can not disappear. Mr Dursley is an American. Mr Dursley can disappear?
+Expected: False
+Received: Unknown
+Input: John smokes tobacco with a probability 10 percent. Does John smoke?
+Expected: None
+Received: True
+Input: John is in a box at the red house. The box is at a house?
+Expected: True
+Received: Unknown
+Input: Nile's length is 80 kilometers. The length of Nile is 90 kilometers?
+Expected: False
+Received: Unknown
+Input: Car's length is 80 kilometers. The length of the car is 90 kilometers?
+Expected: False
+Received: Unknown
+Input: The car's length is 80 kilometers. The length of the car is 90 kilometers?
+Expected: False
+Received: Unknown
+Input: The red car's length is 80 kilometers. The length of the car is 90 kilometers?
+Expected: False
+Received: Unknown
+Input: Emajogi's length is 80 kilometers. Emajogi's length is 90 kilometers?
+Expected: False
+Received: Unknown
+Input: Emajogi's length is 80 kilometers. The length of Emajogi is 90 kilometers?
+Expected: False
+Received: Unknown
+Input: The length of Emajogi is 80 kilometers. Emajogi is 90 kilometers long?
+Expected: False
+Received: Unknown
+Input: The nice Emajogi is 80 kilometers long. The nice Emajogi is 90 kilometers long?
+Expected: False
+Received: Unknown
+Input: The red straw is 10 meters long. The red straw is 20 meters long?
+Expected: False
+Received: Unknown
+Input: John has the length 2 meters. John is 2 meters long?
+Expected: True
+Received: Unknown
+Input: John has the length 2 meters. John is 3 meters long?
+Expected: False
+Received: Unknown
+Input: John has length of 2 meters. John is 2 meters long?
+Expected: True
+Received: Unknown
+Input: John has length of 2 meters. John is 3 meters long?
+Expected: False
+Received: Unknown
+Input: John's length is 2 meters. John is 2 meters long?
+Expected: True
+Received: Unknown
+Input: The price of the red car is 2000 dollars. The price of the red car is 3000 dollars?
+Expected: False
+Received: Unknown
+Input: The red car costs 2000 dollars. The price of the red car is 3000 dollars?
+Expected: False
+Received: Unknown
+Input: The red car has the price two dollars. The red car costs three dollars?
+Expected: False
+Received: Unknown
+Input: The red car has the price two dollars. The blue car costs three dollars. The red car costs 3 dollars?
+Expected: False
+Received: Unknown
+Input: The red car has the price two dollars. The blue car costs three dollars. The blue car costs 2 dollars?
+Expected: False
+Received: Unknown
+Input: The red car has the price two dollars. The blue car costs three dollars. The price of the red car equals the price of the blue car?
+Expected: False
+Received: Unknown
+Input: The red car has the price two dollars. The blue car costs three dollars. The price of the red car equals the price of the red car?
+Expected: True
+Received: Unknown
+Input: The red car has the price three dollars. The blue car costs three dollars. The price of the red car is the same as the price of the blue car?
+Expected: True
+Received: Unknown
+Input: The red car has the price three dollars. The blue car costs two dollars. The price of the red car is the same as the price of the blue car?
+Expected: False
+Received: Unknown
+Input: The red car has the price three dollars. The blue car costs three dollars. The red car costs as much as the blue car?
+Expected: True
+Received: Unknown
+Input: The red car has the price three dollars. The blue car costs two dollars. The red car costs as much as the blue car?
+Expected: False
+Received: Unknown
+Input: The red car has the price three dollars. The blue car costs three dollars. The red car is as expensive as the blue car?
+Expected: True
+Received: Unknown
+Input: The red car has the price three dollars. The blue car costs two dollars. The red car is as expensive as the blue car?
+Expected: False
+Received: Unknown
+Input: The red car has the price three dollars. The blue car costs three dollars. The red car is as cheap as the blue car?
+Expected: True
+Received: Unknown
+Input: The red car has the price three dollars. The blue car costs two dollars. The red car is as cheap as the blue car?
+Expected: False
+Received: Unknown
+Input: The red car has the price three dollars. The blue car costs three dollars. The red car has the same price as the blue car?
+Expected: True
+Received: Unknown
+Input: The red car has the price three dollars. The blue car costs two dollars. The red car has the same price as the blue car?
+Expected: False
+Received: Unknown
+Input: The length of the red car is three meters. The blue car is 2 meters long. The red car has the same length as the blue car?
+Expected: False
+Received: Unknown
+Input: The length of the red car is three meters. The blue car is 2 meters long. The red car does not have the same length as the blue car?
+Expected: True
+Received: Unknown
+Input: The length of the red car is three meters. The blue car is 3 meters long. The red car has the same length as the blue car?
+Expected: True
+Received: Unknown
+Input: The length of the red car is three meters. The blue car is 3 meters long. The red car does not have the same length as the blue car?
+Expected: False
+Received: Unknown
+Input: The length of the red car is 3 meters. The length of the black car is 5 meters. 
+      The length of the red car is more than the length of the black car?
+Expected: False
+Received: Unknown
+Input: The length of the red car is 3 meters. The length of the black car is 5 meters. 
+      The length of the red car is less than the length of the black car?
+Expected: True
+Received: Unknown
+Input: The length of the red car is 3 meters. The length of the black car is 5 meters. 
+      The length of the red car is less than 2 meters?
+Expected: False
+Received: Unknown
+Input: The length of the red car is 3 meters. The length of the black car is 5 meters. 
+      The length of the red car is over 2 meters?
+Expected: True
+Received: Unknown
+Input: The length of the red car is 3 meters. The length of the black car is 5 meters.   
+      The length of the red car is more than 2 meters?
+Expected: True
+Received: Unknown
+Input: The length of the red car is 3 meters. The length of the black car is 5 meters.   
+      The length of the red car is under 4 meters?
+Expected: True
+Received: Unknown
+Input: The length of the car is 3 meters. The bike has the same length as the car. The length of the bike is 3 meters?
+Expected: True
+Received: Unknown
+Input: The price of the car is 3 dollars. The bike has the same price as the car.  The price of the bike is 3 dollars?
+Expected: True
+Received: Unknown
+Input: The price of the car is 3 dollars. The bike is as expensive as the car. The price of the bike is 3 dollars?
+Expected: True
+Received: Unknown
+Input: The price of the car is 3 dollars. The bike is as expensive as the car. The price of the bike is 2 dollars?
+Expected: False
+Received: Unknown
+Input: The price of the car is 3 dollars. The bike costs as much as the car. The bike costs 3 dollars?
+Expected: True
+Received: Unknown
+Input: The price of the car is 3 dollars. The bike costs as much as the car. The price of the bike is less than 20 dollars?
+Expected: True
+Received: Unknown
+Input: The price of the car is 3 dollars. The bike costs as much as the car. The price of the bike is more than 20 dollars?
+Expected: False
+Received: Unknown
+Input: The price of the car is 3 dollars. The bike costs as much as the car. The bike costs less than 20 dollars?
+Expected: True
+Received: Unknown
+Input: The price of the car is 3 dollars. The bike costs as much as the car. The bike costs more than 20 dollars?
+Expected: False
+Received: Unknown
+Input: The weight of the car is 3 tons. The bike weighs as much as the car. The bike weighs less than 20 tons?
+Expected: True
+Received: Unknown
+Input: The weight of the car is 3 tons. The bike weighs as much as the car. The bike weighs more than 2 tons?
+Expected: True
+Received: Unknown
+Input: The weight of the car is 3 tons. The bike weighs as much as the car. The bike weighs more than 20 tons?
+Expected: False
+Received: Unknown
+Input: The weight of the car is above 20 tons. The car weighs more than 20 tons?
+Expected: True
+Received: Unknown
