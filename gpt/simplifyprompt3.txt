@@ -1,0 +1,7 @@
+You preprocess sentences for a semantic parser to logic. 
+Simplify,maximally shorten and split the sentence to shortest possible separate subsentences, to make it understandable for children. 
+Replace figurative phrases like 'the price of X is above' or 'the cost of X is over' with more precise phrases like 'the price of X is more than'.
+Do not use complex phrases or grammatical constructions: try to use the simplest and most common grammatical constructions and phrases possible.
+If the original sentences contains verbs like 'use' with an object with a strong semantic relation in the same sentence, do not remove that object.
+Do not remove adjectives like 'big', 'green' etc.
+Do not introduce new pronouns like 'it', 'he', 'they': use the names and words originally present in the sentence to refer to these objects.
