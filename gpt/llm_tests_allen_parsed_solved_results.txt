@@ -1,0 +1,111 @@
+
+=== running test llm_tests_allen_results_converted.py ===
+
+Starting to run 31 tests
+0111001111111000010001100011111
+Testing finished in 3.591 seconds
+Tests run: 31
+OK tests: 18
+Failed tests: 13
+
+Tests which failed:
+Input: Metals conduct electricity. Insulators do not conduct electricity. If something is made of iron then it is metal. 
+      Nails are made of iron. Nails conduct electricity?
+Expected: True
+Received: Unknown
+Input: Harry can do magic. Muggles cannot do magic. If a person can do magic then they can vanish.
+    If a person cannot do magic then they cannot vanish. Mr Dursley is a Muggle. Muggles can vanish?
+Expected: None
+Received: False
+Input: Harry can do magic. Muggles cannot do magic. If a person can do magic then they can vanish.
+    If a person cannot do magic then they cannot vanish. Mr Dursley is a Muggle. 
+     Muggles are persons. Muggles can vanish?
+Expected: False
+Received: Unknown
+Input: Arthur is a bird. Arthur is not wounded. Bill is an ostrich. Colin is a bird. Colin is wounded. Dave is not an ostrich.
+      Dave is wounded. If someone is an ostrich then they are a bird. If someone is an ostrich then they are abnormal.
+      If someone is an ostrich then they cannot fly. If someone is a bird and wounded then they are abnormal.
+      If someone is wounded then they cannot fly. If someone is a bird and not abnormal then they can fly.
+      Arthur can fly?
+Expected: True
+Received: Unknown
+Input: "Arthur is a bird. Arthur is not wounded. Bill is a penguin. Colin is a bird. Colin is wounded. Dave is not a penguin. 
+      Dave is wounded. If someone is an ostrich then they are a bird. If someone is a penguin then they are abnormal.
+      If someone is a penguin then they cannot fly. If someone is a bird and wounded then they are abnormal.
+      If someone is wounded then they cannot fly. If someone is a bird and not abnormal then they can fly.
+      Most objects are not abnormal. Arthur can fly?
+Expected: True
+Received: Unknown
+Input: "Arthur is a bird. Arthur is not wounded. Bill is a penguin. Colin is a bird. Colin is wounded. Dave is not a penguin. 
+      Dave is wounded. If someone is an ostrich then they are a bird. If someone is a penguin then they are abnormal.
+      If someone is a penguin then they cannot fly. If someone is a bird and wounded then they are abnormal.
+      If someone is wounded then they cannot fly. If someone is a bird and not abnormal then they can fly.
+      Most objects are not abnormal. Colin can fly?
+Expected: False
+Received: Unknown
+Input: The circuit has a switch. The circuit has a bell. The switch is on. 
+      If the circuit has the switch and the switch is on then the circuit is complete.
+      If the circuit does not have the switch then the circuit is complete. 
+      If the circuit is complete and the circuit has the light bulb then the light bulb is glowing.
+      If the circuit is complete and the circuit has the bell then the bell is ringing.
+      If the circuit is complete and the circuit has the radio then the radio is playing. 
+      The bell is ringing?
+Expected: True
+Received: Unknown
+Input: The circuit does not have a switch. The circuit has a bell. The switch is off. 
+      If the circuit has the switch and the switch is on then the circuit is complete.
+      If the circuit does not have the switch then the circuit is complete. 
+      If the circuit is complete and the circuit has the light bulb then the light bulb is glowing.
+      If the circuit is complete and the circuit has the bell then the bell is ringing.
+      If the circuit is complete and the circuit has the radio then the radio is playing. 
+      The bell is ringing?
+Expected: True
+Received: Unknown
+Input: The circuit does not have a switch. The circuit has a bell.
+      If the circuit has the switch and the switch is on then the circuit is complete.
+      If the circuit does not have the switch then the circuit is complete. 
+      If the circuit is complete and the circuit has the light bulb then the light bulb is glowing.
+      If the circuit is complete and the circuit has the bell then the bell is ringing.
+      If the circuit is complete and the circuit has the radio then the radio is playing. 
+      The bell is ringing?
+Expected: True
+Received: Unknown
+Input: The circuit has a bell. The switch is on. 
+      If the circuit has the switch and the switch is on then the circuit is complete.
+      If the circuit does not have the switch then the circuit is complete. 
+      If the circuit is complete and the circuit has the light bulb then the light bulb is glowing.
+      If the circuit is complete and the circuit has the bell then the bell is ringing.
+      If the circuit is complete and the circuit has the radio then the radio is playing. 
+      The bell is ringing?
+Expected: True
+Received: Unknown
+Input: The circuit has a switch. The circuit has a bell. The switch is on. 
+      The circuit has a light bulb.
+      If the circuit has the switch and the switch is on then the circuit is complete.
+      If the circuit does not have the switch then the circuit is complete. 
+      If the circuit is complete and the circuit has the light bulb then the light bulb is glowing.
+      If the circuit is complete and the circuit has the bell then the bell is ringing.
+      If the circuit is complete and the circuit has the radio then the radio is playing. 
+      The light bulb is glowing or the radio is playing?
+Expected: True
+Received: Software error.
+Input: The circuit has a switch. The circuit has a bell. The switch is on. 
+      The circuit has a light bulb and a radio.
+      If the circuit has the switch and the switch is on then the circuit is complete.
+      If the circuit does not have the switch then the circuit is complete. 
+      If the circuit is complete and the circuit has the light bulb then the light bulb is glowing.
+      If the circuit is complete and the circuit has the bell then the bell is ringing.
+      If the circuit is complete and the circuit has the radio then the radio is playing. 
+      The light bulb is glowing and the radio is playing?
+Expected: True
+Received: Unknown
+Input: The circuit has a switch. The circuit has a bell. The switch is on. 
+      The circuit has a light bulb and a radio.
+      If the circuit has the switch and the switch is on then the circuit is complete.
+      If the circuit does not have the switch then the circuit is complete. 
+      If the circuit is complete and the circuit has the light bulb then the light bulb is glowing.
+      If the circuit is complete and the circuit has the bell then the bell is ringing.
+      If the circuit is complete and the circuit has the radio then the radio is playing. 
+      A radio is playing?
+Expected: True
+Received: Unknown
