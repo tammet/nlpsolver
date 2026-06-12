@@ -41,6 +41,7 @@
 #-----------------------------------------------------------------
 
 from lc_ctxt import fresh_fv as _fresh_fv
+from globals import options as _g_options
 from lc_clausify import is_world_constant as _is_world_constant
 
 # ======== soft synonym and exclusion axiom injection ========
@@ -985,8 +986,32 @@ def inject_verb_result_state_axioms(result, axiom_vocab=frozenset()):
   """
   del axiom_vocab  # unused; see docstring
   words = _collect_eligible_words(result)
+  slight = _g_options.get("slightcoarse_flag", False)
   axioms = []
   for verb, prop in _VERB_RESULT_STATES:
+    # (slightcoarse) Bridge C: the result state arrived directly as the past
+    # participle (has property "destroyed" X at past/W) with no verb form in
+    # the clauses (split-mode claude, case 1052).  Persist it into the next
+    # world at present tense — the same target context Bridges A/B produce —
+    # so the mutex axioms (destroyed/intact) can fire on the question's
+    # present-tense reading.
+    if slight and prop in words:
+      tc  = _fresh_fv()
+      wca = _fresh_fv()
+      wcb = _fresh_fv()
+      lc  = _fresh_fv()
+      kc  = _fresh_fv()
+      clause_c = [
+          ["-has property", prop, "?:X", ["$ctxt", tc, wca, lc, kc]],
+          ["-next",         wca,  wcb],
+          ["has property",  prop, "?:X", ["$ctxt", "present", wcb, lc, kc]],
+          ["$block", 0,
+            ["$not", ["has property", prop, "?:X",
+                      ["$ctxt", "present", wcb, lc, kc]]]],
+      ]
+      axioms.append({"@name": "frm_verb_result",
+                      "@logic": clause_c,
+                      "@confidence": 0.9})
     if verb not in words:
       continue
     # Bridge A: event-based encoding (gemini/deepseek style).

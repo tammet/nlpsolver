@@ -387,7 +387,39 @@ def _sdc_widen_negation(ant, cons):
 
 # (slightcoarse) Off-inventory predicate names Stage-2 drifts into (isolated
 # -s2split calls most of all), mapped to their inventory forms.
-_OFFINV_PRED_RENAME = {"has": "have", "has rel2": "is rel2"}
+_OFFINV_PRED_RENAME = {"has": "have", "has rel2": "is rel2",
+                       "has agent": "has actor"}
+
+# (slightcoarse) Adjective -> measurement-dimension noun, for $measure_of
+# terms whose dimension slot drifted to the adjective ("$measure_of tall"
+# instead of "$measure_of height", claude case 552).
+_ADJ_DIMENSION = {
+  "tall": "height", "high": "height", "heavy": "weight", "long": "length",
+  "old": "age", "big": "size", "large": "size", "fast": "speed",
+  "wide": "width", "deep": "depth", "hot": "temperature", "far": "distance",
+}
+
+from lc_post_normalize import GRADABLE_PROPS as _GRADABLE_PROPS
+
+
+def _comparative_to_base(word):
+  """"higher than" / "higher" -> "high"; "nicer" -> "nice"; "bigger" -> "big".
+  Strips a trailing " than", then tries the standard -er reversals, accepting
+  a candidate only if it is a known gradable adjective.  Returns the original
+  string when nothing matches (so ordinary relation names are untouched)."""
+  w = word
+  if w.endswith(" than"):
+    w = w[:-5].strip()
+  if w.startswith("more "):
+    cand = w[5:].strip()
+    return cand if cand in _GRADABLE_PROPS else word
+  if w in _GRADABLE_PROPS:
+    return w
+  if w.endswith("er"):
+    for cand in (w[:-2], w[:-1], w[:-3]):   # tall-er, nice-r, bigg-er
+      if cand and cand in _GRADABLE_PROPS:
+        return cand
+  return word
 
 
 def _rename_offinventory_preds(node):
@@ -396,8 +428,17 @@ def _rename_offinventory_preds(node):
   head = node[0]
   if isinstance(head, str) and head in _OFFINV_PRED_RENAME:
     head = _OFFINV_PRED_RENAME[head]
-  return [head] + [_rename_offinventory_preds(x) if isinstance(x, list) else x
-                   for x in node[1:]]
+  out = [head] + [_rename_offinventory_preds(x) if isinstance(x, list) else x
+                  for x in node[1:]]
+  # comparative-phrase relation name: has degree rel2("higher than",...) ->
+  # ("high",...)  (gemini case 553; also bare "higher")
+  if (head in ("has degree rel2", "is rel2") and len(out) >= 2
+      and isinstance(out[1], str)):
+    out[1] = _comparative_to_base(out[1])
+  # adjective-as-dimension: $measure_of("tall", X, W) -> ("height", X, W)
+  if head == "$measure_of" and len(out) >= 2 and isinstance(out[1], str):
+    out[1] = _ADJ_DIMENSION.get(out[1], out[1])
+  return out
 
 
 def _repair_self_defeating_conditional(logic):

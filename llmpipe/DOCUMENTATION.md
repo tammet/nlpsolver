@@ -2957,8 +2957,13 @@ arithmetic, plus off-inventory predicate drift `has`/`has rel2`).  The repair pa
 for these has its own flag, `-slightcoarse` (option key `slightcoarse_flag`) — it is
 NOT implied by `-s2split`, composes with it (and with the default joint mode), and
 is inert on all other paths.  It enables:
-- an off-inventory rename pass (`has` → `have`, `has rel2` → `is rel2`) in
-  `logconvert`;
+- an off-inventory rename and form-normalization pass in `logconvert`:
+  predicate renames (`has` → `have`, `has rel2` → `is rel2`, `has agent` →
+  `has actor`), comparative-phrase relation names reduced to the base adjective
+  (`has degree rel2("higher than", …)` → `"high"`, gated on the gradables
+  whitelist so ordinary relation names are untouched), and adjective-as-dimension
+  `$measure_of` slots mapped to the dimension noun (`$measure_of("tall", …)` →
+  `"height"`);
 - dynamic shape bridges (`lc_post_inject.inject_slightcoarse_shape_bridges`, confidence
   0.99, each gated on both shapes being present): `has_destination` → `has_location`
   (axioms_std.js has only verb-specific location/destination siblings), beneficiary/recipient lift from the event to
@@ -2966,9 +2971,18 @@ is inert on all other paths.  It enables:
   dimension→adjective table;
 - compound composition in property shape (`build_compound_subsumption(degree_comp=True)`):
   the modifier may arrive as a degree/simple property instead of an `isa`;
-- broad-supertype `isa(person/animal, E)` emission (shared with the coarse gate).
+- broad-supertype `isa(person/animal, E)` emission (shared with the coarse gate);
+- a participle-persistence variant (Bridge C) in `inject_verb_result_state_axioms`:
+  when the result state arrives directly as the past participle
+  (`has property("destroyed", X)` at past/W, no verb form in the clauses), persist
+  it into the next world at present tense — the same target context Bridges A/B
+  produce — so the result-state mutexes can fire on the question's present-tense
+  reading.
 
-On the curated 100-subset with gpt: `-s2split` alone scores 93/100
-(`testresults/core_100_s2split_only/`); `-s2split -slightcoarse` scores 100/100
-(`testresults/core_100_s2split_slightcoarse/`) — the joint two-stage score, with no
-regressions.
+On the curated 100-subset (joint two-stage baseline = 100/100 for all four LLMs by
+construction): `-s2split` alone scores 93/100 for gpt
+(`testresults/core_100_s2split_only/`); `-s2split -slightcoarse`
+(`testresults/core_100_s2split_slightcoarse/`) scores gpt 100/100, claude 100/100,
+deepseek 97/100 — the three residual deepseek cases (541, 663, 1335: generic-question
+subject construction, category-instead-of-noun typing, RELCLASS divergence) are
+diagnosed but deliberately unfixed pending proof-level analysis.
