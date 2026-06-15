@@ -178,6 +178,28 @@ def _collect_event_roles(block, E):
   return state["v"], state["a"], objs, state["c"]
 
 
+def _typed_existential_vars(block, E):
+  """Map each variable bound by a nested `exists V [... isa(TYPE,V) ...]` in the
+  block to its isa-type TYPE.  Used to fold a typed-existential role filler
+  ("eat salads" = exists Y[isa(salad,Y) & has_target(E,Y)]) to the bare type name
+  instead of leaving the inner var stranded as an unbound constant.  Excludes the
+  event var E itself; only exists-bound vars qualify, so genuine constants and
+  forall vars are never rewritten."""
+  exist_vars = set()
+  types = {}
+  def walk(n):
+    if isinstance(n, list) and n:
+      if n[0] == "exists" and len(n) >= 2 and isinstance(n[1], str):
+        exist_vars.add(n[1])
+      if (n[0] == "isa" and len(n) >= 3 and isinstance(n[1], str)
+          and isinstance(n[2], str)):
+        types.setdefault(n[2], n[1])           # entity -> type
+      for x in n:
+        walk(x)
+  walk(block)
+  return {v: t for v, t in types.items() if v in exist_vars and v != E}
+
+
 def _fold_event_flat(and_block, E, content_inner):
   """(ultracoarse) Aggressively flatten one event block; None if not an event or
   if it is the inner content event of a two-event reification."""
@@ -199,6 +221,15 @@ def _fold_event_flat(and_block, E, content_inner):
     obj = objs[present[1]] if len(present) > 1 else None
   else:
     return None                              # subject-less event: keep reified
+  # Resolve typed-existential role fillers ("Y" with isa(salad,Y)) to the type
+  # name, so the folded relation carries a meaningful, cross-sentence-consistent
+  # object instead of a stranded inner var.
+  typed = _typed_existential_vars(and_block, E)
+  if typed:
+    if isinstance(subject, str):
+      subject = typed.get(subject, subject)
+    if isinstance(obj, str):
+      obj = typed.get(obj, obj)
   if obj is not None:
     return ["is rel2", vtype, subject, obj]
   return ["has property", vtype, subject]
@@ -579,6 +610,16 @@ def inject_verb_bridges(result):
   return out
 
 
+def _coarsen_one(node, content_inner, ultra):
+  """Fold one scope: coarsen events, then (ultracoarse) fold antecedent event
+  groups and drop the now-redundant guards."""
+  node = _coarsen_node(node, content_inner, ultra)
+  if ultra:
+    node = _fold_antecedent_events(node, content_inner, ultra)
+    node = _drop_redundant_guards(node)
+  return node
+
+
 def coarsen_events(tree, ultra=False):
   """Top-level entry: fold collapsible events across the tree."""
   if not isinstance(tree, list) or not tree:
@@ -588,12 +629,21 @@ def coarsen_events(tree, ultra=False):
     _verb_index = _build_verb_index(tree)  # for two-event inner-verb lookup
     tree = _canonicalize_entities(tree)
     tree = _collapse_degree_node(tree)     # degrees -> simple, before guard-drop
+    # (ultracoarse) Scope the content-inner var set PER top-level package.
+    # Stage 2 reuses event names (E1/E2/...) across sentences, so a single
+    # tree-wide set lets a has_content inner var in one sentence wrongly block
+    # folding an unrelated event of the same name in another (cases 2, 3:
+    # "...E2..." attend event blocked by an E2 content-inner elsewhere).  Per
+    # package each `@id`/`holds` formula folds against only its own inner-content
+    # vars, still skipping a genuine same-scope inner content event.
+    if tree[0] == "and":
+      return [tree[0]] + [
+        _coarsen_one(child, _collect_content_inner_vars(child), ultra)
+        if isinstance(child, list) else child
+        for child in tree[1:]]
+    return _coarsen_one(tree, _collect_content_inner_vars(tree), ultra)
   content_inner = _collect_content_inner_vars(tree)
-  tree = _coarsen_node(tree, content_inner, ultra)
-  if ultra:
-    tree = _fold_antecedent_events(tree, content_inner, ultra)
-    tree = _drop_redundant_guards(tree)
-  return tree
+  return _coarsen_one(tree, content_inner, ultra)
 
 
 def rel2_event_axiom_clauses():
