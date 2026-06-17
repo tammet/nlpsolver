@@ -7,6 +7,21 @@ Detailed reference lives in DOCUMENTATION.md; this file stays concise.
 
 `llmpipe` is an experimental pipeline for semantic parsing of natural language into first-order predicate logic using LLMs (OpenAI GPT, Anthropic Claude, Google Gemini, DeepSeek). It is part of the larger `nlpsolver` repository. Parsed logic is passed to the `gk` binary theorem prover which returns answers.
 
+## Repository layout
+
+**Tracked (committed):** `solver/` (pipeline code), `tests/` (canonical test sets + `FOLIO_yale/` source data), `prompts/` (Stage-1/2 + combined prompts), `mkdata/` (solver-data generators), `axioms_std.js`, the `*.md` docs, and the top-level runners `runtests.py` / `test.py` / `ask.py`.
+
+**Untracked / gitignored (local working data):**
+- `testresults/` — per-run batch results. Run folders are named `<benchmark>_<shape>_<date>` (e.g. `core_two-stage_2026-06-03`, `folio_two-stage-abstracted_2026-06-14`) and mirror the published `/opt/nlformtasks` package; also holds the experiment overviews/memos. See `testresults/README.md`.
+- `fixlogs/` — `testfixlog_*.txt` fix logs (hand-maintained).
+- `memos/` — dated session memos and notes.
+- `debug/` — `examine.py` output + FOLIO scratch; `elogs/` — experiment logs.
+- `prompts/archive/` — superseded prompt drafts.
+- `ideas/`, `lparpaper/`, `nesypaper/` — research / paper material.
+- `cache.db` — SQLite LLM+prover cache; `examine.py` / `compare_runtests_json.py` / `tools/` — local utility scripts.
+
+`/opt/nlformtasks` is the standalone published release of the test sets and their results (renamed there: `tests_<x>` → `<x>_tests`).
+
 ## Running the Pipeline
 
 All scripts are run from the `llmpipe/` directory.
@@ -18,9 +33,6 @@ python3 solver/solve.py "Elephants are animals. John is an elephant. Is John an 
 # Run the test suite (default: tests/tests_core.py)
 python3 test.py
 python3 test.py tests/tests_core.py -llm claude
-
-# Regenerate the logconvert pretty-print check file
-python3 run_pretty_check.py > logconvert_check.txt
 ```
 
 ### solve.py flags
@@ -196,7 +208,7 @@ prompts/stage2_instructions_full.txt   -- Stage 2 system prompt instructions
 prompts/stage2_checklist_full.txt      -- Stage 2 procedural checklist
 prompts/stage2_examples.txt            -- Stage 2 few-shot examples
 ```
-`prompts/tmparchive/` holds historical prompt versions.
+`prompts/archive/` (gitignored) holds historical/superseded prompt versions; `prompts/COMBINED_PROMPT_MEMO.md` documents the combined single-stage prompt family.
 
 ### LLM Configuration (`solver/llmcall.py`)
 
@@ -227,15 +239,15 @@ Full solver data: http://logictools.org/data/nlpsolver_data.tar.gz
 ### Test Data
 
 - `tests/tests_core.py` — list of `[id, input, expected]` triples for the core pipeline
-- `testresults/core/<llm>/case_NNNN.json` — latest batch results per LLM (input, expected, answer, correctness, stage1/stage2/clauses/gk_command/proof); the primary debug input
-- `testresults/core/all4_failed.txt`, `failed_cases.txt` — triage lists of failing cases
+- `testresults/core_two-stage_2026-06-03/<llm>/case_NNNN.json` — latest core batch results per LLM (input, expected, answer, correctness, stage1/stage2/clauses/gk_command/proof); the primary debug input. (`testresults/` is gitignored; run folders follow `<benchmark>_<shape>_<date>`.)
+- `testresults/core_two-stage_2026-06-03/multi_failed.{txt,json}` — triage list of cases any LLM failed
 
 ## Debug Case Workflow
 
-When the user says **"Debug case N"** (N is a case id in `testfixlog_june.txt` or the `all4_failed.txt`/`failed_cases.txt` lists):
+When the user says **"Debug case N"** (N is a case id in `fixlogs/testfixlog_june.txt` or the `testresults/core_two-stage_2026-06-03/multi_failed.txt` list):
 
-1. **Read the four batch result files** for Case N — `testresults/core/{claude,gpt,gemini,deepseek}/case_NNNN.json` (zero-padded to 4 digits). Each JSON contains `input_text`, `expected_answer`, `answer`, `correctness`, plus `stage1`, `stage2`, `clauses`, `gk_command`, `proof` — no need to re-run the solver to inspect parse/proof (they come from the SQLite cache and match a fresh run). For fuller `-debug -explain -logic` logs, run `python3 examine.py N` → writes `debug/eN_{gemini,claude,gpt,deepseek}.txt`.
-2. **Note the `Input:` text and `Expected:` value** — from the JSON and/or the `testfixlog_june.txt` entry.
+1. **Read the four batch result files** for Case N — `testresults/core_two-stage_2026-06-03/{claude,gpt,gemini,deepseek}/case_NNNN.json` (zero-padded to 4 digits). Each JSON contains `input_text`, `expected_answer`, `answer`, `correctness`, plus `stage1`, `stage2`, `clauses`, `gk_command`, `proof` — no need to re-run the solver to inspect parse/proof (they come from the SQLite cache and match a fresh run). For fuller `-debug -explain -logic` logs, run `python3 examine.py N` → writes `debug/eN_{gemini,claude,gpt,deepseek}.txt`.
+2. **Note the `Input:` text and `Expected:` value** — from the JSON and/or the `fixlogs/testfixlog_june.txt` entry.
 3. **Compare across all four LLMs** — read the JSONs/logs fully. For a UDP-pipeline reference answer (not in the batch, not run by `examine.py`), run the udppipe solver manually and include it when informative.
 4. **Examine Stage 1 and Stage 2** — a correct final answer is not sufficient. Report major conceptual differences (wrong entity types, missing isa guards, flat vs nested quantifiers, dropped conditions). Both stages must be correct.
 5. **Assess the Expected value** — form an independent opinion on whether it is correct under a normal reading, or should change. A UDP answer is correct in most but not all cases.
@@ -245,13 +257,13 @@ When the user says **"Debug case N"** (N is a case id in `testfixlog_june.txt` o
 9. **Prover-timeout suspected?** — try in order: (a) run without `axioms_std.js`; (b) swap strategy to `{"strategy":["unit"]}` or `{"strategy":["query_focus"]}` with `query_preference:1`; (c) last resort, raise `-seconds`. If an alternate strategy is much faster, the default may need to change.
 10. **Write analysis and fix plan** — summarize root cause(s) and propose a concrete plan. Do **not** write code or modify files at this stage.
 
-**Fix scope (current campaign):** fixes go into **pipeline code, axioms, or test criteria** (including removing/correcting a bad test case). **Leave the prompt files unchanged.** If a case needs a `prompts/` change, postpone it — record the diagnosis in `testfixlog_june.txt` and move on.
+**Fix scope (current campaign):** fixes go into **pipeline code, axioms, or test criteria** (including removing/correcting a bad test case). **Leave the prompt files unchanged.** If a case needs a `prompts/` change, postpone it — record the diagnosis in `fixlogs/testfixlog_june.txt` and move on.
 
 ## Register Fix Workflow
 
 When the user says **"Register fix for case N"** (analysis done, fix implemented and verified):
 
-1. **Read the Case N entry in `testfixlog_june.txt`**. If none exists, create one (Case / Input / Expected / Received, matching the file's style).
+1. **Read the Case N entry in `fixlogs/testfixlog_june.txt`**. If none exists, create one (Case / Input / Expected / Received, matching the file's style).
 2. **Add brief `Conclusion:`, `Cause:`, `Fixes:` fields** — one or two short lines each, matching existing entries.
 3. **Do not rewrite or remove existing fields** — only add what is missing.
 
@@ -269,9 +281,6 @@ When the user says **"Register fix for case N"** (analysis done, fix implemented
 ### Other Top-Level Scripts
 
 - `runtests.py` — batch runner: every `[id,input,expected]` case × N LLMs in parallel, one JSON per (case, llm) under `testresults/<name>/<llm>/case_NNNN.json`, with a live `summary.json`. Resumes by skipping existing files; `-redo`/`-redo-errors` override; `-sequential` runs serially. See DOCUMENTATION.md §10.
-- `nlpsimplecollect.py` — collect LLM parsing results for a test file
-- `nlpsimpleconv.py` — parse and clean raw collected results
-- `collectmultillmconv.py` — orchestrate multiple LLM providers in one collection run
-- `comparellmconv.py` — compare Stage-1 outputs from multiple LLM runs
-- `checkprompt.py` — validate JSON in prompt files
-- `run_pretty_check.py` — run `rawlogic_convert` on 10 examples and pretty-print results
+- `examine.py` — write per-LLM `-debug -explain -logic` logs for a case id to `debug/eN_{gemini,claude,gpt,deepseek}.txt` (used by the Debug Case Workflow).
+- `compare_runtests_json.py` — diff two `runtests.py` result trees.
+- Collection / comparison / prompt-check helpers (`collectmultillmconv.py`, `comparellmconv.py`, `checkprompt.py`, …) now live in `tools/`.
