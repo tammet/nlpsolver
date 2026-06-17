@@ -22,6 +22,8 @@ secrets/*secrets*
 /llmpipe/lparpaper/
 /llmpipe/nesypaper/
 /llmpipe/tools/
+/llmpipe/examine.py
+/llmpipe/compare_runtests_json.py
 /nlp/
 /llama/
 /full_gpt/
