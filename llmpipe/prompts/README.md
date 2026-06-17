@@ -64,17 +64,17 @@ two-stage texts):
 | File | Construction |
 |------|--------------|
 | `combined_minimal_instructions_full.txt` | `minimal` — cheapest: output-format signature and core conventions only (~10 KB), no per-case rules |
-| `combined_instructions_full.txt`         | `v1` — the two stage specifications concatenated, reframed as "work in two steps, output only step 2" (~109 KB) |
-| `combined_v2_instructions_full.txt`      | `v2` — structural condensation of v1 into two sequential PART blocks with the output contract hoisted to the top; rule wording unchanged |
+| `combined_v2_instructions_full.txt`      | `v2` — structural condensation into two sequential PART blocks with the output contract hoisted to the top; rule wording unchanged |
 | `combined_v3_instructions_full.txt`      | `v3` — one continuously numbered spec (§0–§23) with the Step-1 ANALYSE and Step-2 ENCODE rules interleaved per phenomenon under shared topic banners |
-| `combined_direct_instructions_full.txt`  | `direct` — drops the two-step framing: "read the English; write the logic", rules merged accordingly |
 | `combined_answerfirst_instructions_full.txt` | `answer-first` — the model first decides the answer, then encodes premises + question (~13 KB; FOLIO experiment F4) |
 
-The matching examples files (`combined_examples_pure.txt` = 60 worked
-English → logic examples; `combined_examples_internal.txt` = the same 60
-also showing the non-printed ASU analysis) and per-construction
-checklists (`combined_*_checklist_full.txt`) are passed via
-`-combined-examples` / `-combined-checklist`.
+Earlier/alternate constructions that were never used in a shipped run
+(`v1`, `direct`, and the ASU-showing examples) have been moved to `archive/`.
+
+The matching examples file (`combined_examples_pure.txt` = 60 worked
+English → logic examples) and per-construction checklists
+(`combined_*_checklist_full.txt`) are passed via `-combined-examples` /
+`-combined-checklist`.
 
 ## Other special-purpose prompts
 

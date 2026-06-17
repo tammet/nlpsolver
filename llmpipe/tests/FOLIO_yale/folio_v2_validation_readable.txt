@@ -1,0 +1,3432 @@
+========== case 1 | ex 1014 | story 380 | label: Uncertain ==========
+PREMISES:
+People in this club who perform in school talent shows often attend and are very engaged with school events.
+People in this club either perform in school talent shows often or are inactive and disinterested community members.
+People in this club who chaperone high school dances are not students who attend the school.
+All people in this club who are inactive and disinterested members of their community chaperone high school dances.
+All young children and teenagers in this club who wish to further their academic careers and educational opportunities are students who attend the school.
+Bonnie is in this club and she either both attends and is very engaged with school events and is a student who attends the school or is not someone who both attends and is very engaged with school events and is not a student who attends the school.
+PREMISES-FOL:
+all x (InThisClub(x) & PerformOftenIn(x, schoolTalentShow) -> Attend(x, schoolEvent) & VeryEngagedWith(x, schoolEvent))
+all x (InThisClub(x) -> PerformOftenIn(x, schoolTalentShow) (+) (InActive(x) & Disinterested(x) & MemberOf(x, community)))
+all x (InThisClub(x) & Chaperone(x, highSchoolDance) -> ~(Studen(x) & AttendSchool(x)))
+all x (InThisClub(x) & (InActive(x) & Disinterested(x) & MemberOf(x, community)) -> Chaperone(x, highSchoolDances))
+all x (InThisClub(x) & (YoungChildren(x) (+) Teenager(x)) & WishToFurther(x, academicCareer)) -> Studen(x) & AttendSchool(x))
+InThisClub(bonnie) & ~((Attend(x, schoolEvent) & VeryEngagedWith(bonnie, schoolEvent)) (+) (Studen(bonne) & AttendSchool(bonnie)))
+CONCLUSION:     Bonnie performs in school talent shows often.
+CONCLUSION-FOL: InThisClub(bonnie) & (Perform(bonnie, schoolTalentShow))
+
+========== case 2 | ex 1015 | story 380 | label: True ==========
+PREMISES:
+People in this club who perform in school talent shows often attend and are very engaged with school events.
+People in this club either perform in school talent shows often or are inactive and disinterested community members.
+People in this club who chaperone high school dances are not students who attend the school.
+All people in this club who are inactive and disinterested members of their community chaperone high school dances.
+All young children and teenagers in this club who wish to further their academic careers and educational opportunities are students who attend the school.
+Bonnie is in this club and she either both attends and is very engaged with school events and is a student who attends the school or is not someone who both attends and is very engaged with school events and is not a student who attends the school.
+PREMISES-FOL:
+all x (InThisClub(x) & PerformOftenIn(x, schoolTalentShow) -> Attend(x, schoolEvent) & VeryEngagedWith(x, schoolEvent))
+all x (InThisClub(x) -> PerformOftenIn(x, schoolTalentShow) (+) (InActive(x) & Disinterested(x) & MemberOf(x, community)))
+all x (InThisClub(x) & Chaperone(x, highSchoolDance) -> ~(Studen(x) & AttendSchool(x)))
+all x (InThisClub(x) & (InActive(x) & Disinterested(x) & MemberOf(x, community)) -> Chaperone(x, highSchoolDances))
+all x (InThisClub(x) & (YoungChildren(x) (+) Teenager(x)) & WishToFurther(x, academicCareer)) -> Studen(x) & AttendSchool(x))
+InThisClub(bonnie) & ~((Attend(x, schoolEvent) & VeryEngagedWith(bonnie, schoolEvent)) (+) (Studen(bonne) & AttendSchool(bonnie)))
+CONCLUSION:     If Bonnie is either both a young child or teenager who wishes to further her academic career and educational opportunities and chaperones high school dances or neither is a young child nor teenager who wishes to further her academic career and educational opportunities, then Bonnie is either a student who attends the school or is an inactive and disinterested member of the community.
+CONCLUSION-FOL: ~((YoungChildren(bonnie) (+) Teenager(bonnie)) & WishToFurther(bonnie, academicCareer)) (+) Chaperone(bonnie, highSchoolDance)) -> (Studen(x) & AttendSchool(x)) (+) (YoungChildren(bonnie) (+) Teenager(bonnie)) & WishToFurther(bonnie, academicCareer))
+
+========== case 3 | ex 1016 | story 380 | label: False ==========
+PREMISES:
+People in this club who perform in school talent shows often attend and are very engaged with school events.
+People in this club either perform in school talent shows often or are inactive and disinterested community members.
+People in this club who chaperone high school dances are not students who attend the school.
+All people in this club who are inactive and disinterested members of their community chaperone high school dances.
+All young children and teenagers in this club who wish to further their academic careers and educational opportunities are students who attend the school.
+Bonnie is in this club and she either both attends and is very engaged with school events and is a student who attends the school or is not someone who both attends and is very engaged with school events and is not a student who attends the school.
+PREMISES-FOL:
+all x (InThisClub(x) & PerformOftenIn(x, schoolTalentShow) -> Attend(x, schoolEvent) & VeryEngagedWith(x, schoolEvent))
+all x (InThisClub(x) -> PerformOftenIn(x, schoolTalentShow) (+) (InActive(x) & Disinterested(x) & MemberOf(x, community)))
+all x (InThisClub(x) & Chaperone(x, highSchoolDance) -> ~(Studen(x) & AttendSchool(x)))
+all x (InThisClub(x) & (InActive(x) & Disinterested(x) & MemberOf(x, community)) -> Chaperone(x, highSchoolDances))
+all x (InThisClub(x) & (YoungChildren(x) (+) Teenager(x)) & WishToFurther(x, academicCareer)) -> Studen(x) & AttendSchool(x))
+InThisClub(bonnie) & ~((Attend(x, schoolEvent) & VeryEngagedWith(bonnie, schoolEvent)) (+) (Studen(bonne) & AttendSchool(bonnie)))
+CONCLUSION:     If Bonnie either chaperones high school dances or, if she does not, she performs in school talent shows often, then Bonnie is both a young child or teenager who wishes to further her academic career and educational opportunities and an inactive and disinterested member of the community.
+CONCLUSION-FOL: (Chaperone(bonnie, highSchoolDance) (+) Perform(bonnie, schoolTalentShow)) -> (YoungChildren(bonnie) (+) Teenager(bonnie)) & WishToFurther(bonnie, academicCareer)) & (InActive(bonnie) & Disinterested(bonnie) & MemberOf(bonnie, community))
+
+========== case 4 | ex 1208 | story 426 | label: Uncertain ==========
+PREMISES:
+All employees who schedule a meeting with their customers will go to the company building today.
+Everyone who has lunch in the company building schedules meetings with their customers.
+Employees have lunch either in the company building or at home.
+If an employee has lunch at home, they are working remotely from home.
+All employees who are in other countries work remotely from home.
+No managers work remotely from home.
+James will appear in the company today if and only if he is a manager.
+PREMISES-FOL:
+all x ((Employee(x) & Schedule(x, meeting, customers)) -> AppearIn(x, company))
+all x ((Employee(x) & HasLunch(x, company)) -> Schedule(x, meeting, customers))
+all x (Employee(x) -> (HasLunch(x, company) (+) HasLunch(x, home)))
+all x ((Employee(x) & HasLunch(x, home)) -> Work(x, home))
+all x ((Employee(x) & (~In(x, homecountry))) -> Work(x, home))
+all x (Manager(x) -> ~Work(x, home))
+~(Manager(james) (+) AppearIn(james, company))
+CONCLUSION:     James has lunch in the company.
+CONCLUSION-FOL: HasLunch(james, company)
+
+========== case 5 | ex 1209 | story 426 | label: Uncertain ==========
+PREMISES:
+All employees who schedule a meeting with their customers will go to the company building today.
+Everyone who has lunch in the company building schedules meetings with their customers.
+Employees have lunch either in the company building or at home.
+If an employee has lunch at home, they are working remotely from home.
+All employees who are in other countries work remotely from home.
+No managers work remotely from home.
+James will appear in the company today if and only if he is a manager.
+PREMISES-FOL:
+all x ((Employee(x) & Schedule(x, meeting, customers)) -> AppearIn(x, company))
+all x ((Employee(x) & HasLunch(x, company)) -> Schedule(x, meeting, customers))
+all x (Employee(x) -> (HasLunch(x, company) (+) HasLunch(x, home)))
+all x ((Employee(x) & HasLunch(x, home)) -> Work(x, home))
+all x ((Employee(x) & (~In(x, homecountry))) -> Work(x, home))
+all x (Manager(x) -> ~Work(x, home))
+~(Manager(james) (+) AppearIn(james, company))
+CONCLUSION:     James does not have lunch in the company.
+CONCLUSION-FOL: ~HasLunch(james, company)
+
+========== case 6 | ex 1210 | story 426 | label: True ==========
+PREMISES:
+All employees who schedule a meeting with their customers will go to the company building today.
+Everyone who has lunch in the company building schedules meetings with their customers.
+Employees have lunch either in the company building or at home.
+If an employee has lunch at home, they are working remotely from home.
+All employees who are in other countries work remotely from home.
+No managers work remotely from home.
+James will appear in the company today if and only if he is a manager.
+PREMISES-FOL:
+all x ((Employee(x) & Schedule(x, meeting, customers)) -> AppearIn(x, company))
+all x ((Employee(x) & HasLunch(x, company)) -> Schedule(x, meeting, customers))
+all x (Employee(x) -> (HasLunch(x, company) (+) HasLunch(x, home)))
+all x ((Employee(x) & HasLunch(x, home)) -> Work(x, home))
+all x ((Employee(x) & (~In(x, homecountry))) -> Work(x, home))
+all x (Manager(x) -> ~Work(x, home))
+~(Manager(james) (+) AppearIn(james, company))
+CONCLUSION:     If James is either a manager or in other countries,  then James does not either has lunch at home or work remotely from home. If James either has lunch at home or works remotely from home, then he is neither a manager nor does he work in other countries. [contrapositive is more natural]
+CONCLUSION-FOL: Manager(james) -> ~Work(james, home)
+
+========== case 7 | ex 563 | story 198 | label: True ==========
+PREMISES:
+When the Monkeypox virus occurs in a being, it may get Monkeypox.
+Monkeypox virus can occur in certain animals.
+Humans are mammals.
+Mammals are animals.
+Symptoms of Monkeypox include fever, headache, muscle pains, and tiredness.
+People feel tired when they get the flu.
+PREMISES-FOL:
+exists x (OccurIn(monkeypoxVirus, x) & Get(x, monkeypoxVirus))
+exists x (Animal(x) & OccurIn(monkeypoxVirus, x))
+all x (Human(x) -> Mammal(x))
+all x (Mammal(x) -> Animal(x))
+exists x (SymptonOf(x, monkeypoxVirus) & (Fever(x) | Headache(x) | MusclePain(x) | Tired(x)))
+all x (Human(x) & Get(x, flu) -> Feel(x, tired))
+CONCLUSION:     There is an animal.
+CONCLUSION-FOL: exists x (Animal(x))
+
+========== case 8 | ex 564 | story 198 | label: Uncertain ==========
+PREMISES:
+When the Monkeypox virus occurs in a being, it may get Monkeypox.
+Monkeypox virus can occur in certain animals.
+Humans are mammals.
+Mammals are animals.
+Symptoms of Monkeypox include fever, headache, muscle pains, and tiredness.
+People feel tired when they get the flu.
+PREMISES-FOL:
+exists x (OccurIn(monkeypoxVirus, x) & Get(x, monkeypoxVirus))
+exists x (Animal(x) & OccurIn(monkeypoxVirus, x))
+all x (Human(x) -> Mammal(x))
+all x (Mammal(x) -> Animal(x))
+exists x (SymptonOf(x, monkeypoxVirus) & (Fever(x) | Headache(x) | MusclePain(x) | Tired(x)))
+all x (Human(x) & Get(x, flu) -> Feel(x, tired))
+CONCLUSION:     No one gets the flu.
+CONCLUSION-FOL: all x (Human(x) -> ~Get(x, flu))
+
+========== case 9 | ex 565 | story 198 | label: Uncertain ==========
+PREMISES:
+When the Monkeypox virus occurs in a being, it may get Monkeypox.
+Monkeypox virus can occur in certain animals.
+Humans are mammals.
+Mammals are animals.
+Symptoms of Monkeypox include fever, headache, muscle pains, and tiredness.
+People feel tired when they get the flu.
+PREMISES-FOL:
+exists x (OccurIn(monkeypoxVirus, x) & Get(x, monkeypoxVirus))
+exists x (Animal(x) & OccurIn(monkeypoxVirus, x))
+all x (Human(x) -> Mammal(x))
+all x (Mammal(x) -> Animal(x))
+exists x (SymptonOf(x, monkeypoxVirus) & (Fever(x) | Headache(x) | MusclePain(x) | Tired(x)))
+all x (Human(x) & Get(x, flu) -> Feel(x, tired))
+CONCLUSION:     Symptoms of Monkeypox include coughing.
+CONCLUSION-FOL: exists x (SymptonOf(x, monkeypoxVirus) & Coughing(x))
+
+========== case 10 | ex 0 | story 0 | label: True ==========
+PREMISES:
+There are six types of wild turkeys: Eastern wild turkey, Osceola wild turkey, Goulds wild turkey, Merriams wild turkey, Rio Grande wild turkey, and Ocellated wild turkey.
+Tom is not an Eastern wild turkey.
+Tom is not an Osceola wild turkey.
+Tom is not a Gould's wild turkey.
+Tom is neither a Merriam's wild turkey nor a Rio Grande wild turkey.
+Tom is a wild turkey.
+PREMISES-FOL:
+all x (WildTurkey(x) -> (EasternWildTurkey(x) | OsceolaWildTurkey(x) | GouldsWildTurkey(x) | MerriamsWildTurkey(x) | RiograndeWildTurkey(x) | OcellatedWildTurkey(x)))
+~(EasternWildTurkey(tom))
+~(OsceolaWildTurkey(tom))
+~(GouldsWildTurkey(tom))
+~(MerriamsWildTurkey(tom) | RiograndeWildTurkey(tom))
+WildTurkey(tom)
+CONCLUSION:     Tom is an Ocellated wild turkey.
+CONCLUSION-FOL: OcellatedWildTurkey(tom)
+
+========== case 11 | ex 1 | story 0 | label: False ==========
+PREMISES:
+There are six types of wild turkeys: Eastern wild turkey, Osceola wild turkey, Goulds wild turkey, Merriams wild turkey, Rio Grande wild turkey, and Ocellated wild turkey.
+Tom is not an Eastern wild turkey.
+Tom is not an Osceola wild turkey.
+Tom is not a Gould's wild turkey.
+Tom is neither a Merriam's wild turkey nor a Rio Grande wild turkey.
+Tom is a wild turkey.
+PREMISES-FOL:
+all x (WildTurkey(x) -> (EasternWildTurkey(x) | OsceolaWildTurkey(x) | GouldsWildTurkey(x) | MerriamsWildTurkey(x) | RiograndeWildTurkey(x) | OcellatedWildTurkey(x)))
+~(EasternWildTurkey(tom))
+~(OsceolaWildTurkey(tom))
+~(GouldsWildTurkey(tom))
+~(MerriamsWildTurkey(tom) | RiograndeWildTurkey(tom))
+WildTurkey(tom)
+CONCLUSION:     Tom is an Eastern wild turkey.
+CONCLUSION-FOL: EasternWildTurkey(tom)
+
+========== case 12 | ex 2 | story 0 | label: Uncertain ==========
+PREMISES:
+There are six types of wild turkeys: Eastern wild turkey, Osceola wild turkey, Goulds wild turkey, Merriams wild turkey, Rio Grande wild turkey, and Ocellated wild turkey.
+Tom is not an Eastern wild turkey.
+Tom is not an Osceola wild turkey.
+Tom is not a Gould's wild turkey.
+Tom is neither a Merriam's wild turkey nor a Rio Grande wild turkey.
+Tom is a wild turkey.
+PREMISES-FOL:
+all x (WildTurkey(x) -> (EasternWildTurkey(x) | OsceolaWildTurkey(x) | GouldsWildTurkey(x) | MerriamsWildTurkey(x) | RiograndeWildTurkey(x) | OcellatedWildTurkey(x)))
+~(EasternWildTurkey(tom))
+~(OsceolaWildTurkey(tom))
+~(GouldsWildTurkey(tom))
+~(MerriamsWildTurkey(tom) | RiograndeWildTurkey(tom))
+WildTurkey(tom)
+CONCLUSION:     Joey is a wild turkey.
+CONCLUSION-FOL: WildTurkey(joey)
+
+========== case 13 | ex 57 | story 20 | label: True ==========
+PREMISES:
+A Japanese game company created the game the Legend of Zelda.
+All games on the Top 10 list are made by Japanese game companies.
+If a game sells more than one million copies, then it will be included in the Top 10 list.
+The Legend of Zelda sold more than one million copies.
+PREMISES-FOL:
+Game(theLegendofZelda) & exists x (Japanese(x) & VideoGameCompany(x) & Created(x, theLegendofZelda))
+all x all y ((Game(x) & InTop10(x) & Created(y,x)) -> Japanese(y))
+all x ((Game(x) & exists y(GreaterThan(y, oneMillion) & CopiesSold(x, y))) -> Top10(x)))
+exists y(GreaterThan(y, oneMillion) & CopiesSold(theLegendofZelda,y))
+CONCLUSION:     The Legend of Zelda is on the Top 10 list.
+CONCLUSION-FOL: Top10(thelegendofzelda)
+
+========== case 14 | ex 58 | story 20 | label: Uncertain ==========
+PREMISES:
+A Japanese game company created the game the Legend of Zelda.
+All games on the Top 10 list are made by Japanese game companies.
+If a game sells more than one million copies, then it will be included in the Top 10 list.
+The Legend of Zelda sold more than one million copies.
+PREMISES-FOL:
+Game(theLegendofZelda) & exists x (Japanese(x) & VideoGameCompany(x) & Created(x, theLegendofZelda))
+all x all y ((Game(x) & InTop10(x) & Created(y,x)) -> Japanese(y))
+all x ((Game(x) & exists y(GreaterThan(y, oneMillion) & CopiesSold(x, y))) -> Top10(x)))
+exists y(GreaterThan(y, oneMillion) & CopiesSold(theLegendofZelda,y))
+CONCLUSION:     FIFA 22 is made by a Japanese video game company.
+CONCLUSION-FOL: exists x(Created(x, fifa22) & Japanese(x) & VideoGameCompany(x))
+
+========== case 15 | ex 59 | story 20 | label: False ==========
+PREMISES:
+A Japanese game company created the game the Legend of Zelda.
+All games on the Top 10 list are made by Japanese game companies.
+If a game sells more than one million copies, then it will be included in the Top 10 list.
+The Legend of Zelda sold more than one million copies.
+PREMISES-FOL:
+Game(theLegendofZelda) & exists x (Japanese(x) & VideoGameCompany(x) & Created(x, theLegendofZelda))
+all x all y ((Game(x) & InTop10(x) & Created(y,x)) -> Japanese(y))
+all x ((Game(x) & exists y(GreaterThan(y, oneMillion) & CopiesSold(x, y))) -> Top10(x)))
+exists y(GreaterThan(y, oneMillion) & CopiesSold(theLegendofZelda,y))
+CONCLUSION:     The Legend of Zelda is not on the Top 10 list.
+CONCLUSION-FOL: ~Top10(thelegendofzelda)
+
+========== case 16 | ex 726 | story 282 | label: True ==========
+PREMISES:
+All squares are four-sided.
+All four-sided things are shapes.
+PREMISES-FOL:
+all x (Square(x) -> FourSided(x))
+all x (FourSided(x) -> Shape(x))
+CONCLUSION:     All squares are shapes.
+CONCLUSION-FOL: all x (Square(x) -> Shape(x))
+
+========== case 17 | ex 1361 | story 471 | label: Uncertain ==========
+PREMISES:
+All rabbits that can be spotted near the campus are cute.
+Some turtles can be spotted near the campus.
+The only animals that can be spotted near the campus are rabbits and squirrels.
+If something is skittish, then it is not calm.
+All the squirrels that can be spotted near the campus are skittish.
+Rockie can be spotted near the campus, and it is calm.
+PREMISES-FOL:
+all x (Rabbit(x) & CanBeSpottedNear(x, campus) -> Cute(x))
+exists x (Turtle(x) & CanBeSpottedNear(x, campus))
+all x (CanBeSpottedNear(x, campus) -> (Rabbit(x) (+) Squirrel(x)))
+all x (Skittish(x) -> ~Calm(x))
+all x (Squirrel(x) & CanBeSpottedNear(x, campus) -> Skittish(x))
+CanBeSpottedNear(rockie, campus) & Calm(rockie)
+CONCLUSION:     Rockie is a turtle.
+CONCLUSION-FOL: Turtle(rockie)
+
+========== case 18 | ex 1362 | story 471 | label: Uncertain ==========
+PREMISES:
+All rabbits that can be spotted near the campus are cute.
+Some turtles can be spotted near the campus.
+The only animals that can be spotted near the campus are rabbits and squirrels.
+If something is skittish, then it is not calm.
+All the squirrels that can be spotted near the campus are skittish.
+Rockie can be spotted near the campus, and it is calm.
+PREMISES-FOL:
+all x (Rabbit(x) & CanBeSpottedNear(x, campus) -> Cute(x))
+exists x (Turtle(x) & CanBeSpottedNear(x, campus))
+all x (CanBeSpottedNear(x, campus) -> (Rabbit(x) (+) Squirrel(x)))
+all x (Skittish(x) -> ~Calm(x))
+all x (Squirrel(x) & CanBeSpottedNear(x, campus) -> Skittish(x))
+CanBeSpottedNear(rockie, campus) & Calm(rockie)
+CONCLUSION:     Rockie is not a turtle.
+CONCLUSION-FOL: ~Turtle(rockie)
+
+========== case 19 | ex 1363 | story 471 | label: True ==========
+PREMISES:
+All rabbits that can be spotted near the campus are cute.
+Some turtles can be spotted near the campus.
+The only animals that can be spotted near the campus are rabbits and squirrels.
+If something is skittish, then it is not calm.
+All the squirrels that can be spotted near the campus are skittish.
+Rockie can be spotted near the campus, and it is calm.
+PREMISES-FOL:
+all x (Rabbit(x) & CanBeSpottedNear(x, campus) -> Cute(x))
+exists x (Turtle(x) & CanBeSpottedNear(x, campus))
+all x (CanBeSpottedNear(x, campus) -> (Rabbit(x) (+) Squirrel(x)))
+all x (Skittish(x) -> ~Calm(x))
+all x (Squirrel(x) & CanBeSpottedNear(x, campus) -> Skittish(x))
+CanBeSpottedNear(rockie, campus) & Calm(rockie)
+CONCLUSION:     Rockie is a turtle or cute.
+CONCLUSION-FOL: Turtle(rockie) | Cute(rockie)
+
+========== case 20 | ex 1364 | story 471 | label: True ==========
+PREMISES:
+All rabbits that can be spotted near the campus are cute.
+Some turtles can be spotted near the campus.
+The only animals that can be spotted near the campus are rabbits and squirrels.
+If something is skittish, then it is not calm.
+All the squirrels that can be spotted near the campus are skittish.
+Rockie can be spotted near the campus, and it is calm.
+PREMISES-FOL:
+all x (Rabbit(x) & CanBeSpottedNear(x, campus) -> Cute(x))
+exists x (Turtle(x) & CanBeSpottedNear(x, campus))
+all x (CanBeSpottedNear(x, campus) -> (Rabbit(x) (+) Squirrel(x)))
+all x (Skittish(x) -> ~Calm(x))
+all x (Squirrel(x) & CanBeSpottedNear(x, campus) -> Skittish(x))
+CanBeSpottedNear(rockie, campus) & Calm(rockie)
+CONCLUSION:     If Rockie is not both a turtle and a squirrel, then Rockie is either cute or skittish.
+CONCLUSION-FOL: ~(Turtle(rockie) & Squirrel(rockie)) -> Cute(rockie) (+) Skittish(rockie)
+
+========== case 21 | ex 1365 | story 471 | label: False ==========
+PREMISES:
+All rabbits that can be spotted near the campus are cute.
+Some turtles can be spotted near the campus.
+The only animals that can be spotted near the campus are rabbits and squirrels.
+If something is skittish, then it is not calm.
+All the squirrels that can be spotted near the campus are skittish.
+Rockie can be spotted near the campus, and it is calm.
+PREMISES-FOL:
+all x (Rabbit(x) & CanBeSpottedNear(x, campus) -> Cute(x))
+exists x (Turtle(x) & CanBeSpottedNear(x, campus))
+all x (CanBeSpottedNear(x, campus) -> (Rabbit(x) (+) Squirrel(x)))
+all x (Skittish(x) -> ~Calm(x))
+all x (Squirrel(x) & CanBeSpottedNear(x, campus) -> Skittish(x))
+CanBeSpottedNear(rockie, campus) & Calm(rockie)
+CONCLUSION:     If Rockie is cute and calm, then Rockie is a skittish turtle.
+CONCLUSION-FOL: Cute(rockie) & Calm(rockie) -> Turtle(rockie) & Skittish(rockie)
+
+========== case 22 | ex 530 | story 184 | label: True ==========
+PREMISES:
+"Stranger Things" is a popular Netflix show.
+If a Netflix show is popular, Karen will binge-watch it.
+If and only if Karen binge-watches a Netflix show, she will download it.
+Karen does not download "Black Mirror."
+"Black Mirror" is a Netflix show.
+If Karen binge-watches a Netflix show, she will share it with Lisa.
+PREMISES-FOL:
+NetflixShow(strangerThings) & Popular(strangerThings)
+all x ((NetflixShow(x) & Popular(x)) -> BingeWatch(karen, x))
+all x ((NetflixShow(x) & BingeWatch(karen, x)) <-> Download(karen, x))
+~Download(karen, blackMirror)
+NetflixShow(blackMirror)
+all x ((NetflixShow(x) & BingeWatch(karen, x)) -> ShareWith(karen, x, lisa))
+CONCLUSION:     Karen will share "Stranger Things" with Lisa.
+CONCLUSION-FOL: ShareWith(karen, strangerThings, lisa)
+
+========== case 23 | ex 531 | story 184 | label: False ==========
+PREMISES:
+"Stranger Things" is a popular Netflix show.
+If a Netflix show is popular, Karen will binge-watch it.
+If and only if Karen binge-watches a Netflix show, she will download it.
+Karen does not download "Black Mirror."
+"Black Mirror" is a Netflix show.
+If Karen binge-watches a Netflix show, she will share it with Lisa.
+PREMISES-FOL:
+NetflixShow(strangerThings) & Popular(strangerThings)
+all x ((NetflixShow(x) & Popular(x)) -> BingeWatch(karen, x))
+all x ((NetflixShow(x) & BingeWatch(karen, x)) <-> Download(karen, x))
+~Download(karen, blackMirror)
+NetflixShow(blackMirror)
+all x ((NetflixShow(x) & BingeWatch(karen, x)) -> ShareWith(karen, x, lisa))
+CONCLUSION:     "Black Mirror" is popular.
+CONCLUSION-FOL: Popular(blackMirror)
+
+========== case 24 | ex 532 | story 184 | label: Uncertain ==========
+PREMISES:
+"Stranger Things" is a popular Netflix show.
+If a Netflix show is popular, Karen will binge-watch it.
+If and only if Karen binge-watches a Netflix show, she will download it.
+Karen does not download "Black Mirror."
+"Black Mirror" is a Netflix show.
+If Karen binge-watches a Netflix show, she will share it with Lisa.
+PREMISES-FOL:
+NetflixShow(strangerThings) & Popular(strangerThings)
+all x ((NetflixShow(x) & Popular(x)) -> BingeWatch(karen, x))
+all x ((NetflixShow(x) & BingeWatch(karen, x)) <-> Download(karen, x))
+~Download(karen, blackMirror)
+NetflixShow(blackMirror)
+all x ((NetflixShow(x) & BingeWatch(karen, x)) -> ShareWith(karen, x, lisa))
+CONCLUSION:     Karen will share "Black Mirror" with Lisa.
+CONCLUSION-FOL: ShareWith(karen, blackMirror, lisa)
+
+========== case 25 | ex 657 | story 232 | label: True ==========
+PREMISES:
+Beijing is the capital of the People's Republic of China.
+Beijing is the capital city of the world's most populous nation.
+Beijing is located in Northern China.
+Beijing hosted the 2008 Summer Olympics and 2008 Summer Paralympics Games.
+Beijing has hosted the Summer and Winter Olympics and the Summer and Winter Paralympics.
+Many of Beijing's 91 universities consistently rank among the best universities in the world.
+PREMISES-FOL:
+CapitalOf(beijing, peoplesRepublicOfChina)
+exists x (CapitalOf(beijing, x) -> WorldsMostPopulousNation(x))
+LocatedIn(beijing, northernChina)
+Hosted(beijing, 2008SummerOlympics) & Hosted(beijing, 2008SummerParalympicGames)
+Hosted(beijing, summerOlympics) & Hosted(beijing, winterOlympics) & Hosted(beijing, summerParalympicGames)  & Hosted(beijing, winterParalympicGames)
+exists x (University(x) & InBeijing(x) & ConsistentlyRankAmongTheBestIn(x, theWorld))
+CONCLUSION:     Beijing hosted both the 2008 Summer Olympics and the Winter Olympics.
+CONCLUSION-FOL: Hosted(beijing, summerOlympics) & Hosted(beijing, winterOlympics)
+
+========== case 26 | ex 658 | story 232 | label: Uncertain ==========
+PREMISES:
+Beijing is the capital of the People's Republic of China.
+Beijing is the capital city of the world's most populous nation.
+Beijing is located in Northern China.
+Beijing hosted the 2008 Summer Olympics and 2008 Summer Paralympics Games.
+Beijing has hosted the Summer and Winter Olympics and the Summer and Winter Paralympics.
+Many of Beijing's 91 universities consistently rank among the best universities in the world.
+PREMISES-FOL:
+CapitalOf(beijing, peoplesRepublicOfChina)
+exists x (CapitalOf(beijing, x) -> WorldsMostPopulousNation(x))
+LocatedIn(beijing, northernChina)
+Hosted(beijing, 2008SummerOlympics) & Hosted(beijing, 2008SummerParalympicGames)
+Hosted(beijing, summerOlympics) & Hosted(beijing, winterOlympics) & Hosted(beijing, summerParalympicGames)  & Hosted(beijing, winterParalympicGames)
+exists x (University(x) & InBeijing(x) & ConsistentlyRankAmongTheBestIn(x, theWorld))
+CONCLUSION:     Beijing is located in southern China.
+CONCLUSION-FOL: LocatedIn(beijing, southernChina)
+
+========== case 27 | ex 659 | story 232 | label: Uncertain ==========
+PREMISES:
+Beijing is the capital of the People's Republic of China.
+Beijing is the capital city of the world's most populous nation.
+Beijing is located in Northern China.
+Beijing hosted the 2008 Summer Olympics and 2008 Summer Paralympics Games.
+Beijing has hosted the Summer and Winter Olympics and the Summer and Winter Paralympics.
+Many of Beijing's 91 universities consistently rank among the best universities in the world.
+PREMISES-FOL:
+CapitalOf(beijing, peoplesRepublicOfChina)
+exists x (CapitalOf(beijing, x) -> WorldsMostPopulousNation(x))
+LocatedIn(beijing, northernChina)
+Hosted(beijing, 2008SummerOlympics) & Hosted(beijing, 2008SummerParalympicGames)
+Hosted(beijing, summerOlympics) & Hosted(beijing, winterOlympics) & Hosted(beijing, summerParalympicGames)  & Hosted(beijing, winterParalympicGames)
+exists x (University(x) & InBeijing(x) & ConsistentlyRankAmongTheBestIn(x, theWorld))
+CONCLUSION:     Beijing is the second largest Chinese city.
+CONCLUSION-FOL: SecondLargestChineseCity(beijing)
+
+========== case 28 | ex 1301 | story 452 | label: Uncertain ==========
+PREMISES:
+All aliens are extraterrestrials.
+If someone is from Mars, then they are an alien.
+No extraterrestrials are human.
+All highly intelligent beings from Earth are humans.
+Marvin is a highly intelligent being.
+Marvin is either from Earth and from Mars, or he is from neither.
+If Marvin is not from Earth, then Marvin is an extraterrestrial.
+PREMISES-FOL:
+all x (Alien(x) -> Extraterrestrial(x))
+all x (From(x, mars) -> Alien(x))
+all x (Extraterrestrial(x) -> ~Human(x))
+all x (HighlyIntelligentBeing(x) & From(x, earth) -> Human(x))
+HighlyIntelligentBeing(marvin)
+~(From(marvin, earth) (+) From(marvin, mars))
+~From(marvin, earth) -> Extraterrestrial(marvin)
+CONCLUSION:     Marvin is an alien.
+CONCLUSION-FOL: Alien(marvin)
+
+========== case 29 | ex 1302 | story 452 | label: True ==========
+PREMISES:
+All aliens are extraterrestrials.
+If someone is from Mars, then they are an alien.
+No extraterrestrials are human.
+All highly intelligent beings from Earth are humans.
+Marvin is a highly intelligent being.
+Marvin is either from Earth and from Mars, or he is from neither.
+If Marvin is not from Earth, then Marvin is an extraterrestrial.
+PREMISES-FOL:
+all x (Alien(x) -> Extraterrestrial(x))
+all x (From(x, mars) -> Alien(x))
+all x (Extraterrestrial(x) -> ~Human(x))
+all x (HighlyIntelligentBeing(x) & From(x, earth) -> Human(x))
+HighlyIntelligentBeing(marvin)
+~(From(marvin, earth) (+) From(marvin, mars))
+~From(marvin, earth) -> Extraterrestrial(marvin)
+CONCLUSION:     Marvin is neither a human nor from Mars.
+CONCLUSION-FOL: ~Human(marvin) & ~From(marvin, mars)
+
+========== case 30 | ex 1303 | story 452 | label: False ==========
+PREMISES:
+All aliens are extraterrestrials.
+If someone is from Mars, then they are an alien.
+No extraterrestrials are human.
+All highly intelligent beings from Earth are humans.
+Marvin is a highly intelligent being.
+Marvin is either from Earth and from Mars, or he is from neither.
+If Marvin is not from Earth, then Marvin is an extraterrestrial.
+PREMISES-FOL:
+all x (Alien(x) -> Extraterrestrial(x))
+all x (From(x, mars) -> Alien(x))
+all x (Extraterrestrial(x) -> ~Human(x))
+all x (HighlyIntelligentBeing(x) & From(x, earth) -> Human(x))
+HighlyIntelligentBeing(marvin)
+~(From(marvin, earth) (+) From(marvin, mars))
+~From(marvin, earth) -> Extraterrestrial(marvin)
+CONCLUSION:     If Marvin is not from Mars, then Marvin is a human.
+CONCLUSION-FOL: ~From(marvin, mars) -> Human(marvin)
+
+========== case 31 | ex 893 | story 340 | label: Uncertain ==========
+PREMISES:
+Everyone at the mixer is a Grand Slam champion or an Oscar-nominated actor.
+Every Grand Slam champion at the mixer is a professional tennis player.
+All Oscar-nominated actors at the mixer are celebrities.
+All professional tennis players at the mixer are athletes.
+If a person at the mixer is a celebrity, then they are well paid.
+If a person at the mixer is an athlete, then they are famous.
+All well-paid people at the mixer live in tax havens.
+Djokovic is at the mixer: if Djokovic is a famous athlete, then Djokovic is well-paid.
+PREMISES-FOL:
+all x (At(x, mixer) -> (GrandSlam(x) & Champion(x)) | (OscarNominated(x) & Actor(x)))
+all x (At(x, mixer) & (GrandSlam(x) & Champion(x) -> Professional(x) & TennisPlayer(x))
+all x (At(x, mixer) & (OscarNominated(x) & Actor(x) -> Celebrity(x))
+all x (At(x, mixer) & Professional(x) & TennisPlayer(x) -> Athlete(x))
+all x (At(x, mixer) & Celebrity(x) -> WellPaid(x))
+all x (At(x, mixer) & Athlete(x) -> Famous(x))
+all x (At(x, mixer) & WellPaid(x) -> LiveIn(x, taxHaven))
+At(djokovic, mixer) & (Famous(djokovic) & Athlete(djokovic) -> WellPaid(djokovic))
+CONCLUSION:     Djokovic is a Grand Slam champion.
+CONCLUSION-FOL: GrandSlam(djokovic) & Champion(djokovic)
+
+========== case 32 | ex 894 | story 340 | label: True ==========
+PREMISES:
+Everyone at the mixer is a Grand Slam champion or an Oscar-nominated actor.
+Every Grand Slam champion at the mixer is a professional tennis player.
+All Oscar-nominated actors at the mixer are celebrities.
+All professional tennis players at the mixer are athletes.
+If a person at the mixer is a celebrity, then they are well paid.
+If a person at the mixer is an athlete, then they are famous.
+All well-paid people at the mixer live in tax havens.
+Djokovic is at the mixer: if Djokovic is a famous athlete, then Djokovic is well-paid.
+PREMISES-FOL:
+all x (At(x, mixer) -> (GrandSlam(x) & Champion(x)) | (OscarNominated(x) & Actor(x)))
+all x (At(x, mixer) & (GrandSlam(x) & Champion(x) -> Professional(x) & TennisPlayer(x))
+all x (At(x, mixer) & (OscarNominated(x) & Actor(x) -> Celebrity(x))
+all x (At(x, mixer) & Professional(x) & TennisPlayer(x) -> Athlete(x))
+all x (At(x, mixer) & Celebrity(x) -> WellPaid(x))
+all x (At(x, mixer) & Athlete(x) -> Famous(x))
+all x (At(x, mixer) & WellPaid(x) -> LiveIn(x, taxHaven))
+At(djokovic, mixer) & (Famous(djokovic) & Athlete(djokovic) -> WellPaid(djokovic))
+CONCLUSION:     Djokovic lives in a tax haven.
+CONCLUSION-FOL: LiveIn(djokovic, taxHaven)
+
+========== case 33 | ex 895 | story 340 | label: False ==========
+PREMISES:
+Everyone at the mixer is a Grand Slam champion or an Oscar-nominated actor.
+Every Grand Slam champion at the mixer is a professional tennis player.
+All Oscar-nominated actors at the mixer are celebrities.
+All professional tennis players at the mixer are athletes.
+If a person at the mixer is a celebrity, then they are well paid.
+If a person at the mixer is an athlete, then they are famous.
+All well-paid people at the mixer live in tax havens.
+Djokovic is at the mixer: if Djokovic is a famous athlete, then Djokovic is well-paid.
+PREMISES-FOL:
+all x (At(x, mixer) -> (GrandSlam(x) & Champion(x)) | (OscarNominated(x) & Actor(x)))
+all x (At(x, mixer) & (GrandSlam(x) & Champion(x) -> Professional(x) & TennisPlayer(x))
+all x (At(x, mixer) & (OscarNominated(x) & Actor(x) -> Celebrity(x))
+all x (At(x, mixer) & Professional(x) & TennisPlayer(x) -> Athlete(x))
+all x (At(x, mixer) & Celebrity(x) -> WellPaid(x))
+all x (At(x, mixer) & Athlete(x) -> Famous(x))
+all x (At(x, mixer) & WellPaid(x) -> LiveIn(x, taxHaven))
+At(djokovic, mixer) & (Famous(djokovic) & Athlete(djokovic) -> WellPaid(djokovic))
+CONCLUSION:     Djokovic does not live in a tax haven.
+CONCLUSION-FOL: ~LiveIn(djokovic, taxHaven)
+
+========== case 34 | ex 289 | story 96 | label: True ==========
+PREMISES:
+Diamond Mine is a professional wrestling stable formed in WWE.
+Roderick Strong leads Diamond Mine.
+Diamond Mine includes the Creed Brothers and Ivy Nile.
+Imperium has a feud with Diamond Mine.
+PREMISES-FOL:
+ProfessionalWrestlingStable(diamondMine) & In(diamondMine, wWE)
+Leads(roderickStrong, diamondMine)
+Includes(diamondMine, creedBrothers) & Includes(diamondMine, ivyNile)
+Feuds(imperium, diamondMine)
+CONCLUSION:     Roderick Strong leads a professional wrestling stable.
+CONCLUSION-FOL: exists x (Leads(roderickstrong, x) & ProfessionalWrestlingStable(x))
+
+========== case 35 | ex 290 | story 96 | label: Uncertain ==========
+PREMISES:
+Diamond Mine is a professional wrestling stable formed in WWE.
+Roderick Strong leads Diamond Mine.
+Diamond Mine includes the Creed Brothers and Ivy Nile.
+Imperium has a feud with Diamond Mine.
+PREMISES-FOL:
+ProfessionalWrestlingStable(diamondMine) & In(diamondMine, wWE)
+Leads(roderickStrong, diamondMine)
+Includes(diamondMine, creedBrothers) & Includes(diamondMine, ivyNile)
+Feuds(imperium, diamondMine)
+CONCLUSION:     Roderick Strong leads the Creed Brothers.
+CONCLUSION-FOL: Leads(roderickstrong, creedbrothers)
+
+========== case 36 | ex 291 | story 96 | label: False ==========
+PREMISES:
+Diamond Mine is a professional wrestling stable formed in WWE.
+Roderick Strong leads Diamond Mine.
+Diamond Mine includes the Creed Brothers and Ivy Nile.
+Imperium has a feud with Diamond Mine.
+PREMISES-FOL:
+ProfessionalWrestlingStable(diamondMine) & In(diamondMine, wWE)
+Leads(roderickStrong, diamondMine)
+Includes(diamondMine, creedBrothers) & Includes(diamondMine, ivyNile)
+Feuds(imperium, diamondMine)
+CONCLUSION:     Imperium doesn't have a feud with a professional wrestling stable that includes Ivy Nile.
+CONCLUSION-FOL: all x ((ProfessionalWrestlingStable(x) & Includes(x, ivynile)) -> ~Feuds(imperium, x))
+
+========== case 37 | ex 621 | story 219 | label: True ==========
+PREMISES:
+Symphony No. 9 is a music piece.
+Composers write music pieces.
+Beethoven wrote Symphony No. 9.
+Vienna Music Society premiered Symphony No. 9.
+Vienna Music Society is an orchestra.
+Beethoven leads the Vienna Music Society.
+Orchestras are led by conductors.
+PREMISES-FOL:
+MusicPiece(symphony9)
+all x (MusicPiece(x) -> exists y (Composer(y) & Write(y, x)))
+Writtenby(symphony9, beethoven)
+Premiered(viennaMusicSociety, symphony9)
+Orchestra(viennaMusicSociety)
+Lead(beethoven, viennaMusicSociety)
+all x (Orchestra(x) -> (exists y Conductor(y) & Lead(y, x)))
+CONCLUSION:     Beethoven is a composer.
+CONCLUSION-FOL: Composer(beethoven)
+
+========== case 38 | ex 622 | story 219 | label: True ==========
+PREMISES:
+Symphony No. 9 is a music piece.
+Composers write music pieces.
+Beethoven wrote Symphony No. 9.
+Vienna Music Society premiered Symphony No. 9.
+Vienna Music Society is an orchestra.
+Beethoven leads the Vienna Music Society.
+Orchestras are led by conductors.
+PREMISES-FOL:
+MusicPiece(symphony9)
+all x (MusicPiece(x) -> exists y (Composer(y) & Write(y, x)))
+Writtenby(symphony9, beethoven)
+Premiered(viennaMusicSociety, symphony9)
+Orchestra(viennaMusicSociety)
+Lead(beethoven, viennaMusicSociety)
+all x (Orchestra(x) -> (exists y Conductor(y) & Lead(y, x)))
+CONCLUSION:     Some orchestras premiered music pieces.
+CONCLUSION-FOL: exists x exists y (Orchestra(x) & MusicPiece(y) & Premiered(x, y))
+
+========== case 39 | ex 623 | story 219 | label: False ==========
+PREMISES:
+Symphony No. 9 is a music piece.
+Composers write music pieces.
+Beethoven wrote Symphony No. 9.
+Vienna Music Society premiered Symphony No. 9.
+Vienna Music Society is an orchestra.
+Beethoven leads the Vienna Music Society.
+Orchestras are led by conductors.
+PREMISES-FOL:
+MusicPiece(symphony9)
+all x (MusicPiece(x) -> exists y (Composer(y) & Write(y, x)))
+Writtenby(symphony9, beethoven)
+Premiered(viennaMusicSociety, symphony9)
+Orchestra(viennaMusicSociety)
+Lead(beethoven, viennaMusicSociety)
+all x (Orchestra(x) -> (exists y Conductor(y) & Lead(y, x)))
+CONCLUSION:     Beethoven is not a conductor.
+CONCLUSION-FOL: ~Conductor(beethoven)
+
+========== case 40 | ex 927 | story 350 | label: Uncertain ==========
+PREMISES:
+All of Zaha Hadid's design styles that Max adores have interesting geometries.
+No brutalist buildings that Max adores have interesting geometries.
+Every style that Max adores is either Zaha Hadid's design style or Kelly Wearstler's design style.
+All of Kelly Wearstler's design styles that Max adores are evocative.
+All of Kelly Wearstler's design styles that Max adores are dreamy.
+If a design by Max that he adores has interesting geometries, then the design is a brutalist building and evocative.
+PREMISES-FOL:
+all x (Adore(max, x) & ZahaHadid(x) & DesignStyle(x) -> InterestingGeometry(x))
+all x (Adore(max, x) & BrutalistBuilding(x) -> ~InterestingGeometry(x))
+all x (Adore(max, x) -> ((ZahaHadid(x) & DesignStyle(x)) (+) (KellyWearstler(x) & DesignStyle(x)))
+all x (Adore(max, x) & KellyWearstler(x) & DesignStyle(x) -> Evocative(x))
+all x (Adore(max, x) & KellyWearstler(x) & DesignStyle(x) -> Dreamy(x))
+exists x (Adore(max, x) & Design(x) & ByMax(x) & InterestingGeometry(x) -> BrutalistBuilding(x) & Evocative(x))
+CONCLUSION:     A design by Max is a brutalist building.
+CONCLUSION-FOL: exists x (Design(x) & ByMax(x) & BrutalistBuilding(x))
+
+========== case 41 | ex 928 | story 350 | label: True ==========
+PREMISES:
+All of Zaha Hadid's design styles that Max adores have interesting geometries.
+No brutalist buildings that Max adores have interesting geometries.
+Every style that Max adores is either Zaha Hadid's design style or Kelly Wearstler's design style.
+All of Kelly Wearstler's design styles that Max adores are evocative.
+All of Kelly Wearstler's design styles that Max adores are dreamy.
+If a design by Max that he adores has interesting geometries, then the design is a brutalist building and evocative.
+PREMISES-FOL:
+all x (Adore(max, x) & ZahaHadid(x) & DesignStyle(x) -> InterestingGeometry(x))
+all x (Adore(max, x) & BrutalistBuilding(x) -> ~InterestingGeometry(x))
+all x (Adore(max, x) -> ((ZahaHadid(x) & DesignStyle(x)) (+) (KellyWearstler(x) & DesignStyle(x)))
+all x (Adore(max, x) & KellyWearstler(x) & DesignStyle(x) -> Evocative(x))
+all x (Adore(max, x) & KellyWearstler(x) & DesignStyle(x) -> Dreamy(x))
+exists x (Adore(max, x) & Design(x) & ByMax(x) & InterestingGeometry(x) -> BrutalistBuilding(x) & Evocative(x))
+CONCLUSION:     A design by Max is evocative and dreamy.
+CONCLUSION-FOL: exists x (Design(x) & ByMax(x) & Evocative(x) & Dreamy(x))
+
+========== case 42 | ex 929 | story 350 | label: False ==========
+PREMISES:
+All of Zaha Hadid's design styles that Max adores have interesting geometries.
+No brutalist buildings that Max adores have interesting geometries.
+Every style that Max adores is either Zaha Hadid's design style or Kelly Wearstler's design style.
+All of Kelly Wearstler's design styles that Max adores are evocative.
+All of Kelly Wearstler's design styles that Max adores are dreamy.
+If a design by Max that he adores has interesting geometries, then the design is a brutalist building and evocative.
+PREMISES-FOL:
+all x (Adore(max, x) & ZahaHadid(x) & DesignStyle(x) -> InterestingGeometry(x))
+all x (Adore(max, x) & BrutalistBuilding(x) -> ~InterestingGeometry(x))
+all x (Adore(max, x) -> ((ZahaHadid(x) & DesignStyle(x)) (+) (KellyWearstler(x) & DesignStyle(x)))
+all x (Adore(max, x) & KellyWearstler(x) & DesignStyle(x) -> Evocative(x))
+all x (Adore(max, x) & KellyWearstler(x) & DesignStyle(x) -> Dreamy(x))
+exists x (Adore(max, x) & Design(x) & ByMax(x) & InterestingGeometry(x) -> BrutalistBuilding(x) & Evocative(x))
+CONCLUSION:     A design by Max is either evocative or dreamy.
+CONCLUSION-FOL: exists x (Design(x) & ByMax(x) & (Evocative(x) (+) Dreamy(x)))
+
+========== case 43 | ex 1029 | story 385 | label: True ==========
+PREMISES:
+If someone is ranked highly by the Women's Tennis Association, then they are one of the most active players in major tennis.
+Everyone who lost to Iga Swiatek at Roland Garros 2022 is ranked highly by the Women's Tennis Association.
+All female tennis players at Roland Garros 2022 lost to Iga Swiatek.
+All tennis players at Roland Garros 2022 are either female or male.
+All male tennis players at Roland Garros in 2022 lost to Rafael Nadal.
+If Coco Gauff is ranked highly by the Women's Tennis Association or lost to Rafael Nadal, then Coco Gauff is not a male tennis player at Roland Garros 2022.
+Coco Gauff is at Roland Garros 2022.
+PREMISES-FOL:
+all x (RankedHighlyBy(x, womensTennisAssociation) -> MostActivePlayerIn(x, majorTennis))
+all x (LostTo(x, swiatek) &  At(x, rolandGarros2022) -> RankedHighlyBy(x, womensTennisAssociation))
+all x (FemaleTennisPlayer(x) & At(x, rolandGarros2022) -> LostTo(x, swiatek) &  At(x, rolandGarros2022))
+all x (TennisPlayer(x) & At(x, rolandGarros2022) -> (Female(x) & TennisPlayer(x)) (+) (Male(x) & TennisPlayer(x)))
+all x (Male(x) & TennisPlayer(x) & At(x, rolandGarros2022) -> LostTo(x, swiatek) & At(x, rolandGarros2022))
+RankedHighlyBy(cocoGauff, womensTennisAssociation) | (LostTo(cocoGauff, swiatek) & LostAt(cocoGauff, rolandGarros2022)) -> ~(Male(cocoGauff) & TennisPlayer(cocoGauff) & AtRolandGarros2022(cocoGauff))
+TennisPlayer(cocoGauff) & At(cocoGauff, rolandGarros2022)
+CONCLUSION:     Coco Gauff is among the most active Grand-Slam players.
+CONCLUSION-FOL: MostActivePlayerIn(cocoGauff, majorTennis)
+
+========== case 44 | ex 1030 | story 385 | label: Uncertain ==========
+PREMISES:
+If someone is ranked highly by the Women's Tennis Association, then they are one of the most active players in major tennis.
+Everyone who lost to Iga Swiatek at Roland Garros 2022 is ranked highly by the Women's Tennis Association.
+All female tennis players at Roland Garros 2022 lost to Iga Swiatek.
+All tennis players at Roland Garros 2022 are either female or male.
+All male tennis players at Roland Garros in 2022 lost to Rafael Nadal.
+If Coco Gauff is ranked highly by the Women's Tennis Association or lost to Rafael Nadal, then Coco Gauff is not a male tennis player at Roland Garros 2022.
+Coco Gauff is at Roland Garros 2022.
+PREMISES-FOL:
+all x (RankedHighlyBy(x, womensTennisAssociation) -> MostActivePlayerIn(x, majorTennis))
+all x (LostTo(x, swiatek) &  At(x, rolandGarros2022) -> RankedHighlyBy(x, womensTennisAssociation))
+all x (FemaleTennisPlayer(x) & At(x, rolandGarros2022) -> LostTo(x, swiatek) &  At(x, rolandGarros2022))
+all x (TennisPlayer(x) & At(x, rolandGarros2022) -> (Female(x) & TennisPlayer(x)) (+) (Male(x) & TennisPlayer(x)))
+all x (Male(x) & TennisPlayer(x) & At(x, rolandGarros2022) -> LostTo(x, swiatek) & At(x, rolandGarros2022))
+RankedHighlyBy(cocoGauff, womensTennisAssociation) | (LostTo(cocoGauff, swiatek) & LostAt(cocoGauff, rolandGarros2022)) -> ~(Male(cocoGauff) & TennisPlayer(cocoGauff) & AtRolandGarros2022(cocoGauff))
+TennisPlayer(cocoGauff) & At(cocoGauff, rolandGarros2022)
+CONCLUSION:     Coco Gauff has lost to Rafael Nadal.
+CONCLUSION-FOL: LostTo(cocoGauff, swiatek) & At(cocoGauff, rolandGarros2022)
+
+========== case 45 | ex 1031 | story 385 | label: False ==========
+PREMISES:
+If someone is ranked highly by the Women's Tennis Association, then they are one of the most active players in major tennis.
+Everyone who lost to Iga Swiatek at Roland Garros 2022 is ranked highly by the Women's Tennis Association.
+All female tennis players at Roland Garros 2022 lost to Iga Swiatek.
+All tennis players at Roland Garros 2022 are either female or male.
+All male tennis players at Roland Garros in 2022 lost to Rafael Nadal.
+If Coco Gauff is ranked highly by the Women's Tennis Association or lost to Rafael Nadal, then Coco Gauff is not a male tennis player at Roland Garros 2022.
+Coco Gauff is at Roland Garros 2022.
+PREMISES-FOL:
+all x (RankedHighlyBy(x, womensTennisAssociation) -> MostActivePlayerIn(x, majorTennis))
+all x (LostTo(x, swiatek) &  At(x, rolandGarros2022) -> RankedHighlyBy(x, womensTennisAssociation))
+all x (FemaleTennisPlayer(x) & At(x, rolandGarros2022) -> LostTo(x, swiatek) &  At(x, rolandGarros2022))
+all x (TennisPlayer(x) & At(x, rolandGarros2022) -> (Female(x) & TennisPlayer(x)) (+) (Male(x) & TennisPlayer(x)))
+all x (Male(x) & TennisPlayer(x) & At(x, rolandGarros2022) -> LostTo(x, swiatek) & At(x, rolandGarros2022))
+RankedHighlyBy(cocoGauff, womensTennisAssociation) | (LostTo(cocoGauff, swiatek) & LostAt(cocoGauff, rolandGarros2022)) -> ~(Male(cocoGauff) & TennisPlayer(cocoGauff) & AtRolandGarros2022(cocoGauff))
+TennisPlayer(cocoGauff) & At(cocoGauff, rolandGarros2022)
+CONCLUSION:     Coco Gauff is not both a player who lost to Iga Swiatek at Roland Garros 2022 and one of the most active players in major tennis.
+CONCLUSION-FOL: ~(LostTo(cocoGauff, swiatek) & At(cocoGauff, rolandGarros2022)) | ~MostActivePlayerIn(cocoGauff, majorTennis)
+
+========== case 46 | ex 700 | story 256 | label: Uncertain ==========
+PREMISES:
+All cats are mammals.
+Some pets are not mammals.
+PREMISES-FOL:
+all x (Cat(x) -> Mammal(x))
+exists x (Pet(x) & ~Mammal(x))
+CONCLUSION:     No pets are cats.
+CONCLUSION-FOL: all x (Pet(x) -> ~Cat(x))
+
+========== case 47 | ex 456 | story 159 | label: True ==========
+PREMISES:
+There are four seasons in a year: Spring, Summer, Fall, and Winter.
+All students who want to have a long vacation have summer as their favorite season.
+Emma's favorite season is summer.
+Mia's favorite season is not the same as Emma's.
+James wants to have a long vacation.
+PREMISES-FOL:
+Season(spring) | Season(summer) | Season(fall) | Season(winter) & (Season(spring) -> ~Season(summer) & ~Season(fall) & ~Season(winter)) & (Season(summer) -> ~Season(spring) & ~Season(fall) & ~Season(winter)) & (Season(fall) -> ~Season(spring) & ~Season(summer) & ~Season(winter)) & (Season(winter) -> ~Season(spring) & ~Season(summer) & ~Season(fall))
+all x (Want(x, longvacation) -> Favorite(x, summer))
+Favorite(emma, summer)
+all x all y (Season(x) & Season(y) & Favorite(mia, x) & Favorite(emma, y) -> ~(x=y))
+Want(james, longVacation)
+CONCLUSION:     James's favorite season is summer.
+CONCLUSION-FOL: Favorite(james, summer)
+
+========== case 48 | ex 457 | story 159 | label: Uncertain ==========
+PREMISES:
+There are four seasons in a year: Spring, Summer, Fall, and Winter.
+All students who want to have a long vacation have summer as their favorite season.
+Emma's favorite season is summer.
+Mia's favorite season is not the same as Emma's.
+James wants to have a long vacation.
+PREMISES-FOL:
+Season(spring) | Season(summer) | Season(fall) | Season(winter) & (Season(spring) -> ~Season(summer) & ~Season(fall) & ~Season(winter)) & (Season(summer) -> ~Season(spring) & ~Season(fall) & ~Season(winter)) & (Season(fall) -> ~Season(spring) & ~Season(summer) & ~Season(winter)) & (Season(winter) -> ~Season(spring) & ~Season(summer) & ~Season(fall))
+all x (Want(x, longvacation) -> Favorite(x, summer))
+Favorite(emma, summer)
+all x all y (Season(x) & Season(y) & Favorite(mia, x) & Favorite(emma, y) -> ~(x=y))
+Want(james, longVacation)
+CONCLUSION:     Mia's favorite season is spring.
+CONCLUSION-FOL: Favorite(mia, spring)
+
+========== case 49 | ex 904 | story 343 | label: Uncertain ==========
+PREMISES:
+No digital media are analog.
+Every printed text is analog media.
+All streaming services are digital media.
+If an object is a hardcover book, then it is printed text.
+If 1984 is a streaming service, then 1984 is a hardcover book.
+PREMISES-FOL:
+all x (DigitalMedia(x) -> ~AnalogMedia(x))
+all x (PrintedText(x) -> AnalogMedia(x))
+all x (StreamingService(x) -> DigitalMedia(x))
+all x (HardcoverBook(x) -> PrintedText(x))
+StreamingService(1984) -> HardcoverBook(1984)
+CONCLUSION:     1984 is printed text.
+CONCLUSION-FOL: PrintedText(y1984)
+
+========== case 50 | ex 905 | story 343 | label: False ==========
+PREMISES:
+No digital media are analog.
+Every printed text is analog media.
+All streaming services are digital media.
+If an object is a hardcover book, then it is printed text.
+If 1984 is a streaming service, then 1984 is a hardcover book.
+PREMISES-FOL:
+all x (DigitalMedia(x) -> ~AnalogMedia(x))
+all x (PrintedText(x) -> AnalogMedia(x))
+all x (StreamingService(x) -> DigitalMedia(x))
+all x (HardcoverBook(x) -> PrintedText(x))
+StreamingService(1984) -> HardcoverBook(1984)
+CONCLUSION:     1984 is a streaming service.
+CONCLUSION-FOL: StreamingService(y1984)
+
+========== case 51 | ex 906 | story 343 | label: True ==========
+PREMISES:
+No digital media are analog.
+Every printed text is analog media.
+All streaming services are digital media.
+If an object is a hardcover book, then it is printed text.
+If 1984 is a streaming service, then 1984 is a hardcover book.
+PREMISES-FOL:
+all x (DigitalMedia(x) -> ~AnalogMedia(x))
+all x (PrintedText(x) -> AnalogMedia(x))
+all x (StreamingService(x) -> DigitalMedia(x))
+all x (HardcoverBook(x) -> PrintedText(x))
+StreamingService(1984) -> HardcoverBook(1984)
+CONCLUSION:     1984 is not a streaming service.
+CONCLUSION-FOL: ~StreamingService(y1984)
+
+========== case 52 | ex 608 | story 213 | label: False ==========
+PREMISES:
+All Romance languages are Indo-European languages.
+Romance languages are a language family.
+All languages within a language family are related to each other.
+French and Spanish are both Romance languages.
+German is related to Spanish.
+Basque is not related to any other language.
+PREMISES-FOL:
+all x (RomanceLanguage(x) -> IndoEuropeanLanguage(x))
+all x (RomanceLanguage(x) -> MemberOf(x, languageFamily))
+all x all y all z ((MemberOf(x, z) & MemberOf(y, z)) -> (Related(x, y) & Related(y, x)))
+RomanceLanguage(french) & RomanceLanguage(spanish)
+Related(german, spanish)
+all x (Language(x) -> ~Related(basque, x))
+CONCLUSION:     Basque is a Romance language.
+CONCLUSION-FOL: RomanceLanguage(basque)
+
+========== case 53 | ex 609 | story 213 | label: Uncertain ==========
+PREMISES:
+All Romance languages are Indo-European languages.
+Romance languages are a language family.
+All languages within a language family are related to each other.
+French and Spanish are both Romance languages.
+German is related to Spanish.
+Basque is not related to any other language.
+PREMISES-FOL:
+all x (RomanceLanguage(x) -> IndoEuropeanLanguage(x))
+all x (RomanceLanguage(x) -> MemberOf(x, languageFamily))
+all x all y all z ((MemberOf(x, z) & MemberOf(y, z)) -> (Related(x, y) & Related(y, x)))
+RomanceLanguage(french) & RomanceLanguage(spanish)
+Related(german, spanish)
+all x (Language(x) -> ~Related(basque, x))
+CONCLUSION:     German is a Romance language.
+CONCLUSION-FOL: RomanceLanguage(german)
+
+========== case 54 | ex 610 | story 213 | label: True ==========
+PREMISES:
+All Romance languages are Indo-European languages.
+Romance languages are a language family.
+All languages within a language family are related to each other.
+French and Spanish are both Romance languages.
+German is related to Spanish.
+Basque is not related to any other language.
+PREMISES-FOL:
+all x (RomanceLanguage(x) -> IndoEuropeanLanguage(x))
+all x (RomanceLanguage(x) -> MemberOf(x, languageFamily))
+all x all y all z ((MemberOf(x, z) & MemberOf(y, z)) -> (Related(x, y) & Related(y, x)))
+RomanceLanguage(french) & RomanceLanguage(spanish)
+Related(german, spanish)
+all x (Language(x) -> ~Related(basque, x))
+CONCLUSION:     French is an Indo-European language.
+CONCLUSION-FOL: IndoEuropeanLanguage(french)
+
+========== case 55 | ex 240 | story 79 | label: True ==========
+PREMISES:
+Robert Lewandowski is a striker.
+Strikers are soccer players.
+Robert Lewandowski left Bayern Munchen.
+If a player leaves a team they no longer play for that team.
+PREMISES-FOL:
+Striker(robertLewandowski)
+all x (Striker(x) -> SoccerPlayer(x))
+Left(robertLewandowski, bayernMunchen)
+all x all y (Left(x, y) -> ~PlaysFor(x, y))
+CONCLUSION:     Robert Lewandowski is a soccer player.
+CONCLUSION-FOL: SoccerPlayer(robertLewandowski)
+
+========== case 56 | ex 241 | story 79 | label: False ==========
+PREMISES:
+Robert Lewandowski is a striker.
+Strikers are soccer players.
+Robert Lewandowski left Bayern Munchen.
+If a player leaves a team they no longer play for that team.
+PREMISES-FOL:
+Striker(robertLewandowski)
+all x (Striker(x) -> SoccerPlayer(x))
+Left(robertLewandowski, bayernMunchen)
+all x all y (Left(x, y) -> ~PlaysFor(x, y))
+CONCLUSION:     Robert Lewandowski plays for Bayern Munchen.
+CONCLUSION-FOL: PlaysFor(robertLewandowski, bayernMunchen)
+
+========== case 57 | ex 242 | story 79 | label: Uncertain ==========
+PREMISES:
+Robert Lewandowski is a striker.
+Strikers are soccer players.
+Robert Lewandowski left Bayern Munchen.
+If a player leaves a team they no longer play for that team.
+PREMISES-FOL:
+Striker(robertLewandowski)
+all x (Striker(x) -> SoccerPlayer(x))
+Left(robertLewandowski, bayernMunchen)
+all x all y (Left(x, y) -> ~PlaysFor(x, y))
+CONCLUSION:     Robert Lewandowski is a star.
+CONCLUSION-FOL: SoccerStar(robertLewandowski)
+
+========== case 58 | ex 4 | story 2 | label: False ==========
+PREMISES:
+Billings is a city in the state of Montana in U.S.
+The state of Montana includes the cities of Butte, Helena, and Missoula.
+White Sulphur Springs and Butte are cities in the same state in U.S.
+The city of St Pierre is not in the state of Montana.
+Any city in Butte is not in St Pierre.
+A city can only be in one state in U.S.  except for Bristol, Texarkana, Texhoma and Union City.
+PREMISES-FOL:
+City(billings) & In(billings, montana)
+City(butte) & In(butte, montana) & City(helena) & In(helena, montana) & City(missoula) & In(missoula, montana)
+exists x (City(whitesulphursprings) & In(whitesulphursprings, x) & City(butte) & In(butte, x))
+City(pierre) & ~(In(pierre, montana))
+all x ((City(x) & City(butte) & In(x, butte)) -> ~(In(x, pierre)))
+all x exists y ((City(x) & (In(x, y) & ~(x=bristol) & ~(x=texarkana) & ~(x=texhoma) & ~(x=unionCity)) -> ~exists z (~(z=y) & In(x, z)))
+CONCLUSION:     Butte and St Pierre are in the same state.
+CONCLUSION-FOL: exists x (In(butte, x) & In(stPierre, x))
+
+========== case 59 | ex 5 | story 2 | label: Uncertain ==========
+PREMISES:
+Billings is a city in the state of Montana in U.S.
+The state of Montana includes the cities of Butte, Helena, and Missoula.
+White Sulphur Springs and Butte are cities in the same state in U.S.
+The city of St Pierre is not in the state of Montana.
+Any city in Butte is not in St Pierre.
+A city can only be in one state in U.S.  except for Bristol, Texarkana, Texhoma and Union City.
+PREMISES-FOL:
+City(billings) & In(billings, montana)
+City(butte) & In(butte, montana) & City(helena) & In(helena, montana) & City(missoula) & In(missoula, montana)
+exists x (City(whitesulphursprings) & In(whitesulphursprings, x) & City(butte) & In(butte, x))
+City(pierre) & ~(In(pierre, montana))
+all x ((City(x) & City(butte) & In(x, butte)) -> ~(In(x, pierre)))
+all x exists y ((City(x) & (In(x, y) & ~(x=bristol) & ~(x=texarkana) & ~(x=texhoma) & ~(x=unionCity)) -> ~exists z (~(z=y) & In(x, z)))
+CONCLUSION:     St Pierre and Bismarck are in the same state.
+CONCLUSION-FOL: exists x (City(pierre) & In(pierre, x) & City(bismarck) & In(bismarck, x))
+
+========== case 60 | ex 6 | story 2 | label: True ==========
+PREMISES:
+Billings is a city in the state of Montana in U.S.
+The state of Montana includes the cities of Butte, Helena, and Missoula.
+White Sulphur Springs and Butte are cities in the same state in U.S.
+The city of St Pierre is not in the state of Montana.
+Any city in Butte is not in St Pierre.
+A city can only be in one state in U.S.  except for Bristol, Texarkana, Texhoma and Union City.
+PREMISES-FOL:
+City(billings) & In(billings, montana)
+City(butte) & In(butte, montana) & City(helena) & In(helena, montana) & City(missoula) & In(missoula, montana)
+exists x (City(whitesulphursprings) & In(whitesulphursprings, x) & City(butte) & In(butte, x))
+City(pierre) & ~(In(pierre, montana))
+all x ((City(x) & City(butte) & In(x, butte)) -> ~(In(x, pierre)))
+all x exists y ((City(x) & (In(x, y) & ~(x=bristol) & ~(x=texarkana) & ~(x=texhoma) & ~(x=unionCity)) -> ~exists z (~(z=y) & In(x, z)))
+CONCLUSION:     Montana is home to the city of Missoula.
+CONCLUSION-FOL: City(missoula) & In(missoula, montana)
+
+========== case 61 | ex 548 | story 192 | label: Uncertain ==========
+PREMISES:
+International students in the US have either an F1 visa or a J1 visa.
+An international student in the US with an F1 visa needs to apply for CPT or OPT if the student wants to work in the US.
+Mike is an international student.
+Mike needs to apply for CPT if he wants to work in the US.
+PREMISES-FOL:
+all x (InternationalStudent(x) & In(x, unitedStates) -> F1Visa(x) (+) J1Visa(x))
+all x (InternationalStudent(x) & In(x, unitedStates) & F1Visa(x) & WantToWorkIn(x, unitedStates) -> Apply(x, cpt) | Apply(x, opt))
+InternationalStudent(mike)
+WantToWorkIn(x, unitedStates) -> Apply(mike, cpt)
+CONCLUSION:     Mike has an F1 visa.
+CONCLUSION-FOL: F1Visa(mike)
+
+========== case 62 | ex 549 | story 192 | label: Uncertain ==========
+PREMISES:
+International students in the US have either an F1 visa or a J1 visa.
+An international student in the US with an F1 visa needs to apply for CPT or OPT if the student wants to work in the US.
+Mike is an international student.
+Mike needs to apply for CPT if he wants to work in the US.
+PREMISES-FOL:
+all x (InternationalStudent(x) & In(x, unitedStates) -> F1Visa(x) (+) J1Visa(x))
+all x (InternationalStudent(x) & In(x, unitedStates) & F1Visa(x) & WantToWorkIn(x, unitedStates) -> Apply(x, cpt) | Apply(x, opt))
+InternationalStudent(mike)
+WantToWorkIn(x, unitedStates) -> Apply(mike, cpt)
+CONCLUSION:     Mike has a J1 visa.
+CONCLUSION-FOL: J1Visa(mike)
+
+========== case 63 | ex 1271 | story 442 | label: Uncertain ==========
+PREMISES:
+All Brown Swiss cattle are cows.
+Some pets are Brown Swiss Cattle.
+All cows are domesticated animals.
+Alligators are not domesticated animals.
+Ted is an alligator.
+PREMISES-FOL:
+all x (BrownSwissCattle(x) -> Cow(x))
+exists x (Pet(x) & BrownSwissCattle(x))
+all x (Cow(x) -> DomesticatedAnimal(x))
+all x (Aligator(x) -> ~DomesticatedAnimal(x))
+Aligator(ted)
+CONCLUSION:     Ted is a pet.
+CONCLUSION-FOL: Pet(ted)
+
+========== case 64 | ex 1272 | story 442 | label: False ==========
+PREMISES:
+All Brown Swiss cattle are cows.
+Some pets are Brown Swiss Cattle.
+All cows are domesticated animals.
+Alligators are not domesticated animals.
+Ted is an alligator.
+PREMISES-FOL:
+all x (BrownSwissCattle(x) -> Cow(x))
+exists x (Pet(x) & BrownSwissCattle(x))
+all x (Cow(x) -> DomesticatedAnimal(x))
+all x (Aligator(x) -> ~DomesticatedAnimal(x))
+Aligator(ted)
+CONCLUSION:     Ted is a pet and Brown Swiss cattle
+CONCLUSION-FOL: Pet(ted) & BrownSwissCattle(ted)
+
+========== case 65 | ex 1273 | story 442 | label: True ==========
+PREMISES:
+All Brown Swiss cattle are cows.
+Some pets are Brown Swiss Cattle.
+All cows are domesticated animals.
+Alligators are not domesticated animals.
+Ted is an alligator.
+PREMISES-FOL:
+all x (BrownSwissCattle(x) -> Cow(x))
+exists x (Pet(x) & BrownSwissCattle(x))
+all x (Cow(x) -> DomesticatedAnimal(x))
+all x (Aligator(x) -> ~DomesticatedAnimal(x))
+Aligator(ted)
+CONCLUSION:     If Ted is a Brown Swiss cattle, then Ted is not a pet.
+CONCLUSION-FOL: BrownSwissCattle(ted) -> ~Pet(ted)
+
+========== case 66 | ex 663 | story 234 | label: True ==========
+PREMISES:
+Yale University is a private Ivy League research university.
+Yale University moved to New Haven in 1716.
+Yale university's endowment was valued at $42.3 billion.
+A list of residential colleges at Yale: Benjamin Franklin College, Berkeley College, Branford College, Davenport College, Ezra Stiles College, Grace Hopper College, Jonathan Edwards College, Morse College, Pauli Murray College, Pierson College, Saybrook College, Silliman College, Timothy Dwight College, and Trumbull College.
+PREMISES-FOL:
+PrivateIvyLeagueResearchUniversity(yaleUniversity)
+MovedTo(yaleUniversity, newHaven) & MovedIn(yaleUniversity, year1716)
+ValuedAt(yaleUniversitysEndowment, 42point3billion)
+all x (ResidentialCollege(x) -> At(x, yale) & (BenjaminFranklinCollege(x) (+) BerkleyCollege(x) (+) BranfordCollege(x) (+) DavenportCollege(x) (+) EzraStilesCollege(x) (+) GraceHopperCollege(x) (+) JonathanEdwardsCollege(x) (+) MorseCollege(x) (+) PauliMurrayCollege(x) (+) PiersonCollege(x) (+) SaybrookCollege(x) (+) SillimanCollege(x) (+) TimothyDwightCollege(x) (+) TrumbullCollege(x)))
+CONCLUSION:     A private Ivy League research university moved to New Haven.
+CONCLUSION-FOL: exists x (PrivateIvyLeagueResearchUniversity(x) & MovedTo(x, newHaven))
+
+========== case 67 | ex 664 | story 234 | label: Uncertain ==========
+PREMISES:
+Yale University is a private Ivy League research university.
+Yale University moved to New Haven in 1716.
+Yale university's endowment was valued at $42.3 billion.
+A list of residential colleges at Yale: Benjamin Franklin College, Berkeley College, Branford College, Davenport College, Ezra Stiles College, Grace Hopper College, Jonathan Edwards College, Morse College, Pauli Murray College, Pierson College, Saybrook College, Silliman College, Timothy Dwight College, and Trumbull College.
+PREMISES-FOL:
+PrivateIvyLeagueResearchUniversity(yaleUniversity)
+MovedTo(yaleUniversity, newHaven) & MovedIn(yaleUniversity, year1716)
+ValuedAt(yaleUniversitysEndowment, 42point3billion)
+all x (ResidentialCollege(x) -> At(x, yale) & (BenjaminFranklinCollege(x) (+) BerkleyCollege(x) (+) BranfordCollege(x) (+) DavenportCollege(x) (+) EzraStilesCollege(x) (+) GraceHopperCollege(x) (+) JonathanEdwardsCollege(x) (+) MorseCollege(x) (+) PauliMurrayCollege(x) (+) PiersonCollege(x) (+) SaybrookCollege(x) (+) SillimanCollege(x) (+) TimothyDwightCollege(x) (+) TrumbullCollege(x)))
+CONCLUSION:     Yale University has the largest university endowment of any educational institution.
+CONCLUSION-FOL: LargestUniversityEndowmentOf(yale, anyEducationalInstitution)
+
+========== case 68 | ex 665 | story 234 | label: True ==========
+PREMISES:
+Yale University is a private Ivy League research university.
+Yale University moved to New Haven in 1716.
+Yale university's endowment was valued at $42.3 billion.
+A list of residential colleges at Yale: Benjamin Franklin College, Berkeley College, Branford College, Davenport College, Ezra Stiles College, Grace Hopper College, Jonathan Edwards College, Morse College, Pauli Murray College, Pierson College, Saybrook College, Silliman College, Timothy Dwight College, and Trumbull College.
+PREMISES-FOL:
+PrivateIvyLeagueResearchUniversity(yaleUniversity)
+MovedTo(yaleUniversity, newHaven) & MovedIn(yaleUniversity, year1716)
+ValuedAt(yaleUniversitysEndowment, 42point3billion)
+all x (ResidentialCollege(x) -> At(x, yale) & (BenjaminFranklinCollege(x) (+) BerkleyCollege(x) (+) BranfordCollege(x) (+) DavenportCollege(x) (+) EzraStilesCollege(x) (+) GraceHopperCollege(x) (+) JonathanEdwardsCollege(x) (+) MorseCollege(x) (+) PauliMurrayCollege(x) (+) PiersonCollege(x) (+) SaybrookCollege(x) (+) SillimanCollege(x) (+) TimothyDwightCollege(x) (+) TrumbullCollege(x)))
+CONCLUSION:     Pierson College is a residential college at Yale.
+CONCLUSION-FOL: ResidentialCollege(piersonCollege) & At(piersonCollege, yale)
+
+========== case 69 | ex 360 | story 120 | label: True ==========
+PREMISES:
+Badults is a British Sitcom series starring members of Pappy's.
+Badults was piloted in July 2013 on BBC Three.
+The Working title "The Secret Dude Society" was used for Badults.
+Andrew Collins was the script editor for Badults.
+PREMISES-FOL:
+exists x (BritishSitcom(badults) & Series(badults) & MemberOf(x, pappys) & Starring(badults, x))
+PilotedIn(badults, july2013) & PilotedOn(badults, bBCThree)
+WorkingTitle(theSecretDudeSociety, badults) & UsedFor(theSecretDudeSociety, badults)
+ScriptEditorFor(andrewCollins, badults)
+CONCLUSION:     Andrew Collins was the script editor for a series with the working title "The Secret Dude Society".
+CONCLUSION-FOL: exists x (ScriptEditorFor(andrewCollins, x) & Series(x) & WorkingTitle(theSecretDudeSociety, x))
+
+========== case 70 | ex 361 | story 120 | label: False ==========
+PREMISES:
+Badults is a British Sitcom series starring members of Pappy's.
+Badults was piloted in July 2013 on BBC Three.
+The Working title "The Secret Dude Society" was used for Badults.
+Andrew Collins was the script editor for Badults.
+PREMISES-FOL:
+exists x (BritishSitcom(badults) & Series(badults) & MemberOf(x, pappys) & Starring(badults, x))
+PilotedIn(badults, july2013) & PilotedOn(badults, bBCThree)
+WorkingTitle(theSecretDudeSociety, badults) & UsedFor(theSecretDudeSociety, badults)
+ScriptEditorFor(andrewCollins, badults)
+CONCLUSION:     No members of Pappy's have starred in a show piloting on BBC Two or BBC Three.
+CONCLUSION-FOL: all x all y (MemberOf(x, pappys) & Starring(y, x) -> ~(PilotedOn(y, bBCTwo) | PilotedOn(y, bBCThree)))
+
+========== case 71 | ex 819 | story 322 | label: Uncertain ==========
+PREMISES:
+All growth stocks are bought to earn profits from rapid price appreciation.
+If the stock price is bought to earn profits from rapid price appreciation, then it is not suitable for a retirement fund.
+Some stocks are growth stocks.
+All mature stocks are suitable for a retirement fund.
+KO is a mature stock.
+PREMISES-FOL:
+all x (GrowthStock(x) -> BoughtToEarnProfitFrom(x, rapidPriceAppreciation))
+all x (BoughtToEarnProfitFrom(x, earnProfit, rapidPriceAppreciation) -> ~SuitableFor(x, retirementFund))
+exists x (Stock(x) & GrowthStock(x))
+all x (MatureStock(x) -> SuitableFor(x, retirementFund))
+MatureStock(kO)
+CONCLUSION:     KO is a stock.
+CONCLUSION-FOL: Stock(kO)
+
+========== case 72 | ex 820 | story 322 | label: False ==========
+PREMISES:
+All growth stocks are bought to earn profits from rapid price appreciation.
+If the stock price is bought to earn profits from rapid price appreciation, then it is not suitable for a retirement fund.
+Some stocks are growth stocks.
+All mature stocks are suitable for a retirement fund.
+KO is a mature stock.
+PREMISES-FOL:
+all x (GrowthStock(x) -> BoughtToEarnProfitFrom(x, rapidPriceAppreciation))
+all x (BoughtToEarnProfitFrom(x, earnProfit, rapidPriceAppreciation) -> ~SuitableFor(x, retirementFund))
+exists x (Stock(x) & GrowthStock(x))
+all x (MatureStock(x) -> SuitableFor(x, retirementFund))
+MatureStock(kO)
+CONCLUSION:     KO is a stock and a growth stock.
+CONCLUSION-FOL: ~GrowthStock(kO)
+
+========== case 73 | ex 821 | story 322 | label: True ==========
+PREMISES:
+All growth stocks are bought to earn profits from rapid price appreciation.
+If the stock price is bought to earn profits from rapid price appreciation, then it is not suitable for a retirement fund.
+Some stocks are growth stocks.
+All mature stocks are suitable for a retirement fund.
+KO is a mature stock.
+PREMISES-FOL:
+all x (GrowthStock(x) -> BoughtToEarnProfitFrom(x, rapidPriceAppreciation))
+all x (BoughtToEarnProfitFrom(x, earnProfit, rapidPriceAppreciation) -> ~SuitableFor(x, retirementFund))
+exists x (Stock(x) & GrowthStock(x))
+all x (MatureStock(x) -> SuitableFor(x, retirementFund))
+MatureStock(kO)
+CONCLUSION:     If KO is a growth stock or bought to earn profits from rapid price appreciation, then KO is neither a stock nor is its price volatile.
+CONCLUSION-FOL: GrowthStock(kO) | BoughtToEarnProfitFrom(kO, earnProfit, rapidPriceAppreciation) -> ~Stock(kO) & ~BoughtToEarnProfitFrom(kO, rapidPriceAppreciation)
+
+========== case 74 | ex 253 | story 83 | label: True ==========
+PREMISES:
+All vehicle registration plates in Istanbul begin with the number 34.
+Plates that do not begin with the number 34 are not from Istanbul.
+Joe's vehicle registration plate is from Istanbul.
+Tom's license plate begins with the number 35.
+If a license plate begins with the number 35, then it does not begin with the number 34.
+PREMISES-FOL:
+all x (VehicleRegistrationPlateIn(x, istanbul) -> BeginWith(x, num34))
+all x (~BeginWith(x, num34) -> ~FromIstanbul(x))
+exists x (Owns(joe, x) & VehicleRegistrationPlateIn(x, istanbul))
+exists x (Owns(tom, x) & BeginWith(x, num35))
+all x (BeginWith(x, num35) -> ~BeginWith(x, num34))
+CONCLUSION:     Joe's license plate begins with the number 34.
+CONCLUSION-FOL: exists x (Owns(joe, x) & BeginWith(x, num34))
+
+========== case 75 | ex 254 | story 83 | label: False ==========
+PREMISES:
+All vehicle registration plates in Istanbul begin with the number 34.
+Plates that do not begin with the number 34 are not from Istanbul.
+Joe's vehicle registration plate is from Istanbul.
+Tom's license plate begins with the number 35.
+If a license plate begins with the number 35, then it does not begin with the number 34.
+PREMISES-FOL:
+all x (VehicleRegistrationPlateIn(x, istanbul) -> BeginWith(x, num34))
+all x (~BeginWith(x, num34) -> ~FromIstanbul(x))
+exists x (Owns(joe, x) & VehicleRegistrationPlateIn(x, istanbul))
+exists x (Owns(tom, x) & BeginWith(x, num35))
+all x (BeginWith(x, num35) -> ~BeginWith(x, num34))
+CONCLUSION:     Tom's license plate is from Istanbul.
+CONCLUSION-FOL: exists x (Owns(tom, x) & VehicleRegistrationPlateIn(x, istanbul))
+
+========== case 76 | ex 979 | story 368 | label: Uncertain ==========
+PREMISES:
+If people at Mary's school work in student jobs on campus, then they need to earn money to help pay for their college tuition.
+If people at Mary's school order takeout frequently in college, then they work in student jobs on campus.
+People at Mary's school order takeout frequently in college or enjoy the dining hall meals and recipes.
+If people at Mary's school enjoy the dining hall meals and recipes, then they are not picky eaters.
+If people at Mary's school enjoy the dining hall meals and recipes, then they spend a lot of their time eating and catching up with friends in the campus dining halls.
+Hannah is at Mary's school.
+Hannah works in student jobs on campus and if she needs to earn money to help pay for her college tuition, then she is neither picky nor needs to earn money to help pay for her college tuition.
+PREMISES-FOL:
+all x (At(x, marysSchool) & WorkIn(x, studentJob, campus) -> NeedToEarnMoneyToHelpPayFor(x, collegeTuition))
+all x (At(x, marysSchool) & OrderFrequently(x, takeout) -> WorkIn(x, studentJob, campus))
+all x (At(x, marysSchool) & (OrderFrequently(x, takeout) | Enjoy(x, diningHallMeal)))
+all x (At(x, marysSchool) & Enjoy(x, diningHallMeal) -> ~PickyEater(x))
+all x (At(x, marysSchool) & Enjoy(x, diningHallMeal) -> Spend(x, aLotOfTime, eating) & Spend(x, aLotOfTime, catchingUpWithFriends, diningHall))
+At(hannah, marysSchool)
+(WorkIn(hannah, studentJob, campus) & NeedToEarnMoneyToHelpPayFor(hannah, collegeTuition) -> ~(PickyEater(hannah) | NeedToEarnMoneyToHelpPayFor(hannah, collegeTuition))
+CONCLUSION:     Hannah needs to earn money to help pay for her college tuition.
+CONCLUSION-FOL: NeedToEarnMoneyToHelpPayFor(hannah, collegeTuition)
+
+========== case 77 | ex 980 | story 368 | label: True ==========
+PREMISES:
+If people at Mary's school work in student jobs on campus, then they need to earn money to help pay for their college tuition.
+If people at Mary's school order takeout frequently in college, then they work in student jobs on campus.
+People at Mary's school order takeout frequently in college or enjoy the dining hall meals and recipes.
+If people at Mary's school enjoy the dining hall meals and recipes, then they are not picky eaters.
+If people at Mary's school enjoy the dining hall meals and recipes, then they spend a lot of their time eating and catching up with friends in the campus dining halls.
+Hannah is at Mary's school.
+Hannah works in student jobs on campus and if she needs to earn money to help pay for her college tuition, then she is neither picky nor needs to earn money to help pay for her college tuition.
+PREMISES-FOL:
+all x (At(x, marysSchool) & WorkIn(x, studentJob, campus) -> NeedToEarnMoneyToHelpPayFor(x, collegeTuition))
+all x (At(x, marysSchool) & OrderFrequently(x, takeout) -> WorkIn(x, studentJob, campus))
+all x (At(x, marysSchool) & (OrderFrequently(x, takeout) | Enjoy(x, diningHallMeal)))
+all x (At(x, marysSchool) & Enjoy(x, diningHallMeal) -> ~PickyEater(x))
+all x (At(x, marysSchool) & Enjoy(x, diningHallMeal) -> Spend(x, aLotOfTime, eating) & Spend(x, aLotOfTime, catchingUpWithFriends, diningHall))
+At(hannah, marysSchool)
+(WorkIn(hannah, studentJob, campus) & NeedToEarnMoneyToHelpPayFor(hannah, collegeTuition) -> ~(PickyEater(hannah) | NeedToEarnMoneyToHelpPayFor(hannah, collegeTuition))
+CONCLUSION:     Hannah is at Mary's school and she is not a picky eater and spends a lot of her time eating and catching up with friends in the campus dining halls.
+CONCLUSION-FOL: ~(PickyEater(hannah) & Spend(hannah, aLotOfTime, eating) & Spend(hannah, aLotOfTime, catchingUpWithFriends, diningHall))
+
+========== case 78 | ex 981 | story 368 | label: False ==========
+PREMISES:
+If people at Mary's school work in student jobs on campus, then they need to earn money to help pay for their college tuition.
+If people at Mary's school order takeout frequently in college, then they work in student jobs on campus.
+People at Mary's school order takeout frequently in college or enjoy the dining hall meals and recipes.
+If people at Mary's school enjoy the dining hall meals and recipes, then they are not picky eaters.
+If people at Mary's school enjoy the dining hall meals and recipes, then they spend a lot of their time eating and catching up with friends in the campus dining halls.
+Hannah is at Mary's school.
+Hannah works in student jobs on campus and if she needs to earn money to help pay for her college tuition, then she is neither picky nor needs to earn money to help pay for her college tuition.
+PREMISES-FOL:
+all x (At(x, marysSchool) & WorkIn(x, studentJob, campus) -> NeedToEarnMoneyToHelpPayFor(x, collegeTuition))
+all x (At(x, marysSchool) & OrderFrequently(x, takeout) -> WorkIn(x, studentJob, campus))
+all x (At(x, marysSchool) & (OrderFrequently(x, takeout) | Enjoy(x, diningHallMeal)))
+all x (At(x, marysSchool) & Enjoy(x, diningHallMeal) -> ~PickyEater(x))
+all x (At(x, marysSchool) & Enjoy(x, diningHallMeal) -> Spend(x, aLotOfTime, eating) & Spend(x, aLotOfTime, catchingUpWithFriends, diningHall))
+At(hannah, marysSchool)
+(WorkIn(hannah, studentJob, campus) & NeedToEarnMoneyToHelpPayFor(hannah, collegeTuition) -> ~(PickyEater(hannah) | NeedToEarnMoneyToHelpPayFor(hannah, collegeTuition))
+CONCLUSION:     Hannah is at Mary's school and she either is not a picky eater or, if she is, then she spends a lot of her time eating and catching up with friends in the campus dining halls.
+CONCLUSION-FOL: PickyEater(hannah) (+) (Spend(hannah, aLotOfTime, eating) & Spend(hannah, aLotOfTime, catchingUpWithFriends, diningHall))
+
+========== case 79 | ex 805 | story 319 | label: False ==========
+PREMISES:
+No baked sweets are spicy.
+All cupcakes are baked sweets.
+All mala hotpots are spicy.
+All products from Baked by Melissa are cupcakes.
+Dried Thai chilies are spicy or mala hotpots or not baked sweets.
+PREMISES-FOL:
+all x (BakedSweet(x) -> ~Spicy(x))
+all x (Cupcake(x) -> BakedSweet(x))
+all x (MalaHotpot(x) -> Spicy(x))
+all x (Product(x) & From(x, bakedByMelissa) -> Cupcake(x))
+Spicy(driedThaiChili) | MalaHotpot(driedThaiChili)| ~BakedSweet(driedThaiChili)
+CONCLUSION:     Dried Thai chilies are products of Baked by Melissa.
+CONCLUSION-FOL: Product(driedThaiChili) & From(driedThaiChili, bakedByMelissa)
+
+========== case 80 | ex 806 | story 319 | label: True ==========
+PREMISES:
+No baked sweets are spicy.
+All cupcakes are baked sweets.
+All mala hotpots are spicy.
+All products from Baked by Melissa are cupcakes.
+Dried Thai chilies are spicy or mala hotpots or not baked sweets.
+PREMISES-FOL:
+all x (BakedSweet(x) -> ~Spicy(x))
+all x (Cupcake(x) -> BakedSweet(x))
+all x (MalaHotpot(x) -> Spicy(x))
+all x (Product(x) & From(x, bakedByMelissa) -> Cupcake(x))
+Spicy(driedThaiChili) | MalaHotpot(driedThaiChili)| ~BakedSweet(driedThaiChili)
+CONCLUSION:     Dried Thai chilies are not products of Baked by Melissa.
+CONCLUSION-FOL: ~(Product(driedThaiChili) & From(driedThaiChili, bakedByMelissa))
+
+========== case 81 | ex 807 | story 319 | label: Uncertain ==========
+PREMISES:
+No baked sweets are spicy.
+All cupcakes are baked sweets.
+All mala hotpots are spicy.
+All products from Baked by Melissa are cupcakes.
+Dried Thai chilies are spicy or mala hotpots or not baked sweets.
+PREMISES-FOL:
+all x (BakedSweet(x) -> ~Spicy(x))
+all x (Cupcake(x) -> BakedSweet(x))
+all x (MalaHotpot(x) -> Spicy(x))
+all x (Product(x) & From(x, bakedByMelissa) -> Cupcake(x))
+Spicy(driedThaiChili) | MalaHotpot(driedThaiChili)| ~BakedSweet(driedThaiChili)
+CONCLUSION:     Dried Thai chilies are a mala hotpot.
+CONCLUSION-FOL: MalaHotpot(driedThaiChili)
+
+========== case 82 | ex 808 | story 319 | label: True ==========
+PREMISES:
+No baked sweets are spicy.
+All cupcakes are baked sweets.
+All mala hotpots are spicy.
+All products from Baked by Melissa are cupcakes.
+Dried Thai chilies are spicy or mala hotpots or not baked sweets.
+PREMISES-FOL:
+all x (BakedSweet(x) -> ~Spicy(x))
+all x (Cupcake(x) -> BakedSweet(x))
+all x (MalaHotpot(x) -> Spicy(x))
+all x (Product(x) & From(x, bakedByMelissa) -> Cupcake(x))
+Spicy(driedThaiChili) | MalaHotpot(driedThaiChili)| ~BakedSweet(driedThaiChili)
+CONCLUSION:     Dried Thai chilies are neither products of Baked by Melissa nor baked sweets.
+CONCLUSION-FOL: ~(Product(driedThaiChili) & From(driedThaiChili, bakedByMelissa)) & ~BakedSweet(driedThaiChili)
+
+========== case 83 | ex 809 | story 319 | label: False ==========
+PREMISES:
+No baked sweets are spicy.
+All cupcakes are baked sweets.
+All mala hotpots are spicy.
+All products from Baked by Melissa are cupcakes.
+Dried Thai chilies are spicy or mala hotpots or not baked sweets.
+PREMISES-FOL:
+all x (BakedSweet(x) -> ~Spicy(x))
+all x (Cupcake(x) -> BakedSweet(x))
+all x (MalaHotpot(x) -> Spicy(x))
+all x (Product(x) & From(x, bakedByMelissa) -> Cupcake(x))
+Spicy(driedThaiChili) | MalaHotpot(driedThaiChili)| ~BakedSweet(driedThaiChili)
+CONCLUSION:     Dried Thai chilies are cupcakes and products of Baked by Melissa.
+CONCLUSION-FOL: Cupcake(driedThaiChili) & Product(driedThaiChili) & From(driedThaiChili, bakedByMelissa)
+
+========== case 84 | ex 754 | story 306 | label: False ==========
+PREMISES:
+If a restaurant is listed in Yelps recommendations, then the restaurant has not received many negative reviews.
+All restaurants with a rating greater than four are listed in Yelps recommendations.
+Some restaurants that do not provide take-out service receive many negative reviews.
+All restaurants that are popular among local residents have ratings greater than four.
+The Hamden Plaza Subway store has a rating greater than four, or it is popular among local residents.
+PREMISES-FOL:
+all x exists y (ListedIn(x, yelpRecommendation) -> NegativeReview(y) & ~Receive(x, y))
+all x all y (HaveRating(x, y) & GreaterThan(y, 4) -> ListedIn(x, yelpRecommendation))
+exists x exists y (~Provide(x, takeOutService) -> NegativeReview(y) & Receive(x, y))
+all x all y (PopularAmong(x, localResidents) -> HaveRating(x, y) & GreaterThan(y, 4))
+all x (HaveRating(hamdenPlazaSubway, x) & GreaterThan(x, 4) (+) PopularAmong(hamdenPlazaSubway, localResidents))
+CONCLUSION:     If the Hamden Plaza Subway store provides take-out service and receives many negative reviews, then its rating is greater than 4 and it does not provide take-out service.
+CONCLUSION-FOL: exists x ((TakeOutService(hamdenPlazaSubway) & NegativeReview(x) & Receive(hamdenPlazaSubway, x) -> PopularAmong(hamdenPlazaSubway, localResidents) & ~Provide(hamdenPlazaSubway, takeOutService))
+
+========== case 85 | ex 755 | story 306 | label: True ==========
+PREMISES:
+If a restaurant is listed in Yelps recommendations, then the restaurant has not received many negative reviews.
+All restaurants with a rating greater than four are listed in Yelps recommendations.
+Some restaurants that do not provide take-out service receive many negative reviews.
+All restaurants that are popular among local residents have ratings greater than four.
+The Hamden Plaza Subway store has a rating greater than four, or it is popular among local residents.
+PREMISES-FOL:
+all x exists y (ListedIn(x, yelpRecommendation) -> NegativeReview(y) & ~Receive(x, y))
+all x all y (HaveRating(x, y) & GreaterThan(y, 4) -> ListedIn(x, yelpRecommendation))
+exists x exists y (~Provide(x, takeOutService) -> NegativeReview(y) & Receive(x, y))
+all x all y (PopularAmong(x, localResidents) -> HaveRating(x, y) & GreaterThan(y, 4))
+all x (HaveRating(hamdenPlazaSubway, x) & GreaterThan(x, 4) (+) PopularAmong(hamdenPlazaSubway, localResidents))
+CONCLUSION:     The Hamden Plaza Subway store provides take-out service or does not receive many negative reviews.
+CONCLUSION-FOL: exists x (Provide(hamdenPlazaSubway, takeOutService) | (NegativeReview(x) & ~Receive(hamdenPlazaSubway, x)))
+
+========== case 86 | ex 756 | story 306 | label: Uncertain ==========
+PREMISES:
+If a restaurant is listed in Yelps recommendations, then the restaurant has not received many negative reviews.
+All restaurants with a rating greater than four are listed in Yelps recommendations.
+Some restaurants that do not provide take-out service receive many negative reviews.
+All restaurants that are popular among local residents have ratings greater than four.
+The Hamden Plaza Subway store has a rating greater than four, or it is popular among local residents.
+PREMISES-FOL:
+all x exists y (ListedIn(x, yelpRecommendation) -> NegativeReview(y) & ~Receive(x, y))
+all x all y (HaveRating(x, y) & GreaterThan(y, 4) -> ListedIn(x, yelpRecommendation))
+exists x exists y (~Provide(x, takeOutService) -> NegativeReview(y) & Receive(x, y))
+all x all y (PopularAmong(x, localResidents) -> HaveRating(x, y) & GreaterThan(y, 4))
+all x (HaveRating(hamdenPlazaSubway, x) & GreaterThan(x, 4) (+) PopularAmong(hamdenPlazaSubway, localResidents))
+CONCLUSION:     The Hamden Plaza store does not provide take-out service.
+CONCLUSION-FOL: ~Provide(hamdenPlazaSubway, takeOutService)
+
+========== case 87 | ex 688 | story 245 | label: True ==========
+PREMISES:
+In superhero movies, the good guys always win.
+The Surprising Adventures of Sir Digby Chicken Caesar is a superhero movie.
+Good guys fight bad guys and vice versa.
+Sir Digby fights his nemesis.
+If a superhero movie is named after a character, that character is a good guy.
+The Surprising Adventures of Sir Digby Chicken Caesar is named after Sir Digby.
+If somebody wins a fight, the person they are fighting does not win.
+If a superhero movie is named after a character, that character is in the movie.
+PREMISES-FOL:
+all x all y (SuperheroMovie(x) & In(y, x) & GoodGuy(y) -> Wins(y))
+SuperheroMovie(theSurprisingAdventuresofSirDigbyChickenCaesar)
+all x all y (GoodGuy(x) & Fight(x, y) <-> BadGuy(y) & Fight(y, x))
+Fight(sirDigby, sirDigbysNemesis)
+all x all y (SuperheroMovie(x) & NamedAfter(x, y) -> GoodGuy(y))
+NamedAfter(theSurprisingAdventuresofSirDigbyChickenCaesar, sirDigby)
+all x all y (Fights(x, y) & Win(x) -> ~Wins(y))
+all x all y (SuperheroMovie(x) & NamedAfter(x, y) -> In(y, x))
+CONCLUSION:     Sir Digbys nemesis does not win.
+CONCLUSION-FOL: ~Win(sirDigbysNemesis)
+
+========== case 88 | ex 171 | story 58 | label: True ==========
+PREMISES:
+Books contain tons of knowledge.
+When a person reads a book, that person gains knowledge.
+If a person gains knowledge, they become smarter.
+Harry read the book Walden by Henry Thoreau.
+PREMISES-FOL:
+all x (Book(x) -> Contains(x, knowledge))
+all x all y (ReadBook(x, y) -> Gains(x, knowledge))
+all x (Gains(x, knowledge) -> Smarter(x))
+ReadBook(harry, walden) & Book(walden)
+CONCLUSION:     Walden contains knowledge.
+CONCLUSION-FOL: Gains(harry, knowledge)
+
+========== case 89 | ex 172 | story 58 | label: True ==========
+PREMISES:
+Books contain tons of knowledge.
+When a person reads a book, that person gains knowledge.
+If a person gains knowledge, they become smarter.
+Harry read the book Walden by Henry Thoreau.
+PREMISES-FOL:
+all x (Book(x) -> Contains(x, knowledge))
+all x all y (ReadBook(x, y) -> Gains(x, knowledge))
+all x (Gains(x, knowledge) -> Smarter(x))
+ReadBook(harry, walden) & Book(walden)
+CONCLUSION:     Harry is smarter than before.
+CONCLUSION-FOL: Smarter(harry)
+
+========== case 90 | ex 173 | story 58 | label: Uncertain ==========
+PREMISES:
+Books contain tons of knowledge.
+When a person reads a book, that person gains knowledge.
+If a person gains knowledge, they become smarter.
+Harry read the book Walden by Henry Thoreau.
+PREMISES-FOL:
+all x (Book(x) -> Contains(x, knowledge))
+all x all y (ReadBook(x, y) -> Gains(x, knowledge))
+all x (Gains(x, knowledge) -> Smarter(x))
+ReadBook(harry, walden) & Book(walden)
+CONCLUSION:     A smarter person has gained knowledge.
+CONCLUSION-FOL: all x (Smarter(x) -> GainKnowledge(x))
+
+========== case 91 | ex 546 | story 191 | label: True ==========
+PREMISES:
+A natural language processing task can be categorized as either a language generation task or a language understanding task.
+If the output of a natural language processing task is a text sequence, then it is a language generation task.
+Machine translation is a natural language processing task.
+The output of machine translation is a text sequence.
+PREMISES-FOL:
+all x (NaturalLanguageProcessingTask(x) -> LanguageGenerationTask(x) (+) LanguageUnderstandingTask(x))
+all x (NaturalLanguageProcessingTasks(x) & OutputSequence(x, text) -> LanguageGenerationTask(x))
+NaturalLanguageProcessingTask(machineTranslation)
+OutputSequence(machineTranslation, text)
+CONCLUSION:     Machine translation is a language generation task.
+CONCLUSION-FOL: LanguageGenerationTask(machineTranslation)
+
+========== case 92 | ex 547 | story 191 | label: False ==========
+PREMISES:
+A natural language processing task can be categorized as either a language generation task or a language understanding task.
+If the output of a natural language processing task is a text sequence, then it is a language generation task.
+Machine translation is a natural language processing task.
+The output of machine translation is a text sequence.
+PREMISES-FOL:
+all x (NaturalLanguageProcessingTask(x) -> LanguageGenerationTask(x) (+) LanguageUnderstandingTask(x))
+all x (NaturalLanguageProcessingTasks(x) & OutputSequence(x, text) -> LanguageGenerationTask(x))
+NaturalLanguageProcessingTask(machineTranslation)
+OutputSequence(machineTranslation, text)
+CONCLUSION:     Machine translation is a language understanding task.
+CONCLUSION-FOL: LanguageUnderstandingTask(machineTranslation)
+
+========== case 93 | ex 476 | story 166 | label: False ==========
+PREMISES:
+Pets are allowed in some managed buildings.
+A deposit is required to rent an apartment in a managed building.
+The security deposit can be either equal to the monthly rent at a managed building or more.
+Fluffy is Tom's cat.
+Cats are pets.
+The Olive Garden is a managed building.
+The monthly rent at the Olive Garden is $2000.
+$2000 is more than $1500.
+Tom will rent an apartment in a managed building if he is allowed to move in with Fluffy, and the security deposit is no more than $1500.
+If a managed building allows pets, then people are allowed to move in with a pet.
+PREMISES-FOL:
+exists x (ManagedBuilding(x) & AllowPet(x))
+all x all y (ManagedBuilding(x) & RentApartmentIn(y, x) -> DepositRequired(y))
+all x all y all z (SecurityDeposit(x) & ManagedBuilding(z) & MonthlyRentAt(y, z) -> (MoreThan(x, y) (+) Equal(x, y))
+Cat(fluffy) & BelongTo(fluffy, tom)
+all x (Cat(x) -> Pet(x))
+ManagedBuilding(oliveGarden)
+MonthlyRentAt(uSD2000, oliveGarden)
+MoreThan(uSD2000, uSD1500)
+all x all y (ManagedBuilding(x) & AllowedToMoveInWith(tom, x, fluffy) & SecurityDeposit(y) & ~MoreThan(y, uSD1500) -> RentApartmentIn(tom, x))
+all x all y all z (ManagedBuilding(x) & AllowPet(x) & Pet(z) -> AllowedToMoveInWith(y, x, z))
+CONCLUSION:     Tom will rent an apartment in The Olive Garden.
+CONCLUSION-FOL: RentApartmentIn(tom, oliveGarden)
+
+========== case 94 | ex 477 | story 166 | label: Uncertain ==========
+PREMISES:
+Pets are allowed in some managed buildings.
+A deposit is required to rent an apartment in a managed building.
+The security deposit can be either equal to the monthly rent at a managed building or more.
+Fluffy is Tom's cat.
+Cats are pets.
+The Olive Garden is a managed building.
+The monthly rent at the Olive Garden is $2000.
+$2000 is more than $1500.
+Tom will rent an apartment in a managed building if he is allowed to move in with Fluffy, and the security deposit is no more than $1500.
+If a managed building allows pets, then people are allowed to move in with a pet.
+PREMISES-FOL:
+exists x (ManagedBuilding(x) & AllowPet(x))
+all x all y (ManagedBuilding(x) & RentApartmentIn(y, x) -> DepositRequired(y))
+all x all y all z (SecurityDeposit(x) & ManagedBuilding(z) & MonthlyRentAt(y, z) -> (MoreThan(x, y) (+) Equal(x, y))
+Cat(fluffy) & BelongTo(fluffy, tom)
+all x (Cat(x) -> Pet(x))
+ManagedBuilding(oliveGarden)
+MonthlyRentAt(uSD2000, oliveGarden)
+MoreThan(uSD2000, uSD1500)
+all x all y (ManagedBuilding(x) & AllowedToMoveInWith(tom, x, fluffy) & SecurityDeposit(y) & ~MoreThan(y, uSD1500) -> RentApartmentIn(tom, x))
+all x all y all z (ManagedBuilding(x) & AllowPet(x) & Pet(z) -> AllowedToMoveInWith(y, x, z))
+CONCLUSION:     Tom is allowed to move into an apartment in The Olive Garden with Fluffy.
+CONCLUSION-FOL: AllowedToMoveInWith(tom, oliveGarden, fluffy)
+
+========== case 95 | ex 478 | story 166 | label: True ==========
+PREMISES:
+Pets are allowed in some managed buildings.
+A deposit is required to rent an apartment in a managed building.
+The security deposit can be either equal to the monthly rent at a managed building or more.
+Fluffy is Tom's cat.
+Cats are pets.
+The Olive Garden is a managed building.
+The monthly rent at the Olive Garden is $2000.
+$2000 is more than $1500.
+Tom will rent an apartment in a managed building if he is allowed to move in with Fluffy, and the security deposit is no more than $1500.
+If a managed building allows pets, then people are allowed to move in with a pet.
+PREMISES-FOL:
+exists x (ManagedBuilding(x) & AllowPet(x))
+all x all y (ManagedBuilding(x) & RentApartmentIn(y, x) -> DepositRequired(y))
+all x all y all z (SecurityDeposit(x) & ManagedBuilding(z) & MonthlyRentAt(y, z) -> (MoreThan(x, y) (+) Equal(x, y))
+Cat(fluffy) & BelongTo(fluffy, tom)
+all x (Cat(x) -> Pet(x))
+ManagedBuilding(oliveGarden)
+MonthlyRentAt(uSD2000, oliveGarden)
+MoreThan(uSD2000, uSD1500)
+all x all y (ManagedBuilding(x) & AllowedToMoveInWith(tom, x, fluffy) & SecurityDeposit(y) & ~MoreThan(y, uSD1500) -> RentApartmentIn(tom, x))
+all x all y all z (ManagedBuilding(x) & AllowPet(x) & Pet(z) -> AllowedToMoveInWith(y, x, z))
+CONCLUSION:     The security deposit at the Olive Garden is either $2000 or more.
+CONCLUSION-FOL: all x (SecurityDeposit(x, oliveGarden) -> MoreThan(x, uSD2000) (+) Equal(x, uSD2000))
+
+========== case 96 | ex 933 | story 352 | label: Uncertain ==========
+PREMISES:
+All business organizations are legal entities.
+All companies are business organizations.
+All private companies are companies.
+All legal entities are created under law.
+All legal entities have legal obligations.
+If the Harvard Weekly Book Club is created under law, then it is not a private company.
+PREMISES-FOL:
+all x (BusinessOrganization(x) -> LegalEntity(x))
+all x (Company(x) -> BusinessOrganization(x))
+all x (PrivateCompany(x) -> Company(x))
+all x (LegalEntity(x) -> CreatedUnderLaw(x))
+all x (LegalEntity(x) -> LegalObligation(x))
+CreatedUnderLaw(harvardWeeklyBookClub) -> ~PrivateCompany(harvardWeeklyBookClub)
+CONCLUSION:     The Harvard Weekly Book club has legal obligations.
+CONCLUSION-FOL: LegalObligation(harvardWeeklyBookClub)
+
+========== case 97 | ex 934 | story 352 | label: False ==========
+PREMISES:
+All business organizations are legal entities.
+All companies are business organizations.
+All private companies are companies.
+All legal entities are created under law.
+All legal entities have legal obligations.
+If the Harvard Weekly Book Club is created under law, then it is not a private company.
+PREMISES-FOL:
+all x (BusinessOrganization(x) -> LegalEntity(x))
+all x (Company(x) -> BusinessOrganization(x))
+all x (PrivateCompany(x) -> Company(x))
+all x (LegalEntity(x) -> CreatedUnderLaw(x))
+all x (LegalEntity(x) -> LegalObligation(x))
+CreatedUnderLaw(harvardWeeklyBookClub) -> ~PrivateCompany(harvardWeeklyBookClub)
+CONCLUSION:     The Harvard Weekly Book club has legal obligations and is a private company.
+CONCLUSION-FOL: LegalObligation(harvardWeeklyBookClub) & PrivateCompany(harvardWeeklyBookClub)
+
+========== case 98 | ex 935 | story 352 | label: True ==========
+PREMISES:
+All business organizations are legal entities.
+All companies are business organizations.
+All private companies are companies.
+All legal entities are created under law.
+All legal entities have legal obligations.
+If the Harvard Weekly Book Club is created under law, then it is not a private company.
+PREMISES-FOL:
+all x (BusinessOrganization(x) -> LegalEntity(x))
+all x (Company(x) -> BusinessOrganization(x))
+all x (PrivateCompany(x) -> Company(x))
+all x (LegalEntity(x) -> CreatedUnderLaw(x))
+all x (LegalEntity(x) -> LegalObligation(x))
+CreatedUnderLaw(harvardWeeklyBookClub) -> ~PrivateCompany(harvardWeeklyBookClub)
+CONCLUSION:     If the Harvard Weekly Book club is a private company, then it either has legal obligations or is created under law.
+CONCLUSION-FOL: PrivateCompany(harvardWeeklyBookClub) -> LegalObligation(harvardWeeklyBookClub) (+) CreatedUnderLaw(harvardWeeklyBookClub)
+
+========== case 99 | ex 1366 | story 472 | label: Uncertain ==========
+PREMISES:
+Animals are either invertebrates or vertebrates.
+All animals with backbones reproduce by male-and-female mating.
+All vertebrate animals have a backbone.
+All bees do not reproduce by male-and-female mating.
+All queen bees are bees.
+Harry is a bee.
+PREMISES-FOL:
+all x (Animal(x) -> Invertebrate(x) (+) Vertebrate(x))
+all x (Animal(x) & With(x, backbone) -> ReproduceBy(x, male-and-femaleMating))
+all x (Animal(x) & Vertebrate(x) -> With(x, backbone))
+all x (Bee(x) -> ~ReproduceBy(x, male-and-femaleMating))
+all x (QueenBee(x) -> Bee(x))
+Bee(harry)
+CONCLUSION:     Harry is a queen bee.
+CONCLUSION-FOL: QueenBee(harry)
+
+========== case 100 | ex 1367 | story 472 | label: True ==========
+PREMISES:
+Animals are either invertebrates or vertebrates.
+All animals with backbones reproduce by male-and-female mating.
+All vertebrate animals have a backbone.
+All bees do not reproduce by male-and-female mating.
+All queen bees are bees.
+Harry is a bee.
+PREMISES-FOL:
+all x (Animal(x) -> Invertebrate(x) (+) Vertebrate(x))
+all x (Animal(x) & With(x, backbone) -> ReproduceBy(x, male-and-femaleMating))
+all x (Animal(x) & Vertebrate(x) -> With(x, backbone))
+all x (Bee(x) -> ~ReproduceBy(x, male-and-femaleMating))
+all x (QueenBee(x) -> Bee(x))
+Bee(harry)
+CONCLUSION:     Harry is an invertebrate or a queen bee.
+CONCLUSION-FOL: Invertebrate(harry) | QueenBee(harry)
+
+========== case 101 | ex 1368 | story 472 | label: False ==========
+PREMISES:
+Animals are either invertebrates or vertebrates.
+All animals with backbones reproduce by male-and-female mating.
+All vertebrate animals have a backbone.
+All bees do not reproduce by male-and-female mating.
+All queen bees are bees.
+Harry is a bee.
+PREMISES-FOL:
+all x (Animal(x) -> Invertebrate(x) (+) Vertebrate(x))
+all x (Animal(x) & With(x, backbone) -> ReproduceBy(x, male-and-femaleMating))
+all x (Animal(x) & Vertebrate(x) -> With(x, backbone))
+all x (Bee(x) -> ~ReproduceBy(x, male-and-femaleMating))
+all x (QueenBee(x) -> Bee(x))
+Bee(harry)
+CONCLUSION:     If Harry is either both a vertebrate and an animal with a backbone, or neither a vertebrate nor an animal with a backbone, then Harry is neither an invertebrate nor a queen bee.
+CONCLUSION-FOL: ~(Invertebrate(harry) (+) With(harry, backbone)) -> ~Invertebrate(harry) & ~QueenBee(harry)
+
+========== case 102 | ex 1011 | story 379 | label: Uncertain ==========
+PREMISES:
+People who are born in a multiple birth with siblings spend a lot of time hanging out with and playing with their siblings.
+If people have siblings who were born together, then they were born in a multiple birth.
+If people complain often about annoying siblings, then they have siblings who were born together.
+If people live at home, then they do not live with strangers.
+If people spend a lot of time hanging out with and playing with their siblings, then they often live at home.
+Luke either is a baby born in a multiple birth and live with strangers, or is not a baby born in a multiple birth and does not live with strangers
+PREMISES-FOL:
+all x (BornIn(x, multipleBirth) -> SpendTimePlayingWith(x, sibling))
+all x (exists y (Sibling(x, y) & BornTogether(y)) -> BornIn(x, multipleBirth))
+all x (ComplainAboutOften(x, annoyingSiblings) -> exists y (Sibling(x, y) & BornTogether(y)))
+all x (LiveAt(x, home) -> ~LiveWith(x, strangers))
+all x (SpendTimeplayingWith(x, sibling) -> LiveAt(x, home))
+~(BornIn(luke, multipleBirth) (+) LiveWith(luke, strangers))
+CONCLUSION:     Luke spends a lot of time hanging out and playing with his siblings.
+CONCLUSION-FOL: SpendTime(luke, playingWith, siblings)
+
+========== case 103 | ex 1012 | story 379 | label: False ==========
+PREMISES:
+People who are born in a multiple birth with siblings spend a lot of time hanging out with and playing with their siblings.
+If people have siblings who were born together, then they were born in a multiple birth.
+If people complain often about annoying siblings, then they have siblings who were born together.
+If people live at home, then they do not live with strangers.
+If people spend a lot of time hanging out with and playing with their siblings, then they often live at home.
+Luke either is a baby born in a multiple birth and live with strangers, or is not a baby born in a multiple birth and does not live with strangers
+PREMISES-FOL:
+all x (BornIn(x, multipleBirth) -> SpendTimePlayingWith(x, sibling))
+all x (exists y (Sibling(x, y) & BornTogether(y)) -> BornIn(x, multipleBirth))
+all x (ComplainAboutOften(x, annoyingSiblings) -> exists y (Sibling(x, y) & BornTogether(y)))
+all x (LiveAt(x, home) -> ~LiveWith(x, strangers))
+all x (SpendTimeplayingWith(x, sibling) -> LiveAt(x, home))
+~(BornIn(luke, multipleBirth) (+) LiveWith(luke, strangers))
+CONCLUSION:     Luke complains often about annoying siblings.
+CONCLUSION-FOL: ComplainAboutOften(luke, annoyingSiblings)
+
+========== case 104 | ex 1013 | story 379 | label: True ==========
+PREMISES:
+People who are born in a multiple birth with siblings spend a lot of time hanging out with and playing with their siblings.
+If people have siblings who were born together, then they were born in a multiple birth.
+If people complain often about annoying siblings, then they have siblings who were born together.
+If people live at home, then they do not live with strangers.
+If people spend a lot of time hanging out with and playing with their siblings, then they often live at home.
+Luke either is a baby born in a multiple birth and live with strangers, or is not a baby born in a multiple birth and does not live with strangers
+PREMISES-FOL:
+all x (BornIn(x, multipleBirth) -> SpendTimePlayingWith(x, sibling))
+all x (exists y (Sibling(x, y) & BornTogether(y)) -> BornIn(x, multipleBirth))
+all x (ComplainAboutOften(x, annoyingSiblings) -> exists y (Sibling(x, y) & BornTogether(y)))
+all x (LiveAt(x, home) -> ~LiveWith(x, strangers))
+all x (SpendTimeplayingWith(x, sibling) -> LiveAt(x, home))
+~(BornIn(luke, multipleBirth) (+) LiveWith(luke, strangers))
+CONCLUSION:     Luke is neither born in a multiple birth nor complains often about annoying siblings.
+CONCLUSION-FOL: ~(BornIn(luke, multipleBirth) | ComplainAbout(luke, often, annoyingSiblings) )
+
+========== case 105 | ex 560 | story 197 | label: True ==========
+PREMISES:
+It costs $205 to take the GRE test, which is cheaper than $300.
+ETS provides financial aid to those GRE applicants who prove economic hardship.
+Those living in single-parent families or having few resources available to them can prove economic hardship.
+Tom lives in a single-parent family.
+Tom's dad has been out of work, and Tom has few resources available to them.
+Tom is applying to take the GRE test.
+PREMISES-FOL:
+Cost(gRE, 205) & Cheaper(205, 300)
+all x (ApplicantOf(x, gre) & Prove(x, economicHardship) -> ProvideTo(ets, financialAid, x))
+all x (LivingIn(x, singleParentFamily) | AvailableTo(fewResources, x) -> Prove(x, economicHardship))
+LivingIn(tom, singleParentFamily)
+OutOfWork(tomsDad) & AvailableTo(fewResources, tom)
+ApplicantOf(tom, gre)
+CONCLUSION:     ETS provides financial aid to Tom.
+CONCLUSION-FOL: ProvidesFinancialAidTo(eTS, tom)
+
+========== case 106 | ex 561 | story 197 | label: True ==========
+PREMISES:
+It costs $205 to take the GRE test, which is cheaper than $300.
+ETS provides financial aid to those GRE applicants who prove economic hardship.
+Those living in single-parent families or having few resources available to them can prove economic hardship.
+Tom lives in a single-parent family.
+Tom's dad has been out of work, and Tom has few resources available to them.
+Tom is applying to take the GRE test.
+PREMISES-FOL:
+Cost(gRE, 205) & Cheaper(205, 300)
+all x (ApplicantOf(x, gre) & Prove(x, economicHardship) -> ProvideTo(ets, financialAid, x))
+all x (LivingIn(x, singleParentFamily) | AvailableTo(fewResources, x) -> Prove(x, economicHardship))
+LivingIn(tom, singleParentFamily)
+OutOfWork(tomsDad) & AvailableTo(fewResources, tom)
+ApplicantOf(tom, gre)
+CONCLUSION:     It costs below US $300 to take the GRE test.
+CONCLUSION-FOL: Cost(gRE, x) & Cheaper(x, 300)
+
+========== case 107 | ex 562 | story 197 | label: False ==========
+PREMISES:
+It costs $205 to take the GRE test, which is cheaper than $300.
+ETS provides financial aid to those GRE applicants who prove economic hardship.
+Those living in single-parent families or having few resources available to them can prove economic hardship.
+Tom lives in a single-parent family.
+Tom's dad has been out of work, and Tom has few resources available to them.
+Tom is applying to take the GRE test.
+PREMISES-FOL:
+Cost(gRE, 205) & Cheaper(205, 300)
+all x (ApplicantOf(x, gre) & Prove(x, economicHardship) -> ProvideTo(ets, financialAid, x))
+all x (LivingIn(x, singleParentFamily) | AvailableTo(fewResources, x) -> Prove(x, economicHardship))
+LivingIn(tom, singleParentFamily)
+OutOfWork(tomsDad) & AvailableTo(fewResources, tom)
+ApplicantOf(tom, gre)
+CONCLUSION:     No one taking the GRE test has financial aid provided to them by something.
+CONCLUSION-FOL: ~(exists x exists y (Applicant(x, gRE) & ProvidesFinancialAidTo(y, x)))
+
+========== case 108 | ex 958 | story 361 | label: Uncertain ==========
+PREMISES:
+If people spill a lot of food on their clothing, then they are not notably tidy.
+All clumsy foodies who go out frequently to find new food restaurants to try are people who spill a lot of food on their clothing.
+If people are cleanly, then they are notably tidy.
+If people value order and spotlessness, then they are cleanly.
+All people whose families prioritize order and spotlessness themselves value order and spotlessness.
+Peter is either a person who spills a lot of food on his clothing and is cleanly, or a person who does not spill a lot of food on his clothing and is not cleanly
+PREMISES-FOL:
+all x (Spill(x, aLotOfFood, clothing) -> ~NotablyTidy(x))
+all x (ClumsyFoodie(x) & GoOutFrequentlyToFindToTry(x, newFoodRestaurant) -> SpillOn(x, aLotOfFood, clothing))
+all x (Cleanly(x) -> NotablyTidy(x))
+all x (Value(x, order) & Value(x, spotlessness) -> Cleanly(x))
+all x ((exists y (FamilyOf(y, x) & Prioritize(y, order) & Prioritize(y, spotlessness)) -> Value(x, order) & Value(x, spotlessness))
+~(Spill(peter, aLotOfFood, clothing) (+) Cleanly(peter))
+CONCLUSION:     Peter is notably tidy.
+CONCLUSION-FOL: NotablyTidy(peter)
+
+========== case 109 | ex 959 | story 361 | label: False ==========
+PREMISES:
+If people spill a lot of food on their clothing, then they are not notably tidy.
+All clumsy foodies who go out frequently to find new food restaurants to try are people who spill a lot of food on their clothing.
+If people are cleanly, then they are notably tidy.
+If people value order and spotlessness, then they are cleanly.
+All people whose families prioritize order and spotlessness themselves value order and spotlessness.
+Peter is either a person who spills a lot of food on his clothing and is cleanly, or a person who does not spill a lot of food on his clothing and is not cleanly
+PREMISES-FOL:
+all x (Spill(x, aLotOfFood, clothing) -> ~NotablyTidy(x))
+all x (ClumsyFoodie(x) & GoOutFrequentlyToFindToTry(x, newFoodRestaurant) -> SpillOn(x, aLotOfFood, clothing))
+all x (Cleanly(x) -> NotablyTidy(x))
+all x (Value(x, order) & Value(x, spotlessness) -> Cleanly(x))
+all x ((exists y (FamilyOf(y, x) & Prioritize(y, order) & Prioritize(y, spotlessness)) -> Value(x, order) & Value(x, spotlessness))
+~(Spill(peter, aLotOfFood, clothing) (+) Cleanly(peter))
+CONCLUSION:     Peter is either a  clumsy foodie who goes out frequently to find new food restaurants to try or he is someone whose family prioritizes order and spotlessness.
+CONCLUSION-FOL: ClumsyFoodie(peter) | (exists y (FamilyOf(y, peter) & Prioritize(y, order) & Prioritize(y, spotlessness)))
+
+========== case 110 | ex 960 | story 361 | label: True ==========
+PREMISES:
+If people spill a lot of food on their clothing, then they are not notably tidy.
+All clumsy foodies who go out frequently to find new food restaurants to try are people who spill a lot of food on their clothing.
+If people are cleanly, then they are notably tidy.
+If people value order and spotlessness, then they are cleanly.
+All people whose families prioritize order and spotlessness themselves value order and spotlessness.
+Peter is either a person who spills a lot of food on his clothing and is cleanly, or a person who does not spill a lot of food on his clothing and is not cleanly
+PREMISES-FOL:
+all x (Spill(x, aLotOfFood, clothing) -> ~NotablyTidy(x))
+all x (ClumsyFoodie(x) & GoOutFrequentlyToFindToTry(x, newFoodRestaurant) -> SpillOn(x, aLotOfFood, clothing))
+all x (Cleanly(x) -> NotablyTidy(x))
+all x (Value(x, order) & Value(x, spotlessness) -> Cleanly(x))
+all x ((exists y (FamilyOf(y, x) & Prioritize(y, order) & Prioritize(y, spotlessness)) -> Value(x, order) & Value(x, spotlessness))
+~(Spill(peter, aLotOfFood, clothing) (+) Cleanly(peter))
+CONCLUSION:     Peter is either both a clumsy foodie who goes out frequently to find new food restaurants to try and issomeone whose family prioritizes order and spotlessness, or he neither is a clumsy foodie who goes out frequently to find new food restaurants to try nor does his family prioritize order and spotlessness.
+CONCLUSION-FOL: ~(ClumsyFoodie(peter) (+) (exists y (FamilyOf(y, peter) & Prioritize(y, order) & Prioritize(y, spotlessness))))
+
+========== case 111 | ex 706 | story 262 | label: Uncertain ==========
+PREMISES:
+All fir trees are evergreens.
+Some objects of worship are fir trees.
+PREMISES-FOL:
+all x (FirTree(x) -> Evergreen(x))
+exists x exists y (ObjectOfWorship(x) & ObjectOfWorship(y) & FirTree(x) & FirTree(y) & ~(x=y))
+CONCLUSION:     Some evergreens are not objects of worship.
+CONCLUSION-FOL: exists x exists y (Evergreen(x) & Evergreen(y) & ~ObjectOfWorship(x) & ~ObjectOfWorship(y) & ~(x=y))
+
+========== case 112 | ex 370 | story 124 | label: True ==========
+PREMISES:
+The Picuris Mountains are a mountain range in New Mexico or Texas.
+Juan de Onate visited the Picuris Mountains.
+The Harding Pegmatite Mine, located in the Picuris Mountains, was donated.
+There are no mountain ranges in texas that have mines that have been donated.
+PREMISES-FOL:
+MountainRange(thePicurisMountains) & (In(thePicurisMountains, newMexico) (+) In(thePicurisMountains, texas))
+Visited(juanDeOnate, thePicurisMountains)
+In(hardingPegmatiteMine, thePicurisMountains) & Mine(hardingPegmatiteMine) & Donated(hardingPegmatiteMine)
+all x all y (Mine(x) & Donated(x) & In(x, y) & MountainRange(y) -> ~In(y, texas))
+CONCLUSION:     Juan de Onate visited a mountain range in New Mexico.
+CONCLUSION-FOL: exists x (Visited(juanDeOnate, x) & MountainRange(x) & In(x, newMexico))
+
+========== case 113 | ex 371 | story 124 | label: Uncertain ==========
+PREMISES:
+The Picuris Mountains are a mountain range in New Mexico or Texas.
+Juan de Onate visited the Picuris Mountains.
+The Harding Pegmatite Mine, located in the Picuris Mountains, was donated.
+There are no mountain ranges in texas that have mines that have been donated.
+PREMISES-FOL:
+MountainRange(thePicurisMountains) & (In(thePicurisMountains, newMexico) (+) In(thePicurisMountains, texas))
+Visited(juanDeOnate, thePicurisMountains)
+In(hardingPegmatiteMine, thePicurisMountains) & Mine(hardingPegmatiteMine) & Donated(hardingPegmatiteMine)
+all x all y (Mine(x) & Donated(x) & In(x, y) & MountainRange(y) -> ~In(y, texas))
+CONCLUSION:     Juan de Onate visited a mountain range in Texas.
+CONCLUSION-FOL: exists x (Visited(juanDeOnate, x) & MountainRange(x) & In(x, texas))
+
+========== case 114 | ex 372 | story 124 | label: False ==========
+PREMISES:
+The Picuris Mountains are a mountain range in New Mexico or Texas.
+Juan de Onate visited the Picuris Mountains.
+The Harding Pegmatite Mine, located in the Picuris Mountains, was donated.
+There are no mountain ranges in texas that have mines that have been donated.
+PREMISES-FOL:
+MountainRange(thePicurisMountains) & (In(thePicurisMountains, newMexico) (+) In(thePicurisMountains, texas))
+Visited(juanDeOnate, thePicurisMountains)
+In(hardingPegmatiteMine, thePicurisMountains) & Mine(hardingPegmatiteMine) & Donated(hardingPegmatiteMine)
+all x all y (Mine(x) & Donated(x) & In(x, y) & MountainRange(y) -> ~In(y, texas))
+CONCLUSION:     The Harding Pegmatite Mine is not located in a mountain range in New Mexico.
+CONCLUSION-FOL: all x (In(hardingPegmatiteMine, x) -> ~(MountainRange(x) & In(x, newMexico)))
+
+========== case 115 | ex 527 | story 183 | label: False ==========
+PREMISES:
+If a man is taller than another man, the taller one can block the other's shooting.
+Michael is a man who is taller than everyone else in his class.
+If person x is taller than person y, and person y is taller than person z, then x is taller than z
+Peter is a man who is taller than Michael.
+Michael can block any shooting from a person as long as the person does not jump when shooting.
+Michael cannot block Windy's shooting.
+Every shooter who can jump when shooting is a great shooter.
+PREMISES-FOL:
+all x all y (Man(x) & Man(y) & Taller(x, y) -> CanBlock(x, y))
+all x (Man(x) & SameClass(x, michael) & ~(x=michael) -> Taller(michael, x))
+all x all y all z ((Taller(x, y) & Taller(y, z)) -> Taller(x, z))
+Man(peter) & Taller(peter, michael)
+all x (~JumpWhenShooting(x) -> CanBlock(michael, x))
+~CanBlock(michael, windy)
+all x (JumpWhenShooting(x) -> GreatShooter(x))
+CONCLUSION:     Peter is shorter than a man in Michael's class.
+CONCLUSION-FOL: exists x (Man(x) & SameClass(x, michael) & ~Taller(peter, x))
+
+========== case 116 | ex 528 | story 183 | label: True ==========
+PREMISES:
+If a man is taller than another man, the taller one can block the other's shooting.
+Michael is a man who is taller than everyone else in his class.
+If person x is taller than person y, and person y is taller than person z, then x is taller than z
+Peter is a man who is taller than Michael.
+Michael can block any shooting from a person as long as the person does not jump when shooting.
+Michael cannot block Windy's shooting.
+Every shooter who can jump when shooting is a great shooter.
+PREMISES-FOL:
+all x all y (Man(x) & Man(y) & Taller(x, y) -> CanBlock(x, y))
+all x (Man(x) & SameClass(x, michael) & ~(x=michael) -> Taller(michael, x))
+all x all y all z ((Taller(x, y) & Taller(y, z)) -> Taller(x, z))
+Man(peter) & Taller(peter, michael)
+all x (~JumpWhenShooting(x) -> CanBlock(michael, x))
+~CanBlock(michael, windy)
+all x (JumpWhenShooting(x) -> GreatShooter(x))
+CONCLUSION:     Windy is a great shooter.
+CONCLUSION-FOL: GreatShooter(windy)
+
+========== case 117 | ex 529 | story 183 | label: Uncertain ==========
+PREMISES:
+If a man is taller than another man, the taller one can block the other's shooting.
+Michael is a man who is taller than everyone else in his class.
+If person x is taller than person y, and person y is taller than person z, then x is taller than z
+Peter is a man who is taller than Michael.
+Michael can block any shooting from a person as long as the person does not jump when shooting.
+Michael cannot block Windy's shooting.
+Every shooter who can jump when shooting is a great shooter.
+PREMISES-FOL:
+all x all y (Man(x) & Man(y) & Taller(x, y) -> CanBlock(x, y))
+all x (Man(x) & SameClass(x, michael) & ~(x=michael) -> Taller(michael, x))
+all x all y all z ((Taller(x, y) & Taller(y, z)) -> Taller(x, z))
+Man(peter) & Taller(peter, michael)
+all x (~JumpWhenShooting(x) -> CanBlock(michael, x))
+~CanBlock(michael, windy)
+all x (JumpWhenShooting(x) -> GreatShooter(x))
+CONCLUSION:     Peter can block Windy's shooting.
+CONCLUSION-FOL: CanBlock(peter, windy)
+
+========== case 118 | ex 439 | story 151 | label: Uncertain ==========
+PREMISES:
+Barutin Cove is a cove named after the Bulgarian settlement of Barutin.
+Barutin Cove is on the southwest coast of Snow Island.
+Snow Island, Greenwich Island, and Deception Island are located in the South Shetland Islands.
+Antarctica is located on the South Shetland Islands.
+If place A is located in place B and place B is located in place C, then place A is located in place C.
+PREMISES-FOL:
+Cove(barutinCove) & NamedAfter(barutinCove, barutinSettlement) & LocatedIn(barutinSettlement, bulgaria)
+LocatedIn(barutinCove, snowIsland)
+LocatedIn(snowIsland, southShetlandIslands) & LocatedIn(greenwichIsland, southShetlandIslands) & LocatedIn(deceptionIsland, southShetlandIslands)
+LocatedIn(southShetlandIslands, antarctica)
+all x all y all z ((LocatedIn(x, y) & LocatedIn(y, z)) -> LocatedIn(x, z))
+CONCLUSION:     Barutin Cove is named after all islands in Antarctica.
+CONCLUSION-FOL: all x (LocatedIn(x, antarctica) -> NamedAfter(barutinCove, x))
+
+========== case 119 | ex 440 | story 151 | label: True ==========
+PREMISES:
+Barutin Cove is a cove named after the Bulgarian settlement of Barutin.
+Barutin Cove is on the southwest coast of Snow Island.
+Snow Island, Greenwich Island, and Deception Island are located in the South Shetland Islands.
+Antarctica is located on the South Shetland Islands.
+If place A is located in place B and place B is located in place C, then place A is located in place C.
+PREMISES-FOL:
+Cove(barutinCove) & NamedAfter(barutinCove, barutinSettlement) & LocatedIn(barutinSettlement, bulgaria)
+LocatedIn(barutinCove, snowIsland)
+LocatedIn(snowIsland, southShetlandIslands) & LocatedIn(greenwichIsland, southShetlandIslands) & LocatedIn(deceptionIsland, southShetlandIslands)
+LocatedIn(southShetlandIslands, antarctica)
+all x all y all z ((LocatedIn(x, y) & LocatedIn(y, z)) -> LocatedIn(x, z))
+CONCLUSION:     There is at least one cove in Antarctica named after a place in Bulgaria.
+CONCLUSION-FOL: exists x exists y (Cove(x) & LocatedIn(x, antarctica) & NameAfter(x, y) & LocatedIn(y, bulgaria))
+
+========== case 120 | ex 441 | story 151 | label: False ==========
+PREMISES:
+Barutin Cove is a cove named after the Bulgarian settlement of Barutin.
+Barutin Cove is on the southwest coast of Snow Island.
+Snow Island, Greenwich Island, and Deception Island are located in the South Shetland Islands.
+Antarctica is located on the South Shetland Islands.
+If place A is located in place B and place B is located in place C, then place A is located in place C.
+PREMISES-FOL:
+Cove(barutinCove) & NamedAfter(barutinCove, barutinSettlement) & LocatedIn(barutinSettlement, bulgaria)
+LocatedIn(barutinCove, snowIsland)
+LocatedIn(snowIsland, southShetlandIslands) & LocatedIn(greenwichIsland, southShetlandIslands) & LocatedIn(deceptionIsland, southShetlandIslands)
+LocatedIn(southShetlandIslands, antarctica)
+all x all y all z ((LocatedIn(x, y) & LocatedIn(y, z)) -> LocatedIn(x, z))
+CONCLUSION:     Barutin Cove is not located in Antarctica.
+CONCLUSION-FOL: ~LocatedIn(barutinCove, antarctica)
+
+========== case 121 | ex 739 | story 295 | label: Uncertain ==========
+PREMISES:
+Some affection is love.
+Some love is positive.
+PREMISES-FOL:
+exists x (Affection(x) & Love(x))
+exists x (Love(x) & Positive(x))
+CONCLUSION:     Some affection is positive.
+CONCLUSION-FOL: exists x (Affection(x) & Positive(x))
+
+========== case 122 | ex 786 | story 315 | label: Uncertain ==========
+PREMISES:
+If something can transport multiple passengers, then they are not one-seaters.
+All Tesla Model 3 can transport multiple passengers.
+All single-seat electric cars are one-seaters.
+All Solo EV cars are single-seat electric cars.
+If John's car is not a Tesla Model 3, then John's car is not a Tesla Model 3 or a single-seat electric car.
+PREMISES-FOL:
+all x (exists y exists z (Passenger(y) & Passenger(z) & Transport(x, y) & Transport(x, y) & ~(y=z)) -> ~OneSeater(x))
+all x (TeslaModel3(x) -> (exists y exists z (Passenger(y) & Passenger(z) & Transport(x, y) & Transport(x, y) & ~(y=z)))
+all x (SingleSeat(x) & ElectricCar(x) -> OneSeater(x))
+all x (SoloEV(x) & Car(x) -> SingleSeat(x) & ElectricCar(x))
+~TeslaModel3(johnsCar) -> ~(TeslaModel3(johnsCar) | (SingleSeat(x) & ElectricCar(johnsCar)))
+CONCLUSION:     John's car is a Tesla Model 3.
+CONCLUSION-FOL: TeslaModel3(johnsCar)
+
+========== case 123 | ex 787 | story 315 | label: False ==========
+PREMISES:
+If something can transport multiple passengers, then they are not one-seaters.
+All Tesla Model 3 can transport multiple passengers.
+All single-seat electric cars are one-seaters.
+All Solo EV cars are single-seat electric cars.
+If John's car is not a Tesla Model 3, then John's car is not a Tesla Model 3 or a single-seat electric car.
+PREMISES-FOL:
+all x (exists y exists z (Passenger(y) & Passenger(z) & Transport(x, y) & Transport(x, y) & ~(y=z)) -> ~OneSeater(x))
+all x (TeslaModel3(x) -> (exists y exists z (Passenger(y) & Passenger(z) & Transport(x, y) & Transport(x, y) & ~(y=z)))
+all x (SingleSeat(x) & ElectricCar(x) -> OneSeater(x))
+all x (SoloEV(x) & Car(x) -> SingleSeat(x) & ElectricCar(x))
+~TeslaModel3(johnsCar) -> ~(TeslaModel3(johnsCar) | (SingleSeat(x) & ElectricCar(johnsCar)))
+CONCLUSION:     John's car is a Solo EV.
+CONCLUSION-FOL: SoloEV(johnsCar) & Car(johnsCar)
+
+========== case 124 | ex 788 | story 315 | label: True ==========
+PREMISES:
+If something can transport multiple passengers, then they are not one-seaters.
+All Tesla Model 3 can transport multiple passengers.
+All single-seat electric cars are one-seaters.
+All Solo EV cars are single-seat electric cars.
+If John's car is not a Tesla Model 3, then John's car is not a Tesla Model 3 or a single-seat electric car.
+PREMISES-FOL:
+all x (exists y exists z (Passenger(y) & Passenger(z) & Transport(x, y) & Transport(x, y) & ~(y=z)) -> ~OneSeater(x))
+all x (TeslaModel3(x) -> (exists y exists z (Passenger(y) & Passenger(z) & Transport(x, y) & Transport(x, y) & ~(y=z)))
+all x (SingleSeat(x) & ElectricCar(x) -> OneSeater(x))
+all x (SoloEV(x) & Car(x) -> SingleSeat(x) & ElectricCar(x))
+~TeslaModel3(johnsCar) -> ~(TeslaModel3(johnsCar) | (SingleSeat(x) & ElectricCar(johnsCar)))
+CONCLUSION:     John's car is not a Solo EV.
+CONCLUSION-FOL: ~(SoloEV(johnsCar) & Car(johnsCar))
+
+========== case 125 | ex 1348 | story 467 | label: Uncertain ==========
+PREMISES:
+All of Peter's pets that are mammals are also animals.
+All monkeys are mammals.
+Peter's pets are all either monkeys or birds.
+Peter's birds can fly.
+All animals that are Peter's pets can breathe.
+If Peter's pet can fly, then it has wings.
+Rock is Peter's pet.
+Rock can fly, or Rock is a bird, or Rock cannot breathe.
+PREMISES-FOL:
+all x (PetersPet(x) & Mammal(x) -> Animal(x))
+all x (Monkey(x) -> Mammal(x))
+all x (PetersPet(x) -> Monkey(x) (+)  Bird(x))
+all x (Bird(x) -> CanFly(x))
+all x (PetersPet(x) & Animal(x) -> Breathe(x))
+all x (PetersPet(x) & CanFly(x) -> exists y exists z (~(y=z) & Wing(y) & Wing(z) & Have(x, y) & Have(x, z)))
+PeterSPet(rock)
+CanFly(rock) | Bird(rock) | ~Breathe(rock)
+CONCLUSION:     Rock is a monkey.
+CONCLUSION-FOL: Monkey(rock)
+
+========== case 126 | ex 1349 | story 467 | label: True ==========
+PREMISES:
+All of Peter's pets that are mammals are also animals.
+All monkeys are mammals.
+Peter's pets are all either monkeys or birds.
+Peter's birds can fly.
+All animals that are Peter's pets can breathe.
+If Peter's pet can fly, then it has wings.
+Rock is Peter's pet.
+Rock can fly, or Rock is a bird, or Rock cannot breathe.
+PREMISES-FOL:
+all x (PetersPet(x) & Mammal(x) -> Animal(x))
+all x (Monkey(x) -> Mammal(x))
+all x (PetersPet(x) -> Monkey(x) (+)  Bird(x))
+all x (Bird(x) -> CanFly(x))
+all x (PetersPet(x) & Animal(x) -> Breathe(x))
+all x (PetersPet(x) & CanFly(x) -> exists y exists z (~(y=z) & Wing(y) & Wing(z) & Have(x, y) & Have(x, z)))
+PeterSPet(rock)
+CanFly(rock) | Bird(rock) | ~Breathe(rock)
+CONCLUSION:     Rock has wings.
+CONCLUSION-FOL: exists y exists z (~(y=z) & Wing(y) & Wing(z) & Have(rock, y) & Have(rock, z))
+
+========== case 127 | ex 1350 | story 467 | label: False ==========
+PREMISES:
+All of Peter's pets that are mammals are also animals.
+All monkeys are mammals.
+Peter's pets are all either monkeys or birds.
+Peter's birds can fly.
+All animals that are Peter's pets can breathe.
+If Peter's pet can fly, then it has wings.
+Rock is Peter's pet.
+Rock can fly, or Rock is a bird, or Rock cannot breathe.
+PREMISES-FOL:
+all x (PetersPet(x) & Mammal(x) -> Animal(x))
+all x (Monkey(x) -> Mammal(x))
+all x (PetersPet(x) -> Monkey(x) (+)  Bird(x))
+all x (Bird(x) -> CanFly(x))
+all x (PetersPet(x) & Animal(x) -> Breathe(x))
+all x (PetersPet(x) & CanFly(x) -> exists y exists z (~(y=z) & Wing(y) & Wing(z) & Have(x, y) & Have(x, z)))
+PeterSPet(rock)
+CanFly(rock) | Bird(rock) | ~Breathe(rock)
+CONCLUSION:     Rock does not have wings.
+CONCLUSION-FOL: ~(exists y exists z (~(y=z) & Wing(y) & Wing(z) & Have(rock, y) & Have(rock, z)))
+
+========== case 128 | ex 846 | story 330 | label: False ==========
+PREMISES:
+All people who make wedding plans are people who are engaged.
+All people who invite others to come to their ceremony make wedding plans.
+Anyone who has a well-attended wedding invites others to come to their ceremony.
+Some people that have well-attended weddings have larger families.
+If John is engaged, then John does not invite friends to their ceremony and make wedding plans.
+If John has a larger family, then either John has a well-attended wedding or invites friends to their ceremony.
+PREMISES-FOL:
+all x (Make(x, weddingPlan) -> Engaged(x))
+all x (exists y exists z (~(y=x) & ~(z=x) & ~(y=z) & InviteToComeTo(x, y, wedding) & InviteToComeTo(x, z, wedding)) -> Make(x, weddingPlan))
+all x (Have(x, wellAttendedWedding) -> exists y exists z (~(y=x) & ~(z=x) & ~(y=z) & InviteToComeTo(x, y, wedding) & InviteToComeTo(x, z, wedding)))
+exists x (Have(x, wellAttendedWedding) & Have(x, largerFamily))
+Engaged(john) -> ~(exists y exists z (~(y=x) & ~(z=x) & ~(y=z) & InviteToComeTo(john, y, wedding) & Invite(john, z, comeTo, wedding))) & Make(john, weddingPlan)
+Have(john, largerFamily) -> Have(john, wellAttendedWedding) (+) exists y exists z (~(y=x) & ~(z=x) & ~(y=z) & Invite(x, y, comeTo, wedding) & InviteToComeTo(x, z, wedding))
+CONCLUSION:     John has a larger family.
+CONCLUSION-FOL: Have(john, largeFamily)
+
+========== case 129 | ex 847 | story 330 | label: True ==========
+PREMISES:
+All people who make wedding plans are people who are engaged.
+All people who invite others to come to their ceremony make wedding plans.
+Anyone who has a well-attended wedding invites others to come to their ceremony.
+Some people that have well-attended weddings have larger families.
+If John is engaged, then John does not invite friends to their ceremony and make wedding plans.
+If John has a larger family, then either John has a well-attended wedding or invites friends to their ceremony.
+PREMISES-FOL:
+all x (Make(x, weddingPlan) -> Engaged(x))
+all x (exists y exists z (~(y=x) & ~(z=x) & ~(y=z) & InviteToComeTo(x, y, wedding) & InviteToComeTo(x, z, wedding)) -> Make(x, weddingPlan))
+all x (Have(x, wellAttendedWedding) -> exists y exists z (~(y=x) & ~(z=x) & ~(y=z) & InviteToComeTo(x, y, wedding) & InviteToComeTo(x, z, wedding)))
+exists x (Have(x, wellAttendedWedding) & Have(x, largerFamily))
+Engaged(john) -> ~(exists y exists z (~(y=x) & ~(z=x) & ~(y=z) & InviteToComeTo(john, y, wedding) & Invite(john, z, comeTo, wedding))) & Make(john, weddingPlan)
+Have(john, largerFamily) -> Have(john, wellAttendedWedding) (+) exists y exists z (~(y=x) & ~(z=x) & ~(y=z) & Invite(x, y, comeTo, wedding) & InviteToComeTo(x, z, wedding))
+CONCLUSION:     John does not have a larger family.
+CONCLUSION-FOL: ~Have(john, largerFamily)
+
+========== case 130 | ex 848 | story 330 | label: Uncertain ==========
+PREMISES:
+All people who make wedding plans are people who are engaged.
+All people who invite others to come to their ceremony make wedding plans.
+Anyone who has a well-attended wedding invites others to come to their ceremony.
+Some people that have well-attended weddings have larger families.
+If John is engaged, then John does not invite friends to their ceremony and make wedding plans.
+If John has a larger family, then either John has a well-attended wedding or invites friends to their ceremony.
+PREMISES-FOL:
+all x (Make(x, weddingPlan) -> Engaged(x))
+all x (exists y exists z (~(y=x) & ~(z=x) & ~(y=z) & InviteToComeTo(x, y, wedding) & InviteToComeTo(x, z, wedding)) -> Make(x, weddingPlan))
+all x (Have(x, wellAttendedWedding) -> exists y exists z (~(y=x) & ~(z=x) & ~(y=z) & InviteToComeTo(x, y, wedding) & InviteToComeTo(x, z, wedding)))
+exists x (Have(x, wellAttendedWedding) & Have(x, largerFamily))
+Engaged(john) -> ~(exists y exists z (~(y=x) & ~(z=x) & ~(y=z) & InviteToComeTo(john, y, wedding) & Invite(john, z, comeTo, wedding))) & Make(john, weddingPlan)
+Have(john, largerFamily) -> Have(john, wellAttendedWedding) (+) exists y exists z (~(y=x) & ~(z=x) & ~(y=z) & Invite(x, y, comeTo, wedding) & InviteToComeTo(x, z, wedding))
+CONCLUSION:     John is engaged.
+CONCLUSION-FOL: Engaged(john)
+
+========== case 131 | ex 849 | story 330 | label: True ==========
+PREMISES:
+All people who make wedding plans are people who are engaged.
+All people who invite others to come to their ceremony make wedding plans.
+Anyone who has a well-attended wedding invites others to come to their ceremony.
+Some people that have well-attended weddings have larger families.
+If John is engaged, then John does not invite friends to their ceremony and make wedding plans.
+If John has a larger family, then either John has a well-attended wedding or invites friends to their ceremony.
+PREMISES-FOL:
+all x (Make(x, weddingPlan) -> Engaged(x))
+all x (exists y exists z (~(y=x) & ~(z=x) & ~(y=z) & InviteToComeTo(x, y, wedding) & InviteToComeTo(x, z, wedding)) -> Make(x, weddingPlan))
+all x (Have(x, wellAttendedWedding) -> exists y exists z (~(y=x) & ~(z=x) & ~(y=z) & InviteToComeTo(x, y, wedding) & InviteToComeTo(x, z, wedding)))
+exists x (Have(x, wellAttendedWedding) & Have(x, largerFamily))
+Engaged(john) -> ~(exists y exists z (~(y=x) & ~(z=x) & ~(y=z) & InviteToComeTo(john, y, wedding) & Invite(john, z, comeTo, wedding))) & Make(john, weddingPlan)
+Have(john, largerFamily) -> Have(john, wellAttendedWedding) (+) exists y exists z (~(y=x) & ~(z=x) & ~(y=z) & Invite(x, y, comeTo, wedding) & InviteToComeTo(x, z, wedding))
+CONCLUSION:     John neither has a larger family nor does he invite others to his wedding.
+CONCLUSION-FOL: ~Have(john, largerFamily) & ~(exists y exists z (~(y=john) & ~(z=john) & ~(y=z) & InviteToComeTo(john, y, wedding) & InviteToComeTo(john, z, wedding)))
+
+========== case 132 | ex 74 | story 26 | label: True ==========
+PREMISES:
+Some mammals have teeth.
+Platypuses have no teeth.
+Platypuses are mammals.
+Humans have teeth.
+PREMISES-FOL:
+exists x exists y (Mammal(x) & Mammal(y) & (~(x=y)) & Have(x, teeth) & Have(y, teeth))
+~Have(platypus, teeth)
+Mammal(platypus)
+Have(humans, teeth)
+CONCLUSION:     Platypuses are mammals with no teeth.
+CONCLUSION-FOL: Mammal(platypus) & (~Have(platypus, teeth))
+
+========== case 133 | ex 75 | story 26 | label: Uncertain ==========
+PREMISES:
+Some mammals have teeth.
+Platypuses have no teeth.
+Platypuses are mammals.
+Humans have teeth.
+PREMISES-FOL:
+exists x exists y (Mammal(x) & Mammal(y) & (~(x=y)) & Have(x, teeth) & Have(y, teeth))
+~Have(platypus, teeth)
+Mammal(platypus)
+Have(humans, teeth)
+CONCLUSION:     Platypuses are reptiles.
+CONCLUSION-FOL: Reptile(platypus)
+
+========== case 134 | ex 76 | story 26 | label: Uncertain ==========
+PREMISES:
+Some mammals have teeth.
+Platypuses have no teeth.
+Platypuses are mammals.
+Humans have teeth.
+PREMISES-FOL:
+exists x exists y (Mammal(x) & Mammal(y) & (~(x=y)) & Have(x, teeth) & Have(y, teeth))
+~Have(platypus, teeth)
+Mammal(platypus)
+Have(humans, teeth)
+CONCLUSION:     Humans are mammals.
+CONCLUSION-FOL: Mammal(humans)
+
+========== case 135 | ex 578 | story 203 | label: True ==========
+PREMISES:
+Plungers suck.
+Vacuums suck.
+Vampires suck.
+Space is a vacuum.
+A duster is a household appliance that doesn't suck.
+PREMISES-FOL:
+all x (Plunger(x) -> Suck(x))
+all x (Vacuum(x) -> Suck(x))
+all x (Vampire(x) -> Suck(x))
+Vacuum(space)
+HouseholdAppliance(duster) & ~Suck(duster)
+CONCLUSION:     Space sucks.
+CONCLUSION-FOL: Suck(space)
+
+========== case 136 | ex 579 | story 203 | label: Uncertain ==========
+PREMISES:
+Plungers suck.
+Vacuums suck.
+Vampires suck.
+Space is a vacuum.
+A duster is a household appliance that doesn't suck.
+PREMISES-FOL:
+all x (Plunger(x) -> Suck(x))
+all x (Vacuum(x) -> Suck(x))
+all x (Vampire(x) -> Suck(x))
+Vacuum(space)
+HouseholdAppliance(duster) & ~Suck(duster)
+CONCLUSION:     Space is a vampire.
+CONCLUSION-FOL: Vampire(space)
+
+========== case 137 | ex 580 | story 203 | label: False ==========
+PREMISES:
+Plungers suck.
+Vacuums suck.
+Vampires suck.
+Space is a vacuum.
+A duster is a household appliance that doesn't suck.
+PREMISES-FOL:
+all x (Plunger(x) -> Suck(x))
+all x (Vacuum(x) -> Suck(x))
+all x (Vampire(x) -> Suck(x))
+Vacuum(space)
+HouseholdAppliance(duster) & ~Suck(duster)
+CONCLUSION:     If something is a household appliance, it sucks.
+CONCLUSION-FOL: all x (HouseHoldApp(x) -> Suck(x))
+
+========== case 138 | ex 388 | story 131 | label: True ==========
+PREMISES:
+Machine Learning algorithms can be categorized as supervised learning, unsupervised learning, and reinforcement learning.
+Unsupervised learning algorithms do not require labeled data.
+The state-of-the-art text summarization model is trained with machine learning algorithms.
+Reinforcement learning is not used to train the state-of-the-art text summarization model.
+The Machine Learning algorithm for training text summarization models requires labeled data.
+PREMISES-FOL:
+all x (MachineLearningAlgorithm(x) -> SupervisedLearningAlgorithm(x) | UnsupervisedLearningAlgorithm(x) | ReinforcementLearningAlgorithm(x))
+all x (UnsupervisedLearningAlgorithm(x) -> ~Require(x, labeledData))
+all x (TrainedWith(stateOfTheArtTextSummarizationModel, x) -> MachineLearningAlgorithm(x))
+all x (ReinforcementLearningAlgorithm(x) -> ~TrainedWith(stateOfTheArtTextSummarizationModel, x))
+all x ((MachineLearningAlgorithm(x) & TrainedWith(stateOfTheArtTextSummarizationModel, x)) -> Require(x, labeledData))
+CONCLUSION:     Supervised learning is used to train the state-of-the-art text summarization model.
+CONCLUSION-FOL: exists x (SupervisedLearningAlgorithm(x) & TrainedWith(stateOfTheArtTextSummarizationModel, x))
+
+========== case 139 | ex 389 | story 131 | label: False ==========
+PREMISES:
+Machine Learning algorithms can be categorized as supervised learning, unsupervised learning, and reinforcement learning.
+Unsupervised learning algorithms do not require labeled data.
+The state-of-the-art text summarization model is trained with machine learning algorithms.
+Reinforcement learning is not used to train the state-of-the-art text summarization model.
+The Machine Learning algorithm for training text summarization models requires labeled data.
+PREMISES-FOL:
+all x (MachineLearningAlgorithm(x) -> SupervisedLearningAlgorithm(x) | UnsupervisedLearningAlgorithm(x) | ReinforcementLearningAlgorithm(x))
+all x (UnsupervisedLearningAlgorithm(x) -> ~Require(x, labeledData))
+all x (TrainedWith(stateOfTheArtTextSummarizationModel, x) -> MachineLearningAlgorithm(x))
+all x (ReinforcementLearningAlgorithm(x) -> ~TrainedWith(stateOfTheArtTextSummarizationModel, x))
+all x ((MachineLearningAlgorithm(x) & TrainedWith(stateOfTheArtTextSummarizationModel, x)) -> Require(x, labeledData))
+CONCLUSION:     Unsupervised learning is used to train the state-of-the-art text summarization model.
+CONCLUSION-FOL: exists x (UnsupervisedLearningAlgorithm(x) & TrainedWith(stateOfTheArtTextSummarizationModel, x))
+
+========== case 140 | ex 1327 | story 460 | label: Uncertain ==========
+PREMISES:
+If a film is appropriate for people of all ages, then children can watch it without guidance from parents.
+If a film contains excessive erotic and violent content, children cannot watch it without guidance from their parents.
+If a film is rated General Audience, then it is appropriate for people of all ages.
+All family-friendly animated films are rated General Audience.
+All movies in the Frozen series are family-friendly animated films.
+Hachi: A dogs Tale is a film.
+Hachi: A dogs Tale  is either a family-friendly animated film or is appropriate for people of all ages.
+PREMISES-FOL:
+all x (Film(x) & Rated(x, adultsOnly) -> CanWatchWithout(children, x, guidanceFromParents))
+all x (Film(x) & Contain(x, excessiveEroticContent) & Contain(x, excessiveViolentContent) -> ~CanWatchWithout(children, x, guidanceFromParents))
+all x (Film(x) & Rated(x, generalAudience) -> AppropriateFor(x, peopleOfAllAges))
+all x (Film(x) & FamilyFriendly(x) & Animated(x) -> Rated(x, generalAudience))
+all x (Film(x) & InfrozenSeries(x) -> FamilyFriendly(x) & Animated(x))
+Film(hachiAdogsTale)
+(FamilyFriendly(hachiAdogsTale) & Animated(hachiAdogsTale)) (+) Rated(hachiAdogsTale, adultsOnly)
+CONCLUSION:     "Hachi: A dog's Tale" is rated General Audience.
+CONCLUSION-FOL: Rated(x, generalAudience)
+
+========== case 141 | ex 1328 | story 460 | label: False ==========
+PREMISES:
+If a film is appropriate for people of all ages, then children can watch it without guidance from parents.
+If a film contains excessive erotic and violent content, children cannot watch it without guidance from their parents.
+If a film is rated General Audience, then it is appropriate for people of all ages.
+All family-friendly animated films are rated General Audience.
+All movies in the Frozen series are family-friendly animated films.
+Hachi: A dogs Tale is a film.
+Hachi: A dogs Tale  is either a family-friendly animated film or is appropriate for people of all ages.
+PREMISES-FOL:
+all x (Film(x) & Rated(x, adultsOnly) -> CanWatchWithout(children, x, guidanceFromParents))
+all x (Film(x) & Contain(x, excessiveEroticContent) & Contain(x, excessiveViolentContent) -> ~CanWatchWithout(children, x, guidanceFromParents))
+all x (Film(x) & Rated(x, generalAudience) -> AppropriateFor(x, peopleOfAllAges))
+all x (Film(x) & FamilyFriendly(x) & Animated(x) -> Rated(x, generalAudience))
+all x (Film(x) & InfrozenSeries(x) -> FamilyFriendly(x) & Animated(x))
+Film(hachiAdogsTale)
+(FamilyFriendly(hachiAdogsTale) & Animated(hachiAdogsTale)) (+) Rated(hachiAdogsTale, adultsOnly)
+CONCLUSION:     "Hachi: A dog's Tale" contains excessive erotic and violent content or is in the "Frozen" series or both.
+CONCLUSION-FOL: (Contain(x, excessiveEroticContent) & Contain(x, excessiveViolentContent)) | InfrozenSeries(excessiveViolentContent)
+
+========== case 142 | ex 1329 | story 460 | label: True ==========
+PREMISES:
+If a film is appropriate for people of all ages, then children can watch it without guidance from parents.
+If a film contains excessive erotic and violent content, children cannot watch it without guidance from their parents.
+If a film is rated General Audience, then it is appropriate for people of all ages.
+All family-friendly animated films are rated General Audience.
+All movies in the Frozen series are family-friendly animated films.
+Hachi: A dogs Tale is a film.
+Hachi: A dogs Tale  is either a family-friendly animated film or is appropriate for people of all ages.
+PREMISES-FOL:
+all x (Film(x) & Rated(x, adultsOnly) -> CanWatchWithout(children, x, guidanceFromParents))
+all x (Film(x) & Contain(x, excessiveEroticContent) & Contain(x, excessiveViolentContent) -> ~CanWatchWithout(children, x, guidanceFromParents))
+all x (Film(x) & Rated(x, generalAudience) -> AppropriateFor(x, peopleOfAllAges))
+all x (Film(x) & FamilyFriendly(x) & Animated(x) -> Rated(x, generalAudience))
+all x (Film(x) & InfrozenSeries(x) -> FamilyFriendly(x) & Animated(x))
+Film(hachiAdogsTale)
+(FamilyFriendly(hachiAdogsTale) & Animated(hachiAdogsTale)) (+) Rated(hachiAdogsTale, adultsOnly)
+CONCLUSION:     "Hachi: A dog's Tale" either contains excessive erotic and violent content and is a film in the "Frozen" series, or it neither contains excessive erotic and violent content nor is a film in the "Frozen" series.
+CONCLUSION-FOL: ~((Contain(x, excessiveEroticContent) & Contain(x, excessiveViolentContent)) (+) InfrozenSeries(excessiveViolentContent))
+
+========== case 143 | ex 133 | story 46 | label: True ==========
+PREMISES:
+Breeding back is a form of artificial selection by the deliberate selective breeding of domestic animals.
+Heck cattle were bred back in the 1920s to resemble the aurochs.
+Heck cattle are animals.
+Aurochs are animals.
+Some animals to be bred back resemble extinct animals.
+PREMISES-FOL:
+all x (BreedingBack(x) -> (ArtificialSelection(x) & DeliberateSelectiveBreedingOfDomesticAnimals(x)))
+exists x exists y (HeckCattle(x) & BreedingBack(x) & Auroch(y) & Resemble(x, y))
+all x (HeckCattle(x) -> Animal(x))
+all x (Auroch(x) -> Animal(x))
+exists x exists y (Animal(x) & Animal(y) & (~(x=y)) & BreedingBack(x) & BreedingBack(y) & (exists w(Dead(w) & Resemble(x, w)) & (~(w=z)) & (exists z(Dead(z) & Resemble(y, z))))
+CONCLUSION:     Some Heck cattle are artificially selected.
+CONCLUSION-FOL: exists x exists y(HeckCattle(x) & ArtificialSelection(x) & (~(x=y)) & HeckCattle(y) & ArtificialSelection(y))
+
+========== case 144 | ex 134 | story 46 | label: Uncertain ==========
+PREMISES:
+Breeding back is a form of artificial selection by the deliberate selective breeding of domestic animals.
+Heck cattle were bred back in the 1920s to resemble the aurochs.
+Heck cattle are animals.
+Aurochs are animals.
+Some animals to be bred back resemble extinct animals.
+PREMISES-FOL:
+all x (BreedingBack(x) -> (ArtificialSelection(x) & DeliberateSelectiveBreedingOfDomesticAnimals(x)))
+exists x exists y (HeckCattle(x) & BreedingBack(x) & Auroch(y) & Resemble(x, y))
+all x (HeckCattle(x) -> Animal(x))
+all x (Auroch(x) -> Animal(x))
+exists x exists y (Animal(x) & Animal(y) & (~(x=y)) & BreedingBack(x) & BreedingBack(y) & (exists w(Dead(w) & Resemble(x, w)) & (~(w=z)) & (exists z(Dead(z) & Resemble(y, z))))
+CONCLUSION:     Aurochs are extinct.
+CONCLUSION-FOL: all x (Auroch(x) -> Dead(x))
+
+========== case 145 | ex 1410 | story 483 | label: Uncertain ==========
+PREMISES:
+Everyone who can register to vote in the United States can participate in the 2024 United States presidential election.
+If someone has United States citizenship, then they can register to vote in the United States.
+A person either has United States citizenship or Taiwanese citizenship.
+No Russian Federation officials hold Taiwanese citizenship.
+Vladimir neither holds Taiwanese citizenship nor is he a manager at Gazprom.
+Ekaterina she can register to vote in the United States, or she is a Russian federation official.
+PREMISES-FOL:
+all x (CanRegisterToVoteIn(x, unitedStates) -> CanParticipateIn(x, 2024UnitedStatesElection))
+all x (Have(x, unitedStatesCitizenship) -> CanRegisterToVoteIn(x, unitedStates))
+all x (Have(x, unitedStatesCitizenship) | Have(x, taiwaneseCitizenship))
+all x (Russian(x) & FederationOfficial(x) -> ~Have(x, taiwaneseCitizenship))
+~Have(vladimir, taiwaneseCitizenship) & ~ManagerAt(vladimir, gazprom)
+(Russian(ekaterina) & FederationOfficial(ekaterina)) | CanRegisterToVoteIn(ekaterina, unitedStates)
+CONCLUSION:     Vladimir is a Russian federation official
+CONCLUSION-FOL: Russian(vladimir) & FederationOfficial(vladimir)
+
+========== case 146 | ex 1411 | story 483 | label: Uncertain ==========
+PREMISES:
+Everyone who can register to vote in the United States can participate in the 2024 United States presidential election.
+If someone has United States citizenship, then they can register to vote in the United States.
+A person either has United States citizenship or Taiwanese citizenship.
+No Russian Federation officials hold Taiwanese citizenship.
+Vladimir neither holds Taiwanese citizenship nor is he a manager at Gazprom.
+Ekaterina she can register to vote in the United States, or she is a Russian federation official.
+PREMISES-FOL:
+all x (CanRegisterToVoteIn(x, unitedStates) -> CanParticipateIn(x, 2024UnitedStatesElection))
+all x (Have(x, unitedStatesCitizenship) -> CanRegisterToVoteIn(x, unitedStates))
+all x (Have(x, unitedStatesCitizenship) | Have(x, taiwaneseCitizenship))
+all x (Russian(x) & FederationOfficial(x) -> ~Have(x, taiwaneseCitizenship))
+~Have(vladimir, taiwaneseCitizenship) & ~ManagerAt(vladimir, gazprom)
+(Russian(ekaterina) & FederationOfficial(ekaterina)) | CanRegisterToVoteIn(ekaterina, unitedStates)
+CONCLUSION:     Vladimir is not a Russian federation official
+CONCLUSION-FOL: ~(Russian(vladimir) & FederationOfficial(vladimir))
+
+========== case 147 | ex 1412 | story 483 | label: True ==========
+PREMISES:
+Everyone who can register to vote in the United States can participate in the 2024 United States presidential election.
+If someone has United States citizenship, then they can register to vote in the United States.
+A person either has United States citizenship or Taiwanese citizenship.
+No Russian Federation officials hold Taiwanese citizenship.
+Vladimir neither holds Taiwanese citizenship nor is he a manager at Gazprom.
+Ekaterina she can register to vote in the United States, or she is a Russian federation official.
+PREMISES-FOL:
+all x (CanRegisterToVoteIn(x, unitedStates) -> CanParticipateIn(x, 2024UnitedStatesElection))
+all x (Have(x, unitedStatesCitizenship) -> CanRegisterToVoteIn(x, unitedStates))
+all x (Have(x, unitedStatesCitizenship) | Have(x, taiwaneseCitizenship))
+all x (Russian(x) & FederationOfficial(x) -> ~Have(x, taiwaneseCitizenship))
+~Have(vladimir, taiwaneseCitizenship) & ~ManagerAt(vladimir, gazprom)
+(Russian(ekaterina) & FederationOfficial(ekaterina)) | CanRegisterToVoteIn(ekaterina, unitedStates)
+CONCLUSION:     Ekaterina can participate in the 2024 United States presidential election or is a manager at Gazprom.
+CONCLUSION-FOL: CanParticipateIn(ekaterina, 2024UnitedStatesElection) | ManagerAt(ekaterina, gazprom)
+
+========== case 148 | ex 1413 | story 483 | label: True ==========
+PREMISES:
+Everyone who can register to vote in the United States can participate in the 2024 United States presidential election.
+If someone has United States citizenship, then they can register to vote in the United States.
+A person either has United States citizenship or Taiwanese citizenship.
+No Russian Federation officials hold Taiwanese citizenship.
+Vladimir neither holds Taiwanese citizenship nor is he a manager at Gazprom.
+Ekaterina she can register to vote in the United States, or she is a Russian federation official.
+PREMISES-FOL:
+all x (CanRegisterToVoteIn(x, unitedStates) -> CanParticipateIn(x, 2024UnitedStatesElection))
+all x (Have(x, unitedStatesCitizenship) -> CanRegisterToVoteIn(x, unitedStates))
+all x (Have(x, unitedStatesCitizenship) | Have(x, taiwaneseCitizenship))
+all x (Russian(x) & FederationOfficial(x) -> ~Have(x, taiwaneseCitizenship))
+~Have(vladimir, taiwaneseCitizenship) & ~ManagerAt(vladimir, gazprom)
+(Russian(ekaterina) & FederationOfficial(ekaterina)) | CanRegisterToVoteIn(ekaterina, unitedStates)
+CONCLUSION:     Ekaterina can participate in the 2024 United States presidential election or Vladimir is a manager at Gazprom.
+CONCLUSION-FOL: CanParticipateIn(ekaterina, 2024UnitedStatesElection) (+) ManagerAt(vladimir, gazprom)
+
+========== case 149 | ex 1414 | story 483 | label: False ==========
+PREMISES:
+Everyone who can register to vote in the United States can participate in the 2024 United States presidential election.
+If someone has United States citizenship, then they can register to vote in the United States.
+A person either has United States citizenship or Taiwanese citizenship.
+No Russian Federation officials hold Taiwanese citizenship.
+Vladimir neither holds Taiwanese citizenship nor is he a manager at Gazprom.
+Ekaterina she can register to vote in the United States, or she is a Russian federation official.
+PREMISES-FOL:
+all x (CanRegisterToVoteIn(x, unitedStates) -> CanParticipateIn(x, 2024UnitedStatesElection))
+all x (Have(x, unitedStatesCitizenship) -> CanRegisterToVoteIn(x, unitedStates))
+all x (Have(x, unitedStatesCitizenship) | Have(x, taiwaneseCitizenship))
+all x (Russian(x) & FederationOfficial(x) -> ~Have(x, taiwaneseCitizenship))
+~Have(vladimir, taiwaneseCitizenship) & ~ManagerAt(vladimir, gazprom)
+(Russian(ekaterina) & FederationOfficial(ekaterina)) | CanRegisterToVoteIn(ekaterina, unitedStates)
+CONCLUSION:     It is not true that Ekaterina can register to vote in the United States and Vladimir can participate in the 2024 United States presidential election.
+CONCLUSION-FOL: CanRegisterToVoteIn(ekaterina, unitedStates) & CanParticipateIn(vladimir, 2024UnitedStatesElection)
+
+========== case 150 | ex 243 | story 80 | label: True ==========
+PREMISES:
+New Vessel Press is a publishing house specializing in translating foreign literature into English.
+All of New Vessel Press's published books are in English.
+Neapolitan Chronicles is a book published by New Vessel Press.
+Neapolitan Chronicles was translated from Italian.
+Palace of Flies is a book published by New Vessel Press.
+PREMISES-FOL:
+PublishingHouse(newVesselPress) & SpecializesInTranslatingIntoEnglish(newVesselPress, foreignLiterature)
+all x ((Book(x) & PublishedBy(x, newVesselPress)) -> In(x, english))
+Book(neapolitanChronicles) & PublishedBy(neapolitanChronicles, newVesselPress)
+TranslatedFrom(neapolitanChronicles, italian)
+Book(palaceOfFlies) & PublishedBy(palaceOfFlies, newVesselPress)
+CONCLUSION:     Neapolitan Chronicles is an English book.
+CONCLUSION-FOL: Book(neapolitanChronicles) & In(neapolitanChronicles, english)
+
+========== case 151 | ex 244 | story 80 | label: Uncertain ==========
+PREMISES:
+New Vessel Press is a publishing house specializing in translating foreign literature into English.
+All of New Vessel Press's published books are in English.
+Neapolitan Chronicles is a book published by New Vessel Press.
+Neapolitan Chronicles was translated from Italian.
+Palace of Flies is a book published by New Vessel Press.
+PREMISES-FOL:
+PublishingHouse(newVesselPress) & SpecializesInTranslatingIntoEnglish(newVesselPress, foreignLiterature)
+all x ((Book(x) & PublishedBy(x, newVesselPress)) -> In(x, english))
+Book(neapolitanChronicles) & PublishedBy(neapolitanChronicles, newVesselPress)
+TranslatedFrom(neapolitanChronicles, italian)
+Book(palaceOfFlies) & PublishedBy(palaceOfFlies, newVesselPress)
+CONCLUSION:     Harry Potter was published by New Vessel Press.
+CONCLUSION-FOL: PublishedBy(harryPotter, newVesselPress)
+
+========== case 152 | ex 245 | story 80 | label: Uncertain ==========
+PREMISES:
+New Vessel Press is a publishing house specializing in translating foreign literature into English.
+All of New Vessel Press's published books are in English.
+Neapolitan Chronicles is a book published by New Vessel Press.
+Neapolitan Chronicles was translated from Italian.
+Palace of Flies is a book published by New Vessel Press.
+PREMISES-FOL:
+PublishingHouse(newVesselPress) & SpecializesInTranslatingIntoEnglish(newVesselPress, foreignLiterature)
+all x ((Book(x) & PublishedBy(x, newVesselPress)) -> In(x, english))
+Book(neapolitanChronicles) & PublishedBy(neapolitanChronicles, newVesselPress)
+TranslatedFrom(neapolitanChronicles, italian)
+Book(palaceOfFlies) & PublishedBy(palaceOfFlies, newVesselPress)
+CONCLUSION:     Palace of Flies was translated from Italian.
+CONCLUSION-FOL: TranslatedFrom(palaceOfFlies, italian)
+
+========== case 153 | ex 964 | story 363 | label: Uncertain ==========
+PREMISES:
+All hydrocarbons are organic compounds .
+All alkanes are hydrocarbons
+All organic compounds are chemical compounds.
+All organic compounds contain carbon.
+No chemical compounds contain only one element.
+The mixture either both is a chemical compound and contains only one element, or neither.
+PREMISES-FOL:
+all x (Hydrocarbon(x) -> Orgranic(x) & Compound(x))
+all x (Alkane(x) -> Hydrocarbon(x))
+all x (Orgranic(x) & Compound(x) -> Chemical(x) & Compound(x))
+all x (Orgranic(x) & Compound(x) -> Contain(x, carbon))
+all x (Chemical(x) & Compound(x) -> all y all z (~(Contain(x, y) & Contain(x, z) & (y=z))))
+~((Chemical(mixture) & Compound(mixture)) (+) (all y all z (Contain(x, y) & Contain(x, z) & y=z)))
+CONCLUSION:     The mixture contains carbon.
+CONCLUSION-FOL: Contain(mixture, carbon)
+
+========== case 154 | ex 965 | story 363 | label: False ==========
+PREMISES:
+All hydrocarbons are organic compounds .
+All alkanes are hydrocarbons
+All organic compounds are chemical compounds.
+All organic compounds contain carbon.
+No chemical compounds contain only one element.
+The mixture either both is a chemical compound and contains only one element, or neither.
+PREMISES-FOL:
+all x (Hydrocarbon(x) -> Orgranic(x) & Compound(x))
+all x (Alkane(x) -> Hydrocarbon(x))
+all x (Orgranic(x) & Compound(x) -> Chemical(x) & Compound(x))
+all x (Orgranic(x) & Compound(x) -> Contain(x, carbon))
+all x (Chemical(x) & Compound(x) -> all y all z (~(Contain(x, y) & Contain(x, z) & (y=z))))
+~((Chemical(mixture) & Compound(mixture)) (+) (all y all z (Contain(x, y) & Contain(x, z) & y=z)))
+CONCLUSION:     The mixture is an alkane and contains carbon.
+CONCLUSION-FOL: Alkane(mixture) & Contain(mixture, carbon)
+
+========== case 155 | ex 966 | story 363 | label: True ==========
+PREMISES:
+All hydrocarbons are organic compounds .
+All alkanes are hydrocarbons
+All organic compounds are chemical compounds.
+All organic compounds contain carbon.
+No chemical compounds contain only one element.
+The mixture either both is a chemical compound and contains only one element, or neither.
+PREMISES-FOL:
+all x (Hydrocarbon(x) -> Orgranic(x) & Compound(x))
+all x (Alkane(x) -> Hydrocarbon(x))
+all x (Orgranic(x) & Compound(x) -> Chemical(x) & Compound(x))
+all x (Orgranic(x) & Compound(x) -> Contain(x, carbon))
+all x (Chemical(x) & Compound(x) -> all y all z (~(Contain(x, y) & Contain(x, z) & (y=z))))
+~((Chemical(mixture) & Compound(mixture)) (+) (all y all z (Contain(x, y) & Contain(x, z) & y=z)))
+CONCLUSION:     If the mixture contains only one element or contains carbon, then the mixture is neither a chemical compound nor an alkane.
+CONCLUSION-FOL: (all x all y (Contain(mixture, x) & Contain(mixture, y) & x=y)) | Contain(mixture, carbon) -> ~(Chemical(mixture) & Compound(mixture)) & ~Alkane(mixture))
+
+========== case 156 | ex 702 | story 258 | label: Uncertain ==========
+PREMISES:
+All humans are mortal.
+All Greeks are humans.
+PREMISES-FOL:
+all x (Human(x) -> Mortal(x))
+all x (Greek(x) -> Human(x))
+CONCLUSION:     Some Greeks are mortal.
+CONCLUSION-FOL: exists x exists y (Greek(x) & Greek(y) & Mortal(x) & Mortal(y) & ~(x=y))
+
+========== case 157 | ex 1244 | story 435 | label: False ==========
+PREMISES:
+None of the students who currently work in the library are from the computer science department.
+All of the students with part-time jobs offered by the university currently work in the library.
+All of the students who are taking the database course are from the computer science department.
+All of the students taking a class with Professor David are taking the database course.
+All students working in the lab are taking a class with Professor David.
+James is a student working in the lab.
+James doesn't work in the lab or have a part-time job offered by the university.
+PREMISES-FOL:
+all x (Student(x) & WorkIn(x, library) -> (~From(x, computerScienceDepartment)))
+all x (Student(x) & Have(x, partTimeJob) & OfferedBy(y, university) -> WorkIn(x, library))
+all x ((Student(x) & Take(x, databaseCourse)) -> From(x, computerScienceDepartment))
+all x ((Student(x) & InstructedBy(x, professorDavid)) -> Take(x, databaseCourse))
+all x ((Student(x) & WorkIn(x, lab)) -> InstructedBy(x, professorDavid))
+Student(james) & WorkIn(james, lab)
+~exists x (PartTimeJob(x) & Have(james, x) & OfferedBy(x, computerScienceDepartment)) & ~WorkIn(james, lab)
+CONCLUSION:     James has a part-time job offered by the university.
+CONCLUSION-FOL: exists y (PartTimeJob(y) & Have(james, y) & OfferedBy(y, university))
+
+========== case 158 | ex 1245 | story 435 | label: True ==========
+PREMISES:
+None of the students who currently work in the library are from the computer science department.
+All of the students with part-time jobs offered by the university currently work in the library.
+All of the students who are taking the database course are from the computer science department.
+All of the students taking a class with Professor David are taking the database course.
+All students working in the lab are taking a class with Professor David.
+James is a student working in the lab.
+James doesn't work in the lab or have a part-time job offered by the university.
+PREMISES-FOL:
+all x (Student(x) & WorkIn(x, library) -> (~From(x, computerScienceDepartment)))
+all x (Student(x) & Have(x, partTimeJob) & OfferedBy(y, university) -> WorkIn(x, library))
+all x ((Student(x) & Take(x, databaseCourse)) -> From(x, computerScienceDepartment))
+all x ((Student(x) & InstructedBy(x, professorDavid)) -> Take(x, databaseCourse))
+all x ((Student(x) & WorkIn(x, lab)) -> InstructedBy(x, professorDavid))
+Student(james) & WorkIn(james, lab)
+~exists x (PartTimeJob(x) & Have(james, x) & OfferedBy(x, computerScienceDepartment)) & ~WorkIn(james, lab)
+CONCLUSION:     James does not have a part-time job offered by the university.
+CONCLUSION-FOL: ~exists y(PartTimeJob(y) & Have(james, y) & OfferedBy(y, university))
+
+========== case 159 | ex 1246 | story 435 | label: True ==========
+PREMISES:
+None of the students who currently work in the library are from the computer science department.
+All of the students with part-time jobs offered by the university currently work in the library.
+All of the students who are taking the database course are from the computer science department.
+All of the students taking a class with Professor David are taking the database course.
+All students working in the lab are taking a class with Professor David.
+James is a student working in the lab.
+James doesn't work in the lab or have a part-time job offered by the university.
+PREMISES-FOL:
+all x (Student(x) & WorkIn(x, library) -> (~From(x, computerScienceDepartment)))
+all x (Student(x) & Have(x, partTimeJob) & OfferedBy(y, university) -> WorkIn(x, library))
+all x ((Student(x) & Take(x, databaseCourse)) -> From(x, computerScienceDepartment))
+all x ((Student(x) & InstructedBy(x, professorDavid)) -> Take(x, databaseCourse))
+all x ((Student(x) & WorkIn(x, lab)) -> InstructedBy(x, professorDavid))
+Student(james) & WorkIn(james, lab)
+~exists x (PartTimeJob(x) & Have(james, x) & OfferedBy(x, computerScienceDepartment)) & ~WorkIn(james, lab)
+CONCLUSION:     James either takes the database course or has a part-time job offered by the university.
+CONCLUSION-FOL: Take(james, databaseCourse) (+) (exists y (PartTimeJob(y) & Have(james, y) & OfferedBy(y, university))
+
+========== case 160 | ex 1247 | story 435 | label: Uncertain ==========
+PREMISES:
+None of the students who currently work in the library are from the computer science department.
+All of the students with part-time jobs offered by the university currently work in the library.
+All of the students who are taking the database course are from the computer science department.
+All of the students taking a class with Professor David are taking the database course.
+All students working in the lab are taking a class with Professor David.
+James is a student working in the lab.
+James doesn't work in the lab or have a part-time job offered by the university.
+PREMISES-FOL:
+all x (Student(x) & WorkIn(x, library) -> (~From(x, computerScienceDepartment)))
+all x (Student(x) & Have(x, partTimeJob) & OfferedBy(y, university) -> WorkIn(x, library))
+all x ((Student(x) & Take(x, databaseCourse)) -> From(x, computerScienceDepartment))
+all x ((Student(x) & InstructedBy(x, professorDavid)) -> Take(x, databaseCourse))
+all x ((Student(x) & WorkIn(x, lab)) -> InstructedBy(x, professorDavid))
+Student(james) & WorkIn(james, lab)
+~exists x (PartTimeJob(x) & Have(james, x) & OfferedBy(x, computerScienceDepartment)) & ~WorkIn(james, lab)
+CONCLUSION:     James takes the database course.
+CONCLUSION-FOL: Take(james, databaseCourse)
+
+========== case 161 | ex 618 | story 217 | label: True ==========
+PREMISES:
+If George likes music, he wants to compose.
+If George has access to a program, he can compose.
+If George can compose and wants to compose, he will compose.
+PREMISES-FOL:
+LikeMusic(george) -> WantToCompose(george)
+AccesstoProgram(george) -> CanCompose(george)
+(WantToCompose(george) & CanCompose(george)) -> WillCompose(george)
+CONCLUSION:     If George likes music and has access to a program, he will compose.
+CONCLUSION-FOL: (LikeMusic(george) & AccesstoProgram(george)) -> WillCompose(george)
+
+========== case 162 | ex 619 | story 217 | label: Uncertain ==========
+PREMISES:
+If George likes music, he wants to compose.
+If George has access to a program, he can compose.
+If George can compose and wants to compose, he will compose.
+PREMISES-FOL:
+LikeMusic(george) -> WantToCompose(george)
+AccesstoProgram(george) -> CanCompose(george)
+(WantToCompose(george) & CanCompose(george)) -> WillCompose(george)
+CONCLUSION:     If George will not compose, George can not compose.
+CONCLUSION-FOL: ~WantToCompose(george) -> ~WillCompose(george)
+
+========== case 163 | ex 736 | story 292 | label: False ==========
+PREMISES:
+A hawk never swims.
+Some birds are hawks.
+PREMISES-FOL:
+all x (Hawk(x) -> ~Swim(x))
+exists x exists y (Bird(x) & Bird(y) & Hawk(x) & Hawk(y) & ~(x=y))
+CONCLUSION:     All birds swim.
+CONCLUSION-FOL: all x (Bird(x) -> Swim(x))
+
+========== case 164 | ex 802 | story 318 | label: Uncertain ==========
+PREMISES:
+Some show airing at 8 pm on Monday gives out roses on TV.
+If a show gives out roses on TV, then the show is an episode of The Bachelor.
+The Bachelor portrays the lives of real people.
+All shows portraying the lives of real people are reality TV shows.
+Breaking Bad is a show.
+Breaking Bad is not a reality TV show.
+PREMISES-FOL:
+exists x (Show(x) & AiringAtOn(x, 8PMMonday) & GivenOutOn(x, rose, tV))
+all x (Show(x) & GivenOutOnAt(rose, tV, x) -> TheBachelor(x))
+all x (TheBachelor(x) -> Portray(x, lifeOfRealPeople))
+all x (Portray(x, liveOfRealPeople) -> RealityTVShow(x))
+Show(breakingBad)
+~RealityTVShow(breakingBad)
+CONCLUSION:     Breaking Bad is on Monday at 8 pm.
+CONCLUSION-FOL: all x (MondayAt8PM(x) & On(breakingBad, x))
+
+========== case 165 | ex 803 | story 318 | label: False ==========
+PREMISES:
+Some show airing at 8 pm on Monday gives out roses on TV.
+If a show gives out roses on TV, then the show is an episode of The Bachelor.
+The Bachelor portrays the lives of real people.
+All shows portraying the lives of real people are reality TV shows.
+Breaking Bad is a show.
+Breaking Bad is not a reality TV show.
+PREMISES-FOL:
+exists x (Show(x) & AiringAtOn(x, 8PMMonday) & GivenOutOn(x, rose, tV))
+all x (Show(x) & GivenOutOnAt(rose, tV, x) -> TheBachelor(x))
+all x (TheBachelor(x) -> Portray(x, lifeOfRealPeople))
+all x (Portray(x, liveOfRealPeople) -> RealityTVShow(x))
+Show(breakingBad)
+~RealityTVShow(breakingBad)
+CONCLUSION:     Breaking Bad is a TV show in which roses are given out on Monday at 8 pm.
+CONCLUSION-FOL: all x all y (MondayAt8PM(x) & Rose(y) & GivenOutOn(y, tv) & On(tv, x) & From(y, breakingBad))
+
+========== case 166 | ex 804 | story 318 | label: True ==========
+PREMISES:
+Some show airing at 8 pm on Monday gives out roses on TV.
+If a show gives out roses on TV, then the show is an episode of The Bachelor.
+The Bachelor portrays the lives of real people.
+All shows portraying the lives of real people are reality TV shows.
+Breaking Bad is a show.
+Breaking Bad is not a reality TV show.
+PREMISES-FOL:
+exists x (Show(x) & AiringAtOn(x, 8PMMonday) & GivenOutOn(x, rose, tV))
+all x (Show(x) & GivenOutOnAt(rose, tV, x) -> TheBachelor(x))
+all x (TheBachelor(x) -> Portray(x, lifeOfRealPeople))
+all x (Portray(x, liveOfRealPeople) -> RealityTVShow(x))
+Show(breakingBad)
+~RealityTVShow(breakingBad)
+CONCLUSION:     If roses are given out during Breaking Bad, then it is on Monday at 8 pm.
+CONCLUSION-FOL: all x all y ((Rose(y) & GivenOutOn(y, tv) & On(tv, x) & From(y, breakingBad)) -> MondayAt8PM(x))
+
+========== case 167 | ex 323 | story 107 | label: True ==========
+PREMISES:
+Heinrich Schmidt was a German politician.
+Heinrich Schmidt was also a member of the Prussian State Parliament and the Nazi Reichstag.
+PREMISES-FOL:
+German(heinrichSchmidt) & Politician(heinrichSchmidt)
+Member(heinrichSchmidt, prussianStateParliament) & Member(heinrichSchmidt, naziReichstag)
+CONCLUSION:     Heinrich Schmidt was German or Russian or both.
+CONCLUSION-FOL: German(heinrichSchmidt) | Russian(heinrichSchmidt)
+
+========== case 168 | ex 324 | story 107 | label: True ==========
+PREMISES:
+Heinrich Schmidt was a German politician.
+Heinrich Schmidt was also a member of the Prussian State Parliament and the Nazi Reichstag.
+PREMISES-FOL:
+German(heinrichSchmidt) & Politician(heinrichSchmidt)
+Member(heinrichSchmidt, prussianStateParliament) & Member(heinrichSchmidt, naziReichstag)
+CONCLUSION:     Some German politician was part of both the Prussian State Parliament and the Nazi Reichstag.
+CONCLUSION-FOL: exists x (German(x) & Politician(x) & Member(x, prussianStateParliament) & Member(x, naziReichstag))
+
+========== case 169 | ex 325 | story 107 | label: False ==========
+PREMISES:
+Heinrich Schmidt was a German politician.
+Heinrich Schmidt was also a member of the Prussian State Parliament and the Nazi Reichstag.
+PREMISES-FOL:
+German(heinrichSchmidt) & Politician(heinrichSchmidt)
+Member(heinrichSchmidt, prussianStateParliament) & Member(heinrichSchmidt, naziReichstag)
+CONCLUSION:     No politicians are part of the Nazi Reichstag.
+CONCLUSION-FOL: all x (Politician(x) -> ~Member(x, naziReichstag))
+
+========== case 170 | ex 1032 | story 386 | label: Uncertain ==========
+PREMISES:
+If something is a deadly disease, then it comes with a low survival rate.
+Severe cancers are deadly diseases.
+Bile duct cancer is a severe form cancer.
+All Cholangiocarcinoma is bile duct cancer.
+Mild flu comes with a low survival rate.
+Colorectal cancer is not both a bile duct cancer and with a low survival rate.
+PREMISES-FOL:
+all x (DeadlyDiseases(x) -> ComeWith(x, lowSurvivalRate))
+all x (SevereCancer(x) -> DeadlyDiseases(x))
+all x (BileDuctCancer(x) -> SevereCancer(x))
+all x (Cholangiocarcinoma(x) -> BileDuctCancer(x))
+all x (MildFlu(x) -> ~ComeWith(x, lowSurvivalRate))
+~(BileDuctCancer(colorectalCancer) & ComeWith(colorectalCancer, lowSurvivalRate))
+CONCLUSION:     Colorectal cancer is a kind of severe cancer
+CONCLUSION-FOL: SevereCancer(colorectalCancer)
+
+========== case 171 | ex 1033 | story 386 | label: True ==========
+PREMISES:
+If something is a deadly disease, then it comes with a low survival rate.
+Severe cancers are deadly diseases.
+Bile duct cancer is a severe form cancer.
+All Cholangiocarcinoma is bile duct cancer.
+Mild flu comes with a low survival rate.
+Colorectal cancer is not both a bile duct cancer and with a low survival rate.
+PREMISES-FOL:
+all x (DeadlyDiseases(x) -> ComeWith(x, lowSurvivalRate))
+all x (SevereCancer(x) -> DeadlyDiseases(x))
+all x (BileDuctCancer(x) -> SevereCancer(x))
+all x (Cholangiocarcinoma(x) -> BileDuctCancer(x))
+all x (MildFlu(x) -> ~ComeWith(x, lowSurvivalRate))
+~(BileDuctCancer(colorectalCancer) & ComeWith(colorectalCancer, lowSurvivalRate))
+CONCLUSION:     If colorectal cancer is a kind of bile duct cancer or a form of Cholangiocarcinoma, then colorectal cancer is a kind of bile duct cancer and a kind of mild flu.
+CONCLUSION-FOL: ~(BileDuctCancer(colorectalCancer) | Cholangiocarcinoma(colorectalCancer)) | (BileDuctCancer(colorectalCancer) & MildFlu(colorectalCancer))
+
+========== case 172 | ex 1034 | story 386 | label: False ==========
+PREMISES:
+If something is a deadly disease, then it comes with a low survival rate.
+Severe cancers are deadly diseases.
+Bile duct cancer is a severe form cancer.
+All Cholangiocarcinoma is bile duct cancer.
+Mild flu comes with a low survival rate.
+Colorectal cancer is not both a bile duct cancer and with a low survival rate.
+PREMISES-FOL:
+all x (DeadlyDiseases(x) -> ComeWith(x, lowSurvivalRate))
+all x (SevereCancer(x) -> DeadlyDiseases(x))
+all x (BileDuctCancer(x) -> SevereCancer(x))
+all x (Cholangiocarcinoma(x) -> BileDuctCancer(x))
+all x (MildFlu(x) -> ~ComeWith(x, lowSurvivalRate))
+~(BileDuctCancer(colorectalCancer) & ComeWith(colorectalCancer, lowSurvivalRate))
+CONCLUSION:     Colorectal cancer is a form of Cholangiocarcinoma and it is a kind of mild flu or a kind of bile duct cancer, or all of the above.
+CONCLUSION-FOL: Cholangiocarcinoma(colorectalCancer) & (MildFlu(colorectalCancer) | BileDuctCancer(colorectalCancer))
+
+========== case 173 | ex 941 | story 355 | label: Uncertain ==========
+PREMISES:
+All people who eat salads regularly are very conscious about their health and eating habits.
+All people who grew up in health-conscious childhood homes eat salads regularly.
+All people who fulfill their daily nutritional intakes grew up in health-conscious childhood homes.
+All people who disregard their physical well-being are not very conscious about their health and eating habits.
+If people visit the gym at least once a day, then they always fulfill their daily nutritional intakes.
+Taylor either grew up in a health-conscious childhood home and disregard her physical well-being, or she did neither.
+PREMISES-FOL:
+all x (RegularlyEat(x, salad) -> ConsciousAbout(x, health) & ConsciousAbout(x, eatinggHabit))
+all x (GrewUpIn(x, health-consciousChildhoodHome) -> RegularlyEat(x, salad))
+all x (Fulfill(x, dailyNutritionalIntake) -> GrewUpIn(x, health-consciousChildhoodHome))
+all x (Disregard(x, physicalWellbeing) -> ~(ConsciousAbout(x, health) & ConsciousAbout(x, eatingHabit)))
+all x (VisitDaily(x, gym) -> Fulfill(x, dailyNutritionalIntake))
+~(GrowUpIn(taylor, health-consciousChildhoodHome) (+) Disregard(taylor, physicalWellbeing))
+CONCLUSION:     Taylor eats salads regularly.
+CONCLUSION-FOL: RegularlyEat(taylor, salad)
+
+========== case 174 | ex 942 | story 355 | label: False ==========
+PREMISES:
+All people who eat salads regularly are very conscious about their health and eating habits.
+All people who grew up in health-conscious childhood homes eat salads regularly.
+All people who fulfill their daily nutritional intakes grew up in health-conscious childhood homes.
+All people who disregard their physical well-being are not very conscious about their health and eating habits.
+If people visit the gym at least once a day, then they always fulfill their daily nutritional intakes.
+Taylor either grew up in a health-conscious childhood home and disregard her physical well-being, or she did neither.
+PREMISES-FOL:
+all x (RegularlyEat(x, salad) -> ConsciousAbout(x, health) & ConsciousAbout(x, eatinggHabit))
+all x (GrewUpIn(x, health-consciousChildhoodHome) -> RegularlyEat(x, salad))
+all x (Fulfill(x, dailyNutritionalIntake) -> GrewUpIn(x, health-consciousChildhoodHome))
+all x (Disregard(x, physicalWellbeing) -> ~(ConsciousAbout(x, health) & ConsciousAbout(x, eatingHabit)))
+all x (VisitDaily(x, gym) -> Fulfill(x, dailyNutritionalIntake))
+~(GrowUpIn(taylor, health-consciousChildhoodHome) (+) Disregard(taylor, physicalWellbeing))
+CONCLUSION:     Taylor visits the gym at least once a day.
+CONCLUSION-FOL: VisitDaily(taylor, gym)
+
+========== case 175 | ex 943 | story 355 | label: True ==========
+PREMISES:
+All people who eat salads regularly are very conscious about their health and eating habits.
+All people who grew up in health-conscious childhood homes eat salads regularly.
+All people who fulfill their daily nutritional intakes grew up in health-conscious childhood homes.
+All people who disregard their physical well-being are not very conscious about their health and eating habits.
+If people visit the gym at least once a day, then they always fulfill their daily nutritional intakes.
+Taylor either grew up in a health-conscious childhood home and disregard her physical well-being, or she did neither.
+PREMISES-FOL:
+all x (RegularlyEat(x, salad) -> ConsciousAbout(x, health) & ConsciousAbout(x, eatinggHabit))
+all x (GrewUpIn(x, health-consciousChildhoodHome) -> RegularlyEat(x, salad))
+all x (Fulfill(x, dailyNutritionalIntake) -> GrewUpIn(x, health-consciousChildhoodHome))
+all x (Disregard(x, physicalWellbeing) -> ~(ConsciousAbout(x, health) & ConsciousAbout(x, eatingHabit)))
+all x (VisitDaily(x, gym) -> Fulfill(x, dailyNutritionalIntake))
+~(GrowUpIn(taylor, health-consciousChildhoodHome) (+) Disregard(taylor, physicalWellbeing))
+CONCLUSION:     Taylor neither grew up in a health-conscious childhood home nor does she visit the gym at least once a day.
+CONCLUSION-FOL: ~GrowUpIn(taylor, health-consciousChildhoodHome) & ~VisitDaily(taylor, gym))
+
+========== case 176 | ex 147 | story 51 | label: Uncertain ==========
+PREMISES:
+The summer Olympic games is a sporting event.
+The last summer Olympic games was in Tokyo.
+The United States won the most medals in Tokyo.
+PREMISES-FOL:
+SportingEvent(olympics)
+LastSummerOlympics(tokyo)
+MostMedals(unitedStates, tokyo)
+CONCLUSION:     The world championships is a sporting event.
+CONCLUSION-FOL: SportingEvent(champs)
+
+========== case 177 | ex 148 | story 51 | label: False ==========
+PREMISES:
+The summer Olympic games is a sporting event.
+The last summer Olympic games was in Tokyo.
+The United States won the most medals in Tokyo.
+PREMISES-FOL:
+SportingEvent(olympics)
+LastSummerOlympics(tokyo)
+MostMedals(unitedStates, tokyo)
+CONCLUSION:     The last summer Olympic games were not in Tokyo.
+CONCLUSION-FOL: ~LastSummerOlympics(tokyo)
+
+========== case 178 | ex 149 | story 51 | label: True ==========
+PREMISES:
+The summer Olympic games is a sporting event.
+The last summer Olympic games was in Tokyo.
+The United States won the most medals in Tokyo.
+PREMISES-FOL:
+SportingEvent(olympics)
+LastSummerOlympics(tokyo)
+MostMedals(unitedStates, tokyo)
+CONCLUSION:     The United States won the most medals in the last summer Olympic games.
+CONCLUSION-FOL: exists x (LastSummerOlympics(x) & MostMedals(unitedStates, x))
+
+========== case 179 | ex 703 | story 259 | label: False ==========
+PREMISES:
+All horses have hooves.
+No humans have hooves.
+PREMISES-FOL:
+all x (Horse(x) -> exists y exists z (~(y=z) & Hoof(y) & Hoof(z) & Have(x, y) & Have(x, z)))
+all x (Human(x) -> ~(exists y exists z (~(y=z) & Hoof(y) & Hoof(z) & Have(x, y) & Have(x, z))))
+CONCLUSION:     Some humans are horses.
+CONCLUSION-FOL: exists x (Human(x) & Human(y) & Horse(x) & Horse(y) & ~(x=y))
+
+========== case 180 | ex 442 | story 152 | label: False ==========
+PREMISES:
+Susan flies to LGA airport.
+The departure and arrival can not be at the same airport.
+John flies from LGA airport.
+PREMISES-FOL:
+FlyTo(susan, lgaAirport)
+all x all y (FlyFrom(x, y) (+) FlyTo(x, y))
+FlyFrom(john, lgaAirport)
+CONCLUSION:     Susan flies from LGA airport.
+CONCLUSION-FOL: FlyFrom(susan, lgaAirport)
+
+========== case 181 | ex 443 | story 152 | label: False ==========
+PREMISES:
+Susan flies to LGA airport.
+The departure and arrival can not be at the same airport.
+John flies from LGA airport.
+PREMISES-FOL:
+FlyTo(susan, lgaAirport)
+all x all y (FlyFrom(x, y) (+) FlyTo(x, y))
+FlyFrom(john, lgaAirport)
+CONCLUSION:     John flies to LGA airport.
+CONCLUSION-FOL: FlyTo(john, lgaAirport)
+
+========== case 182 | ex 1268 | story 441 | label: Uncertain ==========
+PREMISES:
+No one nice to animals is also mean to animals.
+Some grumpy people are mean to animals.
+All animal lovers are nice to animals.
+All pet owners love animals.
+Tom is a pet owner.
+PREMISES-FOL:
+all x (NiceTo(x, animal) -> ~MeanTo(x, animal))
+exists x (Grumpy(x) & MeanTo(x, animal))
+all x (AnimalLover(x) -> NiceTo(x, animal))
+all x (PetOwner(x) -> AnimalLover(x))
+PetOwner(tom)
+CONCLUSION:     Tom is a grumpy person.
+CONCLUSION-FOL: Grumpy(tom)
+
+========== case 183 | ex 1269 | story 441 | label: True ==========
+PREMISES:
+No one nice to animals is also mean to animals.
+Some grumpy people are mean to animals.
+All animal lovers are nice to animals.
+All pet owners love animals.
+Tom is a pet owner.
+PREMISES-FOL:
+all x (NiceTo(x, animal) -> ~MeanTo(x, animal))
+exists x (Grumpy(x) & MeanTo(x, animal))
+all x (AnimalLover(x) -> NiceTo(x, animal))
+all x (PetOwner(x) -> AnimalLover(x))
+PetOwner(tom)
+CONCLUSION:     Tom is not both a grumpy person and mean to animals.
+CONCLUSION-FOL: ~(Grumpy(tom) & MeanTo(tom, animal))
+
+========== case 184 | ex 1270 | story 441 | label: False ==========
+PREMISES:
+No one nice to animals is also mean to animals.
+Some grumpy people are mean to animals.
+All animal lovers are nice to animals.
+All pet owners love animals.
+Tom is a pet owner.
+PREMISES-FOL:
+all x (NiceTo(x, animal) -> ~MeanTo(x, animal))
+exists x (Grumpy(x) & MeanTo(x, animal))
+all x (AnimalLover(x) -> NiceTo(x, animal))
+all x (PetOwner(x) -> AnimalLover(x))
+PetOwner(tom)
+CONCLUSION:     If Tom is not both a grumpy person and mean to animals, then Tom is neither a grumpy person nor an animal lover.
+CONCLUSION-FOL: ~(Grumpy(tom) & MeanTo(tom, animal)) -> ~Grumpy(tom) & ~AnimalLover(tom))
+
+========== case 185 | ex 189 | story 64 | label: True ==========
+PREMISES:
+A podcast is not a novel.
+If a person is born in American City, the person is American.
+If a book is a novel and it is written by a person, then the person is a novel writer.
+Dani Shapiro is an American writer.
+Family History is written by Dani Shapiro.
+Family History is a novel written in 2003.
+Dani Shapiro created a podcast called Family Secrets.
+Boston is an American city.
+PREMISES-FOL:
+all x (Podcast(x) -> ~Novel(x))
+all x((exists y(BornIn(x, y) & City(y) & LocatedIn(y,america)) -> American(x))
+all x all y ((Novel(x) & WrittenBy(x, y)) -> WritesNovel(y))
+American(dani_Shapiro) & Writer(dani_Shapiro)
+WrittenBy(family_History, dani_Shapiro)
+Novel(family_History) & WrittenIn(family_History, yr2003)
+Podcast(family_Secrets) & CreatedBy(family_Secrets, dani_Shapiro)
+City(boston) & American(boston)
+CONCLUSION:     Dani Shapiro is a novel writer.
+CONCLUSION-FOL: WritesNovel(dani_Shapiro)
+
+========== case 186 | ex 190 | story 64 | label: False ==========
+PREMISES:
+A podcast is not a novel.
+If a person is born in American City, the person is American.
+If a book is a novel and it is written by a person, then the person is a novel writer.
+Dani Shapiro is an American writer.
+Family History is written by Dani Shapiro.
+Family History is a novel written in 2003.
+Dani Shapiro created a podcast called Family Secrets.
+Boston is an American city.
+PREMISES-FOL:
+all x (Podcast(x) -> ~Novel(x))
+all x((exists y(BornIn(x, y) & City(y) & LocatedIn(y,america)) -> American(x))
+all x all y ((Novel(x) & WrittenBy(x, y)) -> WritesNovel(y))
+American(dani_Shapiro) & Writer(dani_Shapiro)
+WrittenBy(family_History, dani_Shapiro)
+Novel(family_History) & WrittenIn(family_History, yr2003)
+Podcast(family_Secrets) & CreatedBy(family_Secrets, dani_Shapiro)
+City(boston) & American(boston)
+CONCLUSION:     Family Secrets is a novel.
+CONCLUSION-FOL: IsNovel(family_Secrets)
+
+========== case 187 | ex 191 | story 64 | label: Uncertain ==========
+PREMISES:
+A podcast is not a novel.
+If a person is born in American City, the person is American.
+If a book is a novel and it is written by a person, then the person is a novel writer.
+Dani Shapiro is an American writer.
+Family History is written by Dani Shapiro.
+Family History is a novel written in 2003.
+Dani Shapiro created a podcast called Family Secrets.
+Boston is an American city.
+PREMISES-FOL:
+all x (Podcast(x) -> ~Novel(x))
+all x((exists y(BornIn(x, y) & City(y) & LocatedIn(y,america)) -> American(x))
+all x all y ((Novel(x) & WrittenBy(x, y)) -> WritesNovel(y))
+American(dani_Shapiro) & Writer(dani_Shapiro)
+WrittenBy(family_History, dani_Shapiro)
+Novel(family_History) & WrittenIn(family_History, yr2003)
+Podcast(family_Secrets) & CreatedBy(family_Secrets, dani_Shapiro)
+City(boston) & American(boston)
+CONCLUSION:     Dani Shapiro was born in Boston.
+CONCLUSION-FOL: BornIn(dani_Shapiro, boston)
+
+========== case 188 | ex 1313 | story 456 | label: Uncertain ==========
+PREMISES:
+Some professional basketball players are not American nationals.
+All professional basketball players can do jump shots.
+If someone can jump shots, they leap straight into the air.
+If someone leaps straight into the air, they activate their leg muscles.
+Yuri does not activate his leg muscles.
+PREMISES-FOL:
+exists x (Professional(x) & BasketballPlayer(x) & ~AmericanNational(x))
+all x (Professional(x) & BasketballPlayer(x) -> CanDo(x, jumpShot))
+all x (CanDo(x, jumpShot) -> LeapStraightIntoAir(x))
+all x (LeapStraightIntoAir(x) -> Activate(x, legMuscle))
+~Activate(yuri, legMuscle)
+CONCLUSION:     Yuri is an American national.
+CONCLUSION-FOL: AmericanNational(yuri)
+
+========== case 189 | ex 1314 | story 456 | label: True ==========
+PREMISES:
+Some professional basketball players are not American nationals.
+All professional basketball players can do jump shots.
+If someone can jump shots, they leap straight into the air.
+If someone leaps straight into the air, they activate their leg muscles.
+Yuri does not activate his leg muscles.
+PREMISES-FOL:
+exists x (Professional(x) & BasketballPlayer(x) & ~AmericanNational(x))
+all x (Professional(x) & BasketballPlayer(x) -> CanDo(x, jumpShot))
+all x (CanDo(x, jumpShot) -> LeapStraightIntoAir(x))
+all x (LeapStraightIntoAir(x) -> Activate(x, legMuscle))
+~Activate(yuri, legMuscle)
+CONCLUSION:     Yuri is not an American professional basketball player.
+CONCLUSION-FOL: ~(AmericanNational(yuri) & Professional(yuri) & BasketballPlayer(yuri))
+
+========== case 190 | ex 1315 | story 456 | label: False ==========
+PREMISES:
+Some professional basketball players are not American nationals.
+All professional basketball players can do jump shots.
+If someone can jump shots, they leap straight into the air.
+If someone leaps straight into the air, they activate their leg muscles.
+Yuri does not activate his leg muscles.
+PREMISES-FOL:
+exists x (Professional(x) & BasketballPlayer(x) & ~AmericanNational(x))
+all x (Professional(x) & BasketballPlayer(x) -> CanDo(x, jumpShot))
+all x (CanDo(x, jumpShot) -> LeapStraightIntoAir(x))
+all x (LeapStraightIntoAir(x) -> Activate(x, legMuscle))
+~Activate(yuri, legMuscle)
+CONCLUSION:     Yuri is an American professional basketball player.
+CONCLUSION-FOL: AmericanNational(yuri) & Professional(yuri) & BasketballPlayer(yuri)
+
+========== case 191 | ex 1316 | story 456 | label: False ==========
+PREMISES:
+Some professional basketball players are not American nationals.
+All professional basketball players can do jump shots.
+If someone can jump shots, they leap straight into the air.
+If someone leaps straight into the air, they activate their leg muscles.
+Yuri does not activate his leg muscles.
+PREMISES-FOL:
+exists x (Professional(x) & BasketballPlayer(x) & ~AmericanNational(x))
+all x (Professional(x) & BasketballPlayer(x) -> CanDo(x, jumpShot))
+all x (CanDo(x, jumpShot) -> LeapStraightIntoAir(x))
+all x (LeapStraightIntoAir(x) -> Activate(x, legMuscle))
+~Activate(yuri, legMuscle)
+CONCLUSION:     If Yuri does not leap straight into the air, then Yuri is an American professional basketball player.
+CONCLUSION-FOL: ~LeapStraightIntoAir(yuri) -> (AmericanNational(yuri) & Professional(yuri) & BasketballPlayer(yuri))
+
+========== case 192 | ex 1317 | story 456 | label: False ==========
+PREMISES:
+Some professional basketball players are not American nationals.
+All professional basketball players can do jump shots.
+If someone can jump shots, they leap straight into the air.
+If someone leaps straight into the air, they activate their leg muscles.
+Yuri does not activate his leg muscles.
+PREMISES-FOL:
+exists x (Professional(x) & BasketballPlayer(x) & ~AmericanNational(x))
+all x (Professional(x) & BasketballPlayer(x) -> CanDo(x, jumpShot))
+all x (CanDo(x, jumpShot) -> LeapStraightIntoAir(x))
+all x (LeapStraightIntoAir(x) -> Activate(x, legMuscle))
+~Activate(yuri, legMuscle)
+CONCLUSION:     If Yuri is not an American professional basketball player, then Yuri is a professional basketball player.
+CONCLUSION-FOL: ~(AmericanNational(yuri) & Professional(yuri) & BasketballPlayer(yuri)) -> (Professional(yuri) & BasketballPlayer(yuri))
+
+========== case 193 | ex 724 | story 280 | label: False ==========
+PREMISES:
+Events are either happy or sad.
+At least one event is happy.
+PREMISES-FOL:
+all x (Event(x) -> Happy(x) (+) Sad(x))
+exists x (Event(x) & Happy(x))
+CONCLUSION:     All events are sad.
+CONCLUSION-FOL: all x (Event(x) -> Sad(x))
+
+========== case 194 | ex 411 | story 140 | label: False ==========
+PREMISES:
+The winner of the 1992 du Maurier Classic was Steinhauer.
+Steinhauer participated in the 1992 du Maurier Classic.
+One six-way tie was on the leaderboard, and one person in the six-way tie was from Belgium.
+Descampe is from Belgium and is on the leaderboard of the 1992 du Maurier Classic.
+All people on the leaderboard of the 1992 du Maurier Classic participated in the 1992 du Maurier Classic.
+PREMISES-FOL:
+WinnerOf(steinhauer, duMaurierClassic, year1992)
+Participate(duMaurierClassic, steinhauer, year1992)
+exists x exists y (OnLeaderBoardOf(x, duMaurierClassic) & SixWayTie(x)) & In(y, sixWayTie) & Belgium(y))
+From(descampe, belgium) & OnLeaderBoardOf(descampe, duMaurierClassic)
+all x (LeaderBoard(maurier, x) -> Participate(maurier, x))
+CONCLUSION:     Steinhauer was not the winner of the 1992 du Maurier Classic.
+CONCLUSION-FOL: ~WinnerOf(steinhauer, duMaurierClassic, year1992)
+
+========== case 195 | ex 412 | story 140 | label: Uncertain ==========
+PREMISES:
+The winner of the 1992 du Maurier Classic was Steinhauer.
+Steinhauer participated in the 1992 du Maurier Classic.
+One six-way tie was on the leaderboard, and one person in the six-way tie was from Belgium.
+Descampe is from Belgium and is on the leaderboard of the 1992 du Maurier Classic.
+All people on the leaderboard of the 1992 du Maurier Classic participated in the 1992 du Maurier Classic.
+PREMISES-FOL:
+WinnerOf(steinhauer, duMaurierClassic, year1992)
+Participate(duMaurierClassic, steinhauer, year1992)
+exists x exists y (OnLeaderBoardOf(x, duMaurierClassic) & SixWayTie(x)) & In(y, sixWayTie) & Belgium(y))
+From(descampe, belgium) & OnLeaderBoardOf(descampe, duMaurierClassic)
+all x (LeaderBoard(maurier, x) -> Participate(maurier, x))
+CONCLUSION:     Descampe is in the six-way tie in the leaderboard of the 1992 du Maurier Classic.
+CONCLUSION-FOL: SixWayTie(descampe)
+
+========== case 196 | ex 1324 | story 459 | label: Uncertain ==========
+PREMISES:
+Jane does not like any animals that bark.
+All dogs are animals that bark.
+Jane likes all animals that jump.
+If an animal has legs, then it jumps.
+If an animal is terricolous, then it has legs.
+KiKi is an animal.
+If KiKi neither jumps nor has legs, then KiKi is terricolous or has legs.
+PREMISES-FOL:
+all x (Animal(x) & Bark(x) -> ~Like(jane, x))
+all x (Dog(x) -> Animal(x) & Bark(x))
+all x (Animal(x) & Jump(x) -> Like(jane, x))
+all x (exists y exists z (~(y=z) & Leg(y) & Leg(z) & Have(x, y) & Have(x, z)) -> Jump(x))
+all x (Terricolous(x) -> exists y exists z (~(y=z) & Leg(y) & Leg(z) & Have(x, y) & Have(x, z)))
+Animal(kiki)
+~Jump(kiki) & ~(exists y exists z (~(y=z) & Leg(y) & Leg(z) & Have(kiki, y) & Have(kiki, z))) -> Terricolous(kiki) | exists y exists z (~(y=z) & Leg(y) & Leg(z) & Have(kiki, y) & Have(kiki, z))
+CONCLUSION:     KiKi is terricolous.
+CONCLUSION-FOL: Terricolous(kiki)
+
+========== case 197 | ex 1325 | story 459 | label: False ==========
+PREMISES:
+Jane does not like any animals that bark.
+All dogs are animals that bark.
+Jane likes all animals that jump.
+If an animal has legs, then it jumps.
+If an animal is terricolous, then it has legs.
+KiKi is an animal.
+If KiKi neither jumps nor has legs, then KiKi is terricolous or has legs.
+PREMISES-FOL:
+all x (Animal(x) & Bark(x) -> ~Like(jane, x))
+all x (Dog(x) -> Animal(x) & Bark(x))
+all x (Animal(x) & Jump(x) -> Like(jane, x))
+all x (exists y exists z (~(y=z) & Leg(y) & Leg(z) & Have(x, y) & Have(x, z)) -> Jump(x))
+all x (Terricolous(x) -> exists y exists z (~(y=z) & Leg(y) & Leg(z) & Have(x, y) & Have(x, z)))
+Animal(kiki)
+~Jump(kiki) & ~(exists y exists z (~(y=z) & Leg(y) & Leg(z) & Have(kiki, y) & Have(kiki, z))) -> Terricolous(kiki) | exists y exists z (~(y=z) & Leg(y) & Leg(z) & Have(kiki, y) & Have(kiki, z))
+CONCLUSION:     KiKi is a barking dog.
+CONCLUSION-FOL: Bark(kiki) & Dog(kiki)
+
+========== case 198 | ex 1326 | story 459 | label: True ==========
+PREMISES:
+Jane does not like any animals that bark.
+All dogs are animals that bark.
+Jane likes all animals that jump.
+If an animal has legs, then it jumps.
+If an animal is terricolous, then it has legs.
+KiKi is an animal.
+If KiKi neither jumps nor has legs, then KiKi is terricolous or has legs.
+PREMISES-FOL:
+all x (Animal(x) & Bark(x) -> ~Like(jane, x))
+all x (Dog(x) -> Animal(x) & Bark(x))
+all x (Animal(x) & Jump(x) -> Like(jane, x))
+all x (exists y exists z (~(y=z) & Leg(y) & Leg(z) & Have(x, y) & Have(x, z)) -> Jump(x))
+all x (Terricolous(x) -> exists y exists z (~(y=z) & Leg(y) & Leg(z) & Have(x, y) & Have(x, z)))
+Animal(kiki)
+~Jump(kiki) & ~(exists y exists z (~(y=z) & Leg(y) & Leg(z) & Have(kiki, y) & Have(kiki, z))) -> Terricolous(kiki) | exists y exists z (~(y=z) & Leg(y) & Leg(z) & Have(kiki, y) & Have(kiki, z))
+CONCLUSION:     KiKi does not bark and he is not a dog.
+CONCLUSION-FOL: ~Bark(kiki) & ~Dog(kiki)
+
+========== case 199 | ex 304 | story 101 | label: False ==========
+PREMISES:
+Ailton Silva, born in 1995, is commonly known as Ailton.
+Ailton is a football player who was loaned out to Braga.
+Ailton Silva is a Brazilian footballer who plays for Nautico.
+Nautico is a football club along with Braga.
+Fluminense is a football club.
+PREMISES-FOL:
+BornIn(ailtonSilva, year1995) & CommonlyKnownAs(ailtonSilva, ailton)
+FootballPlayer(ailton) & LoanedTo(ailton, braga)
+Brazilian(ailtonSilva) & Footballplayer(ailtonSilva) & PlayFor(ailtonSilva, nautico)
+FootballClub(nautico) & FootballClub(braga)
+FootballClub(fluminense)
+CONCLUSION:     No one playing for Nautico is Brazilian.
+CONCLUSION-FOL: all x (PlayFor(x, nautico) -> ~Brazilian(x))
+
+========== case 200 | ex 305 | story 101 | label: False ==========
+PREMISES:
+Ailton Silva, born in 1995, is commonly known as Ailton.
+Ailton is a football player who was loaned out to Braga.
+Ailton Silva is a Brazilian footballer who plays for Nautico.
+Nautico is a football club along with Braga.
+Fluminense is a football club.
+PREMISES-FOL:
+BornIn(ailtonSilva, year1995) & CommonlyKnownAs(ailtonSilva, ailton)
+FootballPlayer(ailton) & LoanedTo(ailton, braga)
+Brazilian(ailtonSilva) & Footballplayer(ailtonSilva) & PlayFor(ailtonSilva, nautico)
+FootballClub(nautico) & FootballClub(braga)
+FootballClub(fluminense)
+CONCLUSION:     Ailton Silva does not play for a football club.
+CONCLUSION-FOL: all x (FootballClub(x) -> ~PlayFor(ailtonSilva, x))
+
+========== case 201 | ex 306 | story 101 | label: False ==========
+PREMISES:
+Ailton Silva, born in 1995, is commonly known as Ailton.
+Ailton is a football player who was loaned out to Braga.
+Ailton Silva is a Brazilian footballer who plays for Nautico.
+Nautico is a football club along with Braga.
+Fluminense is a football club.
+PREMISES-FOL:
+BornIn(ailtonSilva, year1995) & CommonlyKnownAs(ailtonSilva, ailton)
+FootballPlayer(ailton) & LoanedTo(ailton, braga)
+Brazilian(ailtonSilva) & Footballplayer(ailtonSilva) & PlayFor(ailtonSilva, nautico)
+FootballClub(nautico) & FootballClub(braga)
+FootballClub(fluminense)
+CONCLUSION:     Ailton was not loaned out to a football club.
+CONCLUSION-FOL: all x (FootballClub(x) -> ~LoanedTo(ailton, x))
+
+========== case 202 | ex 307 | story 101 | label: Uncertain ==========
+PREMISES:
+Ailton Silva, born in 1995, is commonly known as Ailton.
+Ailton is a football player who was loaned out to Braga.
+Ailton Silva is a Brazilian footballer who plays for Nautico.
+Nautico is a football club along with Braga.
+Fluminense is a football club.
+PREMISES-FOL:
+BornIn(ailtonSilva, year1995) & CommonlyKnownAs(ailtonSilva, ailton)
+FootballPlayer(ailton) & LoanedTo(ailton, braga)
+Brazilian(ailtonSilva) & Footballplayer(ailtonSilva) & PlayFor(ailtonSilva, nautico)
+FootballClub(nautico) & FootballClub(braga)
+FootballClub(fluminense)
+CONCLUSION:     Ailton Silva played for Fluminense.
+CONCLUSION-FOL: PlayFor(ailtonSilva, fluminense)
+
+========== case 203 | ex 308 | story 101 | label: Uncertain ==========
+PREMISES:
+Ailton Silva, born in 1995, is commonly known as Ailton.
+Ailton is a football player who was loaned out to Braga.
+Ailton Silva is a Brazilian footballer who plays for Nautico.
+Nautico is a football club along with Braga.
+Fluminense is a football club.
+PREMISES-FOL:
+BornIn(ailtonSilva, year1995) & CommonlyKnownAs(ailtonSilva, ailton)
+FootballPlayer(ailton) & LoanedTo(ailton, braga)
+Brazilian(ailtonSilva) & Footballplayer(ailtonSilva) & PlayFor(ailtonSilva, nautico)
+FootballClub(nautico) & FootballClub(braga)
+FootballClub(fluminense)
+CONCLUSION:     Ailton Silva was loaned out to a football club.
+CONCLUSION-FOL: exists x (FootballClub(x) & LoanedTo(ailtonSilva, x))
+

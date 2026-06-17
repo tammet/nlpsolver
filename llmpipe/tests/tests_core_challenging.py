@@ -1,5 +1,5 @@
-# Core test suite — NOT-EASY split (>=2 total errors across 4 experiments x 4 LLMs).
-# Union of the MEDIUM (2-3 errors) and HARD (>=4 errors) splits.
+# Core test suite — CHALLENGING split (>=2 total errors across 4 experiments x 4 LLMs;
+# formerly "not-easy"). Union of the MEDIUM (2-3 errors) and HARD (>=4 errors) splits.
 # Auto-generated from tests_core.py via difficulty_matrix.json; do not edit by hand.
 
 [
