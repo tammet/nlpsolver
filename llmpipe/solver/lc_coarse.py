@@ -136,6 +136,29 @@ _OBJ_ROLE_PRIORITY = ["has recipient", "has beneficiary", "has target",
                       "has accompaniment", "has instrument"]
 
 _verb_index = {}    # event var -> its has-type verb, built per coarsen_events run
+_eventprop_mode = False  # (ultracoarse2) tag folded object roles as ["eventprop", role, value]
+_davidson_mode = False   # (-davidson) structure-preserving fold: spine -> event(V,A,O,E), keep the rest
+_dav_nr = 0              # counter for fresh existential agent/patient vars (reset per coarsen_events run)
+
+# (-davidson) Roles eligible to fill the event() PATIENT slot: the THEME/target
+# only.  The bridge projects the patient slot unconditionally as has_target(E,O),
+# so the slot must hold the theme, not a dative -- otherwise a recipient in the
+# slot is mislabelled has_target and collides with a kept has_target (wh-bug:
+# "showed the map to the students. What did the teacher show?" -> "the students
+# and the map").  Datives (recipient/beneficiary) and obliques (location, source,
+# direction, instrument, accompaniment, destination) are NEVER the patient; they
+# stay as has_<role>(E,...) adjuncts on the handle.  So "John ate in the house"
+# keeps its location adjunct, and "gave Mary a book" -> event(give,John,book,E) +
+# has_recipient(E,Mary).  Object-less events get a fresh existential patient.
+_DAV_PATIENT_ROLES = ["has target", "has goal", "has topic"]
+
+
+def _dav_fresh(kind):
+  """Fresh BARE existential var name (clausifier Skolemizes it when bound by exists).
+  Not '?:'-prefixed, so it is not a clause-level free (universal) variable."""
+  global _dav_nr
+  _dav_nr += 1
+  return "Dav" + kind + str(_dav_nr)
 
 
 def _build_verb_index(tree):
@@ -214,11 +237,14 @@ def _fold_event_flat(and_block, E, content_inner):
     if inner_verb is not None:
       objs["has target"] = inner_verb
   present = [r for r in _OBJ_ROLE_PRIORITY if r in objs]
+  obj_role = None                            # the role whose value fills the object slot
   if actor is not None:
     subject, obj = actor, (objs[present[0]] if present else None)
+    obj_role = present[0] if present else None
   elif present:                              # passive: patient becomes subject
     subject = objs[present[0]]
     obj = objs[present[1]] if len(present) > 1 else None
+    obj_role = present[1] if len(present) > 1 else None
   else:
     return None                              # subject-less event: keep reified
   # Resolve typed-existential role fillers ("Y" with isa(salad,Y)) to the type
@@ -231,8 +257,99 @@ def _fold_event_flat(and_block, E, content_inner):
     if isinstance(obj, str):
       obj = typed.get(obj, obj)
   if obj is not None:
+    # (ultracoarse2) tag the object with its role so a target is never confused
+    # with an instrument/location/etc.: is_rel2(V, subj, ["eventprop", $role, value]).
+    # The role label is $-prefixed so it is a meta-token: content-word extractors
+    # (axiom_vocab._eligible, the synonym/exclusion injectors) skip $-tokens, so the
+    # role never leaks into the vocabulary as a spurious noun (e.g. "location"≈"object").
+    if _eventprop_mode and obj_role is not None:
+      label = obj_role[4:] if obj_role.startswith("has ") else obj_role
+      obj = ["eventprop", "$" + label, obj]
     return ["is rel2", vtype, subject, obj]
   return ["has property", vtype, subject]
+
+
+def _is_spine_atom(c, E, vtype, patient_role):
+  """True for the spine atoms of event E that `event(V,A,O,E)` absorbs:
+  isa(activity,E), has_type(E,V), has_actor(E,A), and has_<patient_role>(E,O).
+  Everything else on E (other roles, adjuncts, classifiers, entity isa) is kept."""
+  if not (isinstance(c, list) and c and isinstance(c[0], str)):
+    return False
+  h = c[0]
+  if h == "isa" and len(c) >= 3 and c[1] == "activity" and c[2] == E:
+    return True
+  if len(c) >= 3 and c[1] == E:
+    if h == "has type" or h == "has actor":
+      return True
+    if patient_role is not None and h == patient_role:
+      return True
+  return False
+
+
+def _strip_spine(node, E, vtype, patient_role):
+  """Recursively drop E's spine atoms anywhere in the block, preserving structure.
+  Returns the cleaned node, or None if the node itself was a spine atom."""
+  if isinstance(node, list) and node and isinstance(node[0], str):
+    if _is_spine_atom(node, E, vtype, patient_role):
+      return None
+    op = node[0]
+    if op in ("and", "or"):
+      kept = [_strip_spine(x, E, vtype, patient_role) for x in node[1:]]
+      kept = [k for k in kept if k is not None]
+      return [op] + kept
+    if op in ("exists", "forall") and len(node) >= 3:
+      inner = _strip_spine(node[2], E, vtype, patient_role)
+      if inner is None:
+        return None
+      return [op, node[1], inner] + node[3:]
+  return node
+
+
+def _davidson_event(and_block, E, content_inner):
+  """(-davidson) Structure-preserving fold of one event block: collapse the spine
+  into event(V, subject, patient, E) and keep every other role/adjunct on E.
+  Absent agent (passive) and absent patient (intransitive/omitted) become fresh
+  existentials wrapped in `exists`.  Returns the rewritten body, or None to keep
+  the block reified (non-event, or inner content event of a two-event reification)."""
+  if E in content_inner:
+    return None
+  vtype, actor, objs, content = _collect_event_roles(and_block, E)
+  if vtype is None:
+    return None
+  # two-event reification: inner content event -> its verb as the object (as in _fold_event_flat)
+  if content is not None and "has target" not in objs:
+    inner_verb = _verb_index.get(content)
+    if inner_verb is not None:
+      objs["has target"] = inner_verb
+  present = [r for r in _DAV_PATIENT_ROLES if r in objs]
+  patient_role = present[0] if present else None
+  patient = objs[patient_role] if patient_role is not None else None
+  fresh = []
+  if actor is not None:
+    subject = actor
+  else:
+    subject = _dav_fresh("a")
+    fresh.append(subject)
+  if patient is None:
+    patient = _dav_fresh("p")
+    fresh.append(patient)
+  # Resolve typed-existential role fillers ("Y" with isa(salad,Y)) to the type name.
+  typed = _typed_existential_vars(and_block, E)
+  if typed:
+    if isinstance(subject, str):
+      subject = typed.get(subject, subject)
+    if isinstance(patient, str):
+      patient = typed.get(patient, patient)
+  ev = ["event", vtype, subject, patient, E]
+  stripped = _strip_spine(and_block, E, vtype, patient_role)
+  # stripped is the original "and" block minus the spine atoms; prepend the event atom
+  if isinstance(stripped, list) and stripped and stripped[0] == "and":
+    body = ["and", ev] + stripped[1:]
+  else:
+    body = ["and", ev, stripped]
+  for v in fresh:                       # wrap fresh agent/patient as existentials
+    body = ["exists", v, body]
+  return body
 
 
 def _fold_event(and_block, E, content_inner, ultra):
@@ -330,9 +447,17 @@ def _coarsen_node(node, content_inner, ultra):
     E = node[1]
     inner = node[2]
     if _event_var(inner) == E:
-      folded = _fold_event(inner, E, content_inner, ultra)
-      if folded is not None:
-        return folded
+      if _davidson_mode:
+        body = _davidson_event(inner, E, content_inner)
+        if body is not None:
+          # keep the exists E wrapper (E stays live in event(...) and adjuncts);
+          # recurse into the rewritten body to fold any nested events.
+          return ([node[0], node[1], _coarsen_node(body, content_inner, ultra)]
+                  + [_coarsen_node(x, content_inner, ultra) for x in node[3:]])
+      else:
+        folded = _fold_event(inner, E, content_inner, ultra)
+        if folded is not None:
+          return folded
     return ([node[0], node[1], _coarsen_node(inner, content_inner, ultra)]
             + [_coarsen_node(x, content_inner, ultra) for x in node[3:]])
   head = node[0] if isinstance(node[0], str) else _coarsen_node(node[0], content_inner, ultra)
@@ -340,11 +465,23 @@ def _coarsen_node(node, content_inner, ultra):
 
 
 def _vars_in_relational(conj):
-  """Collect every argument of is_rel2 / do literals in a conjunct list."""
+  """Collect every argument of is_rel2 / do literals in a conjunct list.
+
+  (ultracoarse2) An object may be role-tagged as ["eventprop", $role, value];
+  unwrap it so the inner value still counts as bound by the relation, otherwise
+  the guard-drop keeps a now-redundant isa(type, value) guard (case 185)."""
   bound = set()
   for c in conj:
     if isinstance(c, list) and c and c[0] in ("is rel2", "do"):
       for a in c[1:]:
+        if isinstance(a, list) and len(a) == 3 and a[0] == "eventprop":
+          a = a[2]
+        if isinstance(a, str):
+          bound.add(a)
+    elif isinstance(c, list) and c and c[0] == "event" and len(c) >= 4:
+      # (-davidson) event(V, AGENT, PATIENT, E, ctxt): the agent (arg 2) and
+      # patient (arg 3) are relationally bound, so their type guards are redundant.
+      for a in (c[2], c[3]):
         if isinstance(a, str):
           bound.add(a)
   return bound
@@ -610,40 +747,83 @@ def inject_verb_bridges(result):
   return out
 
 
-def _coarsen_one(node, content_inner, ultra):
-  """Fold one scope: coarsen events, then (ultracoarse) fold antecedent event
-  groups and drop the now-redundant guards."""
-  node = _coarsen_node(node, content_inner, ultra)
-  if ultra:
-    node = _fold_antecedent_events(node, content_inner, ultra)
+def _coarsen_one(node, content_inner, flatten, do_guard):
+  """Fold one scope.  ``flatten``: use the aggressive flat is_rel2/has_property
+  fold (and fold rule-antecedent event groups so they flatten too).  ``do_guard``
+  (guarddrop bucket / ultracoarse): drop the now-redundant antecedent type guards."""
+  node = _coarsen_node(node, content_inner, flatten)
+  if flatten:
+    node = _fold_antecedent_events(node, content_inner, flatten)
+  if do_guard:
     node = _drop_redundant_guards(node)
   return node
 
 
-def coarsen_events(tree, ultra=False):
-  """Top-level entry: fold collapsible events across the tree."""
+def coarsen_events(tree, ultra=False, eventprop=False, flatevents=False,
+                   coarse=False, entitymerge=False, guarddrop=False, davidson=False):
+  """Top-level entry: fold collapsible events / apply the lc_coarse abstraction mods.
+
+  Separable axes (each implied by ``ultra`` so -ultracoarse is unchanged):
+  - flatten = ultra or flatevents : aggressive flat is_rel2/has_property fold
+    (with eventprop tagging when the caller passes eventprop=True).
+  - do_canon = ultra or entitymerge : proper-noun entity canonicalization
+    (runs independently of folding).
+  - do_guard = ultra or guarddrop  : drop redundant antecedent type guards
+    (a no-op without flattening — there are no folded is_rel2 guards to drop).
+  - degree collapse stays ultracoarse-internal for v1 (gated on ``ultra``).
+  - coarse (plain -coarse, no flatten) : the conservative collapsible "do" fold.
+  See memos/ABSTRACTION_BUCKETS_PLAN.md."""
+  global _eventprop_mode, _davidson_mode, _dav_nr, _verb_index
+  _eventprop_mode = eventprop
+  _davidson_mode = davidson
   if not isinstance(tree, list) or not tree:
     return tree
-  if ultra:
-    global _verb_index
-    _verb_index = _build_verb_index(tree)  # for two-event inner-verb lookup
+  flatten  = ultra or flatevents
+  do_canon = ultra or entitymerge
+  do_guard = ultra or guarddrop
+
+  # Tree-level mods (independent of folding).
+  if do_canon:
     tree = _canonicalize_entities(tree)
+  if ultra:
     tree = _collapse_degree_node(tree)     # degrees -> simple, before guard-drop
-    # (ultracoarse) Scope the content-inner var set PER top-level package.
-    # Stage 2 reuses event names (E1/E2/...) across sentences, so a single
-    # tree-wide set lets a has_content inner var in one sentence wrongly block
-    # folding an unrelated event of the same name in another (cases 2, 3:
-    # "...E2..." attend event blocked by an E2 content-inner elsewhere).  Per
-    # package each `@id`/`holds` formula folds against only its own inner-content
-    # vars, still skipping a genuine same-scope inner content event.
+
+  if davidson:
+    # structure-preserving Davidsonian fold: spine -> event(V,A,O,E), keep adjuncts.
+    # Per-package content-inner scoping, like the flatten path.  do_guard (under
+    # -ultracoarse / -guarddrop) drops antecedent type guards now made redundant
+    # by the event(...) relation -- _vars_in_relational treats agent+patient as bound.
+    _dav_nr = 0                            # deterministic fresh-var numbering per run
+    _verb_index = _build_verb_index(tree)
+    def _dav_pkg(child):
+      out = _coarsen_node(child, _collect_content_inner_vars(child), False)
+      if do_guard:
+        out = _drop_redundant_guards(out)
+      return out
+    if tree[0] == "and":
+      return [tree[0]] + [_dav_pkg(child) if isinstance(child, list) else child
+                          for child in tree[1:]]
+    return _dav_pkg(tree)
+
+  if flatten:
+    _verb_index = _build_verb_index(tree)  # for two-event inner-verb lookup
+    # Scope the content-inner var set PER top-level package.  Stage 2 reuses
+    # event names (E1/E2/...) across sentences, so a single tree-wide set lets a
+    # has_content inner var in one sentence wrongly block folding an unrelated
+    # event of the same name in another (cases 2, 3).
     if tree[0] == "and":
       return [tree[0]] + [
-        _coarsen_one(child, _collect_content_inner_vars(child), ultra)
+        _coarsen_one(child, _collect_content_inner_vars(child), flatten, do_guard)
         if isinstance(child, list) else child
         for child in tree[1:]]
-    return _coarsen_one(tree, _collect_content_inner_vars(tree), ultra)
-  content_inner = _collect_content_inner_vars(tree)
-  return _coarsen_one(tree, content_inner, ultra)
+    return _coarsen_one(tree, _collect_content_inner_vars(tree), flatten, do_guard)
+
+  if coarse:
+    # plain -coarse: conservative fold (tree-wide content-inner), no flat/canon.
+    return _coarsen_one(tree, _collect_content_inner_vars(tree), flatten, do_guard)
+
+  # No folding requested (e.g. -entitymerge alone): return the (canon-applied) tree.
+  return tree
 
 
 def rel2_event_axiom_clauses():
@@ -671,3 +851,68 @@ def rel2_event_axiom_clauses():
       ["is rel2", V, A, O, Ctx]]},
   ]
   return fwd + rev
+
+
+def event_axiom_clauses():
+  """(-davidson) The event<->reified-roles bridge so the folded
+    event(V,A,O,E) interderives with the neo-Davidsonian role atoms that the
+  rest of the pipeline (wh-question builders, answer-binding, rendering) reads,
+  plus a projection to the LLM's flat is_rel2 for the ~1% same-verb interop.
+    event(V,A,O,E) <-> isa(activity,E) & has type(E,V) & has actor(E,A) & has target(E,O)
+    event(V,A,O,E) -> is rel2(V,A,O)
+  """
+  V, A, O, E, Ctx = "?:Vev", "?:Aev", "?:Oev", "?:Eev", "?:Cev"
+  ev = ["event", V, A, O, E, Ctx]
+  nev = ["-event", V, A, O, E, Ctx]
+  fwd = [                                            # event -> roles (+ is_rel2)
+    {"@name": "frm_event", "@logic": [nev, ["isa", "activity", E]]},
+    {"@name": "frm_event", "@logic": [nev, ["has type", E, V, Ctx]]},
+    {"@name": "frm_event", "@logic": [nev, ["has actor", E, A, Ctx]]},
+    {"@name": "frm_event", "@logic": [nev, ["has target", E, O, Ctx]]},
+    {"@name": "frm_event", "@logic": [nev, ["is rel2", V, A, O, Ctx]]},
+  ]
+  rev = [                                            # roles -> event
+    {"@name": "frm_event_rev", "@logic": [
+      ["-isa", "activity", E],
+      ["-has type", E, V, Ctx],
+      ["-has actor", E, A, Ctx],
+      ["-has target", E, O, Ctx],
+      ["event", V, A, O, E, Ctx]]},
+  ]
+  return fwd + rev
+
+
+def _davidson_expand_for_scan(result):
+  """SCAN-ONLY view of the clause list for the post-clausification injectors.
+
+  Davidson folds the spine into event(V,A,O,E,Ct), so injectors that scan the
+  static clauses for has_type (the verb), has_actor/has_target or the projected
+  is_rel2 no longer find them.  Return a copy of ``result`` with each
+  event(...) atom accompanied by synthetic has_type/has_actor/has_target/is_rel2
+  atoms so those injectors recognise folded events exactly as they would the
+  reified encoding.  The synthetic atoms are NEVER added to the real clause list
+  -- the event<->roles bridge (event_axiom_clauses) supplies them at prove time.
+  """
+  extra = []
+  def scan(n):
+    if isinstance(n, list) and n and isinstance(n[0], str):
+      base = n[0][1:] if n[0].startswith("-") else n[0]
+      if base == "event" and len(n) >= 5:
+        V, A, O, E = n[1], n[2], n[3], n[4]
+        tail = [n[5]] if len(n) >= 6 else []
+        extra.append({"@logic": ["has type", E, V] + tail})
+        extra.append({"@logic": ["has actor", E, A] + tail})
+        extra.append({"@logic": ["has target", E, O] + tail})
+        extra.append({"@logic": ["is rel2", V, A, O] + tail})
+      for c in n[1:]:
+        scan(c)
+    elif isinstance(n, list):
+      for c in n:
+        scan(c)
+  for obj in result:
+    if isinstance(obj, dict):
+      body = obj.get("@logic")
+      if body is None:
+        body = obj.get("@question")
+      scan(body)
+  return list(result) + extra

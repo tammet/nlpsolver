@@ -881,8 +881,15 @@ def _skolemize(frm, freevars, varmap):
   op = frm[0]
 
   if op in _opaque_wrappers:
-    # Keep opaque wrapper but apply outer varmap to rename outer vars inside.
-    return apply_varmap(frm, varmap)
+    # Recurse to Skolemize any existential trapped inside the wrapper (and rename
+    # outer vars), keeping the wrapper itself for pass-2 $block expansion.
+    # _push_normally_inside reduces normally() to wrap a single atom BEFORE this
+    # pass -- but it does NOT push through `or`, so normally(or(..., exists Y ...))
+    # reaches here with a live exists.  The old code returned apply_varmap(frm)
+    # WITHOUT recursing, leaving that exists un-Skolemized -> it survived to gk
+    # ("first argument of exists connective not a variable list", e.g. FOLIO c198
+    # S8).  For a plain normally(atom) this is equivalent to the old apply_varmap.
+    return [op] + [_skolemize(el, freevars, varmap) for el in frm[1:]]
 
   if op == "forall":
     var = frm[1]

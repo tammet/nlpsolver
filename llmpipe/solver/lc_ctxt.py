@@ -29,7 +29,7 @@ _fv_nr = 0
 
 # Predicates that receive a $ctxt term as their last argument during context injection.
 CTXT_ELIGIBLE = frozenset({
-  "has property", "have", "has part", "can", "is rel2",
+  "has property", "have", "has part", "can", "is rel2", "event",
   "has degree property", "has degree rel2",
   "has type", "has actor", "has target", "has location",
   "has instrument", "has manner", "has direction", "has time",
@@ -44,7 +44,7 @@ CTXT_ELIGIBLE = frozenset({
 # and should use free-variable world in $ctxt.
 DESC_PREDS = frozenset({
   "isa",
-  "do",
+  "do", "event",
   "has type", "has actor", "has target", "has time",
   "has location", "has instrument", "has manner", "has direction",
   "has destination", "has recipient", "has source",
@@ -66,7 +66,7 @@ STATIVE_MATRIX_PREDS = frozenset({
 
 # Predicates that signal a "main relation" in a question formula.
 MAIN_RELATION_PREDS = frozenset({
-  "have", "can", "has part", "is rel2", "has degree rel2",
+  "have", "can", "has part", "is rel2", "has degree rel2", "event",
 })
 
 # Connective/quantifier ops to recurse through in _strip_time_wrappers.

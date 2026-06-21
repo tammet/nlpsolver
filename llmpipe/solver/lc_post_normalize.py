@@ -200,8 +200,9 @@ def _walk_assertion_for_pos(frm, cls, prop, deg):
     return
   if op == "isa" and len(frm) >= 3 and looks_like_var(frm[2]):
     cls.add(frm[1])
-  elif op == "has property" and len(frm) >= 3 and looks_like_var(frm[2]):
-    prop.add(frm[1])
+  elif op == "has property" and len(frm) >= 3 and looks_like_var(frm[2]) \
+       and isinstance(frm[1], str):
+    prop.add(frm[1])                      # structured props ([$has_part,C]) skip: not population-relevant
   elif op == "has degree property" and len(frm) >= 5 and looks_like_var(frm[2]):
     deg.add((frm[1], frm[4]))
 

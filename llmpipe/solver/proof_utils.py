@@ -448,6 +448,11 @@ def entity_name(val, with_url=False, proof_mode=False):
   import globals as _g
   json_mode = _g.options.get("json_flag") and proof_mode
 
+  # (ultracoarse2) role-tagged event object: ["eventprop", role, value] -> render
+  # the inner value, dropping the role label (it is a disambiguation tag only).
+  if isinstance(val, list) and len(val) == 3 and val[0] == "eventprop":
+    val = val[2]
+
   # Skolem functions: ["sk0", "Greg 2", ...] -> English event description
   if _is_skolem_fn(val):
     return _skolem_fn_to_name(val)

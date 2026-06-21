@@ -48,6 +48,17 @@ import os as _os
 
 from globals import options as _g_options
 
+
+def _te(gate):
+  """typeenrich active for a named sub-gate, minus any disabled via the
+  TE_SKIP env var (comma-separated of: super,gender,nametype,compound,plural,
+  gnoun).  Diagnostic only -- lets a typeenrich run isolate one sub-injector's
+  effect.  Ultracoarse paths are unaffected (they gate on ultracoarse_flag)."""
+  if not _g_options.get("typeenrich_flag", False):
+    return False
+  return gate not in _os.environ.get("TE_SKIP", "")
+
+
 import lc_clausify
 import lc_questions
 
@@ -442,7 +453,7 @@ def _rename_offinventory_preds(node):
 
 
 def _repair_self_defeating_conditional(logic):
-  if not _g_options.get("ultracoarse_flag"):
+  if not (_g_options.get("ultracoarse_flag") or _g_options.get("guarddrop_flag")):
     return logic
   return _rsdc(logic)
 
@@ -864,13 +875,15 @@ def _build_entity_category_clauses(s1_json, skip_entities=frozenset()):
         # checkpoint behavior.
         elif (category in _BROAD_SUPERTYPES
               and (_g_options.get("coarse_flag", False)
-                   or _g_options.get("slightcoarse_flag", False))):
+                   or _g_options.get("slightcoarse_flag", False)
+                   or _te("super"))):
           clauses.append({"@name": name, "@logic": ["isa", category, eid]})
         # (b2, ultracoarse) Gender from a first-name table: isa(man/woman, E),
         # so a rule guarded by "man"/"woman" can fire ("a man is either kind or
         # evil").  Sound when the name is known.
         if (category == "person"
-            and _g_options.get("ultracoarse_flag", False)):
+            and (_g_options.get("ultracoarse_flag", False)
+                 or _te("gender"))):
           first = eid.split(" ", 1)[0]
           g = _name_gender(first)
           if g:
@@ -894,7 +907,8 @@ def _build_entity_category_clauses(s1_json, skip_entities=frozenset()):
         # its own name lowercased, so a generic existential ("a winter olympics")
         # can bind to the named constant ("Winter Olympics") that is otherwise
         # typed only by its category (isa(event,...)).
-        if _g_options.get("ultracoarse_flag", False):
+        if (_g_options.get("ultracoarse_flag", False)
+            or _te("nametype")):
           name_base = re.sub(r"\s+\d+$", "", eid).strip()
           name_type = name_base.lower()
           if (" " in name_base and re.search(r"[A-Z]", name_base)
@@ -958,6 +972,13 @@ def _merge_typeonly_skolems(result):
       return
     if base == "is rel2" and len(lit) >= 2:
       for i, a in enumerate(lit):
+        # (ultracoarse2) an event object can be role-tagged as
+        # ["eventprop", $role, value]; treat the inner value as occupying this
+        # position so an object Skolem stays MERGEABLE instead of being scanned
+        # as a distinguishing nested literal (which would mark it un-mergeable
+        # and break "the gym"/"the campus" cross-sentence coreference).
+        if isinstance(a, list) and len(a) == 3 and a[0] == "eventprop":
+          a = a[2]
         if _note(a):
           if i <= 2:              # verb(1) or subject(2) -> distinguishing
             bad.add(a)
@@ -1115,10 +1136,27 @@ def rawlogic_convert(logic, s1_json=None, fixes=None):
   # literal.  Runs after actuality injection and tense-has_time stripping so
   # the eligibility test sees the final event shape.  $ctxt is attached to the
   # "do" literal later (lc_ctxt) exactly as for reified roles.
-  if _g_options.get("coarse_flag", False):
+  if (_g_options.get("coarse_flag", False) or _g_options.get("flatevents_flag", False)
+      or _g_options.get("entitymerge_flag", False) or _g_options.get("guarddrop_flag", False)
+      or _g_options.get("davidson_flag", False)):
     import lc_coarse as _lc_coarse
     logic = _lc_coarse.coarsen_events(logic,
-                                      ultra=_g_options.get("ultracoarse_flag", False))
+                                      ultra=_g_options.get("ultracoarse_flag", False),
+                                      eventprop=(_g_options.get("ultracoarse2_flag", False)
+                                                 or _g_options.get("flatevents_flag", False)),
+                                      flatevents=_g_options.get("flatevents_flag", False),
+                                      coarse=_g_options.get("coarse_flag", False),
+                                      entitymerge=_g_options.get("entitymerge_flag", False),
+                                      guarddrop=_g_options.get("guarddrop_flag", False),
+                                      davidson=_g_options.get("davidson_flag", False))
+
+  # (L2 -existfold) fold bare existential attributes into unary has_property.
+  # Pre-clausification tree pass (exists nodes still present); the bridge is
+  # injected later in the sem_axioms block.  Gated entirely on existfold_flag.
+  if _g_options.get("existfold_flag", False):
+    import lc_existfold as _lc_existfold
+    _lc_existfold.reset()
+    logic = _lc_existfold.fold_existential_attributes(logic)
 
   # Strip @definite tags from the logic tree.  These are metadata annotations
   # produced by Stage 2 but not consumed by the pipeline (definite info comes
@@ -1183,7 +1221,8 @@ def rawlogic_convert(logic, s1_json=None, fixes=None):
   # Under -ultracoarse also scan the Stage-1 entity-category clauses, so a
   # compound that only appears as an entity category ("harding pegmatite mine")
   # still gets its head subsumption (-> "mine").  See case 112.
-  _ultra_flag = _g_options.get("ultracoarse_flag", False)
+  _ultra_flag = (_g_options.get("ultracoarse_flag", False)
+                 or _te("compound"))
   compound_subs = _build_compound_subsumption(
       items, ultra=_ultra_flag,
       extra_clauses=(entity_cat_clauses if _ultra_flag else ()),
@@ -1226,7 +1265,8 @@ def rawlogic_convert(logic, s1_json=None, fixes=None):
   # the relation is folded into $theof1 and the Andrew link is lost).  Leaving
   # definites as plain relations keeps those links and matches FOLIO's atomic
   # relation style.
-  if asu_index and not _g_options.get("ultracoarse_flag", False):
+  if asu_index and not (_g_options.get("ultracoarse_flag", False)
+                        or _g_options.get("definites_flag", False)):
     # (coarse) The named-subject identity clauses and the strict
     # placeholder-only is_rel2 matching inside rewrite_definites are gated to
     # the coarse encoding; the default path keeps the core-2026-06-03
@@ -1284,28 +1324,56 @@ def rawlogic_convert(logic, s1_json=None, fixes=None):
     # the result-state property words (e.g. "destroyed" from a destroy
     # event) become eligible for the exclusion injector's REQUIRE_BOTH_SIDES
     # check (e.g. destroyed/intact via MANUAL_ADJ_GRAD_*).
-    verb_result_axioms = _inject_verb_result_state_axioms(result, _axiom_vocab)
-    result.extend(verb_result_axioms)
-    sem_axioms = (_inject_soft_synonyms(result, _axiom_vocab)
-                  + _inject_exclusion_axioms(result, _axiom_vocab)
-                  + _inject_isa_cross_group_axioms(result, _axiom_vocab)
-                  + _inject_verb_mutex_axioms(result, _axiom_vocab)
-                  + _inject_beneficiary_for_bridge(result)
-                  + _inject_kinship_mutex_axioms(result, _axiom_vocab)
-                  + _inject_carrier_lifts(result)
-                  + _inject_acquire_have_axioms(result)
-                  + _inject_positional_actor_bridges(result)
-                  + _inject_containment_bridges(result)
-                  + _inject_attribute_relation_bridges(result)
-                  + _inject_stable_adjective_persistence(result))
-    if _g_options.get("ultracoarse_flag"):
+    # (-davidson) injectors scan the static clauses for has_type (the verb),
+    # has_actor/has_target and is_rel2 -- which davidson folds into event(...).
+    # Give them a SCAN-ONLY expanded view so they recognise folded events exactly
+    # as the reified encoding; the real clause list is unchanged (the event<->roles
+    # bridge supplies the roles at prove time).
+    _davx = _g_options.get("davidson_flag", False)
+    def _dv(r):
+      if not _davx:
+        return r
       import lc_coarse as _lcc
-      sem_axioms = (sem_axioms + _lcc.rel2_event_axiom_clauses()
-                    + _inject_occasion_location_bridges(result)
-                    + _inject_in_haspart_bridge(result)
-                    + _inject_reflexive_property_bridge(result))
+      return _lcc._davidson_expand_for_scan(r)
+    verb_result_axioms = _inject_verb_result_state_axioms(_dv(result), _axiom_vocab)
+    result.extend(verb_result_axioms)
+    iv = _dv(result)                       # recompute after extend (exclusion sees result-states)
+    sem_axioms = (_inject_soft_synonyms(iv, _axiom_vocab)
+                  + _inject_exclusion_axioms(iv, _axiom_vocab)
+                  + _inject_isa_cross_group_axioms(iv, _axiom_vocab)
+                  + _inject_verb_mutex_axioms(iv, _axiom_vocab)
+                  + _inject_beneficiary_for_bridge(iv)
+                  + _inject_kinship_mutex_axioms(iv, _axiom_vocab)
+                  + _inject_carrier_lifts(iv)
+                  + _inject_acquire_have_axioms(iv)
+                  + _inject_positional_actor_bridges(iv)
+                  + _inject_containment_bridges(iv)
+                  + _inject_attribute_relation_bridges(iv)
+                  + _inject_stable_adjective_persistence(iv))
+    if _g_options.get("ultracoarse_flag") or _g_options.get("bridges_flag", False):
+      import lc_coarse as _lcc
+      sem_axioms = (sem_axioms
+                    + _inject_occasion_location_bridges(iv)
+                    + _inject_in_haspart_bridge(iv)
+                    + _inject_reflexive_property_bridge(iv))
+      if not _davx:                        # davidson injects its own event<->roles bridge
+        sem_axioms = sem_axioms + _lcc.rel2_event_axiom_clauses()
     if _g_options.get("slightcoarse_flag"):
-      sem_axioms = sem_axioms + _inject_slightcoarse_shape_bridges(result)
+      sem_axioms = sem_axioms + _inject_slightcoarse_shape_bridges(iv)
+
+  # (-davidson) event<->reified-roles bridge. Injected independently of
+  # nosemnormal: the folded event(...) atoms must interderive with the role
+  # atoms that wh/answer/rendering read, else those break.
+  if _g_options.get("davidson_flag", False):
+    import lc_coarse as _lcc
+    sem_axioms = sem_axioms + _lcc.event_axiom_clauses()
+
+  # (L2 -existfold) named-witness bidirectional bridge, injected only when a fold
+  # actually fired (avoids the reverse clause firing on unrelated problems).
+  if _g_options.get("existfold_flag", False):
+    import lc_existfold as _lc_existfold
+    if _lc_existfold.any_fired():
+      sem_axioms = sem_axioms + _lc_existfold.bridge_clauses()
 
   # Append population facts, synonym axioms, and exclusion axioms after
   # all sentence clauses (assertions + questions come first).
@@ -1380,7 +1448,8 @@ def rawlogic_convert(logic, s1_json=None, fixes=None):
   # with the singular form and with the population witness isa(animal,
   # $some_animal).  Runs after all injection so no later pass can reintroduce a
   # plural class name.
-  _ultra = _g_options.get("ultracoarse_flag", False)
+  _ultra = (_g_options.get("ultracoarse_flag", False)
+            or _te("plural"))
   for _c in result:
     if isinstance(_c, dict):
       for _k in ("@logic", "@question"):
@@ -1414,7 +1483,8 @@ def rawlogic_convert(logic, s1_json=None, fixes=None):
   # ...), inject isa(noun,X) -> isa(man/woman,X), so a rule guarded by
   # "man"/"woman" fires for an entity typed only with the role noun.  Gated to
   # nouns actually present, so at most a handful of axioms are added.
-  if _g_options.get("ultracoarse_flag", False):
+  if (_g_options.get("ultracoarse_flag", False)
+      or _te("gnoun")):
     try:
       from data_names import GENDERED_NOUN as _GN
     except Exception:
@@ -1606,6 +1676,15 @@ def rawlogic_convert(logic, s1_json=None, fixes=None):
         # Treat a list of literals (or a single top-level "or") as a clause.
         if isinstance(body[0], list) or body[0] == "or":
           lits = _flatten_ors(body if isinstance(body[0], list) else [body])
+          # 0b: drop $block/typical meta literals.  Track whether a POSITIVE meta
+          # literal was present: a defeasible-generic rule like "Dogs bark" folds
+          # (davidson) to a clause [-isa(dog,X), typical(handle), $block] whose only
+          # positive content is the typicality marker.  Stripping it leaves the
+          # headless all-negative [-isa(dog,X)] = the unsound "nothing is a dog"
+          # unit (the bark event itself is asserted by its own clause).  Drop such
+          # a headless clause instead of emitting the spurious antecedent-negation.
+          had_pos_meta = any(_is_meta_lit(l) and isinstance(l[0], str)
+                             and not l[0].startswith("-") for l in lits)
           lits = [l for l in lits if not _is_meta_lit(l)]   # 0b: drop $block/typical
           # Reflexive equality left by substitution: =(X,X) is always true (the
           # clause is a tautology -> drop it); -=(X,X) is always false (drop the
@@ -1618,6 +1697,9 @@ def rawlogic_convert(logic, s1_json=None, fixes=None):
                           and l[0] == "-=" and l[1] == l[2])]
           if not lits:                                       # clause emptied -> drop
             continue
+          if had_pos_meta and all(isinstance(l, list) and l and isinstance(l[0], str)
+                                  and l[0].startswith("-") for l in lits):
+            continue                  # headless defeasibility-marker clause -> drop
           # Drop the whole clause if it is a tautology (L and -L both present).
           if any(_complementary(lits[i], lits[j])
                  for i in range(len(lits)) for j in range(i + 1, len(lits))):

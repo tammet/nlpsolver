@@ -44,7 +44,18 @@ options={
   "noexceptions_flag":False, # if True, do not insert exception information (blockers) into logic
   "noproptypes_flag":False,  # if True, remove prop strength and type information
   "coarse_flag":False,  # if True, fold collapsible Davidsonian events into one flat "do" literal
+  "flatevents_flag":False,  # if True, do ONLY the aggressive Davidsonian event flattening to is_rel2/has_property with eventprop-tagged objects (the ultracoarse2 fold), with NONE of the other ultracoarse mods
+  "davidson_flag":False,  # if True, structure-preserving Davidsonian fold: collapse the event spine {isa activity,has_type,has_actor,has_target} into event(V,A,O,E,Ctxt) keeping the handle E; KEEP all other roles/adjuncts on E; absent agent/patient become fresh existentials; an event<->reified-roles bridge interderives. See memos/DAVIDSON_PLAN.md
+  "existfold_flag":False,  # (L2) if True, fold a bare existential attribute "exists Y. isa(C,Y) & has_part/have(X,Y)" into a unary has_property([$has_part/$have, C], X), deleting the Skolem cross-product; a generic bidirectional bridge with a named witness $typed_partof(X,C) reconstructs the existential on demand. See memos/L2_EXISTFOLD_PLAN.md
+  # Separable abstraction buckets (each also implied by ultracoarse_flag). See memos/ABSTRACTION_BUCKETS_PLAN.md.
+  "entitymerge_flag":False,  # proper-noun entity canonicalization + content-keyed set-label coreference
+  "typeenrich_flag":False,   # taxonomy/isa enrichment: broad supertypes, gender-from-name, name-as-type, gendered-noun bridges, compound subsumption over entity cats, plural->singular norm
+  "guarddrop_flag":False,    # drop redundant antecedent isa type guards (+ self-defeating-conditional repair)
+  "bridges_flag":False,      # ultracoarse frame/bridge axioms: rel2<->event equivalence, occasion-location, in-haspart, reflexive-property
+  "definites_flag":False,    # ultracoarse definite-description handling (named-subject identities + strict $theof1 placeholder matching)
   "ultracoarse_flag":False,  # if True, also fold relational events into binary is_rel2 and fold habitual (typical) events
+  "ultracoarse2_flag":False,  # if True (implies ultracoarse), the relational event fold tags the selected object role: is_rel2(V,subj,["eventprop",role,value]) instead of a bare positional object
+  "api_timeout":0,  # hard wall-clock cap (seconds) on the LLM-parse + clause-conversion phase (disarmed before the prover); 0 disables
   "prenorm_flag":False,  # if True, run an experimental pre-Stage-1 LLM phase that unifies repeated entity/property/relation wordings
   "s2split_flag":False,  # if True, run Stage 2 sentence-by-sentence: one LLM call per Stage-1 sentence package, outputs joined (worlds renumbered, rule c')
   "slightcoarse_flag":False,  # if True, enable the light shape-unification pack: off-inventory predicate rename, shape bridges (destination/location, beneficiary lift, measure/comparative), property-shape compound composition, broad-supertype isa

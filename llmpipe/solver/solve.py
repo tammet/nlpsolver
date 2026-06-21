@@ -34,6 +34,8 @@
 
 import sys
 import json
+import signal
+import threading
 import pretty
 
 # ==== import other source files ====
@@ -129,6 +131,22 @@ def main():
   print(result)
 
 
+class _ApiTimeout(BaseException):
+  """Raised by the SIGALRM handler when the LLM-parse-plus-clause-conversion
+  phase exceeds the api_timeout cap.  The cap is disarmed before the prover
+  (gk) runs, so it never interrupts the prover or proof post-processing.
+
+  Subclasses BaseException (NOT Exception) on purpose: the LLM-call retry loops
+  in llmcall.py catch `except Exception` (and used to catch bare `except:`) and
+  would otherwise swallow the timeout and retry, defeating the cap. As a
+  BaseException it propagates straight through those handlers to the
+  `except _ApiTimeout` in english_to_answer."""
+
+
+def _api_timeout_handler(signum, frame):
+  raise _ApiTimeout()
+
+
 def english_to_answer(text, options=None, collect=None):
   """Full pipeline: English -> LLM parse -> logic convert -> prove -> answer.
 
@@ -195,80 +213,101 @@ def english_to_answer(text, options=None, collect=None):
   llmparse.s2split_enabled         = globals.options.get("s2split_flag", False)
   if llmparse.s2split_enabled and llmparse.combined_enabled:
     return "Error: -s2split is incompatible with combined single-stage parsing (-combined-instr)"
-  s1_json, s2_json, parse_stats = llmparse.parse_text(
-    text, llm=llm, version=llm_version, tokens=max_tokens, think=think_flag
-  )
+  # --- hard wall-clock cap on the API-parse + clause-conversion phase ---
+  # Arm a SIGALRM that interrupts a wedged LLM call (blocking socket read) or a
+  # runaway conversion.  The cap is DISARMED right before the prover runs, so it
+  # never interrupts gk or proof post-processing (those have their own limits).
+  # Disabled when api_timeout is 0 or when not on the main thread (signal needs
+  # the main thread; multiprocessing Pool workers and the sequential runner both
+  # call this from their process's main thread, so the cap is active there).
+  _api_to = globals.options.get("api_timeout", 0)
+  _api_armed = bool(_api_to and _api_to > 0
+                    and threading.current_thread() is threading.main_thread())
+  _api_prev = signal.signal(signal.SIGALRM, _api_timeout_handler) if _api_armed else None
+  if _api_armed:
+    signal.alarm(int(_api_to))
+  try:
+    s1_json, s2_json, parse_stats = llmparse.parse_text(
+      text, llm=llm, version=llm_version, tokens=max_tokens, think=think_flag
+    )
 
-  # ASCII-fold the parsed logic before clausification so accented entity names
-  # (e.g. "Náutico", "Świątek", "Oñate") become plain ASCII ("Nautico",
-  # "Swiatek", "Onate").  The prover reads the gk subprocess output as ASCII
-  # (prover.py), so a non-ASCII byte otherwise crashes the proof step (answer
-  # None).  Folding both stages keeps entity names consistent between them.
-  s1_json = _ascii_fold_logic(s1_json)
-  s2_json = _ascii_fold_logic(s2_json)
+    # ASCII-fold the parsed logic before clausification so accented entity names
+    # (e.g. "Náutico", "Świątek", "Oñate") become plain ASCII ("Nautico",
+    # "Swiatek", "Onate").  The prover reads the gk subprocess output as ASCII
+    # (prover.py), so a non-ASCII byte otherwise crashes the proof step (answer
+    # None).  Folding both stages keeps entity names consistent between them.
+    s1_json = _ascii_fold_logic(s1_json)
+    s2_json = _ascii_fold_logic(s2_json)
 
-  if collect is not None:
-    if s1_json is not None:
-      collect["stage1"] = s1_json
-    if s2_json is not None:
-      collect["stage2"] = s2_json
-    for stage_key, out_key in (("s1_fixes", "stage_1_fixes"),
-                                ("s2_fixes", "stage_2_fixes"),
-                                ("s1_retries", "stage_1_retries"),
-                                ("s2_retries", "stage_2_retries")):
-      val = parse_stats.get(stage_key) or []
-      if val:
-        collect[out_key] = list(val)
+    if collect is not None:
+      if s1_json is not None:
+        collect["stage1"] = s1_json
+      if s2_json is not None:
+        collect["stage2"] = s2_json
+      for stage_key, out_key in (("s1_fixes", "stage_1_fixes"),
+                                  ("s2_fixes", "stage_2_fixes"),
+                                  ("s1_retries", "stage_1_retries"),
+                                  ("s2_retries", "stage_2_retries")):
+        val = parse_stats.get(stage_key) or []
+        if val:
+          collect[out_key] = list(val)
 
-  if debug:
-    llmparse.print_stats(parse_stats)
+    if debug:
+      llmparse.print_stats(parse_stats)
 
-  # -details (not -debug): show parsed stage-1 and stage-2 JSON.
-  # -debug already shows these via llmparse._debug_write.
-  if show_details and not debug:
-    import pretty as _pretty
-    if s1_json is not None:
-      print("\n=== stage 1 (ASU JSON, " + actual_llm + ") ===\n")
-      _pretty.pp_stage1(s1_json)
-    if s2_json is not None:
-      print("\n=== stage 2 (logic JSON, " + actual_llm + ") ===\n")
-      _pretty.pp_stage2(s2_json)
+    # -details (not -debug): show parsed stage-1 and stage-2 JSON.
+    # -debug already shows these via llmparse._debug_write.
+    if show_details and not debug:
+      import pretty as _pretty
+      if s1_json is not None:
+        print("\n=== stage 1 (ASU JSON, " + actual_llm + ") ===\n")
+        _pretty.pp_stage1(s1_json)
+      if s2_json is not None:
+        print("\n=== stage 2 (logic JSON, " + actual_llm + ") ===\n")
+        _pretty.pp_stage2(s2_json)
 
-  if s2_json is None:
-    return "Error: LLM parsing failed (stage 2 produced no output)."
+    if s2_json is None:
+      return "Error: LLM parsing failed (stage 2 produced no output)."
 
-  # -logic+: show "simplified to" block if ASU texts differ from input
-  if show_logic and s1_json:
-    _show_simplified_to(text, s1_json)
+    # -logic+: show "simplified to" block if ASU texts differ from input
+    if show_logic and s1_json:
+      _show_simplified_to(text, s1_json)
 
-  # --- rawlogic_convert: improve / adjust the parsed logic (logconvert.py) ---
+    # --- rawlogic_convert: improve / adjust the parsed logic (logconvert.py) ---
 
-  lc_fixes = []
-  logic = rawlogic_convert(s2_json, s1_json, fixes=lc_fixes)
+    lc_fixes = []
+    logic = rawlogic_convert(s2_json, s1_json, fixes=lc_fixes)
 
-  if logic is None:
-    return "Error: rawlogic_convert returned None."
+    if logic is None:
+      return "Error: rawlogic_convert returned None."
 
-  if collect is not None:
-    # Surface logconvert structural clause-repairs alongside the Stage-2 JSON
-    # fixes (they repair the same Stage-2 output, just later in the pipeline).
-    if lc_fixes:
-      collect["stage_2_fixes"] = list(collect.get("stage_2_fixes", [])) + lc_fixes
-    collect["clauses"] = _build_clauses_with_nl(logic, s1_json)
+    if collect is not None:
+      # Surface logconvert structural clause-repairs alongside the Stage-2 JSON
+      # fixes (they repair the same Stage-2 output, just later in the pipeline).
+      if lc_fixes:
+        collect["stage_2_fixes"] = list(collect.get("stage_2_fixes", [])) + lc_fixes
+      collect["clauses"] = _build_clauses_with_nl(logic, s1_json)
 
-  # --- show "sentences mapped to clauses" block ---
-  if show_logic or debug:
-    from proof_render import compute_ambiguity as _compute_ambiguity
-    _compute_ambiguity(logic)   # populate ambiguous_bases before rendering
-    from utils import format_sentences_to_clauses
-    json_mode = options.get("json_flag", False) if options else False
-    print("\n" + format_sentences_to_clauses(logic, s1_json, json_mode=json_mode) + "\n")
+    # --- show "sentences mapped to clauses" block ---
+    if show_logic or debug:
+      from proof_render import compute_ambiguity as _compute_ambiguity
+      _compute_ambiguity(logic)   # populate ambiguous_bases before rendering
+      from utils import format_sentences_to_clauses
+      json_mode = options.get("json_flag", False) if options else False
+      print("\n" + format_sentences_to_clauses(logic, s1_json, json_mode=json_mode) + "\n")
 
-  # --- semantic normalisation: antonym folding + canonical substitution ---
-  if not globals.options.get("nosemnormal_flag"):
-    logic = semnormalize.sem_normalize_clauses(logic)
+    # --- semantic normalisation: antonym folding + canonical substitution ---
+    if not globals.options.get("nosemnormal_flag"):
+      logic = semnormalize.sem_normalize_clauses(logic)
+  except _ApiTimeout:
+    return ("Error: LLM/parse phase exceeded the %ds api-timeout cap." % int(_api_to))
+  finally:
+    if _api_armed:
+      signal.alarm(0)
+      if _api_prev is not None:
+        signal.signal(signal.SIGALRM, _api_prev)
 
-  # --- call the theorem prover ---
+  # --- call the theorem prover (uncapped: gk has its own -seconds limit) ---
   try:
     proof_result = prover.call_prover(logic, s1_json=s1_json)
   except KeyboardInterrupt:
@@ -467,10 +506,49 @@ def _parse_cmd_line():
       opts["noexceptions_flag"] = True
     elif el in ["-coarse", "--coarse"]:
       opts["coarse_flag"] = True
+    elif el in ["-flatevents", "--flatevents"]:
+      # ONLY the aggressive Davidsonian event -> is_rel2/has_property flattening
+      # with eventprop-tagged objects (the same fold -ultracoarse2 uses), with
+      # NONE of the other ultracoarse mods (no entity canonicalization, degree
+      # collapse, guard-drop, Skolem merge, supertypes, simpleproperties,
+      # defeasibility strip, frame/bridge axioms).
+      opts["flatevents_flag"] = True
+    elif el in ["-davidson", "--davidson"]:
+      # structure-preserving Davidsonian fold: collapse the event spine into
+      # event(V,A,O,E) keeping the handle E, KEEP every other role/adjunct on E
+      # (so adjunct distinctions and extra roles survive, unlike -flatevents);
+      # absent agent/patient become fresh existentials; an event<->reified-roles
+      # bridge interderives with the rest of the pipeline. See memos/DAVIDSON_PLAN.md.
+      opts["davidson_flag"] = True
+    elif el in ["-existfold", "--existfold"]:
+      # (L2) fold a bare existential attribute "exists Y. isa(C,Y) & has_part/have(X,Y)"
+      # into a unary has_property([$has_part/$have, C], X), deleting the Skolem
+      # cross-product; a generic bidirectional bridge with a named witness
+      # $typed_partof(X,C) reconstructs the existential on demand. See L2_EXISTFOLD_PLAN.md.
+      opts["existfold_flag"] = True
+    # Separable abstraction buckets (each also implied by -ultracoarse). Composable;
+    # -guarddrop / -bridges are no-ops without -flatevents. See ABSTRACTION_BUCKETS_PLAN.md.
+    elif el in ["-entitymerge", "--entitymerge"]:
+      opts["entitymerge_flag"] = True
+    elif el in ["-typeenrich", "--typeenrich"]:
+      opts["typeenrich_flag"] = True
+    elif el in ["-guarddrop", "--guarddrop"]:
+      opts["guarddrop_flag"] = True
+    elif el in ["-bridges", "--bridges"]:
+      opts["bridges_flag"] = True
+    elif el in ["-definites", "--definites"]:
+      opts["definites_flag"] = True
     elif el in ["-ultracoarse", "--ultracoarse"]:
       opts["coarse_flag"] = True
       opts["ultracoarse_flag"] = True
       opts["noproptypes_flag"] = True   # (a) collapse gradables to simple properties
+    elif el in ["-ultracoarse2", "--ultracoarse2"]:
+      # Same as -ultracoarse, but the relational event fold tags the selected
+      # object role: is_rel2(V, subj, ["eventprop", role, value]).
+      opts["coarse_flag"] = True
+      opts["ultracoarse_flag"] = True
+      opts["ultracoarse2_flag"] = True
+      opts["noproptypes_flag"] = True
     elif el in ["-prenorm", "--prenorm"]:
       opts["prenorm_flag"] = True
     elif el in ["-s2split", "--s2split"]:
@@ -640,6 +718,41 @@ split Stage 2:
                 location, beneficiary/recipient lift, measure<->comparative),
                 property-shape compound composition, broad-supertype isa.
                 Composable with -s2split (whose divergences it was built for)
+ -flatevents  : ONLY the Davidsonian event -> is_rel2/has_property flattening
+                with eventprop-tagged objects (the -ultracoarse2 fold), with
+                none of the other ultracoarse mods (no entity canonicalization,
+                degree collapse, guard-drop, Skolem merge, supertypes,
+                simpleproperties, defeasibility strip, frame/bridge axioms)
+ -davidson    : structure-preserving Davidsonian fold: spine -> event(V,A,O,E)
+                keeping the handle E, KEEP all other roles/adjuncts on E (so
+                adjunct distinctions + extra roles survive, unlike -flatevents);
+                absent agent/patient -> fresh existentials; an event<->reified-
+                roles bridge interderives with the rest of the pipeline
+ -existfold   : (L2) fold a bare existential attribute "exists Y. isa(C,Y) &
+                has_part/have(X,Y)" into has_property([$has_part/$have,C], X),
+                deleting the Skolem cross-product; a bidirectional bridge with a
+                named witness $typed_partof(X,C) reconstructs it on demand
+ separable abstraction buckets (each also implied by -ultracoarse; composable):
+ -entitymerge : proper-noun entity canonicalization + set-label coreference
+ -typeenrich  : taxonomy/isa enrichment (broad supertypes, gender-from-name,
+                name-as-type, gendered-noun bridges, compound subsumption,
+                plural->singular class normalization)
+ -guarddrop   : drop redundant antecedent isa type guards (no-op without -flatevents)
+ -bridges     : ultracoarse frame/bridge axioms: rel2<->event equivalence,
+                occasion-location, in-haspart, reflexive-property (use with -flatevents)
+ -definites   : ultracoarse definite-description handling ($theof1 identities)
+
+coarse / ultracoarse encodings and pre-normalisation (compose with the buckets above):
+ -coarse      : fold collapsible Davidsonian events to flat `do` literals
+ -ultracoarse : aggressive abstraction = -coarse + all separable buckets above
+                (relational flatten, entity canonicalization, guard-drop,
+                Skolem merge, supertypes) + simpleproperties + defeasibility strip
+ -ultracoarse2: like -ultracoarse, but the relational event fold tags the object
+                role: is_rel2(V, subj, ["eventprop", role, value]) so a target is
+                never confused with an instrument/location
+ -prenorm     : pre-Stage-1 LLM wording normalisation (composable; the FOLIO ladder
+                base) -- rewrites the English before the two-stage translation
+ -nocrossstage: disable the ultracoarse cross-stage guard-retry
 
 combined single-stage parsing (one LLM call, English -> logic; no Stage-1 JSON):
  -combined-instr FILE     : combined instructions prompt file (enables single-stage mode)

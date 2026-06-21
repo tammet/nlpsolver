@@ -1489,3 +1489,93 @@ parses are transliterated to plain ASCII before clausification (accented entity 
 otherwise crash the prover-output decoding), and corrective sanity-retry prompts are
 serialized canonically (sorted keys and issue order) so their LLM-cache keys are
 byte-stable across runs.
+
+### 6.6 Separable abstraction buckets
+
+`-ultracoarse` bundles several independent modifications.  Each is also available on its
+own — composable, and each is implied by `-ultracoarse` — so an experiment can isolate one
+lever and measure it (this is how the per-mechanism tables in the LPAR paper are produced):
+
+| flag | isolates |
+|---|---|
+| `-flatevents` | only the relational event flattening (event → `is_rel2`/`has_property`, eventprop-tagged), with none of the other ultracoarse mods |
+| `-entitymerge` | proper-noun entity canonicalization + set-label coreference (§6.3) |
+| `-typeenrich` | taxonomy/`isa` enrichment: broad supertypes, gender-from-name, name-as-type, gendered-noun bridges, compound subsumption, plural→singular class normalization |
+| `-guarddrop` | drop redundant antecedent `isa` type guards (no-op without `-flatevents`) |
+| `-bridges` | the dynamic frame/bridge axioms of §6.4 (use with `-flatevents`) |
+| `-definites` | ultracoarse definite-description handling (`$theof1` identities) |
+
+`-flatevents` is the lossy relational fold (the same one `-ultracoarse2` uses, §6.9) in
+isolation; it drops the event variable and keeps only subject + one (role-tagged) object,
+so secondary roles and adjuncts are lost.  `-guarddrop` and `-bridges` are no-ops without it.
+
+### 6.7 `-davidson`: structure-preserving compact Davidsonian fold
+
+Unlike the lossy `-flatevents`/`-ultracoarse` fold, `-davidson` keeps the event handle and
+every adjunct.  It collapses only the event *spine* —
+`isa(activity,E) ∧ has_type(E,V) ∧ has_actor(E,A) ∧ has_<patient>(E,O)` — into one atom
+
+```
+event(V, A, O, E)
+```
+
+and leaves all other roles, adjuncts, classifiers and context literals on `E`.
+
+- **Patient (object) slot.**  Only theme roles fill the third argument: the first present of
+  `has target`, `has goal`, `has topic`.  Datives (`has recipient`, `has beneficiary`) and
+  obliques (location, source, direction, instrument, accompaniment, destination) are never
+  placed there — they stay as `has_<role>(E,…)` adjuncts.  The slot carries no functional
+  tag; it is purely positional, and the bridge reads it back as `has target` (which is why
+  only themes may fill it — a recipient there would be mislabelled and collide with a kept
+  `has target`).
+- **Missing arguments.**  An absent agent (passive) or patient (intransitive/omitted) becomes
+  a fresh existential wrapped in `exists`.
+- **Bridge (`frm_event`).**  A biconditional interderives the folded atom with the
+  neo-Davidsonian role literals the rest of the pipeline reads:
+  `event(V,A,O,E) ↔ isa(activity,E) ∧ has_type(E,V) ∧ has_actor(E,A) ∧ has_target(E,O)`,
+  plus a forward projection `event(V,A,O,E) → is_rel2(V,A,O)` for same-verb interop.
+
+Because the spine fold removes role literals from the verbose default representation,
+`-davidson` typically **shortens** proofs on the standard encoding (both nlft and default
+FOLIO); stacked on the already-flat `-ultracoarse2` baseline it instead **lengthens** them,
+since that baseline is more compact than `event(...) + handle + adjuncts + bridge`.
+
+### 6.8 `-existfold`: existential-attribute collapse
+
+Folds a bare existential attribute pattern
+
+```
+∃Y. isa(C,Y) ∧ has_part(X,Y)        (or have(X,Y))
+```
+
+into one unary attribute `has_property([$has_part, C], X)` (or `[$have, C]`), deleting the
+Skolem witness and the cross-product it would create when the pattern recurs.  A generic
+**bidirectional** bridge restores the existential on demand, using a named canonical witness
+`$typed_partof(X,C)` — one per `(X,C)`, shared by all consumers, so no branching:
+
+- reverse: `isa(C,Y) ∧ has_part(X,Y) → has_property([$has_part,C], X)` — any witness feeds the property;
+- forward: `has_property([$has_part,C], X) → isa(C, $typed_partof(X,C)) ∧ has_part(X, $typed_partof(X,C))`.
+
+It is narrow and parse-dependent: it matches only the bare `has-a` shape and is not a default
+setting.  Its main effect is on chains where a `has legs → jumps → …` existential would
+otherwise be carried (with a fresh Skolem) through several rules.
+
+### 6.9 `-ultracoarse2`: role-tagged relational fold
+
+Identical to `-ultracoarse` except the relational event fold tags the object with its role,
+so a target is never confused with an instrument or location:
+
+```
+is_rel2(V, subj, ["eventprop", $role, value])
+```
+
+The `$role` label is `$`-prefixed so it is a meta-token (content-word extractors skip it,
+keeping the role from leaking into the vocabulary as a spurious noun).  This is the baseline
+used for the maximally-abstracted FOLIO runs.
+
+### 6.10 `-prenorm` and `-nocrossstage`
+
+`-prenorm` adds an optional LLM pass that rewrites the English input before the two-stage
+translation, normalising surface wording; it composes with any of the above and is the base
+of the FOLIO abstraction ladder.  `-nocrossstage` disables the ultracoarse cross-stage
+guard-retry used alongside it.

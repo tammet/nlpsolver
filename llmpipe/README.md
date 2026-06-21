@@ -112,6 +112,12 @@ python3 solver/solve.py "TEXT"
 -nollmcache                       Disable LLM cache for this run
 -seconds N                        Prover time limit (default 2)
 
+# Representation-abstraction / proof-shortening flags (composable; see ENCODINGS.md §6, -help):
+-prenorm -ultracoarse -ultracoarse2   Coarsen the representation (FOLIO abstraction ladder)
+-flatevents -typeenrich -entitymerge -guarddrop -bridges -definites   Separable buckets
+-davidson                         Compact Davidsonian event fold (shortens proofs)
+-existfold                        Existential-attribute collapse
+
 # Run tests (default file: tests/tests_core.py; see -help for full options)
 python3 test.py
 python3 test.py tests/tests_core.py -llm claude

@@ -311,7 +311,8 @@ def _rewrite_setof(node, depth):
     # never unify even when the bodies match (case 15).
     if explicit_set_id is not None:
       set_id = explicit_set_id
-    elif _g_options.get("ultracoarse_flag", False):
+    elif (_g_options.get("ultracoarse_flag", False)
+          or _g_options.get("entitymerge_flag", False)):
       set_id = "set_" + _content_label(cond_term)
     else:
       global _set_counter

@@ -219,7 +219,7 @@ def _post_with_retry(host, url, body, headers, provider):
       response = conn.getresponse()
     except KeyboardInterrupt:
       raise
-    except:
+    except Exception:
       trycount += 1
       if conn: conn.close()
       if trycount > max_retries:
@@ -236,7 +236,7 @@ def _post_with_retry(host, url, body, headers, provider):
         data = json.loads(response.read())
         if "error" in data and "message" in data["error"]:
           message = ": " + data["error"]["message"]
-      except:
+      except Exception:
         pass
       if conn: conn.close()
       rate_tries += 1
@@ -254,7 +254,7 @@ def _post_with_retry(host, url, body, headers, provider):
         data = json.loads(response.read())
         if "error" in data and "message" in data["error"]:
           message = ": " + data["error"]["message"]
-      except:
+      except Exception:
         pass
       trycount += 1
       if conn: conn.close()
@@ -271,7 +271,7 @@ def _post_with_retry(host, url, body, headers, provider):
     return json.loads(rawdata)
   except KeyboardInterrupt:
     raise
-  except:
+  except Exception:
     return llm_error(provider + " response is not valid JSON: " + str(rawdata))
 
 

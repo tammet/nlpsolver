@@ -59,8 +59,23 @@ Coarse encodings and alternative modes (DOCUMENTATION.md §11–12, ENCODINGS.md
 -coarse          Fold collapsible Davidsonian events to flat `do` literals
 -ultracoarse     + relational folds, guard drops, entity canonicalization
                  (implies -coarse, -simpleproperties)
--prenorm         Pre-Stage-1 LLM wording normalisation (composable)
+-ultracoarse2    Like -ultracoarse, but the flat event fold role-tags the object:
+                 is_rel2(V, subj, ["eventprop", role, value]) (max-abstract FOLIO base)
+-prenorm         Pre-Stage-1 LLM wording normalisation (composable; FOLIO ladder base)
 -nocrossstage    Disable the ultracoarse cross-stage guard retry
+Separable abstraction buckets (each implied by -ultracoarse; composable; ENCODINGS.md §6.6):
+-flatevents      Only the lossy relational event fold (drops event var + 2ndary roles)
+-typeenrich      Taxonomy/isa enrichment (supertypes, gender/name, compound, plural→singular)
+-entitymerge     Proper-noun entity canonicalization + set-label coreference
+-guarddrop       Drop redundant antecedent isa guards (no-op without -flatevents)
+-bridges         Dynamic frame/bridge axioms (use with -flatevents)
+-definites       Ultracoarse definite-description handling ($theof1 identities)
+Proof-shortening folds (structure-preserving; ENCODINGS.md §6.7–6.8):
+-davidson        Compact Davidsonian fold: spine → event(V,A,O,E), keep handle+adjuncts;
+                 patient = first theme role; frm_event bridge. Shortens proofs on the
+                 default encoding, lengthens on the already-flat -ultracoarse2 base
+-existfold       Existential-attribute collapse: ∃Y.isa(C,Y)∧has_part(X,Y) →
+                 has_property([$has_part,C],X) + named-witness ($typed_partof) bridge
 -s2split         One Stage-2 LLM call per Stage-1 sentence; outputs joined
                  (worlds renumbered; failed sentences skipped unless the question)
 -slightcoarse    Light shape unification: predicate rename, shape bridges,

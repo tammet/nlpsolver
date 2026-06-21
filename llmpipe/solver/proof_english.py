@@ -684,6 +684,31 @@ def _isa_neg(e, args):
   if typ == "set":      return ent + " is not a set"
   return ent + " is not " + _indef_article(typ) + " " + typ
 
+def _event_pos(e, args):
+  """Render a folded Davidsonian event atom ["event", VERB, AGENT, PATIENT, E, CTXT]
+  as 'AGENT VERBs PATIENT'.  E and CTXT are not rendered as entities."""
+  verb = e(0); subj = e(1); obj = e(2)
+  if _looks_like_verb(verb):
+    return subj + " " + _conjugate_verb(verb) + " " + obj
+  return subj + " " + verb + " " + obj
+
+def _event_neg(e, args):
+  verb = e(0); subj = e(1); obj = e(2)
+  if _looks_like_verb(verb):
+    return subj + " does not " + verb + " " + obj
+  return subj + " is not " + verb + " " + obj
+
+def _has_property_render(e, args, neg=False):
+  """has property(PROP, ENT).  Default: 'ENT is PROP'.  (L2 -existfold) a folded
+  attribute PROP = ["$has_part", C] / ["$have", C] renders 'ENT has a C'."""
+  prop = args[0] if args else ""
+  if isinstance(prop, list) and len(prop) >= 2 and prop[0] in ("$has_part", "$have"):
+    C = prop[1]
+    cname = C if isinstance(C, str) else entity_name(C, with_url=True, proof_mode=True)
+    have = " does not have " if neg else " has "
+    return e(1) + have + _indef_article(cname) + " " + cname
+  return e(1) + (" is not " if neg else " is ") + e(0)
+
 def _is_rel2_pos(e, args):
   rel_raw = args[0] if args else ""
   # Variable-relation case: read as "Y is/was/will-be in relation X to Z
@@ -1204,8 +1229,8 @@ def _has_time_render(e, args, neg=False):
 
 _PRED_TABLE = {
   # core predicates
-  "has property":       (2, lambda e,a: e(1)+" is "+e(0),
-                            lambda e,a: e(1)+" is not "+e(0)),
+  "has property":       (2, lambda e,a: _has_property_render(e, a, neg=False),
+                            lambda e,a: _has_property_render(e, a, neg=True)),
   "have":               (2, lambda e,a: e(0)+" has "+e(1),
                             lambda e,a: e(0)+" does not have "+e(1)),
   "has part":           (2, lambda e,a: e(0)+" has "+e(1)+" as a part",
@@ -1215,6 +1240,7 @@ _PRED_TABLE = {
   # predicates with complex logic
   "isa":                (2, _isa_pos, _isa_neg),
   "is rel2":            (3, _is_rel2_pos, _is_rel2_neg),
+  "event":              (3, _event_pos, _event_neg),
   "has degree property":(4, lambda e,a: _has_degree_property_render(e, a, neg=False),
                             lambda e,a: _has_degree_property_render(e, a, neg=True)),
   "has degree rel2":    (4, lambda e,a: _has_degree_rel2_render(e, a, neg=False),

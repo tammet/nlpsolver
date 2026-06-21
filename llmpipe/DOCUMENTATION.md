@@ -2871,6 +2871,44 @@ answer-equivalent to the `core-2026-06-03` checkpoint (verified on a stratified
 40-case × 4-LLM sample — byte-identical clauses modulo set-iteration order and
 fresh-variable numbering).
 
+### 11.5 Separable abstraction buckets and the proof-shortening folds
+
+The aggressive `-ultracoarse` bundle was later split into independent, composable
+flags so each abstraction lever can be measured in isolation (the per-mechanism tables
+in the LPAR paper).  All are handled in `lc_coarse.coarsen_events` (which now takes
+`ultra`, `eventprop`, `flatevents`, `coarse`, `entitymerge`, `guarddrop`, `davidson`
+keyword flags) plus `lc_existfold`.  Reference shapes: ENCODINGS.md §6.6–6.10.
+
+- **Buckets** (`-flatevents`, `-typeenrich`, `-entitymerge`, `-guarddrop`, `-bridges`,
+  `-definites`): each isolates one mod that `-ultracoarse` bundles.  `-flatevents` runs
+  only the relational `_fold_event_flat` (no entity canon / degree collapse / guard-drop
+  / Skolem merge / supertypes / defeasibility strip); `-guarddrop` and `-bridges` are
+  no-ops without it.  `-typeenrich` gates the six `isa`-enrichment sub-injectors via the
+  `logconvert._te(gate)` helper (a `TE_SKIP` env var can disable individual gates for
+  diagnostics; the `plural` gate is the one that over-derives population witnesses on
+  core).
+- **`-ultracoarse2`** (`_eventprop_mode`): same as `-ultracoarse` but `_fold_event_flat`
+  role-tags the single object slot as `is_rel2(V, subj, ["eventprop", $role, value])`.
+- **`-davidson`** (`_davidson_event`, `_davidson_mode`): structure-preserving fold of the
+  event spine into `event(V,A,O,E)`, keeping the handle and every adjunct.  The patient
+  slot takes the first theme role in `_DAV_PATIENT_ROLES = ["has target","has goal","has
+  topic"]`; datives/obliques stay as adjuncts; absent agent/patient become fresh
+  existentials; the biconditional `frm_event` bridge (`event_axiom_clauses`) interderives
+  with the reified roles and projects `is_rel2`.  A clausify guard (`lc_clausify`) drops
+  any headless clause left when the fold strips a defeasibility marker, so a generic rule
+  never collapses to a bare negated antecedent (was a soundness bug under
+  `-ultracoarse -davidson`).
+- **`-existfold`** (`lc_existfold.fold_existential_attributes` + `bridge_clauses`): folds
+  `∃Y.isa(C,Y)∧has_part/have(X,Y)` to `has_property([$has_part/$have,C],X)` and emits a
+  bidirectional bridge with the named witness `$typed_partof(X,C)` (forward, reverse, and
+  the witness-isa clause).  Narrow and parse-dependent.
+
+Per-suite effect (LPAR runs): on the default representation `-davidson` shortens proofs
+and is accuracy-neutral on both suites; on the already-flat `-ultracoarse2` FOLIO base it
+net-lengthens.  `-existfold` shortens only the few reified-existential chains and never
+lengthens FOLIO; on core it matches almost nothing and its bridge axioms lengthen more
+than they shorten.
+
 ---
 
 ## 12. Alternative parsing modes: prenorm, combined single-stage, direct answer, split Stage 2

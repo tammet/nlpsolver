@@ -109,6 +109,8 @@ def _worker(args):
 
   collect = {}
   error_payload = None
+  # The api_timeout cap (option key) is enforced inside english_to_answer, scoped
+  # to the LLM-parse + clause-conversion phase and disarmed before the prover.
   try:
     english_to_answer(input_text, options=ro, collect=collect)
   except KeyboardInterrupt:
@@ -587,9 +589,34 @@ def main():
   ap.add_argument("-ultracoarse", action="store_true",
                   help="Enable -ultracoarse abstraction (event-folding, simple "
                        "properties, entity canonicalization)")
+  ap.add_argument("-ultracoarse2", action="store_true",
+                  help="Like -ultracoarse, but tag the folded object role: "
+                       "is_rel2(V, subj, [eventprop, role, value])")
+  ap.add_argument("-flatevents", action="store_true",
+                  help="ONLY the Davidsonian event -> is_rel2/has_property flattening with "
+                       "eventprop-tagged objects (the -ultracoarse2 fold), with none of the "
+                       "other ultracoarse mods")
+  ap.add_argument("-davidson", action="store_true",
+                  help="structure-preserving Davidsonian fold: spine -> event(V,A,O,E) keeping "
+                       "the handle E and all other roles/adjuncts; event<->roles bridge")
+  ap.add_argument("-existfold", action="store_true",
+                  help="(L2) fold exists Y.isa(C,Y)&has_part/have(X,Y) into has_property([$has_part/$have,C],X); named-witness bridge")
+  # Separable abstraction buckets (each implied by -ultracoarse). Composable.
+  ap.add_argument("-entitymerge", action="store_true", help="proper-noun entity canonicalization + set coreference")
+  ap.add_argument("-typeenrich", action="store_true", help="taxonomy/isa enrichment (supertypes, gender, name-as-type, ...)")
+  ap.add_argument("-guarddrop", action="store_true", help="drop redundant antecedent type guards (use with -flatevents)")
+  ap.add_argument("-bridges", action="store_true", help="ultracoarse frame/bridge axioms (use with -flatevents)")
+  ap.add_argument("-definites", action="store_true", help="ultracoarse definite-description handling")
   ap.add_argument("-nocrossstage", action="store_true",
                   help="Disable the ultracoarse cross-stage unsatisfiable-guard "
                        "retry (avoids live corrective LLM calls)")
+  ap.add_argument("-api-timeout", dest="api_timeout", type=int, default=120,
+                  help="Hard wall-clock cap (seconds) on the LLM-parse + clause-"
+                       "conversion phase of each case; disarmed before the prover "
+                       "(gk) and proof post-processing run, so it never clips those. "
+                       "A case exceeding it is recorded as an Error and the run "
+                       "continues (default 120; 0 disables). Guards against wedged "
+                       "LLM calls retrying through their timeouts.")
   ap.add_argument("-version", dest="version", default=None,
                   help="Override the model version for the chosen LLM "
                        "(e.g. claude-opus-4-8). Applies to all -llms in the run.")
@@ -673,6 +700,27 @@ def main():
     run_opts["coarse_flag"] = True
     run_opts["ultracoarse_flag"] = True
     run_opts["noproptypes_flag"] = True
+  if args.ultracoarse2:
+    run_opts["coarse_flag"] = True
+    run_opts["ultracoarse_flag"] = True
+    run_opts["ultracoarse2_flag"] = True
+    run_opts["noproptypes_flag"] = True
+  if args.flatevents:
+    run_opts["flatevents_flag"] = True
+  if args.davidson:
+    run_opts["davidson_flag"] = True
+  if args.existfold:
+    run_opts["existfold_flag"] = True
+  if args.entitymerge:
+    run_opts["entitymerge_flag"] = True
+  if args.typeenrich:
+    run_opts["typeenrich_flag"] = True
+  if args.guarddrop:
+    run_opts["guarddrop_flag"] = True
+  if args.bridges:
+    run_opts["bridges_flag"] = True
+  if args.definites:
+    run_opts["definites_flag"] = True
   if args.nocrossstage:
     run_opts["crossstage_retry_flag"] = False
   if args.think is not None:
@@ -684,6 +732,8 @@ def main():
     run_opts["_version_override"] = args.version
   if args.maxtokens:
     run_opts["_maxtokens_override"] = args.maxtokens
+  if args.api_timeout and args.api_timeout > 0:
+    run_opts["api_timeout"] = args.api_timeout
 
   # Per-case parallel: one worker per (case, llm).  Pool size = len(llms).
   ctx = get_context("fork")
