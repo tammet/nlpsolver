@@ -423,7 +423,7 @@ class _ClauseRenderCtx:
   """
   __slots__ = ("seen", "event_vars", "world_vars", "event_consts",
                "has_type_vars", "isa_type_hint", "used_in_other",
-               "absorbed_isa_ids")
+               "absorbed_isa_ids", "dav_placeholder_patients")
   def __init__(self):
     self.seen = set()             # raw arg names already introduced
     self.event_vars = set()       # vars known to be events from clause scan
@@ -437,6 +437,9 @@ class _ClauseRenderCtx:
     self.used_in_other = set()    # vars that appear in non-isa atoms
     self.absorbed_isa_ids = set() # ids of isa atoms absorbed into a type
                                   # prefix; skipped during rendering
+    self.dav_placeholder_patients = set()  # (-davidson) event-patient vars
+                                  # that are fresh existential placeholders
+                                  # (intransitive/omitted object) — dropped
 
 _RENDER_CTX = None   # module-level slot; clause_to_str owns the lifetime
 
@@ -543,6 +546,28 @@ def _scan_clause_vars(clause, ctx):
   if isinstance(clause, list):
     for atom in clause:
       _scan(atom)
+
+  # (-davidson) A placeholder event patient is a variable that appears ONLY as
+  # the PATIENT slot of an event atom (and has no isa type) — the fresh
+  # existential the fold inserts for an intransitive/omitted object.  The
+  # prover renames the original `Dav…` var, so detect it structurally instead.
+  if isinstance(clause, list):
+    var_occurrences = {}
+    event_patient_vars = set()
+    for atom in clause:
+      if not (isinstance(atom, list) and atom and isinstance(atom[0], str)):
+        continue
+      pred = atom[0]
+      base = pred[1:] if pred.startswith("-") else pred
+      atom_args = atom[1:]
+      for arg in atom_args:
+        if _looks_like_var_arg(arg):
+          var_occurrences[arg] = var_occurrences.get(arg, 0) + 1
+      if base == "event" and len(atom_args) >= 3 and _looks_like_var_arg(atom_args[2]):
+        event_patient_vars.add(atom_args[2])
+    for v in event_patient_vars:
+      if var_occurrences.get(v, 0) <= 1 and v not in ctx.isa_type_hint:
+        ctx.dav_placeholder_patients.add(v)
 
 
 _COMMON_NOUN_CONST_RE = re.compile(r'^[a-z].*\s\d+$')
@@ -684,19 +709,44 @@ def _isa_neg(e, args):
   if typ == "set":      return ent + " is not a set"
   return ent + " is not " + _indef_article(typ) + " " + typ
 
+def _dav_patient_is_real(p):
+  """(-davidson) The PATIENT slot of event(V, A, P, E) is a real object only
+  when the fold found an actual theme filler.  An absent patient (intransitive
+  / omitted object) is a fresh existential placeholder — a Skolem function term
+  after clausification, or a `Dav…`-named variable before it — and should not
+  be rendered as an object ("Mike flies", not "Mike flies the event sk1")."""
+  if p is None:
+    return False
+  if isinstance(p, list):            # Skolemized fresh existential
+    return False
+  if isinstance(p, str) and looks_like_var(p):
+    if _RENDER_CTX is not None and p in _RENDER_CTX.dav_placeholder_patients:
+      return False                   # appears only as this event's patient
+    base = p[2:] if p.startswith("?:") else p
+    return not base.startswith("Dav")
+  return True                        # concrete entity or type token
+
 def _event_pos(e, args):
   """Render a folded Davidsonian event atom ["event", VERB, AGENT, PATIENT, E, CTXT]
-  as 'AGENT VERBs PATIENT'.  E and CTXT are not rendered as entities."""
-  verb = e(0); subj = e(1); obj = e(2)
-  if _looks_like_verb(verb):
-    return subj + " " + _conjugate_verb(verb) + " " + obj
-  return subj + " " + verb + " " + obj
+  as 'AGENT VERBs [PATIENT]'.  The first arg is always a verb root, so it is
+  conjugated directly.  A placeholder PATIENT (intransitive) is dropped; the
+  handle E and CTXT are not rendered here — E is named via its verb wherever a
+  classifier/blocker references it.  Render the subject first so it keeps its
+  'some X' / 'Mike' intro before the patient."""
+  verb = str(args[0]) if args else ""
+  subj = e(1)
+  patient = args[2] if len(args) > 2 else None
+  if _dav_patient_is_real(patient):
+    return subj + " " + _conjugate_verb(verb) + " " + _intro(patient)
+  return subj + " " + _conjugate_verb(verb)
 
 def _event_neg(e, args):
-  verb = e(0); subj = e(1); obj = e(2)
-  if _looks_like_verb(verb):
-    return subj + " does not " + verb + " " + obj
-  return subj + " is not " + verb + " " + obj
+  verb = str(args[0]) if args else ""
+  subj = e(1)
+  patient = args[2] if len(args) > 2 else None
+  if _dav_patient_is_real(patient):
+    return subj + " does not " + verb + " " + _intro(patient)
+  return subj + " does not " + verb
 
 def _has_property_render(e, args, neg=False):
   """has property(PROP, ENT).  Default: 'ENT is PROP'.  (L2 -existfold) a folded

@@ -146,6 +146,18 @@ def _scan_skolem_atom(atom):
     _ctx.skolem_fn_actors.setdefault(str(atom[1]), str(atom[2]))
   elif base_pred == "has target" and _is_skolem_fn(atom[1]):
     _ctx.skolem_fn_targets.setdefault(str(atom[1]), str(atom[2]))
+  elif base_pred == "event" and len(atom) >= 5:
+    # (-davidson) event(V, AGENT, PATIENT, E): the event handle E carries the
+    # verb that a reified has_type(E, V) would otherwise supply.  Register it so
+    # E renders as "the <gerund(V)> event ..." wherever it later appears (a
+    # capability/typical classifier, a $block defeasibility blocker, the answer).
+    E = atom[4]
+    if _is_skolem_fn(E):
+      _ctx.skolem_fn_verbs.setdefault(str(E), str(atom[1]))
+      if isinstance(atom[2], str):
+        _ctx.skolem_fn_actors.setdefault(str(E), str(atom[2]))
+    elif isinstance(E, str) and is_skolem_const(E):
+      _ctx.skolem_types.setdefault(E, "activity")
 
 
 def compute_skolem_types(proof, logic=None):
