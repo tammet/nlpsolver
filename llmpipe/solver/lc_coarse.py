@@ -761,8 +761,7 @@ def _coarsen_one(node, content_inner, flatten, do_guard):
 
 
 def coarsen_events(tree, flatten=False, eventprop=False, davidson=False,
-                   coarse=False, do_canon=False, do_guard=False,
-                   collapse_degree=False):
+                   do_canon=False, do_guard=False, collapse_degree=False):
   """Top-level entry: fold collapsible events / apply the lc_coarse abstraction mods.
 
   All gating is resolved by the caller (lc_encoding.EncodingConfig); the params
@@ -770,7 +769,6 @@ def coarsen_events(tree, flatten=False, eventprop=False, davidson=False,
   - flatten : aggressive flat is_rel2/has_property fold (eventprop tags the
     folded object when eventprop=True).
   - davidson : structure-preserving compact event(V,A,O,E) fold.
-  - coarse : the conservative collapsible "do" fold (no flatten).
   - do_canon : proper-noun entity canonicalization (independent of folding).
   - do_guard : drop redundant antecedent type guards (no-op without a fold).
   - collapse_degree : degree nodes -> simple, before guard-drop.
@@ -815,10 +813,6 @@ def coarsen_events(tree, flatten=False, eventprop=False, davidson=False,
         _coarsen_one(child, _collect_content_inner_vars(child), flatten, do_guard)
         if isinstance(child, list) else child
         for child in tree[1:]]
-    return _coarsen_one(tree, _collect_content_inner_vars(tree), flatten, do_guard)
-
-  if coarse:
-    # plain -coarse: conservative fold (tree-wide content-inner), no flat/canon.
     return _coarsen_one(tree, _collect_content_inner_vars(tree), flatten, do_guard)
 
   # No folding requested (e.g. -entitymerge alone): return the (canon-applied) tree.

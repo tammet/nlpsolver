@@ -103,7 +103,6 @@ from lc_post_normalize import (
 )
 from lc_post_reify import (
   rewrite_definites as _rewrite_definites,
-  emit_definite_identities as _emit_definite_identities,
   rewrite_measure_terms as _rewrite_measure_terms,
 )
 from lc_post_inject import (
@@ -1137,7 +1136,6 @@ def rawlogic_convert(logic, s1_json=None, fixes=None):
                                       flatten=_enc.flatten,
                                       eventprop=_enc.eventprop,
                                       davidson=_enc.davidson,
-                                      coarse=_enc.coarse,
                                       do_canon=_enc.entitymerge,
                                       do_guard=_enc.guarddrop,
                                       collapse_degree=_enc.collapse_degree)

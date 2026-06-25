@@ -151,56 +151,6 @@ def _clause_atoms(clause):
   return []
 
 
-def emit_definite_identities(result, asu_index):
-  """Emit identities for "N is the R of B" constructions, before any $theof1
-  reification runs.  A named subject N asserted in relation R to B IS the
-  definite "the R of B", so N = $theof1(R, B).  rewrite_definites otherwise
-  deep-replaces one is_rel2 subject with the $theof1 term and removes the
-  clause, dropping the named entity's link (e.g. "Andrew Collins was the script
-  editor for Badults" left Andrew connected to nothing).  Reads the pristine
-  is_rel2 atoms, so it must run before rewrite_definites.  Additive: only adds
-  equality clauses; the $theof1 terms it builds match those rewrite_definites
-  will construct (same type_base, arg, ctxt), so the named entity and the
-  definite term unify."""
-  if not asu_index:
-    return
-
-  def _concrete(t):
-    # a ground named entity: a plain string that is not a variable ("?:X"),
-    # a Skolem ("sk..."), a world ("W0"/"w0"), or a $-term.
-    return (isinstance(t, str) and not t.startswith("?:")
-            and not t.startswith("sk") and not t.startswith("$")
-            and not re.fullmatch(r"[Ww]\d+", t))
-
-  seen = set()
-  for asu in asu_index.values():
-    for defn in (asu.get("definites") or []):
-      if not (isinstance(defn, list) and len(defn) >= 3):
-        continue
-      rel_name = defn[0]
-      value_id = defn[1]
-      type_base = rel_name[:-3] if rel_name.endswith(" of") else rel_name
-      for obj in list(result):
-        if not (isinstance(obj, dict) and "@logic" in obj):
-          continue
-        for atom in _clause_atoms(obj["@logic"]):
-          if (isinstance(atom, list) and len(atom) >= 4 and atom[0] == "is rel2"
-              and atom[1] == rel_name):
-            subj, arg = atom[2], atom[3]
-            # only a concrete named subject that is NOT the placeholder being
-            # reified, with a concrete arg (skip question/variable atoms).
-            if not (_concrete(subj) and _concrete(arg) and subj != value_id):
-              continue
-            key = (rel_name, subj, arg)
-            if key in seen:
-              continue
-            seen.add(key)
-            ctxt = atom[4] if len(atom) > 4 else None
-            fn = (["$theof1", type_base, arg, ctxt] if ctxt is not None
-                  else ["$theof1", type_base, arg])
-            result.append({"@name": "frm_theof", "@logic": ["=", subj, fn]})
-
-
 def rewrite_definites(result, asu_index, sid, theof_relations):
   """Rewrite definite functional descriptions to $theof1 terms.
 

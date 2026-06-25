@@ -81,13 +81,13 @@ _combined_loaded_key = None
 # -prenorm flag) to enable.  Cached like any other LLM call.
 prenorm_enabled = False
 
-# (ultracoarse) Aggressive entity-name canonicalization over the Stage-1 output.
+# (entity canon) Aggressive entity-name canonicalization over the Stage-1 output.
 canon_entities_enabled = False
 
-# (ultracoarse) Cross-stage unsatisfiable-guard retry: after Stage 2, if a rule
+# (entity canon) Cross-stage unsatisfiable-guard retry: after Stage 2, if a rule
 # antecedent names a class/property/relation nothing can satisfy, re-read Stage 1
-# and re-encode Stage 2 once with a corrective hint.  Gated on ultracoarse
-# (canon_entities_enabled).  At most one cross-stage retry.
+# and re-encode Stage 2 once with a corrective hint.  Gated on entity
+# canonicalization (canon_entities_enabled, i.e. -entitymerge).  At most one retry.
 crossstage_guard_retry = True
 
 # Combined single-stage parsing: when enabled, parse_text makes ONE LLM call
@@ -244,7 +244,7 @@ def canonicalize_entity_ids(s1_json, stats=None):
   return _t(s1_json)
 
 
-# ======== (ultracoarse) Wikipedia-URL entity unification ========
+# ======== (entity canon) Wikipedia-URL entity unification ========
 #
 # Stage 2 sometimes resolves a proper-noun entity to its Wikipedia URL in the
 # logic body ("https://en.wikipedia.org/wiki/Miroslav_Venhoda") while the
@@ -602,11 +602,11 @@ def parse_text(text, llm=None, version=None, tokens=None, think=None):
       return (None, None)
     # Normalize entity IDs that differ only by sentence-start capitalization.
     _normalize_entity_id_case(s1_json, stats)
-    # (ultracoarse) Aggressively canonicalize entity names across the Stage-1
+    # (entity canon) Aggressively canonicalize entity names across the Stage-1
     # output (ids + text), so the same entity worded several ways becomes one id.
     if canon_entities_enabled:
       s1_json = canonicalize_entity_ids(s1_json, stats)
-    # (ultracoarse) Enable the constant-vs-class / dropped-fact repair check.
+    # (entity canon) Enable the constant-vs-class / dropped-fact repair check.
     _ss.aggressive_repair = canon_entities_enabled
     if s2split_enabled:
       # -s2split: one Stage-2 call per Stage-1 sentence package, joined.
@@ -623,7 +623,7 @@ def parse_text(text, llm=None, version=None, tokens=None, think=None):
       else:
         _debug_write("STAGE 2 OK")
     if s2_json is not None:
-      # (ultracoarse) Fold Stage-2 Wikipedia-URL constants into the matching
+      # (entity canon) Fold Stage-2 Wikipedia-URL constants into the matching
       # Stage-1 entity id so split constants reunify.
       s2_json = canonicalize_entity_urls(s1_json, s2_json, stats)
     return (s1_json, s2_json)
@@ -632,7 +632,7 @@ def parse_text(text, llm=None, version=None, tokens=None, think=None):
   if s1_json is None:
     return (None, None, stats)
 
-  # (ultracoarse, once) Unsatisfiable-guard cross-stage retry: a rule antecedent
+  # (entity canon, once) Unsatisfiable-guard cross-stage retry: a rule antecedent
   # names a class/property/relation that nothing states or derives (a likely
   # dropped word, case 15).  Re-read Stage 1 + re-encode Stage 2 with a neutral
   # corrective hint; keep the retry only if it reduces the unsatisfiable guards.

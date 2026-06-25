@@ -22,7 +22,7 @@ _ALL_TE_GATES = frozenset(
 
 class EncodingConfig:
   __slots__ = (
-    "event_base", "flatten", "eventprop", "davidson", "coarse",
+    "event_base", "flatten", "eventprop", "davidson",
     "entitymerge", "guarddrop", "bridges", "dropdefinites", "localantonyms",
     "simpleprops", "collapse_degree", "parse_canon", "needs_coarsen",
     "typeenrich", "typeenrich_gates",
@@ -36,7 +36,6 @@ class EncodingConfig:
     self.flatten   = base in ("flat", "flatroles")   # flat is_rel2 fold
     self.eventprop = base == "flatroles"             # role-tag the folded object
     self.davidson  = base == "davidson"              # compact event(V,A,O,E) fold
-    self.coarse    = False                           # the do/5 fold is retired
 
     # Additive abstraction primitives (one flag each; presets set a subset).
     self.entitymerge   = bool(o.get("entitymerge_flag"))   # proper-noun canon + set coref
