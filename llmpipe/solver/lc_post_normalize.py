@@ -41,8 +41,6 @@ from lc_questions import (
   build_population_facts,
   is_ground_term,
 )
-import globals as _g
-_g_options = _g.options
 
 # Lazy import to avoid circular dependency (lc_packages imports this module
 # transitively via logconvert).

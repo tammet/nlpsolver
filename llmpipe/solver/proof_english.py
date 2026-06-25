@@ -19,7 +19,6 @@
 # limitations under the License.
 #-----------------------------------------------------------------
 
-import json
 import re
 
 from lc_clausify import is_skolem_const, is_skolem_fn, looks_like_var, is_world_constant
@@ -28,14 +27,13 @@ from linguistics import (
   indef_article  as _indef_article,
   conjugate_verb as _conjugate_verb,
   make_comparative as _make_comparative,
-  to_gerund      as _to_gerund,
   looks_like_verb as _looks_like_verb,
   PREPOSITIONS   as _PREPOSITIONS,
 )
 
 from proof_utils import (
   entity_name, _ctx, _degree_parts, _is_var_display,
-  _ans_display_args, _SAFE_LETTERS, _skolem_fn_short_name,
+  _ans_display_args, _skolem_fn_short_name,
 )
 
 import globals as _g
@@ -136,11 +134,6 @@ def block_to_english(block_atom):
   return _atom_to_english_negated(body)
 
 
-
-# Traditional/JSON logic rendering (in proof_logic.py).
-from proof_logic import (
-  format_clause_logic, format_clause_traditional, formula_to_logic,
-)
 
 
 def _defq_ans_bridge(clause):
@@ -1471,9 +1464,6 @@ def _render_atom(atom, negated=False):
         return "not: " + e(1) + " says that " + _render_atom(args[2])
       return e(1) + " says that " + _render_atom(args[2])
     return ("not: " if negated else "") + _atom_fallback(atom)
-
-  if pred == "next":
-    return ""
 
   # ---- $defq* question-definition atoms ----
   if pred.startswith("$defq"):

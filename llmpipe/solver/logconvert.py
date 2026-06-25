@@ -44,7 +44,6 @@
 #-------------------------------------------------------------------
 
 import re
-import os as _os
 
 from globals import options as _g_options
 
@@ -53,12 +52,12 @@ def _te(gate):
   """True if the named typeenrich sub-gate (super/gender/nametype/compound/
   plural/gnoun) is enabled, per the resolved EncodingConfig.  Selected on the
   CLI with -typeenrich[=<gate-list>]; the -abstract* presets enable all six."""
-  return _lc_encoding.current().te(gate)
+  return lc_encoding.current().te(gate)
 
 
 import lc_clausify
 import lc_questions
-import lc_encoding as _lc_encoding
+import lc_encoding
 
 from lc_clausify import (clausify, is_skolem_const, is_skolem_fn,
                          singularize_isa_classes_in_node,
@@ -450,7 +449,7 @@ def _rename_offinventory_preds(node):
 
 
 def _repair_self_defeating_conditional(logic):
-  if not _lc_encoding.current().guarddrop:
+  if not lc_encoding.current().guarddrop:
     return logic
   return _rsdc(logic)
 
@@ -1132,7 +1131,7 @@ def rawlogic_convert(logic, s1_json=None, fixes=None):
   # and tense-has_time stripping so the eligibility test sees the final event
   # shape.  $ctxt is attached to the folded literal later (lc_ctxt) exactly as
   # for reified roles.
-  _enc = _lc_encoding.current()
+  _enc = lc_encoding.current()
   if _enc.needs_coarsen:
     import lc_coarse as _lc_coarse
     logic = _lc_coarse.coarsen_events(logic,
@@ -1258,7 +1257,7 @@ def rawlogic_convert(logic, s1_json=None, fixes=None):
   # and the Andrew link is lost).  Leaving definites as plain relations keeps
   # those links and matches FOLIO's atomic relation style.  Otherwise reify in
   # the default lenient first-match mode (the core-2026-06-03 behaviour).
-  if asu_index and not _lc_encoding.current().dropdefinites:
+  if asu_index and not lc_encoding.current().dropdefinites:
     for sid_key in asu_index:
       _rewrite_definites(result, asu_index, sid_key, theof_relations)
 
@@ -1315,7 +1314,7 @@ def rawlogic_convert(logic, s1_json=None, fixes=None):
     # Give them a SCAN-ONLY expanded view so they recognise folded events exactly
     # as the reified encoding; the real clause list is unchanged (the event<->roles
     # bridge supplies the roles at prove time).
-    _davx = _lc_encoding.current().davidson
+    _davx = lc_encoding.current().davidson
     def _dv(r):
       if not _davx:
         return r
@@ -1336,7 +1335,7 @@ def rawlogic_convert(logic, s1_json=None, fixes=None):
                   + _inject_containment_bridges(iv)
                   + _inject_attribute_relation_bridges(iv)
                   + _inject_stable_adjective_persistence(iv))
-    if _lc_encoding.current().bridges:
+    if lc_encoding.current().bridges:
       import lc_coarse as _lcc
       sem_axioms = (sem_axioms
                     + _inject_occasion_location_bridges(iv)
@@ -1350,7 +1349,7 @@ def rawlogic_convert(logic, s1_json=None, fixes=None):
   # (-event davidson) event<->reified-roles bridge. Injected independently of
   # nosemnormal: the folded event(...) atoms must interderive with the role
   # atoms that wh/answer/rendering read, else those break.
-  if _lc_encoding.current().davidson:
+  if lc_encoding.current().davidson:
     import lc_coarse as _lcc
     sem_axioms = sem_axioms + _lcc.event_axiom_clauses()
 

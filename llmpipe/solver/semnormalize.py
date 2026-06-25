@@ -42,7 +42,7 @@
 import globals
 import pretty
 import axiom_vocab
-import lc_encoding as _lc_encoding
+import lc_encoding
 from data_antonyms import ANTONYMS
 from data_canonicals import CANONICALS
 
@@ -198,7 +198,7 @@ def sem_normalize_clauses(clauses):
   # On the default path present stays None and antonym folding is unconditional
   # (the core-2026-06-03 checkpoint behaviour).
   present = None
-  if _lc_encoding.current().localantonyms:
+  if lc_encoding.current().localantonyms:
     present = set()
     for clause in clauses:
       if isinstance(clause, dict):
