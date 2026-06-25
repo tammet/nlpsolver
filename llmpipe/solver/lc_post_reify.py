@@ -232,11 +232,9 @@ def rewrite_definites(result, asu_index, sid, theof_relations):
     else:
       type_base = rel_name
 
-    # Primary: find is_rel2 match.  Under the coarse encodings only the
-    # placeholder value_id may be reified (a different named subject is never
-    # absorbed); the default path keeps the core-2026-06-03 first-match
-    # behavior.
-    strict_id = value_id if _g_options.get("coarse_flag", False) else None
+    # Primary: find is_rel2 match, lenient first-match (the core-2026-06-03
+    # behaviour).  The old coarse strict placeholder-only mode is retired.
+    strict_id = None
     match = _find_is_rel2_match(result, rel_name, strict_id)
     remove_clause_idx = None
     if match:

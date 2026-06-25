@@ -19,8 +19,9 @@
 # block folding.  Both passes attach $ctxt to "do"/"is rel2" exactly as to the
 # reified roles, so the encodings differ only in the folded spine.
 #
-# Gated by options["coarse_flag"] / options["ultracoarse_flag"]; called from
-# logconvert.rawlogic_convert after inject_actuality and tense-has_time stripping.
+# Driven by lc_encoding.EncodingConfig (event_base flat/flatroles/davidson);
+# called from logconvert.rawlogic_convert after inject_actuality and
+# tense-has_time stripping.
 
 import re, itertools, collections
 

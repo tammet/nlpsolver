@@ -215,8 +215,6 @@ def call_prover(logic, s1_json=None):
   #decodedd=data.decode('ascii')
   #print("capi called with data",decodedd)
   params=[path]
-  if not options["nokb_flag"]: 
-    params=params+["-usekb",memkb_name]
   if options["prover_axiomfiles"]==False:
     params.append(globals.prover_axiomfile)
   else:
@@ -241,8 +239,7 @@ def call_prover(logic, s1_json=None):
       print(f"\n=== auto-estimated prover seconds: {secs} (worlds: {_count_worlds(logic)}) ===\n")
     params=params+["-seconds",str(secs)]
   params.append(infilename)
-  if options["usekb_flag"]: params=params+globals.usekb_prover_params
-  else: params=params+globals.prover_params
+  params=params+globals.prover_params
   params=params+["--datafolder",prover_datafolder]
   if options["prover_print_flag"] or options["show_prover_flag"]:
     print("\n=== prover params ===\n")

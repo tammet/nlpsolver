@@ -16,43 +16,58 @@
 import globals as _g
 
 
+_ALL_TE_GATES = frozenset(
+  ("super", "gender", "nametype", "compound", "plural", "gnoun"))
+
+
 class EncodingConfig:
   __slots__ = (
-    "flatten", "eventprop", "davidson", "coarse",
-    "entitymerge", "guarddrop", "bridges", "dropdefinites",
-    "collapse_degree", "parse_canon", "needs_coarsen",
+    "event_base", "flatten", "eventprop", "davidson", "coarse",
+    "entitymerge", "guarddrop", "bridges", "dropdefinites", "localantonyms",
+    "simpleprops", "collapse_degree", "parse_canon", "needs_coarsen",
+    "typeenrich", "typeenrich_gates",
   )
 
   def __init__(self, o):
-    ultra  = o.get("ultracoarse_flag", False)
-    ultra2 = o.get("ultracoarse2_flag", False)
-    flatev = o.get("flatevents_flag", False)
-    coarse = o.get("coarse_flag", False)
-    em     = o.get("entitymerge_flag", False)
-    gd     = o.get("guarddrop_flag", False)
-    br     = o.get("bridges_flag", False)
-    defl   = o.get("definites_flag", False)
-    dav    = o.get("davidson_flag", False)
+    base = o.get("event_base", "neodavidson")
+    self.event_base = base
 
     # Event-base derived axes (the coarsen_events fold).
-    self.flatten   = bool(ultra or flatev)     # aggressive flat is_rel2 fold
-    self.eventprop = bool(ultra2 or flatev)    # role-tag the folded object
-    self.davidson  = bool(dav)                 # compact event(V,A,O,E) fold
-    self.coarse    = bool(coarse)              # conservative collapsible "do" fold
+    self.flatten   = base in ("flat", "flatroles")   # flat is_rel2 fold
+    self.eventprop = base == "flatroles"             # role-tag the folded object
+    self.davidson  = base == "davidson"              # compact event(V,A,O,E) fold
+    self.coarse    = False                           # the do/5 fold is retired
 
-    # Additive buckets, each widened by the -ultracoarse master exactly as before.
-    self.entitymerge   = bool(ultra or em)     # proper-noun canon + set coref
-    self.guarddrop     = bool(ultra or gd)     # drop redundant antecedent guards
-    self.bridges       = bool(ultra or br)     # frame/bridge axioms
-    self.dropdefinites = bool(ultra or defl)   # SKIP $theof1 definite reification
+    # Additive abstraction primitives (one flag each; presets set a subset).
+    self.entitymerge   = bool(o.get("entitymerge_flag"))   # proper-noun canon + set coref
+    self.guarddrop     = bool(o.get("guarddrop_flag"))     # drop redundant antecedent guards
+    self.bridges       = bool(o.get("bridges_flag"))       # frame/bridge axioms
+    self.dropdefinites = bool(o.get("dropdefinites_flag")) # SKIP $theof1 definite reification
+    self.localantonyms = bool(o.get("localantonyms_flag")) # restrict antonym-fold vocabulary
+    self.simpleprops   = bool(o.get("noproptypes_flag"))   # degree predicates -> simple
 
-    # -ultracoarse-only internals.
-    self.collapse_degree = bool(ultra)         # degree nodes -> simple, in the fold
-    self.parse_canon     = bool(ultra)         # parse-level entity canonicalization
+    # Degree collapse inside the fold rides with simpleprops; parse-level entity
+    # canonicalization rides with entitymerge (the primitive is self-contained).
+    self.collapse_degree = self.simpleprops
+    self.parse_canon     = self.entitymerge
 
-    # Whether coarsen_events runs at all (raw-flag trigger; ultracoarse sets
-    # coarse_flag at the CLI, so it is covered by `coarse`).
-    self.needs_coarsen = bool(coarse or flatev or em or gd or dav)
+    # typeenrich: a primitive carrying a set of enabled sub-gates (default all).
+    self.typeenrich = bool(o.get("typeenrich_flag"))
+    gates = o.get("typeenrich_gates")
+    if not self.typeenrich:
+      self.typeenrich_gates = frozenset()
+    elif gates is None:
+      self.typeenrich_gates = _ALL_TE_GATES
+    else:
+      self.typeenrich_gates = frozenset(gates)
+
+    # Whether coarsen_events runs at all.
+    self.needs_coarsen = bool(
+      self.davidson or self.flatten or self.entitymerge or self.guarddrop)
+
+  def te(self, gate):
+    """True if the given typeenrich sub-gate is enabled."""
+    return gate in self.typeenrich_gates
 
 
 def current():

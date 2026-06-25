@@ -410,6 +410,32 @@ def _show_simplified_to(text, s1_json):
 # ======== command-line interface ========
 
 
+_TE_GATES = ("super", "gender", "nametype", "compound", "plural", "gnoun")
+
+
+def _parse_te_gates(spec):
+  """Parse a -typeenrich=<list> spec into a set of enabled sub-gates.
+
+  Tokens are gate names (include), `-name` (exclude), or `all`. A spec made up
+  entirely of excludes starts from the full set (e.g. `-plural` == all but plural).
+  """
+  toks = [t.strip() for t in spec.split(",") if t.strip()]
+  if toks and all(t.startswith("-") for t in toks):
+    gates = set(_TE_GATES)
+    for t in toks:
+      gates.discard(t[1:])
+  else:
+    gates = set()
+    for t in toks:
+      if t == "all":
+        gates |= set(_TE_GATES)
+      elif t.startswith("-"):
+        gates.discard(t[1:])
+      else:
+        gates.add(t)
+  return gates
+
+
 def _parse_cmd_line():
   """Parse sys.argv; return (text, options_dict)."""
   global debug, llm, llm_version
@@ -486,14 +512,6 @@ def _parse_cmd_line():
       opts["prover_rawresult_flag"] = True
     elif el in ["-prover", "--prover"]:
       opts["show_prover_flag"] = True
-    elif el in ["-usekb", "--usekb"]:
-      opts["usekb_flag"] = True
-    elif el in ["-nokb", "--nokb"]:
-      opts["nokb_flag"] = True
-    elif el in ["-forward", "--forward"]:
-      opts["forward_flag"] = True
-    elif el in ["-backward", "--backward"]:
-      opts["backward_flag"] = True
     elif el in ["-simple", "--simple"]:
       opts["nocontext_flag"] = True
       opts["noexceptions_flag"] = True
@@ -502,54 +520,53 @@ def _parse_cmd_line():
       opts["nocontext_flag"] = True
     elif el in ["-noexceptions", "--noexceptions"]:
       opts["noexceptions_flag"] = True
-    elif el in ["-simpleproperties", "--simpleproperties"]:
+    elif el in ["-simpleprops", "--simpleprops"]:
       opts["noproptypes_flag"] = True
       opts["noexceptions_flag"] = True
-    elif el in ["-coarse", "--coarse"]:
-      opts["coarse_flag"] = True
-    elif el in ["-flatevents", "--flatevents"]:
-      # ONLY the aggressive Davidsonian event -> is_rel2/has_property flattening
-      # with eventprop-tagged objects (the same fold -ultracoarse2 uses), with
-      # NONE of the other ultracoarse mods (no entity canonicalization, degree
-      # collapse, guard-drop, Skolem merge, supertypes, simpleproperties,
-      # defeasibility strip, frame/bridge axioms).
-      opts["flatevents_flag"] = True
-    elif el in ["-davidson", "--davidson"]:
-      # structure-preserving Davidsonian fold: collapse the event spine into
-      # event(V,A,O,E) keeping the handle E, KEEP every other role/adjunct on E
-      # (so adjunct distinctions and extra roles survive, unlike -flatevents);
-      # absent agent/patient become fresh existentials; an event<->reified-roles
-      # bridge interderives with the rest of the pipeline. See memos/DAVIDSON_PLAN.md.
-      opts["davidson_flag"] = True
+    # --- Event-encoding base: one mutually-exclusive selector. ---
+    elif el in ["-event", "--event"]:
+      if elpos + 1 >= len(params):
+        print("Error: -event requires a mode (neodavidson|davidson|flat|flatroles)")
+        sys.exit(0)
+      mode = params[elpos + 1]
+      if mode not in ("neodavidson", "davidson", "flat", "flatroles"):
+        print("Error: unknown -event mode:", mode,
+              "(expected neodavidson|davidson|flat|flatroles)")
+        sys.exit(0)
+      opts["event_base"] = mode
+      skippos = 1
+    # --- Additive abstraction primitives (compose with any base). ---
     elif el in ["-existfold", "--existfold"]:
-      # (L2) fold a bare existential attribute "exists Y. isa(C,Y) & has_part/have(X,Y)"
-      # into a unary has_property([$has_part/$have, C], X), deleting the Skolem
-      # cross-product; a generic bidirectional bridge with a named witness
-      # $typed_partof(X,C) reconstructs the existential on demand. See L2_EXISTFOLD_PLAN.md.
       opts["existfold_flag"] = True
-    # Separable abstraction buckets (each also implied by -ultracoarse). Composable;
-    # -guarddrop / -bridges are no-ops without -flatevents. See ABSTRACTION_BUCKETS_PLAN.md.
     elif el in ["-entitymerge", "--entitymerge"]:
       opts["entitymerge_flag"] = True
-    elif el in ["-typeenrich", "--typeenrich"]:
-      opts["typeenrich_flag"] = True
     elif el in ["-guarddrop", "--guarddrop"]:
       opts["guarddrop_flag"] = True
     elif el in ["-bridges", "--bridges"]:
       opts["bridges_flag"] = True
-    elif el in ["-definites", "--definites"]:
-      opts["definites_flag"] = True
-    elif el in ["-ultracoarse", "--ultracoarse"]:
-      opts["coarse_flag"] = True
-      opts["ultracoarse_flag"] = True
-      opts["noproptypes_flag"] = True   # (a) collapse gradables to simple properties
-    elif el in ["-ultracoarse2", "--ultracoarse2"]:
-      # Same as -ultracoarse, but the relational event fold tags the selected
-      # object role: is_rel2(V, subj, ["eventprop", role, value]).
-      opts["coarse_flag"] = True
-      opts["ultracoarse_flag"] = True
-      opts["ultracoarse2_flag"] = True
+    elif el in ["-dropdefinites", "--dropdefinites"]:
+      opts["dropdefinites_flag"] = True
+    elif el in ["-localantonyms", "--localantonyms"]:
+      opts["localantonyms_flag"] = True
+    elif el in ["-typeenrich", "--typeenrich"]:
+      opts["typeenrich_flag"] = True
+    elif el.startswith("-typeenrich=") or el.startswith("--typeenrich="):
+      opts["typeenrich_flag"] = True
+      opts["typeenrich_gates"] = _parse_te_gates(el.split("=", 1)[1])
+    # --- Abstraction presets: pure expansions into primitives (read nowhere
+    #     else in the pipeline). -abstract / -abstract-roles / -abstract-max. ---
+    elif el in ["-abstract", "--abstract", "-abstract-roles", "--abstract-roles",
+                "-abstract-max", "--abstract-max"]:
+      opts["event_base"] = "flatroles" if ("roles" in el or "max" in el) else "flat"
+      opts["entitymerge_flag"] = True
+      opts["guarddrop_flag"] = True
+      opts["bridges_flag"] = True
+      opts["dropdefinites_flag"] = True
+      opts["typeenrich_flag"] = True
+      opts["localantonyms_flag"] = True
       opts["noproptypes_flag"] = True
+      if "max" in el:
+        opts["prenorm_flag"] = True
     elif el in ["-prenorm", "--prenorm"]:
       opts["prenorm_flag"] = True
     elif el in ["-s2split", "--s2split"]:
@@ -719,41 +736,32 @@ split Stage 2:
                 location, beneficiary/recipient lift, measure<->comparative),
                 property-shape compound composition, broad-supertype isa.
                 Composable with -s2split (whose divergences it was built for)
- -flatevents  : ONLY the Davidsonian event -> is_rel2/has_property flattening
-                with eventprop-tagged objects (the -ultracoarse2 fold), with
-                none of the other ultracoarse mods (no entity canonicalization,
-                degree collapse, guard-drop, Skolem merge, supertypes,
-                simpleproperties, defeasibility strip, frame/bridge axioms)
- -davidson    : structure-preserving Davidsonian fold: spine -> event(V,A,O,E)
-                keeping the handle E, KEEP all other roles/adjuncts on E (so
-                adjunct distinctions + extra roles survive, unlike -flatevents);
-                absent agent/patient -> fresh existentials; an event<->reified-
-                roles bridge interderives with the rest of the pipeline
+ -event MODE  : event-encoding base (one selector; default neodavidson):
+                neodavidson  reified neo-Davidsonian events (default)
+                davidson     compact event(V,A,O,E), keep handle + adjuncts
+                flat         flat relational is_rel2(V,subj,obj)
+                flatroles    flat relational, eventprop-tagged object
  -existfold   : (L2) fold a bare existential attribute "exists Y. isa(C,Y) &
                 has_part/have(X,Y)" into has_property([$has_part/$have,C], X),
                 deleting the Skolem cross-product; a bidirectional bridge with a
                 named witness $typed_partof(X,C) reconstructs it on demand
- separable abstraction buckets (each also implied by -ultracoarse; composable):
+additive abstraction primitives (compose with any -event base):
  -entitymerge : proper-noun entity canonicalization + set-label coreference
- -typeenrich  : taxonomy/isa enrichment (broad supertypes, gender-from-name,
-                name-as-type, gendered-noun bridges, compound subsumption,
-                plural->singular class normalization)
- -guarddrop   : drop redundant antecedent isa type guards (no-op without -flatevents)
- -bridges     : ultracoarse frame/bridge axioms: rel2<->event equivalence,
-                occasion-location, in-haspart, reflexive-property (use with -flatevents)
- -definites   : ultracoarse definite-description handling ($theof1 identities)
-
-coarse / ultracoarse encodings and pre-normalisation (compose with the buckets above):
- -coarse      : fold collapsible Davidsonian events to flat `do` literals
- -ultracoarse : aggressive abstraction = -coarse + all separable buckets above
-                (relational flatten, entity canonicalization, guard-drop,
-                Skolem merge, supertypes) + simpleproperties + defeasibility strip
- -ultracoarse2: like -ultracoarse, but the relational event fold tags the object
-                role: is_rel2(V, subj, ["eventprop", role, value]) so a target is
-                never confused with an instrument/location
- -prenorm     : pre-Stage-1 LLM wording normalisation (composable; the FOLIO ladder
-                base) -- rewrites the English before the two-stage translation
- -nocrossstage: disable the ultracoarse cross-stage guard-retry
+ -typeenrich[=GATES] : taxonomy/isa enrichment; bare = all six sub-gates, or a
+                comma list of super,gender,nametype,compound,plural,gnoun (use
+                -name to exclude, `all` for all; e.g. -typeenrich=all,-plural)
+ -guarddrop   : drop redundant antecedent isa type guards (needs a fold base)
+ -bridges     : frame/bridge axioms: rel2<->event, occasion-location, in-haspart,
+                reflexive-property (needs -event flat/flatroles)
+ -dropdefinites : skip $theof1 definite reification; leave definites as relations
+ -localantonyms : restrict antonym folding to the problem + axiom vocabulary
+abstraction presets (pure expansions into the primitives above):
+ -abstract      : -event flat + entitymerge + guarddrop + bridges + dropdefinites
+                  + typeenrich + localantonyms + simpleprops
+ -abstract-roles: as -abstract but -event flatroles (eventprop-tagged objects)
+ -abstract-max  : as -abstract-roles + -prenorm (the strongest abstraction)
+ -prenorm     : pre-Stage-1 LLM wording normalisation (composable; FOLIO ladder base)
+ -nocrossstage: disable the cross-stage guard-retry
 
 combined single-stage parsing (one LLM call, English -> logic; no Stage-1 JSON):
  -combined-instr FILE     : combined instructions prompt file (enables single-stage mode)
@@ -772,14 +780,12 @@ controlling the prover:
  -axioms file1.js ... fileN.js : use these files as axioms instead of axioms_std.js
  -strategy file.js : use the given JSON strategy file instead of the default
  -printlevel N : use N>10 to see more of the search process (10 is default, try 12)
- -usekb        : use background knowledge in a shared-memory KB
- -nokb         : do not use a shared memory knowledge base
 
 logic representation options:
  -simple          : simplified representation: no context, no exceptions, simple properties
-    -nocontext       : no context (time, situation) information in logic
-    -noexceptions    : no exception (blocker) information in logic
-    -simpleproperties: simplified properties without strength and type parameters
+    -nocontext     : no context (time, situation) information in logic
+    -noexceptions  : no exception (blocker) information in logic
+    -simpleprops   : simplified properties without strength and type parameters
 """
 
 

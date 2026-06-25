@@ -50,13 +50,10 @@ from globals import options as _g_options
 
 
 def _te(gate):
-  """typeenrich active for a named sub-gate, minus any disabled via the
-  TE_SKIP env var (comma-separated of: super,gender,nametype,compound,plural,
-  gnoun).  Diagnostic only -- lets a typeenrich run isolate one sub-injector's
-  effect.  Ultracoarse paths are unaffected (they gate on ultracoarse_flag)."""
-  if not _g_options.get("typeenrich_flag", False):
-    return False
-  return gate not in _os.environ.get("TE_SKIP", "")
+  """True if the named typeenrich sub-gate (super/gender/nametype/compound/
+  plural/gnoun) is enabled, per the resolved EncodingConfig.  Selected on the
+  CLI with -typeenrich[=<gate-list>]; the -abstract* presets enable all six."""
+  return _lc_encoding.current().te(gate)
 
 
 import lc_clausify
@@ -875,16 +872,13 @@ def _build_entity_category_clauses(s1_json, skip_entities=frozenset()):
         # coarse encodings so the default path matches the core-2026-06-03
         # checkpoint behavior.
         elif (category in _BROAD_SUPERTYPES
-              and (_g_options.get("coarse_flag", False)
-                   or _g_options.get("slightcoarse_flag", False)
+              and (_g_options.get("slightcoarse_flag", False)
                    or _te("super"))):
           clauses.append({"@name": name, "@logic": ["isa", category, eid]})
         # (b2, ultracoarse) Gender from a first-name table: isa(man/woman, E),
         # so a rule guarded by "man"/"woman" can fire ("a man is either kind or
         # evil").  Sound when the name is known.
-        if (category == "person"
-            and (_g_options.get("ultracoarse_flag", False)
-                 or _te("gender"))):
+        if (category == "person" and _te("gender")):
           first = eid.split(" ", 1)[0]
           g = _name_gender(first)
           if g:
@@ -908,8 +902,7 @@ def _build_entity_category_clauses(s1_json, skip_entities=frozenset()):
         # its own name lowercased, so a generic existential ("a winter olympics")
         # can bind to the named constant ("Winter Olympics") that is otherwise
         # typed only by its category (isa(event,...)).
-        if (_g_options.get("ultracoarse_flag", False)
-            or _te("nametype")):
+        if _te("nametype"):
           name_base = re.sub(r"\s+\d+$", "", eid).strip()
           name_type = name_base.lower()
           if (" " in name_base and re.search(r"[A-Z]", name_base)
@@ -1220,8 +1213,7 @@ def rawlogic_convert(logic, s1_json=None, fixes=None):
   # Under -ultracoarse also scan the Stage-1 entity-category clauses, so a
   # compound that only appears as an entity category ("harding pegmatite mine")
   # still gets its head subsumption (-> "mine").  See case 112.
-  _ultra_flag = (_g_options.get("ultracoarse_flag", False)
-                 or _te("compound"))
+  _ultra_flag = _te("compound")
   compound_subs = _build_compound_subsumption(
       items, ultra=_ultra_flag,
       extra_clauses=(entity_cat_clauses if _ultra_flag else ()),
@@ -1259,18 +1251,13 @@ def rawlogic_convert(logic, s1_json=None, fixes=None):
   # Rewrite definite functional descriptions to $theof1 terms (global pass).
   # Runs after all packages are collected so question packages can find
   # is_rel2/have+isa matches from assertion packages.
-  # Under -ultracoarse, skip $theof1 reification: the function-term rewrite can
-  # absorb a named subject's relation ("Andrew was the script editor for X" ->
-  # the relation is folded into $theof1 and the Andrew link is lost).  Leaving
-  # definites as plain relations keeps those links and matches FOLIO's atomic
-  # relation style.
+  # With -dropdefinites (set by the -abstract* presets), skip $theof1
+  # reification: the function-term rewrite can absorb a named subject's relation
+  # ("Andrew was the script editor for X" -> the relation is folded into $theof1
+  # and the Andrew link is lost).  Leaving definites as plain relations keeps
+  # those links and matches FOLIO's atomic relation style.  Otherwise reify in
+  # the default lenient first-match mode (the core-2026-06-03 behaviour).
   if asu_index and not _lc_encoding.current().dropdefinites:
-    # (coarse) The named-subject identity clauses and the strict
-    # placeholder-only is_rel2 matching inside rewrite_definites are gated to
-    # the coarse encoding; the default path keeps the core-2026-06-03
-    # checkpoint behavior (first-match, no identities).
-    if _g_options.get("coarse_flag", False):
-      _emit_definite_identities(result, asu_index)
     for sid_key in asu_index:
       _rewrite_definites(result, asu_index, sid_key, theof_relations)
 
@@ -1327,7 +1314,7 @@ def rawlogic_convert(logic, s1_json=None, fixes=None):
     # Give them a SCAN-ONLY expanded view so they recognise folded events exactly
     # as the reified encoding; the real clause list is unchanged (the event<->roles
     # bridge supplies the roles at prove time).
-    _davx = _g_options.get("davidson_flag", False)
+    _davx = _lc_encoding.current().davidson
     def _dv(r):
       if not _davx:
         return r
@@ -1362,7 +1349,7 @@ def rawlogic_convert(logic, s1_json=None, fixes=None):
   # (-davidson) event<->reified-roles bridge. Injected independently of
   # nosemnormal: the folded event(...) atoms must interderive with the role
   # atoms that wh/answer/rendering read, else those break.
-  if _g_options.get("davidson_flag", False):
+  if _lc_encoding.current().davidson:
     import lc_coarse as _lcc
     sem_axioms = sem_axioms + _lcc.event_axiom_clauses()
 
@@ -1446,8 +1433,7 @@ def rawlogic_convert(logic, s1_json=None, fixes=None):
   # with the singular form and with the population witness isa(animal,
   # $some_animal).  Runs after all injection so no later pass can reintroduce a
   # plural class name.
-  _ultra = (_g_options.get("ultracoarse_flag", False)
-            or _te("plural"))
+  _ultra = _te("plural")
   for _c in result:
     if isinstance(_c, dict):
       for _k in ("@logic", "@question"):
@@ -1481,8 +1467,7 @@ def rawlogic_convert(logic, s1_json=None, fixes=None):
   # ...), inject isa(noun,X) -> isa(man/woman,X), so a rule guarded by
   # "man"/"woman" fires for an entity typed only with the role noun.  Gated to
   # nouns actually present, so at most a handful of axioms are added.
-  if (_g_options.get("ultracoarse_flag", False)
-      or _te("gnoun")):
+  if _te("gnoun"):
     try:
       from data_names import GENDERED_NOUN as _GN
     except Exception:

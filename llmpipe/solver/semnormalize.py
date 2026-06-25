@@ -42,6 +42,7 @@
 import globals
 import pretty
 import axiom_vocab
+import lc_encoding as _lc_encoding
 from data_antonyms import ANTONYMS
 from data_canonicals import CANONICALS
 
@@ -192,12 +193,12 @@ def sem_normalize_clauses(clauses):
   if debug:
     before_str = pretty.pp_str(clauses)
 
-  # Gating vocabulary for antonym folding (coarse encodings only): words
-  # present in the problem plus axiom content words.  On the default path
-  # present stays None and antonym folding is unconditional (core-2026-06-03
-  # checkpoint behavior).
+  # Gating vocabulary for antonym folding (with -localantonyms, set by the
+  # -abstract* presets): words present in the problem plus axiom content words.
+  # On the default path present stays None and antonym folding is unconditional
+  # (the core-2026-06-03 checkpoint behaviour).
   present = None
-  if globals.options.get("coarse_flag", False):
+  if _lc_encoding.current().localantonyms:
     present = set()
     for clause in clauses:
       if isinstance(clause, dict):
