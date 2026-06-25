@@ -759,33 +759,31 @@ def _coarsen_one(node, content_inner, flatten, do_guard):
   return node
 
 
-def coarsen_events(tree, ultra=False, eventprop=False, flatevents=False,
-                   coarse=False, entitymerge=False, guarddrop=False, davidson=False):
+def coarsen_events(tree, flatten=False, eventprop=False, davidson=False,
+                   coarse=False, do_canon=False, do_guard=False,
+                   collapse_degree=False):
   """Top-level entry: fold collapsible events / apply the lc_coarse abstraction mods.
 
-  Separable axes (each implied by ``ultra`` so -ultracoarse is unchanged):
-  - flatten = ultra or flatevents : aggressive flat is_rel2/has_property fold
-    (with eventprop tagging when the caller passes eventprop=True).
-  - do_canon = ultra or entitymerge : proper-noun entity canonicalization
-    (runs independently of folding).
-  - do_guard = ultra or guarddrop  : drop redundant antecedent type guards
-    (a no-op without flattening — there are no folded is_rel2 guards to drop).
-  - degree collapse stays ultracoarse-internal for v1 (gated on ``ultra``).
-  - coarse (plain -coarse, no flatten) : the conservative collapsible "do" fold.
-  See memos/ABSTRACTION_BUCKETS_PLAN.md."""
+  All gating is resolved by the caller (lc_encoding.EncodingConfig); the params
+  are the already-derived booleans:
+  - flatten : aggressive flat is_rel2/has_property fold (eventprop tags the
+    folded object when eventprop=True).
+  - davidson : structure-preserving compact event(V,A,O,E) fold.
+  - coarse : the conservative collapsible "do" fold (no flatten).
+  - do_canon : proper-noun entity canonicalization (independent of folding).
+  - do_guard : drop redundant antecedent type guards (no-op without a fold).
+  - collapse_degree : degree nodes -> simple, before guard-drop.
+  See memos/ABSTRACTION_BUCKETS_PLAN.md and analysis/FLAG_INVENTORY.md."""
   global _eventprop_mode, _davidson_mode, _dav_nr, _verb_index
   _eventprop_mode = eventprop
   _davidson_mode = davidson
   if not isinstance(tree, list) or not tree:
     return tree
-  flatten  = ultra or flatevents
-  do_canon = ultra or entitymerge
-  do_guard = ultra or guarddrop
 
   # Tree-level mods (independent of folding).
   if do_canon:
     tree = _canonicalize_entities(tree)
-  if ultra:
+  if collapse_degree:
     tree = _collapse_degree_node(tree)     # degrees -> simple, before guard-drop
 
   if davidson:

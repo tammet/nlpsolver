@@ -50,6 +50,7 @@ import llmcall
 
 # logic improvement (stub: pass-through until real logic-convert rules are added)
 from logconvert import rawlogic_convert
+import lc_encoding as _lc_encoding
 
 # proof post-processing (stub: pass-through until answer extraction is implemented)
 from procproofs import process_proof
@@ -204,7 +205,7 @@ def english_to_answer(text, options=None, collect=None):
     return answer
 
   llmparse.prenorm_enabled = globals.options.get("prenorm_flag", False)
-  llmparse.canon_entities_enabled = globals.options.get("ultracoarse_flag", False)
+  llmparse.canon_entities_enabled = _lc_encoding.current().parse_canon
   llmparse.crossstage_guard_retry = globals.options.get("crossstage_retry_flag", True)
   llmparse.combined_enabled        = globals.options.get("combined_flag", False)
   llmparse.combined_instr_file     = globals.options.get("combined_instr_file")

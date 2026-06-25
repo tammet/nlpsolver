@@ -37,6 +37,7 @@ import re
 import hashlib
 
 from globals import options as _g_options
+import lc_encoding as _lc_encoding
 
 
 _SETLABEL_SK_RE = re.compile(r"^sk\d")
@@ -311,8 +312,7 @@ def _rewrite_setof(node, depth):
     # never unify even when the bodies match (case 15).
     if explicit_set_id is not None:
       set_id = explicit_set_id
-    elif (_g_options.get("ultracoarse_flag", False)
-          or _g_options.get("entitymerge_flag", False)):
+    elif _lc_encoding.current().entitymerge:
       set_id = "set_" + _content_label(cond_term)
     else:
       global _set_counter

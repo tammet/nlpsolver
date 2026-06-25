@@ -61,6 +61,7 @@ def _te(gate):
 
 import lc_clausify
 import lc_questions
+import lc_encoding as _lc_encoding
 
 from lc_clausify import (clausify, is_skolem_const, is_skolem_fn,
                          singularize_isa_classes_in_node,
@@ -453,7 +454,7 @@ def _rename_offinventory_preds(node):
 
 
 def _repair_self_defeating_conditional(logic):
-  if not (_g_options.get("ultracoarse_flag") or _g_options.get("guarddrop_flag")):
+  if not _lc_encoding.current().guarddrop:
     return logic
   return _rsdc(logic)
 
@@ -1136,19 +1137,17 @@ def rawlogic_convert(logic, s1_json=None, fixes=None):
   # literal.  Runs after actuality injection and tense-has_time stripping so
   # the eligibility test sees the final event shape.  $ctxt is attached to the
   # "do" literal later (lc_ctxt) exactly as for reified roles.
-  if (_g_options.get("coarse_flag", False) or _g_options.get("flatevents_flag", False)
-      or _g_options.get("entitymerge_flag", False) or _g_options.get("guarddrop_flag", False)
-      or _g_options.get("davidson_flag", False)):
+  _enc = _lc_encoding.current()
+  if _enc.needs_coarsen:
     import lc_coarse as _lc_coarse
     logic = _lc_coarse.coarsen_events(logic,
-                                      ultra=_g_options.get("ultracoarse_flag", False),
-                                      eventprop=(_g_options.get("ultracoarse2_flag", False)
-                                                 or _g_options.get("flatevents_flag", False)),
-                                      flatevents=_g_options.get("flatevents_flag", False),
-                                      coarse=_g_options.get("coarse_flag", False),
-                                      entitymerge=_g_options.get("entitymerge_flag", False),
-                                      guarddrop=_g_options.get("guarddrop_flag", False),
-                                      davidson=_g_options.get("davidson_flag", False))
+                                      flatten=_enc.flatten,
+                                      eventprop=_enc.eventprop,
+                                      davidson=_enc.davidson,
+                                      coarse=_enc.coarse,
+                                      do_canon=_enc.entitymerge,
+                                      do_guard=_enc.guarddrop,
+                                      collapse_degree=_enc.collapse_degree)
 
   # (L2 -existfold) fold bare existential attributes into unary has_property.
   # Pre-clausification tree pass (exists nodes still present); the bridge is
@@ -1265,8 +1264,7 @@ def rawlogic_convert(logic, s1_json=None, fixes=None):
   # the relation is folded into $theof1 and the Andrew link is lost).  Leaving
   # definites as plain relations keeps those links and matches FOLIO's atomic
   # relation style.
-  if asu_index and not (_g_options.get("ultracoarse_flag", False)
-                        or _g_options.get("definites_flag", False)):
+  if asu_index and not _lc_encoding.current().dropdefinites:
     # (coarse) The named-subject identity clauses and the strict
     # placeholder-only is_rel2 matching inside rewrite_definites are gated to
     # the coarse encoding; the default path keeps the core-2026-06-03
@@ -1350,7 +1348,7 @@ def rawlogic_convert(logic, s1_json=None, fixes=None):
                   + _inject_containment_bridges(iv)
                   + _inject_attribute_relation_bridges(iv)
                   + _inject_stable_adjective_persistence(iv))
-    if _g_options.get("ultracoarse_flag") or _g_options.get("bridges_flag", False):
+    if _lc_encoding.current().bridges:
       import lc_coarse as _lcc
       sem_axioms = (sem_axioms
                     + _inject_occasion_location_bridges(iv)
