@@ -16,6 +16,7 @@ For implementation details see `DOCUMENTATION.md`.
 4. [End-to-End Example](#4-end-to-end-example)
 5. [Simplification Flags](#5-simplification-flags)
 6. [Event-Encoding Bases and Abstraction Primitives](#6-event-encoding-bases-and-abstraction-primitives)
+7. [CLI Keys → Resolved Options (EncodingConfig)](#7-cli-keys--resolved-options-encodingconfig)
 
 ---
 
@@ -1593,3 +1594,38 @@ guard-retry used alongside the flat bases.
 
 (The light shape-unification repair — predicate rename, shape bridges, compound composition,
 broad-supertype `isa` — is part of `-s2split`, not a separate flag; see DOCUMENTATION.md §12.4.)
+
+---
+
+## 7. CLI Keys → Resolved Options (EncodingConfig)
+
+Each encoding CLI key sets one option key in `globals.options`. The pipeline never reads
+those keys (or the `-abstract*` presets) directly: they are resolved once into
+`lc_encoding.EncodingConfig` (`lc_encoding.current()` reads the live options), and every gate
+in `logconvert`, `lc_coarse`, `lc_sets`, `semnormalize`, `lc_post_reify` and `solve` consults
+that config. This table is the CLI-key → option-key → config-field map; the resolver machinery
+is documented in DOCUMENTATION.md §11.0.
+
+| CLI key | option key (`globals.options`) | `EncodingConfig` field(s) | effect |
+|---|---|---|---|
+| `-event MODE` | `event_base` | `flatten`, `eventprop`, `davidson` (derived from the base) | event surface: `neodavidson` (default) / `davidson` / `flat` / `flatroles` (§6) |
+| `-entitymerge` | `entitymerge_flag` | `entitymerge`, `parse_canon` | proper-noun canonicalization + set-label coreference (§6.3) |
+| `-typeenrich[=GATES]` | `typeenrich_flag` (+ `typeenrich_gates`) | `typeenrich`, `te(gate)` | taxonomy/`isa` enrichment; six sub-gates `super,gender,nametype,compound,plural,gnoun` (§6.3) |
+| `-guarddrop` | `guarddrop_flag` | `guarddrop` | drop redundant antecedent `isa` guards + self-defeating-conditional repair (§6.2) |
+| `-bridges` | `bridges_flag` | `bridges` | dynamic frame/bridge axioms — rel2↔event, occasion-location, in-haspart, reflexive-property (§6.5) |
+| `-dropdefinites` | `dropdefinites_flag` | `dropdefinites` | skip `$theof1` definite reification; leave definites as plain relations (§6.4) |
+| `-localantonyms` | `localantonyms_flag` | `localantonyms` | restrict antonym folding to problem ∪ axiom vocabulary (§6.4) |
+| `-existfold` | `existfold_flag` | *(read from options)* | existential-attribute collapse + named-witness bridge (§6.9) |
+| `-simpleprops` / `-simple` | `noproptypes_flag` | `simpleprops`, `collapse_degree` | degree predicates → simple (§5.3) |
+| `-nocontext` | `nocontext_flag` | *(read from options)* | context → constant `$c`; no worlds/tense (§5.1) |
+| `-noexceptions` | `noexceptions_flag` | *(read from options)* | strip `$block` defeaters from defeasible rules (§5.2) |
+| `-prenorm` | `prenorm_flag` | *(parser, pre-Stage-1)* | LLM wording-normalisation pass (§6.11) |
+| `-s2split` | `s2split_flag` | *(parser + shape repair)* | per-sentence Stage-2 + cross-sentence shape-unification repair (§6.11) |
+
+**Derived fields:** `needs_coarsen` = `davidson ∨ flatten ∨ entitymerge ∨ guarddrop` (whether
+`coarsen_events` runs at all); `collapse_degree` rides with `simpleprops`; `parse_canon` rides
+with `entitymerge`. The vestigial `coarse` field is always `False`.
+
+**Presets** `-abstract` / `-abstract-roles` / `-abstract-max` (§6.10) are pure CLI expansions
+into the primitive option keys above (the last also sets `prenorm_flag`); they are read nowhere
+in pipeline code.

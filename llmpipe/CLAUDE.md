@@ -114,40 +114,16 @@ English text
 
 ### Solver Modules (`solver/`)
 
-One line each; see DOCUMENTATION.md §5 for the full per-module reference.
+Grouped by role; **see DOCUMENTATION.md §5 for the full per-module reference** and
+ENCODINGS.md for the representations they produce. Many concerns are split across
+small cohesive files (façade re-exports keep importers stable), so reach for §5
+rather than guessing from a name.
 
-- `solve.py` — CLI entry point and `english_to_answer(text, options)`
-- `llmparse.py` — two-stage LLM parser; `parse_text(text)` → `(s1_json, s2_json, stats)`; entity-ID case normalization between stages; runs `stage_sanity.check_stage{1,2}` and re-calls the LLM with a corrective prompt (max 2 retries per stage) on issues
-- `llmcall.py` — LLM API wrapper (GPT/Claude/Gemini/DeepSeek) with retries and SQLite caching; `call_llm(sysprompt, input_text)`
-- `logconvert.py` — top-level orchestrator for stage-2 JSON → GK clause list; `rawlogic_convert(logic, s1_json, fixes)`; structural repair (`_hoist_nested_ids`, `_repair_misnested_normally_implies`, `_strip_phantom_query_guards`), what-question population, Stage-1 entity bookkeeping; dispatches per-package work to `lc_packages`
-- `lc_packages.py` — per-`@id` package processing: `extract_package_ctx`, `convert_id_package`, `_process_question`/`_process_assertion`, raw wh-word probes, confidence distribution
-- `lc_rewrites.py` — pre-clausification formula rewrites: meta-predicate normalization, tense-valued `has_time` filtering, `inject_actuality` (marks real Davidsonian events; skips events carrying a Stage-2 modal classifier or that are the inner arg of a non-factive `has_content`), degree presuppositions, existential hoisting, polarity flip
-- `lc_ctxt.py` — `$ctxt` context injection, time-wrapper stripping, fresh-variable generation, predicate classification constants
-- `lc_post_normalize.py` — post-clausification normalising/repair: gradable predicate normalization, RELCLASS coercion, isa-entity stripping, possessive `have` inference, `have`→`has_part` bridges, degree stripping, population-fact extraction, compound subsumption
-- `lc_post_reify.py` — reification of definite descriptions and measurements: `$theof1` rewrites, `$measure`→`$list` unit conversion, `less_measure` rewriting
-- `lc_post_inject.py` — post-clausification dynamic axiom injection (soft synonyms, mutual-exclusion, noun-mutex, verb-result-state, acquire→have, positional/containment/attribute bridges, stable-adjective persistence, world-graph geometry). See "Semantic Normalization" below and DOCUMENTATION.md §7.7
-- `lc_post_una.py` — entity UNA wrapping: prefix every Stage-1 numbered entity with `#:` so the prover treats distinct entity constants as unequal (required by axioms_std.js §7g). Render-time strip in `proof_utils`/`proof_logic`/`procproofs`
-- `lc_clausify.py` — FOL-to-CNF compiler (implies/xor/equivalent elimination, NNF, normally expansion, Skolemization, distribution); Skolem helpers, `is_world_constant`, `singularize_isa_classes_in_node`
-- `lc_questions.py` — question wrapping (`ask`/`question` → `@question`/`@askvars`), population-fact injection, WH-builders (`build_where/when/who/defq_question`), `hoist_generic_yn_subject` (bare-plural-generic yes/no rewrite)
-- `lc_sets.py` — set/counting: `$setof` rewriting, membership axioms, element instantiation, set-existence facts
-- `procproofs.py` — orchestrates prover-output post-processing; parses JSON, strips `#:`, drives answer selection (`proof_answer_select`) + formatting (`proof_answer_format`) + explanation (`proof_explain`)
-- `proof_answer_select.py` — which bindings survive: tier ranking (concrete > Skolem > population), `$list` measure-value preference, unbound-var drop, class-name-leak and tautological-population filters (proof-scan `_is_tautological_population_answer` + clause-scan `_defined_property_witnesses`), proof dedup; `@what_query` preference split by `_what_query_is_relational`
-- `proof_answer_format.py` — renders bindings to English: bool, who/what, where/when, generic join, confidence labels, Skolem-to-class resolution, plus query-shape probes
-- `proof_explain.py` — English proof explanations from prover steps
-- `proof_render.py` — facade re-exporting `proof_utils`, `proof_english`, `proof_logic`
-- `proof_utils.py` — entity naming, Skolem type resolution, render context state, ambiguity detection
-- `proof_english.py` — atom/clause → English; table-driven dispatch (`_PRED_TABLE`) + per-clause `_ClauseRenderCtx`. See DOCUMENTATION.md §5.9
-- `proof_logic.py` — `pred(arg,...)` and JSON logic rendering
-- `linguistics.py` — pure English heuristics (articles, conjugation, comparatives, gerunds)
-- `prover.py` — invokes the `gk` binary subprocess; `call_prover(logic)`; auto-selects unit strategy on equalities with function terms
-- `cache.py` — SQLite cache for LLM responses and prover results
-- `globals.py` — global `options` dict and file paths
-- `pretty.py` — JSON pretty-printer; `pp_str/pp_logic/pp_stage1/pp_stage2`
-- `utils.py` — `debug_print`, `clause_list_to_json`
-- `semnormalize.py` — post-clausification semantic normalization: antonym folding + canonical substitution (skips `$ctxt`, handles disjunctions)
-- `data_canonicals.py` / `data_antonyms.py` / `data_synonyms.py` / `data_exclusions.py` — (generated) `CANONICALS` / `ANTONYMS` / `SOFT_SYNONYMS` / `EXCLUSION_GROUPS`+`EXCLUSION_INDEX` dicts from `mkdata/*.txt`
-- `axiom_vocab.py` — extracts/caches axiom-file content words; restricts synonym/exclusion injection to pairs present in problem ∪ axioms
-- `stage_sanity.py` — structural sanity checks for Stage-1/2 LLM output + corrective-retry kinds. Full check table: DOCUMENTATION.md §5.17 and §7.8
+- **Entry / parsing** — `solve.py` (CLI + `english_to_answer`), `llmparse.py` (two-stage parser, entity-ID normalization, corrective-retry loop), `llmcall.py` (LLM API + SQLite cache), `stage_sanity.py` (Stage-1/2 sanity checks; façade over `stage_sanity_{core,s1,s2,guards}.py`), `directanswer.py`.
+- **Logic conversion** (`logconvert.rawlogic_convert` orchestrates) — `lc_encoding.py` (the `EncodingConfig` gate resolver — single source of truth), `lc_packages.py` (per-`@id`), `lc_rewrites.py` (pre-clausification rewrites), `lc_repairs.py` (structural repairs), `lc_clausify.py` (FOL→CNF), `lc_ctxt.py` (`$ctxt`/time), `lc_questions.py` + `lc_query_guards.py` (questions, guard/what-population), `lc_sets.py` (sets/counting), `lc_coarse.py` + `lc_existfold.py` (event folds), `lc_entity_isa.py` (taxonomy `isa`), `lc_finalize.py` (strict/abstract finaliser).
+- **Post-clausification passes** — `lc_post_normalize.py`, `lc_post_have.py`, `lc_post_reify.py`, `lc_post_inject.py` (+ `lc_inject_synonyms.py`, `lc_inject_scan.py`), `lc_post_population.py`, `lc_post_una.py`, `semnormalize.py`, `axiom_vocab.py`; shared traversal in `treewalk.py`. See "Semantic Normalization" below and DOCUMENTATION.md §7.7.
+- **Proving + proofs** — `prover.py` (gk subprocess), `procproofs.py` → `proof_answer_select.py` / `proof_answer_format.py` / `proof_explain.py`; rendering via `proof_render.py` façade over `proof_utils.py` / `proof_english.py` / `proof_terms.py` / `proof_logic.py`, plus `entity_map.py` and `linguistics.py`. See DOCUMENTATION.md §5.9 and PROOF_RENDERING.md.
+- **Infra / data** — `globals.py` (options dict), `cache.py` (SQLite), `pretty.py`, `utils.py`; generated `data_{canonicals,antonyms,synonyms,exclusions,names}.py` from `mkdata/*.txt`.
 
 ### Semantic Normalization Pipeline
 
@@ -163,20 +139,13 @@ rawlogic_convert() produces clause list
 
 Soft-synonym and exclusion axioms are injected earlier, inside `rawlogic_convert()`, appended after all `sent_*` clauses.
 
-**Injectors** (`lc_post_inject.py`) — each emits dynamic axioms gated on input ∪ axiom-vocab presence:
-
-| Injector | What it does |
-|---|---|
-| `inject_soft_synonyms` | biconditional synonym clauses (`has property`/`isa`/`has type`). Verb taxonomy: `_GENERAL_VERBS` emits only specific→general (`fly→go`, not reverse); `_BLOCKED_VERB_PAIRS` drops wrong pairs. `REQUIRE_BOTH_SIDES` |
-| `inject_exclusion_axioms` | pairwise mutual-exclusion clauses; five atom shapes by group id (adjective `has_property`, `is_rel2` target/prep, `has_degree_rel2` proximity, `_ISA_EXCL_GROUPS` noun-mutex shortcut + cross-entity inequality) |
-| `inject_isa_cross_group_axioms` | Layer-2 noun-mutex across different `_ISA_EXCL_GROUPS`; subsumption-aware (`_TOP_LEVEL_SUBSUMES`) |
-| `inject_carrier_lifts` | plate/tray/etc. → `isa(carrier,X)` (feeds axioms_std.js §7f) |
-| `inject_verb_result_state_axioms` | destroy/break/… → has property "destroyed"/… (Bridge A event-based, Bridge B stative); runs before `inject_exclusion_axioms` |
-| `inject_acquire_have_axioms` | buy/purchase/acquire/obtain → `have(actor, obj)`; benefactive Bridge B for buy/get (case 1163) |
-| `inject_positional_actor_bridges` | `has_location(E,L,PREP) + has_actor(E,X) → is_rel2(PREP,X,L)` for positional preps (case 670) |
-| `inject_containment_bridges` | "filled with"/"full of" → `is_rel2("in", content, container)` (case 673) |
-| `inject_attribute_relation_bridges` | color/shape/material/taste value ↔ `is_rel2("color of"/…)` (case 901) |
-| `inject_stable_adjective_persistence` | same-world past→present for stable individual-level adjectives (case 911, §7.14) |
+**Injectors** — emit dynamic axioms gated on input ∪ axiom-vocab presence, all
+traversing the clause list via `treewalk.walk_result_atoms`. The KB-driven
+synonym / exclusion / mutex injectors live in `lc_inject_synonyms.py` (shared
+scan helpers in `lc_inject_scan.py`); the bridge / verb / world injectors (carrier
+lift, verb-result-state, acquire→have, positional / containment / attribute
+bridges, stable-adjective persistence, world geometry) live in `lc_post_inject.py`,
+which re-exports the synonym injectors. **Full per-injector table: DOCUMENTATION.md §7.7.**
 
 Static counterparts and curated data:
 - `MANUAL_ANTONYMS` / `MANUAL_GRADABLE_ANTONYMS` (`mkdata/build_solver_data.py`) → synthetic `MANUAL_ADJ_*` exclusion groups; gradable pairs flow through exclusion path only (case 55). Chain-rejected antonyms → synthetic `ANT_*` groups.
