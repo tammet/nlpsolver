@@ -586,27 +586,29 @@ def main():
                   help="Light shape unification: predicate rename, shape "
                        "bridges, property-shape compound composition, "
                        "broad-supertype isa (see solve.py -slightcoarse)")
-  ap.add_argument("-ultracoarse", action="store_true",
-                  help="Enable -ultracoarse abstraction (event-folding, simple "
-                       "properties, entity canonicalization)")
-  ap.add_argument("-ultracoarse2", action="store_true",
-                  help="Like -ultracoarse, but tag the folded object role: "
-                       "is_rel2(V, subj, [eventprop, role, value])")
-  ap.add_argument("-flatevents", action="store_true",
-                  help="ONLY the Davidsonian event -> is_rel2/has_property flattening with "
-                       "eventprop-tagged objects (the -ultracoarse2 fold), with none of the "
-                       "other ultracoarse mods")
-  ap.add_argument("-davidson", action="store_true",
-                  help="structure-preserving Davidsonian fold: spine -> event(V,A,O,E) keeping "
-                       "the handle E and all other roles/adjuncts; event<->roles bridge")
+  ap.add_argument("-event", choices=["neodavidson", "davidson", "flat", "flatroles"],
+                  default="neodavidson",
+                  help="event-encoding base: neodavidson (default) | davidson "
+                       "(compact event(V,A,O,E)) | flat (is_rel2) | flatroles "
+                       "(is_rel2 with eventprop-tagged object)")
+  ap.add_argument("-abstract", action="store_true",
+                  help="preset: -event flat + all abstraction buckets + simpleprops + localantonyms")
+  ap.add_argument("-abstract-roles", dest="abstract_roles", action="store_true",
+                  help="preset: as -abstract but -event flatroles")
+  ap.add_argument("-abstract-max", dest="abstract_max", action="store_true",
+                  help="preset: as -abstract-roles + -prenorm (strongest abstraction)")
   ap.add_argument("-existfold", action="store_true",
                   help="(L2) fold exists Y.isa(C,Y)&has_part/have(X,Y) into has_property([$has_part/$have,C],X); named-witness bridge")
-  # Separable abstraction buckets (each implied by -ultracoarse). Composable.
+  # Additive abstraction primitives (compose with any -event base).
   ap.add_argument("-entitymerge", action="store_true", help="proper-noun entity canonicalization + set coreference")
-  ap.add_argument("-typeenrich", action="store_true", help="taxonomy/isa enrichment (supertypes, gender, name-as-type, ...)")
-  ap.add_argument("-guarddrop", action="store_true", help="drop redundant antecedent type guards (use with -flatevents)")
-  ap.add_argument("-bridges", action="store_true", help="ultracoarse frame/bridge axioms (use with -flatevents)")
-  ap.add_argument("-definites", action="store_true", help="ultracoarse definite-description handling")
+  ap.add_argument("-typeenrich", action="store_true", help="taxonomy/isa enrichment (all six sub-gates)")
+  ap.add_argument("-typeenrich-gates", dest="typeenrich_gates", default=None,
+                  help="restrict typeenrich to a comma list of sub-gates "
+                       "(super,gender,nametype,compound,plural,gnoun; -name excludes; all)")
+  ap.add_argument("-guarddrop", action="store_true", help="drop redundant antecedent type guards (needs a fold base)")
+  ap.add_argument("-bridges", action="store_true", help="frame/bridge axioms (needs -event flat/flatroles)")
+  ap.add_argument("-dropdefinites", action="store_true", help="skip $theof1 definite reification (leave as relations)")
+  ap.add_argument("-localantonyms", action="store_true", help="restrict antonym folding to the problem + axiom vocabulary")
   ap.add_argument("-nocrossstage", action="store_true",
                   help="Disable the ultracoarse cross-stage unsatisfiable-guard "
                        "retry (avoids live corrective LLM calls)")
@@ -696,31 +698,37 @@ def main():
     run_opts["s2split_flag"] = True
   if args.slightcoarse:
     run_opts["slightcoarse_flag"] = True
-  if args.ultracoarse:
-    run_opts["coarse_flag"] = True
-    run_opts["ultracoarse_flag"] = True
+  if args.event != "neodavidson":
+    run_opts["event_base"] = args.event
+  if args.abstract or args.abstract_roles or args.abstract_max:
+    # Preset expansion into primitives (mirrors solve.py).
+    run_opts["event_base"] = "flatroles" if (args.abstract_roles or args.abstract_max) else "flat"
+    run_opts["entitymerge_flag"] = True
+    run_opts["guarddrop_flag"] = True
+    run_opts["bridges_flag"] = True
+    run_opts["dropdefinites_flag"] = True
+    run_opts["typeenrich_flag"] = True
+    run_opts["localantonyms_flag"] = True
     run_opts["noproptypes_flag"] = True
-  if args.ultracoarse2:
-    run_opts["coarse_flag"] = True
-    run_opts["ultracoarse_flag"] = True
-    run_opts["ultracoarse2_flag"] = True
-    run_opts["noproptypes_flag"] = True
-  if args.flatevents:
-    run_opts["flatevents_flag"] = True
-  if args.davidson:
-    run_opts["davidson_flag"] = True
+    if args.abstract_max:
+      run_opts["prenorm_flag"] = True
   if args.existfold:
     run_opts["existfold_flag"] = True
   if args.entitymerge:
     run_opts["entitymerge_flag"] = True
-  if args.typeenrich:
+  if args.typeenrich or args.typeenrich_gates:
     run_opts["typeenrich_flag"] = True
+    if args.typeenrich_gates:
+      import solve
+      run_opts["typeenrich_gates"] = solve._parse_te_gates(args.typeenrich_gates)
   if args.guarddrop:
     run_opts["guarddrop_flag"] = True
   if args.bridges:
     run_opts["bridges_flag"] = True
-  if args.definites:
-    run_opts["definites_flag"] = True
+  if args.dropdefinites:
+    run_opts["dropdefinites_flag"] = True
+  if args.localantonyms:
+    run_opts["localantonyms_flag"] = True
   if args.nocrossstage:
     run_opts["crossstage_retry_flag"] = False
   if args.think is not None:
