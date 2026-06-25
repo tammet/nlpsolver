@@ -13,6 +13,7 @@ secrets/*secrets*
 /llmpipe/prompts/llmdevideas
 /llmpipe/prompts/archive/
 /llmpipe/testresults/
+/llmpipe/analysis/
 /llmpipe/memos/
 /llmpipe/fixlogs/
 /llmpipe/.claude/
