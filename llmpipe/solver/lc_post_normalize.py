@@ -15,7 +15,7 @@
 #   - strip_isa_entity           (tautology removal)
 #   - add_possessive_have        (is_rel2 "X of" + isa → have)
 #   - add_haspart_for_typed_have (case-207 has_part bridge)
-#   - strip_degree_predicates    (-simpleproperties mode)
+#   - strip_degree_predicates    (-simpleprops mode)
 #
 #-----------------------------------------------------------------
 # Copyright 2026 Tanel Tammet (tanel.tammet@gmail.com)
@@ -284,7 +284,7 @@ def build_compound_subsumption(items, ultra=False, extra_clauses=(), degree_comp
     Rule 2 (composition, confidence 0.95, no blocker):
       [-isa, "baby", "?:X"], [-isa, "bird", "?:X"], ["isa", "baby bird", "?:X"]
 
-  Under -ultracoarse, Rule 1 subsumes not only to the bare head but to every
+  Under -typeenrich, Rule 1 subsumes not only to the bare head but to every
   attested intermediate word-suffix, so "American professional basketball
   player" -> "professional basketball player" (not just -> "player").  The
   intermediate target must be an isa class actually present in the problem
@@ -304,7 +304,7 @@ def build_compound_subsumption(items, ultra=False, extra_clauses=(), degree_comp
     parts = ctype.split()
     head = parts[-1]
     modifier = " ".join(parts[:-1])
-    # Rule 1: subsumption (strict) — baby bird -> bird; under -ultracoarse also
+    # Rule 1: subsumption (strict) — baby bird -> bird; under -typeenrich also
     # -> every attested intermediate suffix.
     targets = [head]
     if ultra:

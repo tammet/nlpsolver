@@ -1,26 +1,26 @@
-# Flat-event ("coarse") and relational ("ultracoarse") encoding passes.
+# Event-fold passes producing the flat relational encodings (-event flat /
+# flatroles) and the compact Davidsonian encoding (-event davidson).  Resolved
+# via lc_encoding.EncodingConfig.
 #
-# -coarse: replace a collapsible Davidsonian event with one combined literal
-#   ["do", TYPE, ACTOR, TARGET, RECIPIENT]
-# folding the role spine and dropping the event variable.  Collapsible = no
-# modal classifier, not a has_content nest, only template roles {type, actor,
-# target, recipient} (a tense-valued has_time is tolerated and dropped to $ctxt;
-# tense lives in the $ctxt term that lc_ctxt attaches to "do").
-#
-# -ultracoarse: everything -coarse does, plus, to match FOLIO-style atomic
-# relations that must unify across a rule and the question:
+# Flat fold (-event flat / flatroles): flatten a collapsible Davidsonian event,
+# to match FOLIO-style atomic relations that must unify across a rule and the
+# question:
 #   (1) an event with an actor and exactly one object role
 #       {target, beneficiary, source, recipient} folds to the binary relation
 #       ["is rel2", VERB, ACTOR, OBJECT];
 #   (2) a habitual event (the `typical` classifier) is allowed to fold, with the
 #       classifier stripped, so "X plays for Y" in a rule and in the question
 #       reduce to the same literal.
-# Other modal classifiers (capability/necessity/...) and has_content nests still
-# block folding.  Both passes attach $ctxt to "do"/"is rel2" exactly as to the
-# reified roles, so the encodings differ only in the folded spine.
+# Modal classifiers (capability/necessity/...) and has_content nests block
+# folding.  A tense-valued has_time is tolerated and dropped to $ctxt.  $ctxt is
+# attached to "is rel2" exactly as to the reified roles, so the encodings differ
+# only in the folded spine.
 #
-# Driven by lc_encoding.EncodingConfig (event_base flat/flatroles/davidson);
-# called from logconvert.rawlogic_convert after inject_actuality and
+# Compact Davidsonian fold (-event davidson): a structure-preserving fold that
+# collapses the role spine into event(V,A,O,E) and keeps the remaining
+# roles/adjuncts.
+#
+# Called from logconvert.rawlogic_convert after inject_actuality and
 # tense-has_time stripping.
 
 import re, itertools, collections
@@ -35,7 +35,7 @@ _OBJECT_ROLES = ("has target", "has beneficiary", "has source", "has recipient")
 _TENSES = ("past", "present", "future")
 
 
-# ---- (ultracoarse) entity-constant canonicalization -----------------------
+# ---- (entity canon) entity-constant canonicalization ----------------------
 # The same named entity is sometimes split across mentions ("Bayern Munchen"
 # vs "FC Bayern Munich", "2008 Summer Olympics" vs "...Olympic Games"), so
 # facts about it never unify with the question.  Ideally Stage 1 would unify
@@ -120,7 +120,7 @@ def _event_var(and_block):
   return None
 
 
-# ---- (ultracoarse) aggressive Davidsonian-event flattening -----------------
+# ---- (flat fold) aggressive Davidsonian-event flattening -------------------
 # Every event block (isa(activity,E) & has type(E,V) & ...) collapses to a flat
 #   is_rel2(V, subject, object)   or   has property(V, subject)
 # mirroring FOLIO's flat n-ary predicates.  Subject = actor; if no actor, the
@@ -137,11 +137,11 @@ _OBJ_ROLE_PRIORITY = ["has recipient", "has beneficiary", "has target",
                       "has accompaniment", "has instrument"]
 
 _verb_index = {}    # event var -> its has-type verb, built per coarsen_events run
-_eventprop_mode = False  # (ultracoarse2) tag folded object roles as ["eventprop", role, value]
-_davidson_mode = False   # (-davidson) structure-preserving fold: spine -> event(V,A,O,E), keep the rest
+_eventprop_mode = False  # (flatroles) tag folded object roles as ["eventprop", role, value]
+_davidson_mode = False   # (-event davidson) structure-preserving fold: spine -> event(V,A,O,E), keep the rest
 _dav_nr = 0              # counter for fresh existential agent/patient vars (reset per coarsen_events run)
 
-# (-davidson) Roles eligible to fill the event() PATIENT slot: the THEME/target
+# (-event davidson) Roles eligible to fill the event() PATIENT slot: the THEME/target
 # only.  The bridge projects the patient slot unconditionally as has_target(E,O),
 # so the slot must hold the theme, not a dative -- otherwise a recipient in the
 # slot is mislabelled has_target and collides with a kept has_target (wh-bug:
@@ -225,7 +225,7 @@ def _typed_existential_vars(block, E):
 
 
 def _fold_event_flat(and_block, E, content_inner):
-  """(ultracoarse) Aggressively flatten one event block; None if not an event or
+  """(flat fold) Aggressively flatten one event block; None if not an event or
   if it is the inner content event of a two-event reification."""
   if E in content_inner:
     return None
@@ -258,7 +258,7 @@ def _fold_event_flat(and_block, E, content_inner):
     if isinstance(obj, str):
       obj = typed.get(obj, obj)
   if obj is not None:
-    # (ultracoarse2) tag the object with its role so a target is never confused
+    # (flatroles / role-tagged) tag the object with its role so a target is never confused
     # with an instrument/location/etc.: is_rel2(V, subj, ["eventprop", $role, value]).
     # The role label is $-prefixed so it is a meta-token: content-word extractors
     # (axiom_vocab._eligible, the synonym/exclusion injectors) skip $-tokens, so the
@@ -307,7 +307,7 @@ def _strip_spine(node, E, vtype, patient_role):
 
 
 def _davidson_event(and_block, E, content_inner):
-  """(-davidson) Structure-preserving fold of one event block: collapse the spine
+  """(-event davidson) Structure-preserving fold of one event block: collapse the spine
   into event(V, subject, patient, E) and keep every other role/adjunct on E.
   Absent agent (passive) and absent patient (intransitive/omitted) become fresh
   existentials wrapped in `exists`.  Returns the rewritten body, or None to keep
@@ -355,8 +355,8 @@ def _davidson_event(and_block, E, content_inner):
 
 def _fold_event(and_block, E, content_inner, ultra):
   """Return the folded literal for a collapsible event, or None to keep it.
-  Under -ultracoarse this is the aggressive flat fold (every event collapses);
-  under plain -coarse it is the conservative collapsible fold below."""
+  When ``ultra`` is set this is the aggressive flat fold (-event flat / flatroles;
+  every event collapses); otherwise it is the conservative collapsible fold below."""
   if ultra:
     return _fold_event_flat(and_block, E, content_inner)
   if E in content_inner:
@@ -380,7 +380,7 @@ def _fold_event(and_block, E, content_inner, ultra):
       if len(c) >= 3 and c[1] == E and c[2] in _TENSES:
         continue                          # tense -> $ctxt, drop
       if ultra and len(c) >= 3 and c[1] == E:
-        continue                          # (ultracoarse) concrete time -> drop
+        continue                          # (flat fold) concrete time -> drop
       return None                         # explicit time -> keep reified
     if h.startswith("has "):
       if len(c) >= 3 and c[1] == E:
@@ -390,8 +390,8 @@ def _fold_event(and_block, E, content_inner, ultra):
     else:
       return None                         # any other predicate on E -> keep
 
-  # modal gating: a non-typical classifier always blocks; `typical` blocks
-  # under -coarse but is allowed (and stripped) under -ultracoarse.
+  # modal gating: a non-typical classifier always blocks; `typical` blocks in the
+  # conservative fold but is allowed (and stripped) in the flat fold (ultra).
   if classifiers - {"typical"}:
     return None
   if classifiers and not ultra:
@@ -399,21 +399,21 @@ def _fold_event(and_block, E, content_inner, ultra):
   if "has type" not in roles:
     return None
 
-  # (ultracoarse) relational fold: actor + exactly one object role -> is_rel2
+  # (flat fold) relational fold: actor + exactly one object role -> is_rel2
   if ultra and "has actor" in roles:
     objs = [r for r in _OBJECT_ROLES if r in roles]
     extra = set(roles) - {"has type", "has actor"}
     if len(objs) == 1 and extra == {objs[0]}:
       return ["is rel2", roles["has type"], roles["has actor"], roles[objs[0]]]
 
-  # (ultracoarse) topic fold: "X verbs about Y" — actor + a single has_topic,
+  # (flat fold) topic fold: "X verbs about Y" — actor + a single has_topic,
   # no object role -> is_rel2(verb, actor, topic), so "jokes about caffeine" in a
   # rule, a disjunct and the question all reduce to the same binary literal.
   if ultra and "has actor" in roles and "has topic" in roles:
     if not set(roles) - {"has type", "has actor", "has topic"}:
       return ["is rel2", roles["has type"], roles["has actor"], roles["has topic"]]
 
-  # (ultracoarse) passive fold: a target but no actor -> drop the over-specified
+  # (flat fold) passive fold: a target but no actor -> drop the over-specified
   # from/at phrase (has source / has location) and treat the verb as a property
   # of the target ("X was suspended from Y" -> has_property(suspend, X)), so a
   # passive in a rule consequent and in the question match regardless of the
@@ -422,7 +422,7 @@ def _fold_event(and_block, E, content_inner, ultra):
     if not set(roles) - {"has type", "has target", "has source", "has location"}:
       return ["has property", roles["has type"], roles["has target"]]
 
-  # (ultracoarse) intransitive-achievement fold: a `typical` event with an actor
+  # (flat fold) intransitive-achievement fold: a `typical` event with an actor
   # and NO goal role (target/beneficiary/source/recipient) -> has_property(verb,
   # actor), dropping a setting location adjunct ("the good guys always win" ->
   # has_property(win, Y)).  Gated on `typical` so a specific goal-bearing event
@@ -431,7 +431,7 @@ def _fold_event(and_block, E, content_inner, ultra):
     if not (set(roles) & set(_OBJECT_ROLES)):
       return ["has property", roles["has type"], roles["has actor"]]
 
-  # (both) do-fold: template roles only
+  # conservative fallback fold: template roles only
   if set(roles) - set(_TEMPLATE_ROLES):
     return None
   return ["do",
@@ -468,7 +468,7 @@ def _coarsen_node(node, content_inner, ultra):
 def _vars_in_relational(conj):
   """Collect every argument of is_rel2 / do literals in a conjunct list.
 
-  (ultracoarse2) An object may be role-tagged as ["eventprop", $role, value];
+  (flatroles / role-tagged) An object may be role-tagged as ["eventprop", $role, value];
   unwrap it so the inner value still counts as bound by the relation, otherwise
   the guard-drop keeps a now-redundant isa(type, value) guard (case 185)."""
   bound = set()
@@ -480,7 +480,7 @@ def _vars_in_relational(conj):
         if isinstance(a, str):
           bound.add(a)
     elif isinstance(c, list) and c and c[0] == "event" and len(c) >= 4:
-      # (-davidson) event(V, AGENT, PATIENT, E, ctxt): the agent (arg 2) and
+      # (-event davidson) event(V, AGENT, PATIENT, E, ctxt): the agent (arg 2) and
       # patient (arg 3) are relationally bound, so their type guards are redundant.
       for a in (c[2], c[3]):
         if isinstance(a, str):
@@ -489,7 +489,7 @@ def _vars_in_relational(conj):
 
 
 def _collapse_degree_node(node):
-  """(ultracoarse) Collapse gradable degree literals to their simple forms on
+  """(-simpleprops) Collapse gradable degree literals to their simple forms on
   the pre-clausification tree, so the guard-drop sees them as relational:
     has degree rel2(REL, E1, E2, DEG, RELCLASS) -> is rel2(REL, E1, E2)
     has degree property(PROP, ENT, DEG, RELCLASS) -> has property(PROP, ENT)
@@ -551,7 +551,7 @@ def _drop_redundant_guards(node):
   return [head] + [_drop_redundant_guards(x) for x in node[1:]]
 
 
-# ---- (ultracoarse) fold flattened event-groups in rule antecedents ---------
+# ---- (flat fold) fold flattened event-groups in rule antecedents -----------
 # _coarsen_node only folds an event wrapped in its own `exists`.  A rule
 # antecedent introduces its event as bare conjuncts under `forall` (no `exists`
 # wrapper), so the same verb stays Davidsonian in the rule while it folds to
@@ -696,7 +696,7 @@ def _atoms_of(clause):
 
 
 def inject_verb_bridges(result):
-  """(ultracoarse, Experiment F1 / "several shapes") For every verb that appears
+  """(flat fold, Experiment F1 / "several shapes") For every verb that appears
   in BOTH a binary is_rel2(V,A,B) and a reified event has_type(E,V), emit a
   bidirectional bridge so the two shapes interderive:
 
@@ -751,7 +751,7 @@ def inject_verb_bridges(result):
 def _coarsen_one(node, content_inner, flatten, do_guard):
   """Fold one scope.  ``flatten``: use the aggressive flat is_rel2/has_property
   fold (and fold rule-antecedent event groups so they flatten too).  ``do_guard``
-  (guarddrop bucket / ultracoarse): drop the now-redundant antecedent type guards."""
+  (-guarddrop bucket): drop the now-redundant antecedent type guards."""
   node = _coarsen_node(node, content_inner, flatten)
   if flatten:
     node = _fold_antecedent_events(node, content_inner, flatten)
@@ -768,7 +768,7 @@ def coarsen_events(tree, flatten=False, eventprop=False, davidson=False,
   are the already-derived booleans:
   - flatten : aggressive flat is_rel2/has_property fold (eventprop tags the
     folded object when eventprop=True).
-  - davidson : structure-preserving compact event(V,A,O,E) fold.
+  - davidson : structure-preserving compact event(V,A,O,E) fold (-event davidson).
   - do_canon : proper-noun entity canonicalization (independent of folding).
   - do_guard : drop redundant antecedent type guards (no-op without a fold).
   - collapse_degree : degree nodes -> simple, before guard-drop.
@@ -787,9 +787,9 @@ def coarsen_events(tree, flatten=False, eventprop=False, davidson=False,
 
   if davidson:
     # structure-preserving Davidsonian fold: spine -> event(V,A,O,E), keep adjuncts.
-    # Per-package content-inner scoping, like the flatten path.  do_guard (under
-    # -ultracoarse / -guarddrop) drops antecedent type guards now made redundant
-    # by the event(...) relation -- _vars_in_relational treats agent+patient as bound.
+    # Per-package content-inner scoping, like the flatten path.  do_guard
+    # (-guarddrop) drops antecedent type guards now made redundant by the
+    # event(...) relation -- _vars_in_relational treats agent+patient as bound.
     _dav_nr = 0                            # deterministic fresh-var numbering per run
     _verb_index = _build_verb_index(tree)
     def _dav_pkg(child):
@@ -847,7 +847,7 @@ def rel2_event_axiom_clauses():
 
 
 def event_axiom_clauses():
-  """(-davidson) The event<->reified-roles bridge so the folded
+  """(-event davidson) The event<->reified-roles bridge so the folded
     event(V,A,O,E) interderives with the neo-Davidsonian role atoms that the
   rest of the pipeline (wh-question builders, answer-binding, rendering) reads,
   plus a projection to the LLM's flat is_rel2 for the ~1% same-verb interop.

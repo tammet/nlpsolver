@@ -182,8 +182,8 @@ def rewrite_definites(result, asu_index, sid, theof_relations):
     else:
       type_base = rel_name
 
-    # Primary: find is_rel2 match, lenient first-match (the core-2026-06-03
-    # behaviour).  The old coarse strict placeholder-only mode is retired.
+    # Primary: find is_rel2 match.  Reification uses lenient first-match (the
+    # core-2026-06-03 behaviour).
     strict_id = None
     match = _find_is_rel2_match(result, rel_name, strict_id)
     remove_clause_idx = None

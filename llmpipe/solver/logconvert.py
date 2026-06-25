@@ -278,7 +278,7 @@ def _repair_misnested_normally_implies(logic):
 # signal is clean.  Repair only the unambiguous two-conjunct mixed-polarity
 # antecedent, by widening the negation to ¬(A∧B), and ONLY when that removes
 # the self-defeat -- so we never flip a genuinely narrow-scope "(not A) and B".
-# Ultracoarse-gated.
+# Gated on -guarddrop.
 
 _SDC_CONNECTIVES = frozenset({"and", "or", "not", "xor", "implies",
                               "equivalent", "iff"})
@@ -863,18 +863,18 @@ def _build_entity_category_clauses(s1_json, skip_entities=frozenset()):
         # Category isa (e.g. isa(person, man 1)) — skip if Stage-2 already has it.
         if eid not in skip_entities:
           clauses.append({"@name": name, "@logic": ["isa", category, eid]})
-        # (b, coarse/ultracoarse) Broad biological supertypes are emitted even
+        # (typeenrich) Broad biological supertypes are emitted even
         # when Stage-2 already gave a subtype (isa(gentleman,Harry) /
         # isa(alligator,Ted)): a gentleman IS a person, an alligator IS an
         # animal, and rules in the problem are quantified over "person"/
-        # "animal" that nothing else establishes for the entity.  Gated to the
-        # coarse encodings so the default path matches the core-2026-06-03
-        # checkpoint behavior.
+        # "animal" that nothing else establishes for the entity.  Gated to
+        # -typeenrich (the super sub-gate) so the default path matches the
+        # core-2026-06-03 checkpoint behavior.
         elif (category in _BROAD_SUPERTYPES
               and (_g_options.get("slightcoarse_flag", False)
                    or _te("super"))):
           clauses.append({"@name": name, "@logic": ["isa", category, eid]})
-        # (b2, ultracoarse) Gender from a first-name table: isa(man/woman, E),
+        # (typeenrich) Gender from a first-name table: isa(man/woman, E),
         # so a rule guarded by "man"/"woman" can fire ("a man is either kind or
         # evil").  Sound when the name is known.
         if (category == "person" and _te("gender")):
@@ -897,7 +897,7 @@ def _build_entity_category_clauses(s1_json, skip_entities=frozenset()):
             if (singular and singular != base
                 and singular.lower() != category.lower()):
               clauses.append({"@name": name, "@logic": ["isa", singular, eid]})
-        # (ultracoarse) Name-as-type: a multiword proper name is also typed by
+        # (typeenrich) Name-as-type: a multiword proper name is also typed by
         # its own name lowercased, so a generic existential ("a winter olympics")
         # can bind to the named constant ("Winter Olympics") that is otherwise
         # typed only by its category (isa(event,...)).
@@ -914,7 +914,7 @@ _SK_SUFFIX_RE = re.compile(r'^sk\d+_(\w+)$')
 
 
 def _merge_typeonly_skolems(result):
-  """(ultracoarse) Merge per-sentence Skolem CONSTANTS of the same type that are
+  """(abstraction) Merge per-sentence Skolem CONSTANTS of the same type that are
   used only generically, so a definite "the gym"/"the campus" that Stage 2
   re-introduced as a separate `exists G[isa(gym,G)]` in each sentence (folding to
   sk1_gym, sk4_gym, ...) co-refers across the rule and the question.
@@ -965,7 +965,7 @@ def _merge_typeonly_skolems(result):
       return
     if base == "is rel2" and len(lit) >= 2:
       for i, a in enumerate(lit):
-        # (ultracoarse2) an event object can be role-tagged as
+        # (flatroles) an event object can be role-tagged as
         # ["eventprop", $role, value]; treat the inner value as occupying this
         # position so an object Skolem stays MERGEABLE instead of being scanned
         # as a distinguishing nested literal (which would mark it un-mergeable
@@ -1064,7 +1064,7 @@ def rawlogic_convert(logic, s1_json=None, fixes=None):
 
   # Repair a self-defeating conditional caused by a "not A and B" negation-scope
   # mis-parse: widen ["implies", ["and", ["not", A], B], CONS] to ¬(A∧B) when the
-  # current reading makes CONS impossible under its antecedent (ultracoarse,
+  # current reading makes CONS impossible under its antecedent (-guarddrop,
   # case 41).
   _b = logic
   logic = _repair_self_defeating_conditional(logic)
@@ -1124,11 +1124,14 @@ def rawlogic_convert(logic, s1_json=None, fixes=None):
   # inner content events of two-event reifications (has_content second arg).
   logic = _inject_actuality(logic)
 
-  # -coarse experiment: fold collapsible Davidsonian events (no modal, no
-  # content nest, no world change, template roles only) into one flat "do"
-  # literal.  Runs after actuality injection and tense-has_time stripping so
-  # the eligibility test sees the final event shape.  $ctxt is attached to the
-  # "do" literal later (lc_ctxt) exactly as for reified roles.
+  # Event fold: rewrite collapsible Davidsonian events (no modal, no content
+  # nest, no world change, template roles only).  Two folds select here via the
+  # encoding flags: the flat relational fold (-event flat / flatroles, the
+  # latter role-tagging the object as ["eventprop", role, value]) and the
+  # compact Davidsonian fold (-event davidson).  Runs after actuality injection
+  # and tense-has_time stripping so the eligibility test sees the final event
+  # shape.  $ctxt is attached to the folded literal later (lc_ctxt) exactly as
+  # for reified roles.
   _enc = _lc_encoding.current()
   if _enc.needs_coarsen:
     import lc_coarse as _lc_coarse
@@ -1208,7 +1211,7 @@ def rawlogic_convert(logic, s1_json=None, fixes=None):
   pop_facts = _populate_clauses(items)
 
   # Build compound type subsumption rules (e.g. "baby bird" -> "bird").
-  # Under -ultracoarse also scan the Stage-1 entity-category clauses, so a
+  # Under -typeenrich also scan the Stage-1 entity-category clauses, so a
   # compound that only appears as an entity category ("harding pegmatite mine")
   # still gets its head subsumption (-> "mine").  See case 112.
   _ultra_flag = _te("compound")
@@ -1307,7 +1310,7 @@ def rawlogic_convert(logic, s1_json=None, fixes=None):
     # the result-state property words (e.g. "destroyed" from a destroy
     # event) become eligible for the exclusion injector's REQUIRE_BOTH_SIDES
     # check (e.g. destroyed/intact via MANUAL_ADJ_GRAD_*).
-    # (-davidson) injectors scan the static clauses for has_type (the verb),
+    # (-event davidson) injectors scan the static clauses for has_type (the verb),
     # has_actor/has_target and is_rel2 -- which davidson folds into event(...).
     # Give them a SCAN-ONLY expanded view so they recognise folded events exactly
     # as the reified encoding; the real clause list is unchanged (the event<->roles
@@ -1344,7 +1347,7 @@ def rawlogic_convert(logic, s1_json=None, fixes=None):
     if _g_options.get("slightcoarse_flag"):
       sem_axioms = sem_axioms + _inject_slightcoarse_shape_bridges(iv)
 
-  # (-davidson) event<->reified-roles bridge. Injected independently of
+  # (-event davidson) event<->reified-roles bridge. Injected independently of
   # nosemnormal: the folded event(...) atoms must interderive with the role
   # atoms that wh/answer/rendering read, else those break.
   if _lc_encoding.current().davidson:
@@ -1416,7 +1419,7 @@ def rawlogic_convert(logic, s1_json=None, fixes=None):
   # Fix RELCLASS mismatches in question degree-predicate atoms.
   _coerce_relclass(result)
 
-  # When -simpleproperties / -simple is active, replace degree predicates with
+  # When -simpleprops / -simple is active, replace degree predicates with
   # their non-gradable equivalents so the prover sees simpler atoms.
   if _g_options.get("noproptypes_flag", False):
     _strip_degree_predicates(result)
@@ -1438,7 +1441,7 @@ def rawlogic_convert(logic, s1_json=None, fixes=None):
         if isinstance(_c.get(_k), list):
           _c[_k] = singularize_isa_classes_in_node(_c[_k])
           if _ultra:
-            # (ultracoarse) fold isa-class case so "American national" and
+            # (typeenrich) fold isa-class case so "American national" and
             # "american national" become one predicate.  Runs after all
             # injection (incl. compound subsumption) so no later pass can
             # reintroduce a capitalized class.
@@ -1460,7 +1463,7 @@ def rawlogic_convert(logic, s1_json=None, fixes=None):
   # ASU-derived clauses.  It is stripped in clause_list_to_json_commented
   # before serialization for the prover.
 
-  # (b, ultracoarse) Gendered-noun -> gender axioms.  For each gendered role
+  # (typeenrich) Gendered-noun -> gender axioms.  For each gendered role
   # noun that occurs as a type in the clauses (gentleman, actress, waitress,
   # ...), inject isa(noun,X) -> isa(man/woman,X), so a rule guarded by
   # "man"/"woman" fires for an entity typed only with the role noun.  Gated to
@@ -1493,10 +1496,11 @@ def rawlogic_convert(logic, s1_json=None, fixes=None):
   if stage1_entities:
     result = _apply_una(result, stage1_entities)
 
-  # (ultracoarse) Strip ALL defeasibility, then decouple $ctxt across clauses but
+  # (abstraction) Strip ALL defeasibility, then decouple $ctxt across clauses but
   # share ONE context variable within each clause, then tidy the clauses.  Under
-  # ultracoarse the encoding is fully strict/monotonic (matching FOLIO's classical
-  # FOL): defeasible rules become strict and habitual/typical events become real.
+  # the -abstract presets the encoding is fully strict/monotonic (matching FOLIO's
+  # classical FOL): defeasible rules become strict and habitual/typical events
+  # become real.
   # Per clause, in order:
   #   0a. unwrap `normally`/`-normally` wrappers      -> their inner formula
   #   0b. drop `$block` blocker and `typical` literals -> no exceptions, real events

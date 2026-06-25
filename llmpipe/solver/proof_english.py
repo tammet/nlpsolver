@@ -437,7 +437,7 @@ class _ClauseRenderCtx:
     self.used_in_other = set()    # vars that appear in non-isa atoms
     self.absorbed_isa_ids = set() # ids of isa atoms absorbed into a type
                                   # prefix; skipped during rendering
-    self.dav_placeholder_patients = set()  # (-davidson) event-patient vars
+    self.dav_placeholder_patients = set()  # (-event davidson) event-patient vars
                                   # that are fresh existential placeholders
                                   # (intransitive/omitted object) — dropped
 
@@ -547,7 +547,7 @@ def _scan_clause_vars(clause, ctx):
     for atom in clause:
       _scan(atom)
 
-  # (-davidson) A placeholder event patient is a variable that appears ONLY as
+  # (-event davidson) A placeholder event patient is a variable that appears ONLY as
   # the PATIENT slot of an event atom (and has no isa type) — the fresh
   # existential the fold inserts for an intransitive/omitted object.  The
   # prover renames the original `Dav…` var, so detect it structurally instead.
@@ -710,7 +710,7 @@ def _isa_neg(e, args):
   return ent + " is not " + _indef_article(typ) + " " + typ
 
 def _dav_patient_is_real(p):
-  """(-davidson) The PATIENT slot of event(V, A, P, E) is a real object only
+  """(-event davidson) The PATIENT slot of event(V, A, P, E) is a real object only
   when the fold found an actual theme filler.  An absent patient (intransitive
   / omitted object) is a fresh existential placeholder — a Skolem function term
   after clausification, or a `Dav…`-named variable before it — and should not

@@ -1198,7 +1198,7 @@ def inject_containment_bridges(result, axiom_vocab=frozenset()):
 # Emitted per preposition P only when BOTH an is_rel2(P,...) relation AND a
 # has_location(...,P) atom are present (so it never fires on unrelated problems).
 # The bridge is spatially loose (everything <prep> the place inherits the
-# occasion), so it is gated to the ultracoarse encoding (caller-side).
+# occasion), so it is gated to the abstraction encodings (caller-side).
 
 _OCCASION_LOC_PREPS = frozenset({"in", "on", "at", "near"})
 
@@ -1269,14 +1269,14 @@ def inject_occasion_location_bridges(result, axiom_vocab=frozenset()):
 # ("X in Y" makes the container Y the whole and X the part.)  Emitted once, only
 # when the clause set contains BOTH an is_rel2("in", ...) atom and a has_part
 # atom, so the consequent can be consumed and no dead clause is added.  Untyped:
-# under -ultracoarse FOLIO uses "in" for physical part-of containment (a mine
-# in a mountain range), so the bridge is gated to the ultracoarse encoding
+# under the abstraction encodings FOLIO uses "in" for physical part-of containment (a mine
+# in a mountain range), so the bridge is gated to the abstraction encodings
 # (caller-side) rather than to a part-noun type.
 
 def inject_in_haspart_bridge(result, axiom_vocab=frozenset()):
   """Containment->part bridge is_rel2("in",X,Y,C) -> has_part(Y,X,C), emitted
   only when both an is_rel2("in",...) and a has_part atom are present.  See
-  cases 112/114.  Ultracoarse-only (caller-side gate)."""
+  cases 112/114.  Abstraction-encodings-only (caller-side gate)."""
   del axiom_vocab  # gated on atom presence in the clause list
   state = {"in": False, "haspart": False}
 
@@ -1319,7 +1319,7 @@ def inject_in_haspart_bridge(result, axiom_vocab=frozenset()):
 #
 # Emitted per predicate P only when P appears BOTH as a reflexive is_rel2
 # (equal args) AND as a has_property in the clause set, so it never fires on an
-# ordinary two-place relation.  Ultracoarse-only (caller-side gate).
+# ordinary two-place relation.  Abstraction-encodings-only (caller-side gate).
 
 def inject_reflexive_property_bridge(result, axiom_vocab=frozenset()):
   """Bridge has_property(P,X,C) <-> is_rel2(P,X,X,C) for each P present both as
@@ -1693,7 +1693,7 @@ def inject_world_geometry(result):
 # this way most of all, but joint calls do too.  These bridges let the shapes
 # interderive.  Each is emitted only when BOTH shapes (or the bridged
 # predicate) actually occur in the clause list, and only under -slightcoarse
-# (caller-side gate in logconvert), so the default path and the coarse
+# (caller-side gate in logconvert), so the default path and the abstraction
 # encodings are untouched.
 
 def _scan_predicates(result):

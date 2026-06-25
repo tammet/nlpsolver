@@ -58,7 +58,7 @@ options={
   "prenorm_flag":False,  # if True, run an experimental pre-Stage-1 LLM phase that unifies repeated entity/property/relation wordings
   "s2split_flag":False,  # if True, run Stage 2 sentence-by-sentence: one LLM call per Stage-1 sentence package, outputs joined (worlds renumbered, rule c')
   "slightcoarse_flag":False,  # if True, enable the light shape-unification pack: off-inventory predicate rename, shape bridges (destination/location, beneficiary lift, measure/comparative), property-shape compound composition, broad-supertype isa
-  "crossstage_retry_flag":True,  # if False, disable the ultracoarse cross-stage unsatisfiable-guard retry (avoids live corrective LLM calls)
+  "crossstage_retry_flag":True,  # if False, disable the abstraction cross-stage unsatisfiable-guard retry (avoids live corrective LLM calls)
   "prover_axiomfiles":False,  # if not False, use these as axioms instead of the default prover_axiomfile below
   "prover_print":False,  # if not False, use the argument integer for gk printout level, instead of the default
   "prover_strategy":False,  # if not False, use the argument as a gk strategy file, instead of the default

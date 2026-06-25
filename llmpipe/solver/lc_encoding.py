@@ -1,17 +1,12 @@
 # Single source of truth for encoding-flag resolution.
 #
 # All encoding gates (event fold, entity canonicalization, guard drop, bridges,
-# definite-reification skip, degree collapse) used to be inline boolean
-# expressions scattered across logconvert.py / lc_sets.py / lc_coarse.py /
-# solve.py, each re-deriving the "implied by -ultracoarse" relation its own way
-# (see analysis/FLAG_INVENTORY.md). This module centralizes that into one
-# resolver. The pipeline reads ONLY EncodingConfig fields; later flag renames /
-# presets change how the config is POPULATED (in EncodingConfig.__init__) without
-# touching any read site.
-#
-# Phase A note: __init__ reads the legacy option keys and reproduces the exact
-# prior gate logic, so behaviour is byte-identical. Phase B repopulates from the
-# new primitive keys + presets.
+# definite-reification skip, degree collapse) resolve here in one place instead
+# of as inline boolean expressions in logconvert.py / lc_sets.py / lc_coarse.py /
+# semnormalize.py / lc_post_reify.py / solve.py. The pipeline reads ONLY
+# EncodingConfig fields; the CLI flags and the -abstract* presets only change how
+# the config is POPULATED (in EncodingConfig.__init__), never how it is read.
+# See analysis/FLAG_INVENTORY.md.
 
 import globals as _g
 

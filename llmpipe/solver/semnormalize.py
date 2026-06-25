@@ -130,7 +130,7 @@ def _normalize_atom(atom, present, allow_flip=True):
       word = arg
       # Pass 1: antonym resolution — flip polarity and swap to antonym.
       # Only at the top-level literal; function terms have no polarity.
-      # Under the coarse encodings, gated on the target being present
+      # Under -localantonyms, gated on the target being present
       # (present=None means no gating), so we never introduce a predicate that
       # appears nowhere else (case 22: "evil"↛"good" when "good" is absent).
       # The default path folds unconditionally (core-2026-06-03 behavior).

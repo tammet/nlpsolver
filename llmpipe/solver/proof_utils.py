@@ -147,7 +147,7 @@ def _scan_skolem_atom(atom):
   elif base_pred == "has target" and _is_skolem_fn(atom[1]):
     _ctx.skolem_fn_targets.setdefault(str(atom[1]), str(atom[2]))
   elif base_pred == "event" and len(atom) >= 5:
-    # (-davidson) event(V, AGENT, PATIENT, E): the event handle E carries the
+    # (-event davidson) event(V, AGENT, PATIENT, E): the event handle E carries the
     # verb that a reified has_type(E, V) would otherwise supply.  Register it so
     # E renders as "the <gerund(V)> event ..." wherever it later appears (a
     # capability/typical classifier, a $block defeasibility blocker, the answer).
@@ -460,7 +460,7 @@ def entity_name(val, with_url=False, proof_mode=False):
   import globals as _g
   json_mode = _g.options.get("json_flag") and proof_mode
 
-  # (ultracoarse2) role-tagged event object: ["eventprop", role, value] -> render
+  # (flatroles / role-tagged) event object: ["eventprop", role, value] -> render
   # the inner value, dropping the role label (it is a disambiguation tag only).
   if isinstance(val, list) and len(val) == 3 and val[0] == "eventprop":
     val = val[2]

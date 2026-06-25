@@ -1996,7 +1996,7 @@ def check_stage1(s1_json):
   return issues
 
 
-# When True (set by llmparse under -ultracoarse), enable the aggressive
+# When True (set under entity canonicalization (-entitymerge)), enable the aggressive
 # constant-vs-class / dropped-fact repair check that re-prompts the LLM.
 aggressive_repair = False
 

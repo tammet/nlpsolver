@@ -44,7 +44,7 @@ _SETLABEL_SK_RE = re.compile(r"^sk\d")
 
 
 def _content_label(cond_term):
-  """(ultracoarse) Stable short id keyed on a $setof body's predicate skeleton,
+  """(abstraction) Stable short id keyed on a $setof body's predicate skeleton,
   with variables and skolems abstracted to one placeholder so two structurally-
   identical sets (a rule's "copies of E", a fact's "copies of sk1") share a
   label.  $arg1 and ordinary constants (class / relation names) are kept, so
@@ -303,7 +303,7 @@ def _rewrite_setof(node, depth):
     conds_replaced = [_replace_var(c, var, info.arg_name) for c in remaining]
     sorted_conds = _sort_and_conditions(conds_replaced)
     cond_term = ["$and"] + sorted_conds
-    # Set label.  Default: a per-occurrence counter.  Under -ultracoarse: a
+    # Set label.  Default: a per-occurrence counter.  Under the abstraction encodings: a
     # CONTENT-derived label keyed on the body's predicate skeleton (variables
     # and skolems abstracted), so two structurally-identical sets -- a rule's
     # "copies of E" and a fact's "copies of sk1" -- get the SAME label and their

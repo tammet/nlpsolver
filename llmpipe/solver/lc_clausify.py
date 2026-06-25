@@ -186,7 +186,7 @@ def lower_isa_classes_in_node(node):
   atom, so capitalization variants of the same category ("American national" vs
   "american national") unify.  Only arg 1 (the class/type) is touched; the
   entity instance (arg 2) and every other position keep their case.  (Used under
-  -ultracoarse, where FOLIO's mixed-case nationality/proper-adjective classes
+  -typeenrich, where FOLIO's mixed-case nationality/proper-adjective classes
   otherwise split into distinct predicates.)"""
   if not isinstance(node, list) or not node:
     return node
