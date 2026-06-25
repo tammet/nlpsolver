@@ -43,6 +43,7 @@
 from lc_ctxt import fresh_fv as _fresh_fv
 from globals import options as _g_options
 from lc_clausify import is_world_constant as _is_world_constant
+from treewalk import walk_result_atoms
 from data_exclusions import EXCLUSION_GROUPS
 from lc_inject_scan import collect_eligible_words, eligible_word
 from lc_inject_synonyms import (inject_soft_synonyms, inject_exclusion_axioms,
@@ -58,32 +59,14 @@ def _has_predicates_ben_and_for(result):
   saw_ben = [False]
   saw_for = [False]
 
-  def _walk(frm):
-    if not isinstance(frm, list) or not frm:
-      return
-    first = frm[0]
-    if isinstance(first, list):
-      for atom in frm:
-        _walk(atom)
-      return
-    if isinstance(first, str):
-      if first in ("has beneficiary", "-has beneficiary"):
-        saw_ben[0] = True
-      elif (first in ("is rel2", "-is rel2")
-            and len(frm) >= 2 and frm[1] == "for"):
-        saw_for[0] = True
-    for a in frm[1:]:
-      if isinstance(a, list):
-        _walk(a)
-
-  for obj in result:
-    if isinstance(obj, dict):
-      if "@logic" in obj:
-        _walk(obj["@logic"])
-      if "@question" in obj:
-        _walk(obj["@question"])
-    if saw_ben[0] and saw_for[0]:
-      return True
+  def visit(n, base):
+    first = n[0]
+    if first in ("has beneficiary", "-has beneficiary"):
+      saw_ben[0] = True
+    elif (first in ("is rel2", "-is rel2")
+          and len(n) >= 2 and n[1] == "for"):
+      saw_for[0] = True
+  walk_result_atoms(result, visit)
   return saw_ben[0] and saw_for[0]
 
 
@@ -138,30 +121,14 @@ def inject_measure_relation_bridges(result):
   measure_nouns = set()  # N from ["$measure_of", N, ...]
   rel_nouns = set()      # N from ["is rel2", "N of", ...]
 
-  def _walk(frm):
-    if not isinstance(frm, list) or not frm:
-      return
-    if isinstance(frm[0], list):
-      for atom in frm:
-        _walk(atom)
-      return
-    head = frm[0]
-    if head == "$measure_of" and len(frm) >= 2 and isinstance(frm[1], str):
-      measure_nouns.add(frm[1])
-    elif head in ("is rel2", "-is rel2") and len(frm) >= 2 \
-            and isinstance(frm[1], str) and frm[1].endswith(" of"):
-      rel_nouns.add(frm[1][:-len(" of")])
-    for arg in frm[1:]:
-      if isinstance(arg, list):
-        _walk(arg)
-
-  for obj in result:
-    if not isinstance(obj, dict):
-      continue
-    if "@logic" in obj:
-      _walk(obj["@logic"])
-    if "@question" in obj:
-      _walk(obj["@question"])
+  def visit(n, base):
+    head = n[0]
+    if head == "$measure_of" and len(n) >= 2 and isinstance(n[1], str):
+      measure_nouns.add(n[1])
+    elif head in ("is rel2", "-is rel2") and len(n) >= 2 \
+            and isinstance(n[1], str) and n[1].endswith(" of"):
+      rel_nouns.add(n[1][:-len(" of")])
+  walk_result_atoms(result, visit)
 
   axioms = []
   for noun in sorted(measure_nouns & rel_nouns):
@@ -464,25 +431,11 @@ def _collect_has_location_preps(result):
   (arg 3) of any has_location atom (positive or negated) in the clause list."""
   found = set()
 
-  def walk(n):
-    if isinstance(n, list) and n and isinstance(n[0], str):
-      base = n[0][1:] if n[0].startswith("-") else n[0]
-      if (base == "has location" and len(n) >= 4
-          and isinstance(n[3], str) and n[3] in _POSITIONAL_PREPS):
-        found.add(n[3])
-      for c in n[1:]:
-        walk(c)
-    elif isinstance(n, list):
-      for c in n:
-        walk(c)
-
-  for obj in result:
-    if not isinstance(obj, dict):
-      continue
-    body = obj.get("@logic")
-    if body is None:
-      body = obj.get("@question")
-    walk(body)
+  def visit(n, base):
+    if (base == "has location" and len(n) >= 4
+        and isinstance(n[3], str) and n[3] in _POSITIONAL_PREPS):
+      found.add(n[3])
+  walk_result_atoms(result, visit)
   return found
 
 
@@ -535,25 +488,11 @@ def inject_containment_bridges(result, axiom_vocab=frozenset()):
   del axiom_vocab  # gated on relation presence in the clause list
   pairs = set()   # (relation, predicate-name)
 
-  def walk(n):
-    if isinstance(n, list) and n and isinstance(n[0], str):
-      base = n[0][1:] if n[0].startswith("-") else n[0]
-      if (base in ("is rel2", "has degree rel2") and len(n) >= 2
-          and isinstance(n[1], str) and n[1] in _CONTAINMENT_RELS):
-        pairs.add((n[1], base))
-      for c in n[1:]:
-        walk(c)
-    elif isinstance(n, list):
-      for c in n:
-        walk(c)
-
-  for obj in result:
-    if not isinstance(obj, dict):
-      continue
-    body = obj.get("@logic")
-    if body is None:
-      body = obj.get("@question")
-    walk(body)
+  def visit(n, base):
+    if (base in ("is rel2", "has degree rel2") and len(n) >= 2
+        and isinstance(n[1], str) and n[1] in _CONTAINMENT_RELS):
+      pairs.add((n[1], base))
+  walk_result_atoms(result, visit)
 
   axioms = []
   for rel, pred in sorted(pairs):
@@ -600,32 +539,18 @@ def inject_occasion_location_bridges(result, axiom_vocab=frozenset()):
   have_loc = set()       # prepositions seen as a has_location preposition
   place_classes = set()  # physical-location classes asserted in the problem
 
-  def walk(n):
-    if isinstance(n, list) and n and isinstance(n[0], str):
-      neg = n[0].startswith("-")
-      base = n[0][1:] if neg else n[0]
-      if (base == "is rel2" and len(n) >= 2 and isinstance(n[1], str)
-          and n[1] in _OCCASION_LOC_PREPS):
-        have_rel.add(n[1])
-      if (base == "has location" and len(n) >= 4 and isinstance(n[3], str)
-          and n[3] in _OCCASION_LOC_PREPS):
-        have_loc.add(n[3])
-      if (not neg and base == "isa" and len(n) >= 2 and isinstance(n[1], str)
-          and n[1] in _LOCATION_CLASSES):
-        place_classes.add(n[1])
-      for c in n[1:]:
-        walk(c)
-    elif isinstance(n, list):
-      for c in n:
-        walk(c)
-
-  for obj in result:
-    if not isinstance(obj, dict):
-      continue
-    body = obj.get("@logic")
-    if body is None:
-      body = obj.get("@question")
-    walk(body)
+  def visit(n, base):
+    neg = n[0].startswith("-")
+    if (base == "is rel2" and len(n) >= 2 and isinstance(n[1], str)
+        and n[1] in _OCCASION_LOC_PREPS):
+      have_rel.add(n[1])
+    if (base == "has location" and len(n) >= 4 and isinstance(n[3], str)
+        and n[3] in _OCCASION_LOC_PREPS):
+      have_loc.add(n[3])
+    if (not neg and base == "isa" and len(n) >= 2 and isinstance(n[1], str)
+        and n[1] in _LOCATION_CLASSES):
+      place_classes.add(n[1])
+  walk_result_atoms(result, visit)
 
   axioms = []
   for prep in sorted(have_rel & have_loc):
@@ -660,26 +585,12 @@ def inject_in_haspart_bridge(result, axiom_vocab=frozenset()):
   del axiom_vocab  # gated on atom presence in the clause list
   state = {"in": False, "haspart": False}
 
-  def walk(n):
-    if isinstance(n, list) and n and isinstance(n[0], str):
-      base = n[0][1:] if n[0].startswith("-") else n[0]
-      if base == "is rel2" and len(n) >= 2 and n[1] == "in":
-        state["in"] = True
-      elif base == "has part":
-        state["haspart"] = True
-      for c in n[1:]:
-        walk(c)
-    elif isinstance(n, list):
-      for c in n:
-        walk(c)
-
-  for obj in result:
-    if not isinstance(obj, dict):
-      continue
-    body = obj.get("@logic")
-    if body is None:
-      body = obj.get("@question")
-    walk(body)
+  def visit(n, base):
+    if base == "is rel2" and len(n) >= 2 and n[1] == "in":
+      state["in"] = True
+    elif base == "has part":
+      state["haspart"] = True
+  walk_result_atoms(result, visit)
 
   if not (state["in"] and state["haspart"]):
     return []
@@ -708,27 +619,13 @@ def inject_reflexive_property_bridge(result, axiom_vocab=frozenset()):
   refl_props = set()   # P seen as reflexive is_rel2(P, A, A)
   prop_props = set()   # P seen as has_property(P, ...)
 
-  def walk(n):
-    if isinstance(n, list) and n and isinstance(n[0], str):
-      base = n[0][1:] if n[0].startswith("-") else n[0]
-      if (base == "is rel2" and len(n) >= 4 and isinstance(n[1], str)
-          and n[2] == n[3]):
-        refl_props.add(n[1])
-      elif base == "has property" and len(n) >= 3 and isinstance(n[1], str):
-        prop_props.add(n[1])
-      for c in n[1:]:
-        walk(c)
-    elif isinstance(n, list):
-      for c in n:
-        walk(c)
-
-  for obj in result:
-    if not isinstance(obj, dict):
-      continue
-    body = obj.get("@logic")
-    if body is None:
-      body = obj.get("@question")
-    walk(body)
+  def visit(n, base):
+    if (base == "is rel2" and len(n) >= 4 and isinstance(n[1], str)
+        and n[2] == n[3]):
+      refl_props.add(n[1])
+    elif base == "has property" and len(n) >= 3 and isinstance(n[1], str):
+      prop_props.add(n[1])
+  walk_result_atoms(result, visit)
 
   axioms = []
   for p in sorted(refl_props & prop_props):
@@ -791,27 +688,13 @@ def inject_attribute_relation_bridges(result, axiom_vocab=frozenset()):
   prop_values = set()   # arg1 of has_property / has_degree_property
   rel_names = set()     # arg1 of is_rel2
 
-  def walk(n):
-    if isinstance(n, list) and n and isinstance(n[0], str):
-      base = n[0][1:] if n[0].startswith("-") else n[0]
-      if (base in ("has property", "has degree property") and len(n) >= 2
-          and isinstance(n[1], str)):
-        prop_values.add(n[1])
-      elif base == "is rel2" and len(n) >= 2 and isinstance(n[1], str):
-        rel_names.add(n[1])
-      for c in n[1:]:
-        walk(c)
-    elif isinstance(n, list):
-      for c in n:
-        walk(c)
-
-  for obj in result:
-    if not isinstance(obj, dict):
-      continue
-    body = obj.get("@logic")
-    if body is None:
-      body = obj.get("@question")
-    walk(body)
+  def visit(n, base):
+    if (base in ("has property", "has degree property") and len(n) >= 2
+        and isinstance(n[1], str)):
+      prop_values.add(n[1])
+    elif base == "is rel2" and len(n) >= 2 and isinstance(n[1], str):
+      rel_names.add(n[1])
+  walk_result_atoms(result, visit)
 
   axioms = []
   for values, relations in _ATTRIBUTE_FAMILIES.values():
@@ -897,25 +780,11 @@ def inject_stable_adjective_persistence(result, axiom_vocab=frozenset()):
   del axiom_vocab  # gated on stable-adjective presence in the clause list
   present_adjs = set()
 
-  def walk(n):
-    if isinstance(n, list) and n and isinstance(n[0], str):
-      base = n[0][1:] if n[0].startswith("-") else n[0]
-      if (base in ("has property", "has degree property") and len(n) >= 2
-          and isinstance(n[1], str) and n[1] in _STABLE_PERSIST_PROPS):
-        present_adjs.add(n[1])
-      for c in n[1:]:
-        walk(c)
-    elif isinstance(n, list):
-      for c in n:
-        walk(c)
-
-  for obj in result:
-    if not isinstance(obj, dict):
-      continue
-    body = obj.get("@logic")
-    if body is None:
-      body = obj.get("@question")
-    walk(body)
+  def visit(n, base):
+    if (base in ("has property", "has degree property") and len(n) >= 2
+        and isinstance(n[1], str) and n[1] in _STABLE_PERSIST_PROPS):
+      present_adjs.add(n[1])
+  walk_result_atoms(result, visit)
 
   axioms = []
   for adj in sorted(present_adjs):
@@ -1078,22 +947,9 @@ def _scan_predicates(result):
   """Set of positive base predicate names occurring in the clause list."""
   preds = set()
 
-  def walk(n):
-    if isinstance(n, list) and n and isinstance(n[0], str):
-      h = n[0]
-      preds.add(h[1:] if h.startswith("-") else h)
-      for c in n[1:]:
-        walk(c)
-    elif isinstance(n, list):
-      for c in n:
-        walk(c)
-
-  for obj in result:
-    if isinstance(obj, dict):
-      body = obj.get("@logic")
-      if body is None:
-        body = obj.get("@question")
-      walk(body)
+  def visit(n, base):
+    preds.add(base)
+  walk_result_atoms(result, visit)
   return preds
 
 
@@ -1154,28 +1010,15 @@ def _measure_comparative_bridges(result):
   dims = set()
   adjs = set()
 
-  def walk(n):
-    if isinstance(n, list) and n and isinstance(n[0], str):
-      base = n[0][1:] if n[0].startswith("-") else n[0]
-      if base == "less_measure":
-        for a in n[1:]:
-          if (isinstance(a, list) and len(a) >= 2 and a[0] == "$measure_of"
-              and isinstance(a[1], str)):
-            dims.add(a[1])
-      elif base == "has degree rel2" and len(n) >= 2 and isinstance(n[1], str):
-        adjs.add(n[1])
-      for c in n[1:]:
-        walk(c)
-    elif isinstance(n, list):
-      for c in n:
-        walk(c)
-
-  for obj in result:
-    if isinstance(obj, dict):
-      body = obj.get("@logic")
-      if body is None:
-        body = obj.get("@question")
-      walk(body)
+  def visit(n, base):
+    if base == "less_measure":
+      for a in n[1:]:
+        if (isinstance(a, list) and len(a) >= 2 and a[0] == "$measure_of"
+            and isinstance(a[1], str)):
+          dims.add(a[1])
+    elif base == "has degree rel2" and len(n) >= 2 and isinstance(n[1], str):
+      adjs.add(n[1])
+  walk_result_atoms(result, visit)
 
   axioms = []
   for dim in sorted(dims):
