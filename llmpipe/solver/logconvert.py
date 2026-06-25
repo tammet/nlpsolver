@@ -123,7 +123,7 @@ from lc_post_inject import (
   inject_occasion_location_bridges as _inject_occasion_location_bridges,
   inject_in_haspart_bridge as _inject_in_haspart_bridge,
   inject_reflexive_property_bridge as _inject_reflexive_property_bridge,
-  inject_slightcoarse_shape_bridges as _inject_slightcoarse_shape_bridges,
+  inject_s2split_shape_bridges as _inject_s2split_shape_bridges,
   inject_attribute_relation_bridges as _inject_attribute_relation_bridges,
   inject_stable_adjective_persistence as _inject_stable_adjective_persistence,
   inject_world_geometry as _inject_world_geometry,
@@ -393,12 +393,12 @@ def _sdc_widen_negation(ant, cons):
   return new_conjs[0] if len(new_conjs) == 1 else ["and"] + new_conjs
 
 
-# (slightcoarse) Off-inventory predicate names Stage-2 drifts into (isolated
-# -s2split calls most of all), mapped to their inventory forms.
+# (-s2split repair) Off-inventory predicate names an isolated per-sentence
+# Stage-2 call drifts into, mapped to their inventory forms.
 _OFFINV_PRED_RENAME = {"has": "have", "has rel2": "is rel2",
                        "has agent": "has actor"}
 
-# (slightcoarse) Adjective -> measurement-dimension noun, for $measure_of
+# (-s2split repair) Adjective -> measurement-dimension noun, for $measure_of
 # terms whose dimension slot drifted to the adjective ("$measure_of tall"
 # instead of "$measure_of height", claude case 552).
 _ADJ_DIMENSION = {
@@ -871,7 +871,7 @@ def _build_entity_category_clauses(s1_json, skip_entities=frozenset()):
         # -typeenrich (the super sub-gate) so the default path matches the
         # core-2026-06-03 checkpoint behavior.
         elif (category in _BROAD_SUPERTYPES
-              and (_g_options.get("slightcoarse_flag", False)
+              and (_g_options.get("s2split_flag", False)
                    or _te("super"))):
           clauses.append({"@name": name, "@logic": ["isa", category, eid]})
         # (typeenrich) Gender from a first-name table: isa(man/woman, E),
@@ -1070,11 +1070,11 @@ def rawlogic_convert(logic, s1_json=None, fixes=None):
   logic = _repair_self_defeating_conditional(logic)
   _note_repair(_b, logic, "repair self-defeating conditional")
 
-  # (slightcoarse) Normalize off-inventory predicate-name drift: Stage-2
-  # sometimes writes "has" for "have" or "has rel2" for "is rel2" (cases
-  # 190/248; isolated -s2split calls drift most).  Whole-head rename, before
-  # any other pass reads predicate names.
-  if _g_options.get("slightcoarse_flag", False):
+  # (-s2split repair) Normalize off-inventory predicate-name drift: an isolated
+  # per-sentence Stage-2 call sometimes writes "has" for "have" or "has rel2" for
+  # "is rel2" (cases 190/248).  Whole-head rename, before any other pass reads
+  # predicate names.
+  if _g_options.get("s2split_flag", False):
     _b = logic
     logic = _rename_offinventory_preds(logic)
     _note_repair(_b, logic, "rename off-inventory predicates (s2split)")
@@ -1218,7 +1218,7 @@ def rawlogic_convert(logic, s1_json=None, fixes=None):
   compound_subs = _build_compound_subsumption(
       items, ultra=_ultra_flag,
       extra_clauses=(entity_cat_clauses if _ultra_flag else ()),
-      degree_comp=_g_options.get("slightcoarse_flag", False))
+      degree_comp=_g_options.get("s2split_flag", False))
 
   # Track how many times each unit_id has been seen so we can generate
   # globally unique clause names (sent_S1, sent_S1_2, sent_S1_3, ...).
@@ -1344,8 +1344,8 @@ def rawlogic_convert(logic, s1_json=None, fixes=None):
                     + _inject_reflexive_property_bridge(iv))
       if not _davx:                        # davidson injects its own event<->roles bridge
         sem_axioms = sem_axioms + _lcc.rel2_event_axiom_clauses()
-    if _g_options.get("slightcoarse_flag"):
-      sem_axioms = sem_axioms + _inject_slightcoarse_shape_bridges(iv)
+    if _g_options.get("s2split_flag"):
+      sem_axioms = sem_axioms + _inject_s2split_shape_bridges(iv)
 
   # (-event davidson) event<->reified-roles bridge. Injected independently of
   # nosemnormal: the folded event(...) atoms must interderive with the role

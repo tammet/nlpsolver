@@ -3047,16 +3047,15 @@ split; `english_to_answer` returns an error if both are set); composes with
 is its own LLM-cache key.  `runtests.py -s2split` writes to
 `testresults/<set>_s2split/` unless `-tag` overrides.
 
-**Light shape unification (`-slightcoarse`).**  The dominant `-s2split` failure is
-cross-sentence predicate-choice divergence: each isolated call makes a locally-valid encoding choice
-that disagrees with the sibling sentence it must unify with (`have` vs `has part` —
-covered by the static `has_part`→`have` axiom once the rename below applies,
-`has location` vs `has destination`, a role on the target entity vs on the event,
-`small fish` as a compound isa vs adjective + noun, a comparative vs `less_measure`
-arithmetic, plus off-inventory predicate drift `has`/`has rel2`).  The repair pack
-for these has its own flag, `-slightcoarse` (option key `slightcoarse_flag`) — it is
-NOT implied by `-s2split`, composes with it (and with the default joint mode), and
-is inert on all other paths.  It enables:
+**Cross-sentence shape-unification repair (part of `-s2split`).**  The dominant
+`-s2split` failure is cross-sentence predicate-choice divergence: each isolated call
+makes a locally-valid encoding choice that disagrees with the sibling sentence it must
+unify with (`have` vs `has part` — covered by the static `has_part`→`have` axiom once
+the rename below applies, `has location` vs `has destination`, a role on the target
+entity vs on the event, `small fish` as a compound isa vs adjective + noun, a comparative
+vs `less_measure` arithmetic, plus off-inventory predicate drift `has`/`has rel2`).  The
+repair for these is applied automatically under `-s2split` (gated on `s2split_flag`); the
+default joint and abstraction paths are untouched.  It enables:
 - an off-inventory rename and form-normalization pass in `logconvert`:
   predicate renames (`has` → `have`, `has rel2` → `is rel2`, `has agent` →
   `has actor`), comparative-phrase relation names reduced to the base adjective
@@ -3064,7 +3063,7 @@ is inert on all other paths.  It enables:
   whitelist so ordinary relation names are untouched), and adjective-as-dimension
   `$measure_of` slots mapped to the dimension noun (`$measure_of("tall", …)` →
   `"height"`);
-- dynamic shape bridges (`lc_post_inject.inject_slightcoarse_shape_bridges`, confidence
+- dynamic shape bridges (`lc_post_inject.inject_s2split_shape_bridges`, confidence
   0.99, each gated on both shapes being present): `has_destination` → `has_location`
   (axioms_std.js has only verb-specific location/destination siblings), beneficiary/recipient lift from the event to
   its target, and `less_measure($measure_of(D,…))` ↔ `has_degree_rel2(ADJ,…)` via a
@@ -3080,9 +3079,8 @@ is inert on all other paths.  It enables:
   reading.
 
 On the curated 100-subset (joint two-stage baseline = 100/100 for all four LLMs by
-construction): `-s2split` alone scores 93/100 for gpt
-(`testresults/core_100_s2split_only/`); `-s2split -slightcoarse`
-(`testresults/core_100_s2split_slightcoarse/`) scores gpt 100/100, claude 100/100,
-deepseek 97/100 — the three residual deepseek cases (541, 663, 1335: generic-question
-subject construction, category-instead-of-noun typing, RELCLASS divergence) are
-diagnosed but deliberately unfixed pending proof-level analysis.
+construction), `-s2split` scores gpt 100/100, claude 100/100, deepseek 97/100 — the
+three residual deepseek cases (541, 663, 1335: generic-question subject construction,
+category-instead-of-noun typing, RELCLASS divergence) are diagnosed but deliberately
+unfixed pending proof-level analysis.  (The repair is essential to this: without it the
+isolated per-sentence parses diverge and gpt drops to ~93/100.)

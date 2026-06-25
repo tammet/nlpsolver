@@ -986,10 +986,10 @@ def inject_verb_result_state_axioms(result, axiom_vocab=frozenset()):
   """
   del axiom_vocab  # unused; see docstring
   words = _collect_eligible_words(result)
-  slight = _g_options.get("slightcoarse_flag", False)
+  slight = _g_options.get("s2split_flag", False)
   axioms = []
   for verb, prop in _VERB_RESULT_STATES:
-    # (slightcoarse) Bridge C: the result state arrived directly as the past
+    # (-s2split repair) Bridge C: the result state arrived directly as the past
     # participle (has property "destroyed" X at past/W) with no verb form in
     # the clauses (split-mode claude, case 1052).  Persist it into the next
     # world at present tense — the same target context Bridges A/B produce —
@@ -1684,17 +1684,15 @@ def inject_world_geometry(result):
   return axioms
 
 
-# ======== light shape-unification bridges (-slightcoarse) ========
+# ======== cross-sentence shape-unification bridges (-s2split repair) ========
 #
-# Stage-2 output sometimes uses near-synonymous constructions inconsistently:
-# the question says has_location where the fact said has_destination, a role on
-# the target entity where the fact put it on the event, a measure comparison
-# where the question uses a comparative.  Per-sentence -s2split calls diverge
-# this way most of all, but joint calls do too.  These bridges let the shapes
-# interderive.  Each is emitted only when BOTH shapes (or the bridged
-# predicate) actually occur in the clause list, and only under -slightcoarse
-# (caller-side gate in logconvert), so the default path and the abstraction
-# encodings are untouched.
+# Per-sentence -s2split Stage-2 calls use near-synonymous constructions
+# inconsistently: one sentence says has_location where its sibling said
+# has_destination, a role on the target entity vs on the event, a measure
+# comparison vs a comparative.  These bridges let the divergent shapes
+# interderive.  Each is emitted only when BOTH shapes (or the bridged predicate)
+# actually occur in the clause list, and only under -s2split (caller-side gate in
+# logconvert), so the default path and the abstraction encodings are untouched.
 
 def _scan_predicates(result):
   """Set of positive base predicate names occurring in the clause list."""
@@ -1719,8 +1717,8 @@ def _scan_predicates(result):
   return preds
 
 
-def inject_slightcoarse_shape_bridges(result):
-  """Bridges between near-synonymous constructions (-slightcoarse).
+def inject_s2split_shape_bridges(result):
+  """Bridges between near-synonymous constructions (-s2split repair).
 
   - have <-> has_part: a part is had and a had part-ish thing is a part
     ("Who has a grey trunk?" vs rule "elephants have trunks" encoded has_part).
@@ -1765,7 +1763,7 @@ _MEASURE_DIM_ADJ = {
 
 
 def _measure_comparative_bridges(result):
-  """(slightcoarse) Bridge the measurement shape to the comparative shape:
+  """(-s2split repair) Bridge the measurement shape to the comparative shape:
   one Stage-2 output encodes "X is higher than Y" as less_measure($measure_of(height,Y),
   $measure_of(height,X)) while the question split uses
   has_degree_rel2(high, ...).  Per dimension/adjective pair present on both

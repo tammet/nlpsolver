@@ -571,8 +571,6 @@ def _parse_cmd_line():
       opts["prenorm_flag"] = True
     elif el in ["-s2split", "--s2split"]:
       opts["s2split_flag"] = True
-    elif el in ["-slightcoarse", "--slightcoarse"]:
-      opts["slightcoarse_flag"] = True
     elif el in ["-nocrossstage", "--nocrossstage"]:
       opts["crossstage_retry_flag"] = False
     elif el in ["-llm", "--llm"]:
@@ -730,7 +728,11 @@ LLM selection:
 alternative parsing shapes (replace the default two-stage English->logic parse):
  -s2split     : one Stage-2 LLM call per Stage-1 sentence package; outputs joined
                 into one logic (failed sentences skipped unless they hold the
-                question; locally-invented worlds renumbered to fresh indices)
+                question; locally-invented worlds renumbered to fresh indices).
+                Also applies the cross-sentence shape-unification repair
+                (predicate rename, shape bridges, compound composition,
+                broad-supertype isa) that reconciles the divergent per-sentence
+                parses
  -combined-instr FILE     : single-stage parsing -- one LLM call, English -> logic,
                             no Stage-1 JSON (enables single-stage mode)
  -combined-examples FILE  : combined examples prompt file (optional)
@@ -768,8 +770,6 @@ logic conversion / representation (transform the Stage-2 logic before the prover
   -abstract-max   : as -abstract-roles + -prenorm (the strongest abstraction)
  -prenorm       : pre-Stage-1 LLM wording normalisation (composable; FOLIO base)
  -nocrossstage  : disable the cross-stage guard-retry
- -slightcoarse  : light shape unification (predicate rename, shape bridges,
-                  compound composition, broad-supertype isa); built for -s2split
 
 LLM reasoning:
  -think       : enable medium reasoning/thinking mode (GPT: reasoning_effort=medium;

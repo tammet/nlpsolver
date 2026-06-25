@@ -582,10 +582,6 @@ def main():
                   help="Run Stage 2 sentence-by-sentence: one Stage-2 LLM call "
                        "per Stage-1 sentence package, outputs joined. Output "
                        "goes to a <set>_s2split dir unless -tag is given.")
-  ap.add_argument("-slightcoarse", action="store_true",
-                  help="Light shape unification: predicate rename, shape "
-                       "bridges, property-shape compound composition, "
-                       "broad-supertype isa (see solve.py -slightcoarse)")
   ap.add_argument("-event", choices=["neodavidson", "davidson", "flat", "flatroles"],
                   default="neodavidson",
                   help="event-encoding base: neodavidson (default) | davidson "
@@ -696,8 +692,6 @@ def main():
     run_opts["prenorm_flag"] = True
   if args.s2split:
     run_opts["s2split_flag"] = True
-  if args.slightcoarse:
-    run_opts["slightcoarse_flag"] = True
   if args.event != "neodavidson":
     run_opts["event_base"] = args.event
   if args.abstract or args.abstract_roles or args.abstract_max:

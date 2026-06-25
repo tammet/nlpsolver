@@ -1584,11 +1584,12 @@ is how the per-mechanism tables in the LPAR paper are produced).
 | `-abstract-roles` | as `-abstract` but `-event flatroles` |
 | `-abstract-max` | as `-abstract-roles` + `-prenorm` (strongest; the FOLIO ladder base) |
 
-### 6.11 `-prenorm`, `-nocrossstage`, and `-slightcoarse`
+### 6.11 `-prenorm` and `-nocrossstage`
 
 `-prenorm` adds an optional LLM pass that rewrites the English input before the two-stage
 translation, normalising surface wording; it composes with any base or primitive and is the
 top rung of the FOLIO abstraction ladder.  `-nocrossstage` disables the cross-stage
-guard-retry used alongside the flat bases.  `-slightcoarse` applies light shape unification
-(predicate rename, shape bridges, property-shape compound composition, broad-supertype `isa`);
-it is composable and not implied by any preset.
+guard-retry used alongside the flat bases.
+
+(The light shape-unification repair — predicate rename, shape bridges, compound composition,
+broad-supertype `isa` — is part of `-s2split`, not a separate flag; see DOCUMENTATION.md §12.4.)

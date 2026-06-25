@@ -79,12 +79,12 @@ Abstraction presets (pure CLI expansions into the primitives above):
 -abstract-max    As -abstract-roles + -prenorm (strongest; FOLIO ladder base)
 -prenorm         Pre-Stage-1 LLM wording normalisation (composable)
 -nocrossstage    Disable the cross-stage guard retry
--slightcoarse    Light shape unification: predicate rename, shape bridges,
-                 compound composition, broad-supertype isa (built for -s2split)
 
 Alternative parsing shapes (replace the default two-stage parse):
 -s2split         One Stage-2 LLM call per Stage-1 sentence; outputs joined
-                 (worlds renumbered; failed sentences skipped unless the question)
+                 (worlds renumbered; failed sentences skipped unless the question).
+                 Includes the cross-sentence shape-unification repair (predicate
+                 rename, shape bridges, compound composition, broad-supertype isa)
 -combined-instr FILE   Single-stage parsing: ONE LLM call English → logic
                  (+ optional -combined-examples / -combined-checklist)
 -directanswer FILE     ONE LLM call answers directly; no logic, no prover

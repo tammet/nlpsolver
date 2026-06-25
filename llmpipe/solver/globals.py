@@ -56,8 +56,7 @@ options={
   "localantonyms_flag":False, # restrict antonym folding to pairs whose words occur in the problem + axiom vocabulary
   "api_timeout":0,  # hard wall-clock cap (seconds) on the LLM-parse + clause-conversion phase (disarmed before the prover); 0 disables
   "prenorm_flag":False,  # if True, run an experimental pre-Stage-1 LLM phase that unifies repeated entity/property/relation wordings
-  "s2split_flag":False,  # if True, run Stage 2 sentence-by-sentence: one LLM call per Stage-1 sentence package, outputs joined (worlds renumbered, rule c')
-  "slightcoarse_flag":False,  # if True, enable the light shape-unification pack: off-inventory predicate rename, shape bridges (destination/location, beneficiary lift, measure/comparative), property-shape compound composition, broad-supertype isa
+  "s2split_flag":False,  # if True, run Stage 2 sentence-by-sentence (one LLM call per Stage-1 sentence package, outputs joined, worlds renumbered per rule c'), and apply the cross-sentence shape-unification repair (off-inventory predicate rename, shape bridges, compound composition, broad-supertype isa) that reconciles the divergent per-sentence parses
   "crossstage_retry_flag":True,  # if False, disable the abstraction cross-stage unsatisfiable-guard retry (avoids live corrective LLM calls)
   "prover_axiomfiles":False,  # if not False, use these as axioms instead of the default prover_axiomfile below
   "prover_print":False,  # if not False, use the argument integer for gk printout level, instead of the default
