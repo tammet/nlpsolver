@@ -470,7 +470,7 @@ def entity_name(val, with_url=False, proof_mode=False):
     return _skolem_fn_to_name(val)
   # Complex list terms: $count, $setof, arithmetic
   if isinstance(val, list) and val:
-    from proof_english import render_term_english
+    from proof_terms import render_term_english
     return render_term_english(val, proof_mode=proof_mode)
   if not isinstance(val, str):
     return str(val)
