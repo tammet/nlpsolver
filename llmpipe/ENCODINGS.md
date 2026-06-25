@@ -15,7 +15,7 @@ For implementation details see `DOCUMENTATION.md`.
 3. [GK Prover Input: Clause List](#3-gk-prover-input-clause-list)
 4. [End-to-End Example](#4-end-to-end-example)
 5. [Simplification Flags](#5-simplification-flags)
-6. [Coarse and Ultracoarse Encodings](#6-coarse-and-ultracoarse-encodings)
+6. [Event-Encoding Bases and Abstraction Primitives](#6-event-encoding-bases-and-abstraction-primitives)
 
 ---
 
@@ -1318,7 +1318,7 @@ which satisfies the `$defq0` biconditional, confirming the answer.
 
 ## 5. Simplification Flags
 
-The flags `-nocontext`, `-noexceptions`, `-simpleproperties`, and `-simple` produce
+The flags `-nocontext`, `-noexceptions`, `-simpleprops`, and `-simple` produce
 progressively simplified encodings.  `-simple` enables all three.
 
 ### 5.1 `-nocontext`
@@ -1351,7 +1351,7 @@ Only affects clauses derived from the input text.  Axiom-side `$block` literals
 (in `axioms_std.js` frame axioms, etc.) are unaffected.  The `@confidence` field
 is preserved.
 
-### 5.3 `-simpleproperties`
+### 5.3 `-simpleprops`
 
 Converts degree predicates to their non-gradable equivalents, dropping degree and
 relclass arguments while preserving the context argument:
@@ -1365,7 +1365,7 @@ Also implies `-noexceptions`.
 
 ### 5.4 `-simple`
 
-Combines all three: `-nocontext` + `-noexceptions` + `-simpleproperties`.
+Combines all three: `-nocontext` + `-noexceptions` + `-simpleprops`.
 
 ```
 Default: has_degree_property(big, cat_1, none, cat, $ctxt(present, W0, ?:Fv1, ?:Fv2))
@@ -1374,52 +1374,47 @@ Default: has_degree_property(big, cat_1, none, cat, $ctxt(present, W0, ?:Fv1, ?:
 
 ---
 
-## 6. Coarse and Ultracoarse Encodings
+## 6. Event-Encoding Bases and Abstraction Primitives
 
-The flags `-coarse` and `-ultracoarse` produce progressively flatter event encodings,
-built for deductive benchmarks (FOLIO) whose gold logic uses atomic n-ary relations
-rather than reified Davidsonian events.  `-ultracoarse` implies `-coarse` and
-`-simpleproperties`.  Both are post-LLM: Stage 1 and Stage 2 are unchanged; the folds
+The event-encoding base is chosen by a single mutually-exclusive selector `-event MODE`,
+and a set of additive abstraction primitives compose on top of any base.  These are built
+for deductive benchmarks (FOLIO) whose gold logic uses atomic n-ary relations rather than
+reified Davidsonian events.  All are post-LLM: Stage 1 and Stage 2 are unchanged; the folds
 run inside `logconvert` (machinery reference: DOCUMENTATION.md §11).
 
-### 6.1 `-coarse`: the flat `do` literal
+`-event MODE` selects one of:
 
-A *collapsible* Davidsonian event is replaced by one combined literal
+| MODE | event shape |
+|---|---|
+| `neodavidson` (default) | reified neo-Davidsonian events (`isa(activity,E) ∧ has_type(E,V) ∧ has_actor(E,A) ∧ …`) |
+| `davidson` | compact `event(V,A,O,E)`, keeping the handle and all adjuncts (§6.8) |
+| `flat` | flat relational fold `is_rel2(V, subj, obj)` with a bare positional object (§6.1) |
+| `flatroles` | flat relational fold with an eventprop-tagged object `is_rel2(V, subj, ["eventprop", role, value])` (§6.7) |
 
-```
-do(TYPE, ACTOR, TARGET, RECIPIENT)
-```
+The additive primitives are `-entitymerge`, `-typeenrich[=GATES]`, `-guarddrop`, `-bridges`,
+`-dropdefinites`, `-localantonyms`, and `-existfold` (§6.2–6.5, §6.9).  Convenience presets
+(`-abstract`, `-abstract-roles`, `-abstract-max`) are pure CLI expansions into a fixed subset
+of these primitives (§6.10); they are never read in pipeline code.  Every gate is resolved once
+in `solver/lc_encoding.py` `EncodingConfig`, and the pipeline reads only that config.
 
-with `"none"` filling absent roles.  The event variable and its `exists` wrapper
-disappear; `$ctxt` is attached to `do` exactly as it would be to the reified roles, so
-tense survives:
+### 6.1 `-event flat`: relational folds
 
-```
-Default:  exists E. isa(activity,E) ∧ has_type(E,feed) ∧ has_actor(E,"John 1")
-                  ∧ has_target(E,"dog 2") ∧ has_time(E,past,in) ∧ actuality(E)
--coarse:  do(feed, "John 1", "dog 2", none, $ctxt(past, W0, ?:Fv1, ?:Fv2))
-```
-
-Collapsible means: no modal classifier (`capability`, `necessity`, …, including
-`typical`), not part of a `has_content` two-event reification, and only template
-roles `{type, actor, target, recipient}` (a tense-valued `has_time` is tolerated and
-moved to `$ctxt`).  Anything else — an instrument, a location, an explicit time, a
-modal — keeps the event reified, so the two shapes coexist in one clause set.
-
-### 6.2 `-ultracoarse`: relational folds
-
-Everything `-coarse` does, plus aggressive folds that produce FOLIO-style binary
-atoms.  An event with an actor and exactly one object role
-(`target`/`beneficiary`/`source`/`recipient`) becomes a binary relation; an event
-with an actor and no object becomes a unary property:
+A flat relational base produces FOLIO-style binary atoms.  An event with an actor and exactly
+one object role (`target`/`beneficiary`/`source`/`recipient`) becomes a binary relation; an
+event with an actor and no object becomes a unary property:
 
 ```
 "Real Madrid signed Mbappe":   is_rel2(sign, "Real Madrid 1", "Mbappe 2", CTX)
 "The good guys always win":    has_property(win, ?:X, CTX)
 ```
 
+The event variable and its `exists` wrapper disappear; `$ctxt` is attached to the relational
+atom exactly as it would be to the reified roles, so tense survives.  The fold is lossy: it
+drops the event variable and keeps only the subject + one object, so secondary roles and
+adjuncts are lost.
+
 Further fold rules:
-- **Habituals fold.**  The `typical` classifier no longer blocks folding; it is
+- **Habituals fold.**  The `typical` classifier does not block folding; it is
   stripped, so "X plays for Y" in a rule and in the question reduce to the same
   `is_rel2(play, X, Y)` literal.  Other modal classifiers still block.
 - **Topic fold:** actor + `has_topic`, no object role → `is_rel2(verb, actor, topic)`
@@ -1432,48 +1427,68 @@ Further fold rules:
   (no `exists` wrapper) is folded in place, so the rule's literal unifies with the
   folded fact.
 - **Degree collapse:** `has_degree_*` literals collapse to `is_rel2`/`has_property`
-  early (the `-simpleproperties` transformation, applied pre-clausification).
+  early (the `-simpleprops` transformation, applied pre-clausification).
 
-### 6.3 `-ultracoarse`: guard dropping and predicate unification
-
-- **Redundant guards:** in a rule antecedent, an `isa(T,V)` guard is dropped when `V`
-  is already bound by a folded `is_rel2`/`do` literal in the same antecedent, or when
-  `T` is a near-universal type (`thing`, `object`, `entity`, …).  A lone
-  universal-type antecedent (`"a thing is either A or B"`) drops entirely.
+Two further passes come with a flat base:
 - **Class-name case folding:** the class argument of every `isa` is lowercased
   ("American national" and "american national" become one predicate).
+- **`$ctxt` decoupling:** as the LAST pass, every `$ctxt` term is replaced by its own
+  fresh variable, so no two atoms are forced to share tense/world (FOLIO is
+  timeless).  This makes a flat fold strictly more permissive than the default
+  shared-context encoding.
+- **`$setof` labels** become content-derived hashes (`set_3fa2c1d0`) instead of
+  per-occurrence counters, so structurally identical sets in a rule and a fact unify.
+
+### 6.2 `-guarddrop`: guard dropping
+
+`-guarddrop` needs a flat fold base (`-event flat`/`flatroles`); it is a no-op without one.
+
+- **Redundant guards:** in a rule antecedent, an `isa(T,V)` guard is dropped when `V`
+  is already bound by a folded `is_rel2` literal in the same antecedent, or when
+  `T` is a near-universal type (`thing`, `object`, `entity`, …).  A lone
+  universal-type antecedent (`"a thing is either A or B"`) drops entirely.
+
+### 6.3 `-entitymerge` and `-typeenrich`: entity and taxonomy abstraction
+
+`-entitymerge` canonicalizes proper-noun entities and set labels:
+
 - **Entity-constant canonicalization:** proper-noun entities whose ids differ by
   wording variants ("Summer Olympics" / "2008 Summer Olympics", typo-level edits)
   are merged to one constant — both at the Stage-1 level (id remapping) and at the
   tree level; Stage-2 Wikipedia-URL constants are folded into the matching Stage-1
   entity id.  Indefinites (`bear 1` / `bear 2`) are never merged.
-- **Name-as-type:** a multiword proper name is also typed by its own lowercased name
-  (`isa("winter olympics", "Winter Olympics 1")`), so a generic existential can bind
-  to the named constant.
-- **Extra typing facts:** broad supertypes `isa(person/animal, E)` are emitted even
-  when Stage 2 already typed the entity with a subtype; gendered role nouns
-  (gentleman, actress, …) get `isa(noun,X) → isa(man/woman,X)` axioms; a known first
-  name adds `isa(man/woman, E)` directly.
-- **Compound suffix subsumption** extends to every attested intermediate word-suffix
-  ("American professional basketball player" → "professional basketball player",
+
+`-typeenrich[=GATES]` enriches the `isa`/taxonomy structure.  `GATES` is a comma list of
+`super,gender,nametype,compound,plural,gnoun`; a `-NAME` term excludes a gate; the keyword
+`all` (and bare `-typeenrich`) selects all six:
+
+- **Broad supertypes** (`super`): `isa(person/animal, E)` are emitted even when Stage 2
+  already typed the entity with a subtype.
+- **Gender-from-name** (`gender`): a known first name adds `isa(man/woman, E)` directly.
+- **Gendered role nouns** (`gnoun`): gentleman, actress, … get `isa(noun,X) → isa(man/woman,X)`
+  axioms.
+- **Name-as-type** (`nametype`): a multiword proper name is also typed by its own lowercased
+  name (`isa("winter olympics", "Winter Olympics 1")`), so a generic existential can bind to
+  the named constant.
+- **Compound suffix subsumption** (`compound`) extends to every attested intermediate
+  word-suffix ("American professional basketball player" → "professional basketball player",
   not just → "player"), and also scans entity-category clauses.
-- **Antonym folding** (semantic normalisation) only fires when the target word occurs
-  in the problem ∪ axiom vocabulary, so it never rewrites into a predicate nothing
-  else mentions.
-- **`$theof1` reification is skipped** — definites stay plain relations, matching
-  FOLIO's atomic style (under plain `-coarse`, reification runs, with named-subject
-  identity clauses `= (N, $theof1(R,B))` added and strict placeholder-only matching).
-- **`$ctxt` decoupling:** as the LAST pass, every `$ctxt` term is replaced by its own
-  fresh variable, so no two atoms are forced to share tense/world (FOLIO is
-  timeless).  This makes `-ultracoarse` strictly more permissive than the default
-  shared-context encoding.
-- **`$setof` labels** become content-derived hashes (`set_3fa2c1d0`) instead of
-  per-occurrence counters, so structurally identical sets in a rule and a fact unify.
+- **Plural→singular** (`plural`): class names are normalized to their singular form.
 
-### 6.4 `-ultracoarse`: dynamic bridge axioms
+### 6.4 `-localantonyms` and `-dropdefinites`
 
-Emitted into the clause list when (and only when) both sides of the bridge occur in
-the problem:
+- **`-localantonyms`** restricts antonym folding (semantic normalisation) to fire only when
+  the target word occurs in the problem ∪ axiom vocabulary, so it never rewrites into a
+  predicate nothing else mentions.
+- **`-dropdefinites`** skips `$theof1` reification — definites stay plain relations, matching
+  FOLIO's atomic style.  Definites have exactly two modes: the default reifies to `$theof1`
+  using lenient first-match and emits no identity clauses; `-dropdefinites` skips reification
+  entirely.
+
+### 6.5 `-bridges`: dynamic bridge axioms
+
+`-bridges` (use with `-event flat`/`flatroles`) emits these into the clause list when (and
+only when) both sides of the bridge occur in the problem:
 
 | axiom | shape |
 |---|---|
@@ -1482,36 +1497,30 @@ the problem:
 | containment → part | `is_rel2("in",X,Y) → has_part(Y,X)` |
 | reflexive ↔ property | `has_property(P,X) ↔ is_rel2(P,X,X)` for predicates appearing in both shapes |
 
-### 6.5 What stays shared with the default encoding
+### 6.6 What stays shared across all bases
 
-Two recent changes apply on every path, not just the coarse ones: Stage-1/Stage-2
+Two passes apply on every path, regardless of `-event` base or primitives: Stage-1/Stage-2
 parses are transliterated to plain ASCII before clausification (accented entity names
 otherwise crash the prover-output decoding), and corrective sanity-retry prompts are
 serialized canonically (sorted keys and issue order) so their LLM-cache keys are
 byte-stable across runs.
 
-### 6.6 Separable abstraction buckets
+### 6.7 `-event flatroles`: role-tagged relational fold
 
-`-ultracoarse` bundles several independent modifications.  Each is also available on its
-own — composable, and each is implied by `-ultracoarse` — so an experiment can isolate one
-lever and measure it (this is how the per-mechanism tables in the LPAR paper are produced):
+Identical to `-event flat` except the relational event fold tags the object with its role,
+so a target is never confused with an instrument or location:
 
-| flag | isolates |
-|---|---|
-| `-flatevents` | only the relational event flattening (event → `is_rel2`/`has_property`, eventprop-tagged), with none of the other ultracoarse mods |
-| `-entitymerge` | proper-noun entity canonicalization + set-label coreference (§6.3) |
-| `-typeenrich` | taxonomy/`isa` enrichment: broad supertypes, gender-from-name, name-as-type, gendered-noun bridges, compound subsumption, plural→singular class normalization |
-| `-guarddrop` | drop redundant antecedent `isa` type guards (no-op without `-flatevents`) |
-| `-bridges` | the dynamic frame/bridge axioms of §6.4 (use with `-flatevents`) |
-| `-definites` | ultracoarse definite-description handling (`$theof1` identities) |
+```
+is_rel2(V, subj, ["eventprop", $role, value])
+```
 
-`-flatevents` is the lossy relational fold (the same one `-ultracoarse2` uses, §6.9) in
-isolation; it drops the event variable and keeps only subject + one (role-tagged) object,
-so secondary roles and adjuncts are lost.  `-guarddrop` and `-bridges` are no-ops without it.
+The `$role` label is `$`-prefixed so it is a meta-token (content-word extractors skip it,
+keeping the role from leaking into the vocabulary as a spurious noun).  This is the base
+used for the maximally-abstracted FOLIO runs.
 
-### 6.7 `-davidson`: structure-preserving compact Davidsonian fold
+### 6.8 `-event davidson`: compact Davidsonian fold
 
-Unlike the lossy `-flatevents`/`-ultracoarse` fold, `-davidson` keeps the event handle and
+Unlike the lossy `-event flat`/`flatroles` fold, `-event davidson` keeps the event handle and
 every adjunct.  It collapses only the event *spine* —
 `isa(activity,E) ∧ has_type(E,V) ∧ has_actor(E,A) ∧ has_<patient>(E,O)` — into one atom
 
@@ -1536,11 +1545,12 @@ and leaves all other roles, adjuncts, classifiers and context literals on `E`.
   plus a forward projection `event(V,A,O,E) → is_rel2(V,A,O)` for same-verb interop.
 
 Because the spine fold removes role literals from the verbose default representation,
-`-davidson` typically **shortens** proofs on the standard encoding (both nlft and default
-FOLIO); stacked on the already-flat `-ultracoarse2` baseline it instead **lengthens** them,
-since that baseline is more compact than `event(...) + handle + adjuncts + bridge`.
+`-event davidson` typically **shortens** proofs on the default neo-Davidsonian encoding (both
+nlft and default FOLIO); stacked on the already-flat `-event flatroles` base it instead
+**lengthens** them, since that base is more compact than `event(...) + handle + adjuncts +
+bridge`.
 
-### 6.8 `-existfold`: existential-attribute collapse
+### 6.9 `-existfold`: existential-attribute collapse
 
 Folds a bare existential attribute pattern
 
@@ -1560,22 +1570,25 @@ It is narrow and parse-dependent: it matches only the bare `has-a` shape and is 
 setting.  Its main effect is on chains where a `has legs → jumps → …` existential would
 otherwise be carried (with a fresh Skolem) through several rules.
 
-### 6.9 `-ultracoarse2`: role-tagged relational fold
+### 6.10 Abstraction presets
 
-Identical to `-ultracoarse` except the relational event fold tags the object with its role,
-so a target is never confused with an instrument or location:
+The `-abstract*` presets are pure CLI expansions into the `-event` base and the additive
+primitives above — they are never read in pipeline code; the CLI rewrites each to its
+constituent flags before `EncodingConfig` resolves the gates.  Each primitive is independent
+and composable, so an experiment can also set any subset directly to isolate one lever (this
+is how the per-mechanism tables in the LPAR paper are produced).
 
-```
-is_rel2(V, subj, ["eventprop", $role, value])
-```
+| preset | expands to |
+|---|---|
+| `-abstract` | `-event flat` + `-entitymerge` + `-guarddrop` + `-bridges` + `-dropdefinites` + `-typeenrich` + `-localantonyms` + `-simpleprops` |
+| `-abstract-roles` | as `-abstract` but `-event flatroles` |
+| `-abstract-max` | as `-abstract-roles` + `-prenorm` (strongest; the FOLIO ladder base) |
 
-The `$role` label is `$`-prefixed so it is a meta-token (content-word extractors skip it,
-keeping the role from leaking into the vocabulary as a spurious noun).  This is the baseline
-used for the maximally-abstracted FOLIO runs.
-
-### 6.10 `-prenorm` and `-nocrossstage`
+### 6.11 `-prenorm`, `-nocrossstage`, and `-slightcoarse`
 
 `-prenorm` adds an optional LLM pass that rewrites the English input before the two-stage
-translation, normalising surface wording; it composes with any of the above and is the base
-of the FOLIO abstraction ladder.  `-nocrossstage` disables the ultracoarse cross-stage
-guard-retry used alongside it.
+translation, normalising surface wording; it composes with any base or primitive and is the
+top rung of the FOLIO abstraction ladder.  `-nocrossstage` disables the cross-stage
+guard-retry used alongside the flat bases.  `-slightcoarse` applies light shape unification
+(predicate rename, shape bridges, property-shape compound composition, broad-supertype `isa`);
+it is composable and not implied by any preset.

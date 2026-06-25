@@ -49,38 +49,42 @@ Output format:
 -jsonlogic       Shortcut for -logic -json
 -gkin FILE       Save GK prover input to FILE (with GK command as comment)
 
-Simplification (see ENCODINGS.md §5 for details):
--nocontext       Context → constant "$c" (no worlds/tense)
--noexceptions    Strip $block from defeasible rules
--simpleproperties  Degree predicates → simple (+ -noexceptions)
--simple          All three combined
+Logic conversion / representation (transform Stage-2 logic before the prover;
+ENCODINGS.md §6, DOCUMENTATION.md §11). All resolved by one source of truth,
+`lc_encoding.EncodingConfig`; the pipeline reads only that config, never a preset.
 
-Coarse encodings and alternative modes (DOCUMENTATION.md §11–12, ENCODINGS.md §6):
--coarse          Fold collapsible Davidsonian events to flat `do` literals
--ultracoarse     + relational folds, guard drops, entity canonicalization
-                 (implies -coarse, -simpleproperties)
--ultracoarse2    Like -ultracoarse, but the flat event fold role-tags the object:
-                 is_rel2(V, subj, ["eventprop", role, value]) (max-abstract FOLIO base)
--prenorm         Pre-Stage-1 LLM wording normalisation (composable; FOLIO ladder base)
--nocrossstage    Disable the ultracoarse cross-stage guard retry
-Separable abstraction buckets (each implied by -ultracoarse; composable; ENCODINGS.md §6.6):
--flatevents      Only the lossy relational event fold (drops event var + 2ndary roles)
--typeenrich      Taxonomy/isa enrichment (supertypes, gender/name, compound, plural→singular)
+-event MODE      Event-encoding base (one mutually-exclusive selector; default
+                 neodavidson): neodavidson (reified neo-Davidsonian) |
+                 davidson (compact event(V,A,O,E)) | flat (is_rel2) |
+                 flatroles (is_rel2 with eventprop-tagged object)
+Additive abstraction primitives (compose with any -event base):
 -entitymerge     Proper-noun entity canonicalization + set-label coreference
--guarddrop       Drop redundant antecedent isa guards (no-op without -flatevents)
--bridges         Dynamic frame/bridge axioms (use with -flatevents)
--definites       Ultracoarse definite-description handling ($theof1 identities)
-Proof-shortening folds (structure-preserving; ENCODINGS.md §6.7–6.8):
--davidson        Compact Davidsonian fold: spine → event(V,A,O,E), keep handle+adjuncts;
-                 patient = first theme role; frm_event bridge. Shortens proofs on the
-                 default encoding, lengthens on the already-flat -ultracoarse2 base
+-typeenrich[=GATES]  Taxonomy/isa enrichment; bare = all six sub-gates, or a comma
+                 list of super,gender,nametype,compound,plural,gnoun (-name excludes; all)
+-guarddrop       Drop redundant antecedent isa guards (needs a fold base)
+-bridges         Dynamic frame/bridge axioms (needs -event flat/flatroles)
+-dropdefinites   Skip $theof1 definite reification (leave definites as relations)
+-localantonyms   Restrict antonym folding to problem + axiom vocabulary
 -existfold       Existential-attribute collapse: ∃Y.isa(C,Y)∧has_part(X,Y) →
                  has_property([$has_part,C],X) + named-witness ($typed_partof) bridge
+Simplification (ENCODINGS.md §5):
+-nocontext       Context → constant "$c" (no worlds/tense)
+-noexceptions    Strip $block from defeasible rules
+-simpleprops     Degree predicates → simple (+ -noexceptions)
+-simple          The three above combined
+Abstraction presets (pure CLI expansions into the primitives above):
+-abstract        -event flat + entitymerge + guarddrop + bridges + dropdefinites
+                 + typeenrich + localantonyms + simpleprops
+-abstract-roles  As -abstract but -event flatroles (eventprop-tagged objects)
+-abstract-max    As -abstract-roles + -prenorm (strongest; FOLIO ladder base)
+-prenorm         Pre-Stage-1 LLM wording normalisation (composable)
+-nocrossstage    Disable the cross-stage guard retry
+-slightcoarse    Light shape unification: predicate rename, shape bridges,
+                 compound composition, broad-supertype isa (built for -s2split)
+
+Alternative parsing shapes (replace the default two-stage parse):
 -s2split         One Stage-2 LLM call per Stage-1 sentence; outputs joined
                  (worlds renumbered; failed sentences skipped unless the question)
--slightcoarse    Light shape unification: predicate rename, shape bridges,
-                 property-shape compound composition, broad-supertype isa
-                 (built for -s2split divergences; composable, not implied)
 -combined-instr FILE   Single-stage parsing: ONE LLM call English → logic
                  (+ optional -combined-examples / -combined-checklist)
 -directanswer FILE     ONE LLM call answers directly; no logic, no prover

@@ -727,49 +727,51 @@ LLM selection:
  -llm NAME    : LLM provider: gpt, claude, gemini, or deepseek (default: from llmcall.py config)
  -version VER : model version string, e.g. claude-sonnet-4-6, gpt-5.1
 
-split Stage 2:
+alternative parsing shapes (replace the default two-stage English->logic parse):
  -s2split     : one Stage-2 LLM call per Stage-1 sentence package; outputs joined
                 into one logic (failed sentences skipped unless they hold the
                 question; locally-invented worlds renumbered to fresh indices)
- -slightcoarse: light shape unification: off-inventory predicate rename
-                (has->have, has rel2->is rel2), shape bridges (destination->
-                location, beneficiary/recipient lift, measure<->comparative),
-                property-shape compound composition, broad-supertype isa.
-                Composable with -s2split (whose divergences it was built for)
- -event MODE  : event-encoding base (one selector; default neodavidson):
-                neodavidson  reified neo-Davidsonian events (default)
-                davidson     compact event(V,A,O,E), keep handle + adjuncts
-                flat         flat relational is_rel2(V,subj,obj)
-                flatroles    flat relational, eventprop-tagged object
- -existfold   : (L2) fold a bare existential attribute "exists Y. isa(C,Y) &
-                has_part/have(X,Y)" into has_property([$has_part/$have,C], X),
-                deleting the Skolem cross-product; a bidirectional bridge with a
-                named witness $typed_partof(X,C) reconstructs it on demand
-additive abstraction primitives (compose with any -event base):
- -entitymerge : proper-noun entity canonicalization + set-label coreference
- -typeenrich[=GATES] : taxonomy/isa enrichment; bare = all six sub-gates, or a
-                comma list of super,gender,nametype,compound,plural,gnoun (use
-                -name to exclude, `all` for all; e.g. -typeenrich=all,-plural)
- -guarddrop   : drop redundant antecedent isa type guards (needs a fold base)
- -bridges     : frame/bridge axioms: rel2<->event, occasion-location, in-haspart,
-                reflexive-property (needs -event flat/flatroles)
- -dropdefinites : skip $theof1 definite reification; leave definites as relations
- -localantonyms : restrict antonym folding to the problem + axiom vocabulary
-abstraction presets (pure expansions into the primitives above):
- -abstract      : -event flat + entitymerge + guarddrop + bridges + dropdefinites
-                  + typeenrich + localantonyms + simpleprops
- -abstract-roles: as -abstract but -event flatroles (eventprop-tagged objects)
- -abstract-max  : as -abstract-roles + -prenorm (the strongest abstraction)
- -prenorm     : pre-Stage-1 LLM wording normalisation (composable; FOLIO ladder base)
- -nocrossstage: disable the cross-stage guard-retry
-
-combined single-stage parsing (one LLM call, English -> logic; no Stage-1 JSON):
- -combined-instr FILE     : combined instructions prompt file (enables single-stage mode)
+ -combined-instr FILE     : single-stage parsing -- one LLM call, English -> logic,
+                            no Stage-1 JSON (enables single-stage mode)
  -combined-examples FILE  : combined examples prompt file (optional)
  -combined-checklist FILE : combined checklist prompt file (optional)
+ -directanswer FILE       : answer the question directly with one LLM call (no
+                            logic, no prover); test-set agnostic
 
-direct-answer mode (one LLM call, answer the question directly; no logic, no prover):
- -directanswer FILE       : direct-answer prompt file (system prompt); test-set agnostic
+logic conversion / representation (transform the Stage-2 logic before the prover):
+ event-encoding base -- one selector, default neodavidson:
+  -event MODE   neodavidson : reified neo-Davidsonian events (default)
+                davidson    : compact event(V,A,O,E), keep handle + adjuncts
+                flat        : flat relational is_rel2(V,subj,obj)
+                flatroles   : flat relational, eventprop-tagged object
+ additive abstraction primitives (compose with any -event base):
+  -entitymerge   : proper-noun entity canonicalization + set-label coreference
+  -typeenrich[=GATES] : taxonomy/isa enrichment; bare = all six sub-gates, or a
+                  comma list of super,gender,nametype,compound,plural,gnoun (use
+                  -name to exclude, `all` for all; e.g. -typeenrich=all,-plural)
+  -guarddrop     : drop redundant antecedent isa type guards (needs a fold base)
+  -bridges       : frame/bridge axioms: rel2<->event, occasion-location,
+                   in-haspart, reflexive-property (needs -event flat/flatroles)
+  -dropdefinites : skip $theof1 definite reification; leave definites as relations
+  -localantonyms : restrict antonym folding to the problem + axiom vocabulary
+  -existfold     : (L2) fold "exists Y. isa(C,Y) & has_part/have(X,Y)" into
+                   has_property([$has_part/$have,C], X) + named-witness bridge
+ simplification:
+  -simple        : no context, no exceptions, simple properties (the three below)
+  -nocontext     : no context (time, situation) information in logic
+  -noexceptions  : no exception (blocker) information in logic
+  -simpleprops   : simplified properties without strength/type parameters
+ abstraction presets (pure expansions into the primitives above):
+  -abstract       : -event flat + entitymerge + guarddrop + bridges + dropdefinites
+                    + typeenrich + localantonyms + simpleprops
+  -abstract-roles : as -abstract but -event flatroles (eventprop-tagged objects)
+  -abstract-max   : as -abstract-roles + -prenorm (the strongest abstraction)
+ -prenorm       : pre-Stage-1 LLM wording normalisation (composable; FOLIO base)
+ -nocrossstage  : disable the cross-stage guard-retry
+ -slightcoarse  : light shape unification (predicate rename, shape bridges,
+                  compound composition, broad-supertype isa); built for -s2split
+
+LLM reasoning:
  -think       : enable medium reasoning/thinking mode (GPT: reasoning_effort=medium;
                 Claude: extended thinking; Gemini: requires 2.5+ model;
                 DeepSeek: switches to deepseek-reasoner)
@@ -780,12 +782,6 @@ controlling the prover:
  -axioms file1.js ... fileN.js : use these files as axioms instead of axioms_std.js
  -strategy file.js : use the given JSON strategy file instead of the default
  -printlevel N : use N>10 to see more of the search process (10 is default, try 12)
-
-logic representation options:
- -simple          : simplified representation: no context, no exceptions, simple properties
-    -nocontext     : no context (time, situation) information in logic
-    -noexceptions  : no exception (blocker) information in logic
-    -simpleprops   : simplified properties without strength and type parameters
 """
 
 

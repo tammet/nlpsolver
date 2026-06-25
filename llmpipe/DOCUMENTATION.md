@@ -61,7 +61,7 @@ representation so that a developer or LLM can quickly start extending or modifyi
    - 9.4 [Full build pipeline](#94-full-build-pipeline)
    - 9.5 [Spatial and temporal preposition handling](#95-spatial-and-temporal-preposition-handling)
 10. [Extending and modifying the pipeline](#10-extending-and-modifying-the-pipeline)
-11. [Coarse and ultracoarse machinery](#11-coarse-and-ultracoarse-machinery)
+11. [Event-encoding and abstraction machinery](#11-event-encoding-and-abstraction-machinery)
 12. [Alternative parsing modes: prenorm, combined single-stage, direct answer, split Stage 2](#12-alternative-parsing-modes-prenorm-combined-single-stage-direct-answer-split-stage-2)
 
 ---
@@ -537,11 +537,13 @@ Output format and other flags:
 -seconds N         Prover time limit (default 2)
 -simple            No context, no exceptions, simple properties
 -think [N]         Enable reasoning/thinking mode (optional token budget)
--coarse            Fold collapsible Davidsonian events to flat `do` literals (§11)
--ultracoarse       + relational folds, guard drops, entity canonicalization (§11);
-                   implies -coarse and -simpleproperties
+-event MODE        Event-encoding base: neodavidson|davidson|flat|flatroles (§11)
+-abstract / -abstract-roles / -abstract-max   Abstraction presets (§11–12); expand
+                   into -event + the abstraction primitives (+ -prenorm for -max)
+-entitymerge -typeenrich[=GATES] -guarddrop -bridges -dropdefinites -localantonyms
+                   -existfold   Additive abstraction primitives (§11)
 -prenorm           Pre-Stage-1 LLM wording normalisation (§12.1)
--nocrossstage      Disable the ultracoarse cross-stage guard retry (§11.5)
+-nocrossstage      Disable the cross-stage guard retry (§11.5)
 -combined-instr F  Combined single-stage parsing: ONE LLM call English -> logic (§12.2);
                    optional -combined-examples F / -combined-checklist F
 -directanswer F    Answer with ONE LLM call using prompt file F; no logic, no prover (§12.3)
@@ -595,7 +597,7 @@ instructions + `"\n\nExamples:\n\n"` + examples into a single system prompt stri
 - `combined_enabled` — make ONE LLM call (English → Stage-2 logic) with the explicitly
   named combined prompt files and return `(None, s2_json, stats)`; there is no Stage-1
   JSON in this mode (§12.2).
-- `canon_entities_enabled` (set by `-ultracoarse`) — aggressive Stage-1 entity-id
+- `canon_entities_enabled` (set by `-entitymerge`) — aggressive Stage-1 entity-id
   canonicalization (`canonicalize_entity_ids`) and Stage-2 Wikipedia-URL folding
   (`canonicalize_entity_urls`) (§11.4).
 - `crossstage_guard_retry` ∧ `canon_entities_enabled` — after Stage 2, re-run BOTH
@@ -745,7 +747,7 @@ Converts the Stage-2 nested JSON formula into a flat GK clause list:
     ├─ normalize_gradable_predicates()    [lc_post_normalize]
     ├─ strip_isa_entity()                 [lc_post_normalize]
     ├─ coerce_relclass()                  [lc_post_normalize]
-    ├─ strip_degree_predicates()          [lc_post_normalize] (only if -simpleproperties)
+    ├─ strip_degree_predicates()          [lc_post_normalize] (only if -simpleprops)
     ├─ inject_world_geometry()            [lc_post_inject] minimal next chain over present worlds
     ├─ strip @sourcetype                  remove internal annotation before prover
     └─ apply_una(result, stage1_set)      [lc_post_una] wrap Stage-1 entities with #: prefix
@@ -1289,10 +1291,8 @@ cache_db_name     = "cache.db"
 prover_fname      = "../gk/gk"
 prover_axiomfile  = "axioms_std.js"
 prover_datafolder = "../gk"
-memkb_name        = "1000"
 prover_infile     = "gk_infile.js"
 prover_params     = ["-defaults", "-confidence", "0.1", "-keepconfidence", "0.1"]
-usekb_prover_params = ["-usekb", "-confidence", "0.1", "-keepconfidence", "0.1"]
 ```
 
 **`set_global_options(newoptions)`** — merge a dict into `options`; called by `solve.py` with
@@ -1678,7 +1678,7 @@ bridge representation gaps.
 | Meta-predicate normalization | `lc_rewrites.rewrite_meta_predicates` | `["is rel2","is",A,B]` → `["isa",A,B]`; `["is rel2","=",A,B]` → `["=",A,B]`; `["is rel2","located in",A,B]` → `["is rel2","in",A,B]`; `["is rel2","belonged to",THING,OWNER]` → `["have",OWNER,THING]` | Pre-clausification rewrite applied to all formulas.  Normalizes copula (`is` → `isa`), identity (`=`), spatial meta-predicates (`located in/at/on/near/above/under` → bare preposition), movement verbs (travel/journey/move → go), placement verbs (place/set/lay/position/deposit → put), transfer verb synonyms (hand/pass/send → give), and ownership relations to canonical `have(owner,thing)` — passive `belonged to`/`belongs to`/`owned by`/`possessed by` (owner at arg 3, swapped) and active `owns`/`own`/`owned`/`possess(es/ed)` (owner at arg 2) — so a possessive assertion and a "who owns / whose" query share the `have` predicate.  Also normalizes 3-arg `has_destination(E,Dest)` to 4-arg `has_destination(E,Dest,"at")` for backward compat with stale Stage-2 cache entries. |
 | Perspective verb → dative head normalization | `lc_rewrites.normalize_receive_events` | `["has type",E,"receive"]` + `["has actor",E,X]` → `["has type",E,"give"]` + `["has recipient",E,X]`.  Same pattern for hear→tell, see→show, get→give. | Formula-level rewrite: in `and`-blocks containing a perspective-verb event (receive, get, hear, see), the verb is changed to its dative head (give, tell, show) and the actor role is swapped to recipient.  Single mapping table `_PERSPECTIVE_TO_DATIVE`; function name retained for back-compat.  Asymmetry preserved — the rewrite never adds an actor for events lacking an explicit dative agent, so "Did John receive a book?" still fails when John was the giver.  Allows the give-based transfer axioms in `axioms_std.js` to derive `have(Recipient, Object)` in the next world state, and lets queries about hear/see/get match facts about tell/show/give. |
 | Set existence fact | `lc_sets._walk_for_count` | "Bears ate berries" with `forall/implies/member/$setof` in assertion context → `member("$some_bear", $setof(...))` | Generates a ground set membership fact for assertion-context `forall/member` patterns so the prover can bootstrap resolution through member-guarded clauses.  Skipped when the set already has element instantiation from a count assertion. |
-| Degree stripping | `lc_post_normalize.strip_degree_predicates` | With `-simpleproperties`: `has_degree_property(big,X,none,animal)` → `has_property(big,X)` | (Only with `-simpleproperties`) Replaces degree predicates with simple property predicates |
+| Degree stripping | `lc_post_normalize.strip_degree_predicates` | With `-simpleprops`: `has_degree_property(big,X,none,animal)` → `has_property(big,X)` | (Only with `-simpleprops`) Replaces degree predicates with simple property predicates |
 | Semantic normalisation | `semnormalize.sem_normalize_clauses` | "The ball is outside the box" → `outside` is antonym of `inside` → flips polarity and substitutes: `-is_rel2(inside,ball,box)` | Antonym resolution (~311 directional pairs, adjective + noun only: flip polarity + swap word) and canonical substitution (~752 pairs: synonym → canonical form).  Skips `$ctxt` terms.  Polarity-flipping is applied ONLY at the top-level literal — inside nested function terms (`$theof1`, `$measure_of`, Skolem), only canonical substitution runs (flipping `$theof1` to `-$theof1` would produce invalid terms).  Data loaded from generated `data_antonyms.py` and `data_canonicals.py`.  Verb antonyms (`ant_v.txt`) are intentionally excluded from rewriting — most are perspective inversions (give/take, buy/sell), process complementarities (start/stop, come/go), or weak pairs where polarity-flip is wrong, and key verbs collide with axiom-vocab predicates (case 171).  Useful verb subsets (attitude pairs like like/dislike) are scheduled for re-introduction via a defeasible attitude-mutex injector.  `build_antonyms` also skips any pair whose canonical target is itself a CANONICALS key — such chain-through pairs are deferred to `build_exclusions` and emitted as synthetic `ANT_<W1>_<W2>` exclusion groups instead (prevents Pass 2 from chain-substituting the fold target to an unrelated sense, e.g. `open→close→near`). |
 | Soft synonym injection | `lc_post_inject.inject_soft_synonyms` | "The car is red" + axioms mention "crimson" → emits `red(X,Ct) <=> crimson(X,Ct)` biconditional | Dynamic injection of Tier B synonym axioms for words present in both input and axiom vocabulary.  Templates: `has property` (adj), `isa` (noun), `has type` (verb). |
 | Exclusion injection | `lc_post_inject.inject_exclusion_axioms` | "The car is blue. Was it red?" → emits `NOT blue(X,Ct) OR NOT red(X,Ct)` with `$block` | Dynamic injection of mutual-exclusion axioms from `excl_a.txt` and `excl_n.txt` groups.  `needs_blocker=True` groups use defeasible `$block`; `False` groups are hard exclusions. Five atom shapes: default `has_property` (adjective); `_IS_REL2_EXCL_GROUPS` (MONTH/DAY_OF_WEEK/SEASON) — `is_rel2` target at arg 3; `_IS_REL2_PREP_GROUPS` (SPATIAL_*, TEMPORAL_ORDER) — `is_rel2` preposition at arg 1 with two free entity variables; `_HAS_DEGREE_REL2_PREP_GROUPS` (PROXIMITY) — `has_degree_rel2` preposition at arg 1 with two asymmetric axioms per pair; `_ISA_EXCL_GROUPS` (NOUN_*) — concept name at `isa` arg 1, emits both same-entity shortcut `[-isa w1 ?:X, -isa w2 ?:X]` and cross-entity inequality `[-isa w1 ?:X, -isa w2 ?:Y, -=(?:X, ?:Y)]`. Also injects `MANUAL_ANTONYMS` adjective pairs as synthetic `MANUAL_ADJ_<W1>_<W2>` groups, and chain-rejected antonym pairs (from `build_antonyms`) as synthetic `ANT_<W1>_<W2>` defeasible adjective groups. See §9.5 for preposition handling. **Note**: the seven preposition groups in `_STATIC_PREP_EXCL_GROUPS` (SPATIAL_VERTICAL/_OVER_UNDER/_SAGITTAL/_CONTAINMENT/_LATERAL, TEMPORAL_ORDER, PROXIMITY) are skipped here — their mutual-exclusion axioms live statically in `axioms_std.js` §7e because both sides are first-class predicates in the standard ontology. |
@@ -1737,8 +1737,9 @@ randomization; without the sorting, the corrective prompt — and hence its LLM-
 key — would differ byte-for-byte between runs and miss the cache on every fresh run.
 This applies on every path, including the default one.
 
-**Coarse-gated check:** `_check_stage2_constant_vs_class` (enabled only when
-`stage_sanity.aggressive_repair` is set by the ultracoarse path) flags a name used
+**Entity-canon-gated check:** `_check_stage2_constant_vs_class` (enabled only when
+`stage_sanity.aggressive_repair` is set when entity canonicalization is on, i.e.
+under `-entitymerge` / the `-abstract*` presets) flags a name used
 both as a specific entity (a constant) and as a class (an `isa` type) and re-prompts
 Stage 2 to make the reading consistent; see §11.5.
 
@@ -2236,11 +2237,14 @@ tiers with a tight per-request input-token cap; see §5.3):
 english_to_answer(text, {"use_gemini_cache_flag": True})   # or pass -geminicache on the CLI
 ```
 
-**Mode option keys** (all off by default; see §11 and §12 for what they do):
-`coarse_flag`, `ultracoarse_flag`, `prenorm_flag`, `crossstage_retry_flag` (default
-`True`, but inert unless ultracoarse), `combined_flag` + `combined_instr_file` /
-`combined_examples_file` / `combined_checklist_file`, `directanswer_flag` +
-`directanswer_file`.
+**Mode option keys** (defaults as noted; see §11 and §12 for what they do):
+`event_base` (default `"neodavidson"`; else `davidson`/`flat`/`flatroles`), the
+abstraction primitives (`entitymerge_flag`, `typeenrich_flag` + `typeenrich_gates`,
+`guarddrop_flag`, `bridges_flag`, `dropdefinites_flag`, `localantonyms_flag`,
+`existfold_flag`, `noproptypes_flag`), `prenorm_flag`, `crossstage_retry_flag`
+(default `True`, but inert unless an abstraction encoding is active), `combined_flag`
++ `combined_instr_file` / `combined_examples_file` / `combined_checklist_file`,
+`directanswer_flag` + `directanswer_file`.
 
 ---
 
@@ -2734,7 +2738,7 @@ python3 runtests.py -sequential -llms claude tests/tests_folio_v2.py
 python3 runtests.py -version claude-opus-4-8 -think 3000 -maxtokens 16000 ...
 
 # pipeline-mode flags (mirror solve.py; see DOCUMENTATION §11/§12)
-python3 runtests.py -ultracoarse -prenorm [-nocrossstage] ...
+python3 runtests.py -abstract -prenorm [-nocrossstage] ...
 python3 runtests.py -combined-instr prompts/combined_v2_instructions_full.txt \
                     -combined-examples prompts/combined_examples_pure.txt ...
 python3 runtests.py -directanswer prompts/folio_directanswer_instructions.txt ...
@@ -2770,76 +2774,113 @@ python3 run_pretty_check.py > logconvert_check.txt
 
 ---
 
-## 11. Coarse and ultracoarse machinery
+## 11. Event-encoding and abstraction machinery
 
-The `-coarse` and `-ultracoarse` flags select progressively flatter event encodings,
-built for deductive benchmarks (FOLIO) whose gold logic uses atomic n-ary relations.
-What the *encodings* look like is described in ENCODINGS.md §6; this chapter describes
-the machinery.  Both modes are post-LLM: the Stage-1/Stage-2 prompts and calls are
-unchanged (and cache-shared with default runs); everything happens between Stage 2 and
-the prover, plus one optional cross-stage LLM retry.
+The event base is selected by `-event MODE` and a set of additive abstraction
+primitives; together they select progressively flatter event encodings, built for
+deductive benchmarks (FOLIO) whose gold logic uses atomic n-ary relations.  What the
+*encodings* look like is described in ENCODINGS.md §6; this chapter describes the
+machinery.  All of it is post-LLM: the Stage-1/Stage-2 prompts and calls are unchanged
+(and cache-shared with default runs); everything happens between Stage 2 and the
+prover, plus one optional cross-stage LLM retry.
 
-Flag wiring: `-coarse` sets `coarse_flag`; `-ultracoarse` sets `coarse_flag`,
-`ultracoarse_flag` and `noproptypes_flag` (gradables collapse to simple properties).
-`-prenorm` (§12.1) is a separate, composable flag — the FOLIO F3 configuration is
-`-ultracoarse -prenorm`.
+### 11.0 The encoding resolver (`lc_encoding.py`)
+
+Every encoding gate in the pipeline reads a single resolved config.
+`lc_encoding.EncodingConfig`, built once from the option keys (`lc_encoding.current()`
+reads the live `globals.options`), exposes the derived booleans the rest of the
+pipeline consults: `flatten`, `eventprop`, `davidson`, `coarse`, `entitymerge`,
+`guarddrop`, `bridges`, `dropdefinites`, `localantonyms`, `simpleprops`,
+`collapse_degree`, `parse_canon`, `needs_coarsen`, `typeenrich`, plus a `te(gate)`
+method for the per-gate type-enrichment test.  Every encoding read site in
+`logconvert.py`, `lc_sets.py`, `lc_coarse.py`, `semnormalize.py`, `lc_post_reify.py`
+and `solve.py` goes through this config, so the gating logic lives in exactly one place.
+
+Population of the config:
+
+- **Event base** — `-event MODE` sets `event_base` ∈ {`neodavidson` (default, reified
+  neo-Davidsonian), `davidson` (compact `event(V,A,O,E)`), `flat` (bare positional
+  `is_rel2` object), `flatroles` (`is_rel2` with eventprop-tagged object)}.  From it:
+  `flatten = base in {flat, flatroles}`, `eventprop = base == flatroles`,
+  `davidson = base == davidson`.  `coarse` is always `False`.
+- **Additive primitives** — one option key each: `entitymerge_flag`, `guarddrop_flag`,
+  `bridges_flag`, `dropdefinites_flag`, `localantonyms_flag`, `noproptypes_flag`
+  (`simpleprops`), and `typeenrich_flag` (+ optional `typeenrich_gates`).
+  `collapse_degree` rides with `simpleprops`; `parse_canon` rides with `entitymerge`
+  (parse-level entity canonicalization is self-contained, driven by `-entitymerge`).
+- **`needs_coarsen`** — true iff any of `davidson`/`flatten`/`entitymerge`/`guarddrop`
+  is set, i.e. whether `coarsen_events` runs at all.
+- **typeenrich gates** — `typeenrich_gates` is a frozenset over
+  `{super, gender, nametype, compound, plural, gnoun}`; bare `-typeenrich` enables all
+  six, `-typeenrich=GATES` enables the named subset, and `te(gate)` is the per-gate
+  test.
+
+The `-abstract*` presets (§12.0) are pure CLI expansions into these primitive keys —
+they are read nowhere in the pipeline, only at argument-parse time.
 
 ### 11.1 The event folds (`lc_coarse.py`)
 
-`coarsen_events(tree, ultra)` is called from `rawlogic_convert` after actuality
-injection and tense-`has_time` stripping, so the eligibility test sees the final event
-shape.  Under plain `-coarse`, `_fold_event` conservatively folds a collapsible event
-(template roles only, no modal classifier, no `has_content` nest) into one
-`do(type, actor, target, recipient)` literal.  Under `-ultracoarse` it applies the
-aggressive folds (relational `is_rel2`, unary `has_property`, topic/passive/
-intransitive variants, `typical` stripped) — see ENCODINGS.md §6.2 for the rule list.
-`lc_ctxt` registers `do` in `CTXT_ELIGIBLE` and `DESC_PREDS`, so the folded literal
-receives `$ctxt` exactly as reified roles would.
+`coarsen_events(tree, flatten=, eventprop=, davidson=, coarse=, do_canon=, do_guard=,
+collapse_degree=)` is called from `rawlogic_convert` (only when
+`EncodingConfig.needs_coarsen`) after actuality injection and tense-`has_time`
+stripping, so the eligibility test sees the final event shape.  All gating is resolved
+by the caller; the params are the already-derived `EncodingConfig` booleans (the
+`coarse` arg is vestigial, always `False`).  With `flatten` it applies the aggressive
+flat folds (relational `is_rel2`, unary `has_property`, topic/passive/intransitive
+variants, `typical` stripped) — see ENCODINGS.md §6.2 for the rule list; with
+`eventprop` the single object slot is role-tagged as
+`is_rel2(V, subj, ["eventprop", $role, value])`.  With `davidson` it applies instead
+the structure-preserving compact fold into `event(V,A,O,E)`.  `lc_ctxt` registers the
+folded predicate in `CTXT_ELIGIBLE` and `DESC_PREDS`, so it receives `$ctxt` exactly
+as reified roles would.
 
-Supporting passes inside `lc_coarse` (ultracoarse only, in order):
-- `_canonicalize_entities` — tree-level merge of split proper-noun constants
-  (type-sharing + surface-similarity union-find);
-- `_collapse_degree_node` — early degree→simple collapse, before guard analysis;
-- `_fold_antecedent_events` — folds an event introduced as bare conjuncts in a rule
-  antecedent (no `exists` wrapper), so rules and folded facts unify; uses
-  `_rewrite_rel2_event_object` to free event variables that appear as `is_rel2`
-  objects;
-- `_drop_redundant_guards` — drops antecedent `isa` guards that are vacuous
-  (near-universal types) or redundant (variable already bound by a folded literal).
+Supporting passes inside `lc_coarse` (in order, when their gate is set):
+- `_canonicalize_entities` (`do_canon`/`entitymerge`) — tree-level merge of split
+  proper-noun constants (type-sharing + surface-similarity union-find);
+- `_collapse_degree_node` (`collapse_degree`/`simpleprops`) — early degree→simple
+  collapse, before guard analysis;
+- `_fold_antecedent_events` (with a flat fold) — folds an event introduced as bare
+  conjuncts in a rule antecedent (no `exists` wrapper), so rules and folded facts
+  unify; uses `_rewrite_rel2_event_object` to free event variables that appear as
+  `is_rel2` objects;
+- `_drop_redundant_guards` (`do_guard`/`guarddrop`) — drops antecedent `isa` guards
+  that are vacuous (near-universal types) or redundant (variable already bound by a
+  folded literal); a no-op without a fold base.
 
 `inject_verb_bridges` (per-verb bidirectional event↔relation bridges) is defined but
 not wired; the generic `rel2_event_axiom_clauses()` equivalence (§11.3) is used
 instead.
 
-### 11.2 Compile-level ultracoarse passes outside `lc_coarse`
+### 11.2 Compile-level passes outside `lc_coarse`
 
-All gated on `ultracoarse_flag` (or `coarse_flag` where noted):
+Each is gated on the resolved `EncodingConfig` field shown:
 
-| pass | where | what |
-|---|---|---|
-| self-defeating-conditional repair | `logconvert._repair_self_defeating_conditional` | widens a mis-scoped `¬A ∧ B` antecedent to `¬(A∧B)` when a truth-table check shows the conditional can never produce its consequent |
-| broad-supertype isa | `logconvert._build_entity_category_clauses` | `isa(person/animal,E)` emitted even when Stage 2 already typed E (gated on `coarse_flag`) |
-| gender from first name | same | `isa(man/woman, E)` from `data_names.gender_of` |
-| name-as-type isa | same | a multiword proper name also typed by its lowercased name |
-| gendered-noun axioms | `rawlogic_convert` tail | `isa(gentleman,X) → isa(man,X)` etc., for role nouns present in the clauses (`data_names.GENDERED_NOUN`) |
-| compound suffix subsumption | `lc_post_normalize.build_compound_subsumption(ultra=True, extra_clauses=…)` | subsume to every attested intermediate suffix; also scans entity-category clauses |
-| isa-class lowercasing | `lc_clausify.lower_isa_classes_in_node` | run after all injection, folds class-name case |
-| `$theof1` skip | `rawlogic_convert` | definite reification skipped entirely under ultracoarse; under plain `-coarse`, `lc_post_reify.emit_definite_identities` + strict placeholder-only matching run instead |
-| antonym presence-gating | `semnormalize` | antonym folding fires only when the target word is in problem ∪ axiom vocab (gated on `coarse_flag`) |
-| `$setof` content labels | `lc_sets._content_label` | set ids become content-derived hashes so structurally identical sets unify |
-| `$ctxt` decoupling | `rawlogic_convert` last pass | every `$ctxt` term replaced by a fresh variable |
+| pass | where | gate | what |
+|---|---|---|---|
+| self-defeating-conditional repair | `logconvert._repair_self_defeating_conditional` | `flatten` | widens a mis-scoped `¬A ∧ B` antecedent to `¬(A∧B)` when a truth-table check shows the conditional can never produce its consequent |
+| broad-supertype isa | `logconvert._build_entity_category_clauses` | `te("super")` | `isa(person/animal,E)` emitted even when Stage 2 already typed E |
+| gender from first name | same | `te("gender")` | `isa(man/woman, E)` from `data_names.gender_of` |
+| name-as-type isa | same | `te("nametype")` | a multiword proper name also typed by its lowercased name |
+| gendered-noun axioms | `rawlogic_convert` tail | `te("gnoun")` | `isa(gentleman,X) → isa(man,X)` etc., for role nouns present in the clauses (`data_names.GENDERED_NOUN`) |
+| compound suffix subsumption | `lc_post_normalize.build_compound_subsumption` | `te("compound")` | subsume to every attested intermediate suffix; also scans entity-category clauses |
+| isa-class lowercasing | `lc_clausify.lower_isa_classes_in_node` | `flatten` | run after all injection, folds class-name case |
+| definite handling | `rawlogic_convert` | `dropdefinites` | when `dropdefinites`, definite reification is skipped entirely (definites left as plain relations); otherwise `lc_post_reify` reifies `$theof1` with lenient first-match identities |
+| antonym presence-gating | `semnormalize` | `localantonyms` | antonym folding fires only when the target word is in problem ∪ axiom vocab |
+| `$setof` content labels | `lc_sets._content_label` | `entitymerge` | set ids become content-derived hashes so structurally identical sets unify |
+| `$ctxt` decoupling | `rawlogic_convert` last pass | `flatten` | every `$ctxt` term replaced by a fresh variable |
 
 ### 11.3 Dynamic bridge axioms (`lc_post_inject.py` + `lc_coarse.py`)
 
-Appended to the clause list under ultracoarse, each gated on both bridge sides being
-present in the problem: `rel2_event_axiom_clauses` (relation ↔ reified event, Skolem
-`$ev_of(V,A,O)`), `inject_occasion_location_bridges` (co-location through an occasion,
-typed on physical place classes), `inject_in_haspart_bridge` (`in` → `has_part`),
-`inject_reflexive_property_bridge` (`has_property(P,X) ↔ is_rel2(P,X,X)`).  Shapes in
-ENCODINGS.md §6.4.
+Appended to the clause list under `-bridges` (which needs a `flat`/`flatroles` base),
+each gated on both bridge sides being present in the problem: `rel2_event_axiom_clauses`
+(relation ↔ reified event, Skolem `$ev_of(V,A,O)`), `inject_occasion_location_bridges`
+(co-location through an occasion, typed on physical place classes),
+`inject_in_haspart_bridge` (`in` → `has_part`), `inject_reflexive_property_bridge`
+(`has_property(P,X) ↔ is_rel2(P,X,X)`).  Shapes in ENCODINGS.md §6.4.
 
-### 11.4 Entity unification at the parse level (`llmparse.py`, ultracoarse)
+### 11.4 Entity unification at the parse level (`llmparse.py`, `-entitymerge`)
 
+Driven by `EncodingConfig.parse_canon` (i.e. `-entitymerge`).
 `canonicalize_entity_ids(s1_json)` merges Stage-1 entity ids by normalized form,
 suffix-stripped base, head-sharing token subset, and high-threshold Levenshtein —
 proper nouns only, longest-id-first whole-id replacement (no substring corruption).
@@ -2849,7 +2890,7 @@ alone).  Both record their remaps in the parse stats.
 
 ### 11.5 Cross-stage unsatisfiable-guard retry (`llmparse.py` + `stage_sanity.py`)
 
-After Stage 2 (ultracoarse only, at most once, disable with `-nocrossstage`):
+After Stage 2 (only with a flat fold base, at most once, disable with `-nocrossstage`):
 `stage_sanity.check_unsatisfiable_guards` collects content guards — a class
 (`isa`), property (`has property`) or relation (`is rel2`) appearing positively in a
 rule antecedent that no fact states and no rule consequent produces.  Such a rule can
@@ -2862,60 +2903,81 @@ original parse stands, so a genuinely-absent class is never invented.  The relat
 class; re-prompts Stage 2) is enabled on the same path via
 `stage_sanity.aggressive_repair`.
 
-### 11.6 Default-path footprint
+### 11.6 The abstraction primitives and proof-shortening folds
 
-The coarse/ultracoarse work leaves exactly two behaviors on the default path: the
-ASCII fold of parses (§5.1) and the canonical sanity-retry serialization (§7.8).
-Everything else in this chapter is flag-gated; with no flags the pipeline is
-answer-equivalent to the `core-2026-06-03` checkpoint (verified on a stratified
-40-case × 4-LLM sample — byte-identical clauses modulo set-iteration order and
-fresh-variable numbering).
+Each abstraction lever is its own composable primitive, so it can be measured in
+isolation (the per-mechanism tables in the LPAR paper).  The `-abstract*` presets set a
+fixed subset of them; resolution is centralized in `EncodingConfig`.  The event-base
+folds and entity/guard mods are handled in `lc_coarse.coarsen_events` (§11.1); the
+others are `lc_existfold` plus the type-enrichment gates.  Reference shapes:
+ENCODINGS.md §6.6–6.10.
 
-### 11.5 Separable abstraction buckets and the proof-shortening folds
-
-The aggressive `-ultracoarse` bundle was later split into independent, composable
-flags so each abstraction lever can be measured in isolation (the per-mechanism tables
-in the LPAR paper).  All are handled in `lc_coarse.coarsen_events` (which now takes
-`ultra`, `eventprop`, `flatevents`, `coarse`, `entitymerge`, `guarddrop`, `davidson`
-keyword flags) plus `lc_existfold`.  Reference shapes: ENCODINGS.md §6.6–6.10.
-
-- **Buckets** (`-flatevents`, `-typeenrich`, `-entitymerge`, `-guarddrop`, `-bridges`,
-  `-definites`): each isolates one mod that `-ultracoarse` bundles.  `-flatevents` runs
-  only the relational `_fold_event_flat` (no entity canon / degree collapse / guard-drop
-  / Skolem merge / supertypes / defeasibility strip); `-guarddrop` and `-bridges` are
-  no-ops without it.  `-typeenrich` gates the six `isa`-enrichment sub-injectors via the
-  `logconvert._te(gate)` helper (a `TE_SKIP` env var can disable individual gates for
-  diagnostics; the `plural` gate is the one that over-derives population witnesses on
-  core).
-- **`-ultracoarse2`** (`_eventprop_mode`): same as `-ultracoarse` but `_fold_event_flat`
-  role-tags the single object slot as `is_rel2(V, subj, ["eventprop", $role, value])`.
-- **`-davidson`** (`_davidson_event`, `_davidson_mode`): structure-preserving fold of the
-  event spine into `event(V,A,O,E)`, keeping the handle and every adjunct.  The patient
-  slot takes the first theme role in `_DAV_PATIENT_ROLES = ["has target","has goal","has
-  topic"]`; datives/obliques stay as adjuncts; absent agent/patient become fresh
-  existentials; the biconditional `frm_event` bridge (`event_axiom_clauses`) interderives
-  with the reified roles and projects `is_rel2`.  A clausify guard (`lc_clausify`) drops
-  any headless clause left when the fold strips a defeasibility marker, so a generic rule
-  never collapses to a bare negated antecedent (was a soundness bug under
-  `-ultracoarse -davidson`).
+- **Event base** (`-event flat` / `-event flatroles` / `-event davidson`): the fold
+  shape, resolved to `flatten`/`eventprop`/`davidson` (§11.0).  `-event flat` runs only
+  the relational `_fold_event_flat` (no entity canon / degree collapse / guard-drop /
+  Skolem merge / supertypes / defeasibility strip — those are separate primitives);
+  `-guarddrop` and `-bridges` are no-ops without a flat base.  `-event flatroles`
+  (`eventprop`) role-tags the single object slot as
+  `is_rel2(V, subj, ["eventprop", $role, value])`.
+- **`-typeenrich[=GATES]`**: gates the six `isa`-enrichment sub-injectors via the
+  `logconvert._te(gate)` helper (which delegates to `EncodingConfig.te`).  Gates:
+  `super, gender, nametype, compound, plural, gnoun`; bare `-typeenrich` enables all
+  six.  A `TE_SKIP` env var can disable individual gates for diagnostics; the `plural`
+  gate is the one that over-derives population witnesses on core.
+- **`-entitymerge`, `-guarddrop`, `-bridges`, `-dropdefinites`, `-localantonyms`**: the
+  remaining additive primitives, each described at its read site in §11.2–11.5 and
+  §11.0.
+- **`-event davidson`** (`_davidson_event`, `_davidson_mode`): structure-preserving fold
+  of the event spine into `event(V,A,O,E)`, keeping the handle and every adjunct.  The
+  patient slot takes the first theme role in `_DAV_PATIENT_ROLES = ["has target","has
+  goal","has topic"]`; datives/obliques stay as adjuncts; absent agent/patient become
+  fresh existentials; the biconditional `frm_event` bridge (`event_axiom_clauses`)
+  interderives with the reified roles and projects `is_rel2`.  A clausify guard
+  (`lc_clausify`) drops any headless clause left when the fold strips a defeasibility
+  marker, so a generic rule never collapses to a bare negated antecedent.
 - **`-existfold`** (`lc_existfold.fold_existential_attributes` + `bridge_clauses`): folds
   `∃Y.isa(C,Y)∧has_part/have(X,Y)` to `has_property([$has_part/$have,C],X)` and emits a
   bidirectional bridge with the named witness `$typed_partof(X,C)` (forward, reverse, and
   the witness-isa clause).  Narrow and parse-dependent.
 
-Per-suite effect (LPAR runs): on the default representation `-davidson` shortens proofs
-and is accuracy-neutral on both suites; on the already-flat `-ultracoarse2` FOLIO base it
-net-lengthens.  `-existfold` shortens only the few reified-existential chains and never
-lengthens FOLIO; on core it matches almost nothing and its bridge axioms lengthen more
-than they shorten.
+Per-suite effect (LPAR runs): on the default representation `-event davidson` shortens
+proofs and is accuracy-neutral on both suites; on the already-flat `-event flatroles`
+FOLIO base it net-lengthens.  `-existfold` shortens only the few reified-existential
+chains and never lengthens FOLIO; on core it matches almost nothing and its bridge
+axioms lengthen more than they shorten.
+
+### 11.7 Default-path footprint
+
+The event-encoding work leaves exactly two behaviors on the default (`-event
+neodavidson`, no primitives) path: the ASCII fold of parses (§5.1) and the canonical
+sanity-retry serialization (§7.8).  Everything else in this chapter is flag-gated; with
+no flags the pipeline is answer-equivalent to the `core-2026-06-03` checkpoint
+(verified on a stratified 40-case × 4-LLM sample — byte-identical clauses modulo
+set-iteration order and fresh-variable numbering).
 
 ---
 
-## 12. Alternative parsing modes: prenorm, combined single-stage, direct answer, split Stage 2
+## 12. Abstraction presets and alternative parsing modes
 
-Three opt-in modes replace or augment the two-LLM-call parse.  All are selected per
-run (CLI flags / option keys), share the LLM cache keyed on their own prompts, and
-are available in `runtests.py` with auto-suffixed output dirs (§10).
+### 12.0 Abstraction presets (`-abstract` family)
+
+The presets are pure CLI expansions into the §11 primitives — they are read nowhere in
+the pipeline, only at argument-parse time (`solve.py`), where they set the primitive
+option keys.  Three are defined:
+
+- **`-abstract`** = `-event flat` + `-entitymerge` + `-guarddrop` + `-bridges` +
+  `-dropdefinites` + `-typeenrich` + `-localantonyms` + `-simpleprops`.
+- **`-abstract-roles`** = `-abstract` but with `-event flatroles`
+  (eventprop-tagged objects).
+- **`-abstract-max`** = `-abstract-roles` + `-prenorm` (the strongest abstraction; the
+  FOLIO base configuration).
+
+Because they expand into primitives, any preset composes with an explicit override
+(e.g. drop one primitive by not letting the preset set it, or layer `-existfold`).
+
+The alternative parsing modes below replace or augment the two-LLM-call parse.  All are
+selected per run (CLI flags / option keys), share the LLM cache keyed on their own
+prompts, and are available in `runtests.py` with auto-suffixed output dirs (§10).
 
 ### 12.1 `-prenorm` — pre-Stage-1 wording normalisation
 
@@ -2923,7 +2985,7 @@ are available in `runtests.py` with auto-suffixed output dirs (§10).
 `prompts/prenorm_full.txt` to rewrite the input English so the same entity /
 property / relation is always worded identically, then feeds the rewritten text to
 Stage 1.  Returns the original text on any error.  Composable with every other mode;
-part of the FOLIO F3 configuration.
+part of the `-abstract-max` FOLIO configuration.
 
 ### 12.2 Combined single-stage parsing (`-combined-instr` etc.)
 
@@ -2980,8 +3042,8 @@ and locally-invented result worlds never collide across splits.
 
 Mode interaction: incompatible with combined single-stage parsing (no Stage-1 to
 split; `english_to_answer` returns an error if both are set); composes with
-`-prenorm` and `-coarse`/`-ultracoarse` (the split runs inside
-`_stage1_then_stage2`, so the ultracoarse cross-stage retry re-splits).  Each slice
+`-prenorm` and the event-base / `-abstract*` modes (the split runs inside
+`_stage1_then_stage2`, so the flat-fold cross-stage retry re-splits).  Each slice
 is its own LLM-cache key.  `runtests.py -s2split` writes to
 `testresults/<set>_s2split/` unless `-tag` overrides.
 
@@ -3009,7 +3071,7 @@ is inert on all other paths.  It enables:
   dimension→adjective table;
 - compound composition in property shape (`build_compound_subsumption(degree_comp=True)`):
   the modifier may arrive as a degree/simple property instead of an `isa`;
-- broad-supertype `isa(person/animal, E)` emission (shared with the coarse gate);
+- broad-supertype `isa(person/animal, E)` emission (the same `te("super")` enrichment);
 - a participle-persistence variant (Bridge C) in `inject_verb_result_state_axioms`:
   when the result state arrives directly as the past participle
   (`has property("destroyed", X)` at past/W, no verb form in the clauses), persist

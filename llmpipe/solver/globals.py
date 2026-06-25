@@ -117,11 +117,9 @@ cache_db_name=os.path.join(_root, "cache.db")
 # solving logic with a prover
 prover_fname=os.path.join(_root, "../gk/gk")  # gk binary
 prover_datafolder=os.path.join(_root, "../gk")  # where gk_name_number.txt etc are located
-memkb_name="1000"  # in-memory knowledge base name (number)
 prover_infile="gk_infile.js"
 prover_axiomfile=os.path.join(_root, "axioms_std.js")
 prover_params=["-defaults","-confidence","0.1","-keepconfidence","0.1"] # additional prover params, always appended
-usekb_prover_params=["-usekb","-confidence","0.1","-keepconfidence","0.1"] # additional prover params, always appended
 
 
 def set_global_options(newoptions):
