@@ -607,7 +607,7 @@ def parse_text(text, llm=None, version=None, tokens=None, think=None):
     if canon_entities_enabled:
       s1_json = canonicalize_entity_ids(s1_json, stats)
     # (entity canon) Enable the constant-vs-class / dropped-fact repair check.
-    _ss.aggressive_repair = canon_entities_enabled
+    _ss.set_aggressive_repair(canon_entities_enabled)
     if s2split_enabled:
       # -s2split: one Stage-2 call per Stage-1 sentence package, joined.
       s2_json = _run_stage2_split(s1_json, eff_llm, eff_version, eff_tokens,
