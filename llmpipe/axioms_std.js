@@ -211,7 +211,7 @@
    ["-has type", "?:E", "?:V", "?:Ctxt"],
    ["-has actor", "?:E", "?:X", "?:Ctxt"],
    ["capability", "?:E"],
-   ["$block", ["bridge_capability", "?:E"], ["$not", ["capability", "?:E"]]]],
+   ["$block", 0, ["$not", ["capability", "?:E"]]]],
 
   // -- 5.1b Modal Classifier Bridge: typical -> capability (strict) --
   //
