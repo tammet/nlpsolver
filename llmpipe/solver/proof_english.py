@@ -21,7 +21,7 @@
 
 import re
 
-from proof_terms import render_term_english, render_setof_english
+from proof_terms import render_term_english, render_setof_english, _is_var_raw
 
 from lc_clausify import is_skolem_const, is_skolem_fn, looks_like_var, is_world_constant
 
