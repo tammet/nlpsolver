@@ -4,6 +4,7 @@
 # Licensed under the Apache License, Version 2.0.
 #----------------------------------------------------------------
 
+import json
 import re
 from stage_sanity_core import Issue, safe_json
 
