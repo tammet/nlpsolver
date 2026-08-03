@@ -86,6 +86,10 @@ python3 solver/solve.py "Elephants are animals. John is an elephant. Is John an 
 # -> True.
 ```
 
+Note: first calls make live LLM round-trips (~10–60 s); reruns are cache-served and
+near-instant. Parses vary slightly by LLM, so a cold call may occasionally differ
+(e.g. return `Unknown.`) — just rerun, or try `-llm claude`.
+
 Note: the secrets/ folder is in `.gitignore`, so your key will not be
 accidentally committed.
 

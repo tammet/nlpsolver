@@ -205,6 +205,7 @@ def english_to_answer(text, options=None, collect=None):
     return answer
 
   llmparse.prenorm_enabled = globals.options.get("prenorm_flag", False)
+  llmparse.negretry_enabled = globals.options.get("negretry_flag", False)
   llmparse.canon_entities_enabled = lc_encoding.current().parse_canon
   llmparse.crossstage_guard_retry = globals.options.get("crossstage_retry_flag", True)
   llmparse.combined_enabled        = globals.options.get("combined_flag", False)
@@ -567,8 +568,25 @@ def _parse_cmd_line():
       opts["noproptypes_flag"] = True
       if "max" in el:
         opts["prenorm_flag"] = True
+        opts["propclass_flag"] = True
+        opts["numtype_flag"] = True
+        opts["compasym_flag"] = True
+        opts["nominalretry_flag"] = True
+        opts["negretry_flag"] = True
+    elif el in ["-propclass", "--propclass"]:
+      opts["propclass_flag"] = True
+    elif el in ["-numtype", "--numtype"]:
+      opts["numtype_flag"] = True
+    elif el in ["-compasym", "--compasym"]:
+      opts["compasym_flag"] = True
+    elif el in ["-nominalretry", "--nominalretry"]:
+      opts["nominalretry_flag"] = True
+    elif el in ["-negretry", "--negretry"]:
+      opts["negretry_flag"] = True
     elif el in ["-prenorm", "--prenorm"]:
       opts["prenorm_flag"] = True
+    elif el in ["-noprenorm", "--noprenorm"]:
+      opts["prenorm_flag"] = False
     elif el in ["-s2split", "--s2split"]:
       opts["s2split_flag"] = True
     elif el in ["-nocrossstage", "--nocrossstage"]:
@@ -758,6 +776,13 @@ logic conversion / representation (transform the Stage-2 logic before the prover
   -localantonyms : restrict antonym folding to the problem + axiom vocabulary
   -existfold     : (L2) fold "exists Y. isa(C,Y) & has_part/have(X,Y)" into
                    has_property([$has_part/$have,C], X) + named-witness bridge
+  -propclass     : property<->class canonicalization: bridge isa(W,X)<->has_property(W,X)
+                   for a concept the flat fold left in both shapes (safe isa->has_property;
+                   promote has_property->isa only for a nominal compound). (in -abstract-max)
+  -numtype       : numeric-literal typing: parse numeral strings ("34") to int/float and
+                   materialize isa(number/integer/...,N) when -isa(...,N) is demanded. (in -abstract-max)
+  -compasym      : comparative asymmetry: for a strict-scalar adjective R used as
+                   is_rel2(R,X,Y), emit is_rel2(R,X,Y)->-is_rel2(R,Y,X). (in -abstract-max)
  simplification:
   -simple        : no context, no exceptions, simple properties (the three below)
   -nocontext     : no context (time, situation) information in logic
@@ -767,9 +792,19 @@ logic conversion / representation (transform the Stage-2 logic before the prover
   -abstract       : -event flat + entitymerge + guarddrop + bridges + dropdefinites
                     + typeenrich + localantonyms + simpleprops
   -abstract-roles : as -abstract but -event flatroles (eventprop-tagged objects)
-  -abstract-max   : as -abstract-roles + -prenorm (the strongest abstraction)
+  -abstract-max   : as -abstract-roles + -prenorm + propclass + numtype + compasym
+                    + nominalretry + negretry (strongest; nominalretry/negretry can
+                    make live LLM retries)
  -prenorm       : pre-Stage-1 LLM wording normalisation (composable; FOLIO base)
  -nocrossstage  : disable the cross-stage guard-retry
+ -nominalretry  : (experimental) Stage-2 retry when a Stage-1 "ENT is a NOUN"
+                  predication's type is dropped from ENT but used elsewhere (case 126;
+                  in -abstract-max; can make live LLM retries)
+ -negretry      : (experimental) prenorm-negation-fallback: when prenorm strips a
+                  sentential negation from the conclusion question ("X is not a Y?" ->
+                  "Is X a Y?", flipping the answer), re-parse from the original text;
+                  general correctness fix (cases 80/127/189/200; in -abstract-max;
+                  can make live LLM calls)
 
 LLM reasoning:
  -think       : enable medium reasoning/thinking mode (GPT: reasoning_effort=medium;

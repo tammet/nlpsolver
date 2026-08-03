@@ -39,6 +39,13 @@ _SOFT_SYN_TEMPLATES = {
 # unrelated event into "fly" and tripped the baby-bird ¬fly rule (case 1451).
 _GENERAL_VERBS = frozenset({"go", "give", "have", "put", "present"})
 
+# Noun soft-synonym taxonomy. These are GENERAL (hypernym) nouns. When a noun
+# pair has EXACTLY ONE side here, only the specific->general direction is emitted
+# ("a company / agency / union IS an organization", NOT the reverse). Without
+# this, organization->company wrongly coerced the Harvard Weekly Book Club (an
+# organization) into a company (case 96).
+_GENERAL_NOUNS = frozenset({"organization"})
+
 # Verb soft-synonym pairs that are simply wrong (polysemy / POS confusion).
 # Suppressed entirely — no axiom emitted in either direction.
 _BLOCKED_VERB_PAIRS = frozenset({
@@ -85,6 +92,16 @@ def inject_soft_synonyms(result, axiom_vocab=frozenset()):
       # only the specific->general implication and drop the reverse.
       if pos == "v" and len(pair_key & _GENERAL_VERBS) == 1:
         if other in _GENERAL_VERBS:        # orig_word is specific, other general
+          clause = template(orig_word, other, _fresh_fv())
+        else:                              # orig_word is general, other specific
+          clause = template(other, orig_word, _fresh_fv())
+        axioms.append({"@name": "frm_syn",
+                        "@logic": clause,
+                        "@confidence": score})
+        continue
+      # Noun taxonomy: same one-way specific->general rule for hypernym nouns.
+      if pos == "n" and len(pair_key & _GENERAL_NOUNS) == 1:
+        if other in _GENERAL_NOUNS:        # orig_word is specific, other general
           clause = template(orig_word, other, _fresh_fv())
         else:                              # orig_word is general, other specific
           clause = template(other, orig_word, _fresh_fv())

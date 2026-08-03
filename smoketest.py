@@ -88,7 +88,9 @@ def check_gk_proof():
   except Exception as e:
     fail("running gk on the example failed: " + str(e))
   if b'"result": "answer found"' not in out.stdout:
-    fail("gk did not find the expected proof on birdspenguins.js")
+    fail("gk did not find the expected proof on birdspenguins.js\n"
+         "  gk output was:\n  "
+         + out.stdout.decode("utf-8", "replace").strip().replace("\n", "\n  "))
   ok("gk found an answer for birdspenguins.js")
 
 

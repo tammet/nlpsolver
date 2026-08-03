@@ -638,6 +638,230 @@ def inject_reflexive_property_bridge(result, axiom_vocab=frozenset()):
   return axioms
 
 
+# ======== property↔class canonicalization (P1, -propclass) ========
+#
+# The flat fold sometimes leaves ONE concept in both predicate shapes: a class
+# atom isa(W,X) and a property atom has_property(W,X,C).  A rule guard and the
+# query/fact then fail to unify.  Bridge them (analysis/P1_DESIGN.md):
+#   SAFE   isa(W,X) -> has_property(W,X,C): a class member has the property in
+#          every context, so this is sound for ANY W (no word-category gate).
+#          Two trigger shapes: same word (W in both isa and has_property), and
+#          adjective-compound-modifier (isa("A N") -> has_property(A) where the
+#          modifier A is used as a property -- noun modifiers never are).
+#   PROMOTE has_property(W,X,C) -> isa(W,X): asserts PERMANENT class membership,
+#          so only for a kind-naming nominal compound -- detected by W already
+#          having a compound_sub head -- and only when isa(W) is demanded (-isa).
+# Strict clauses; free context variable (timeless class -> property in all C).
+
+def inject_propclass_bridges(result, axiom_vocab=frozenset()):
+  """Property↔class canonicalization bridges; see the section comment above."""
+  del axiom_vocab  # gated on atom presence in the clause list
+  hp = set()        # words W appearing as has_property(W, ...)
+  isa = set()       # words W appearing as isa(W, ...)
+  isa_neg = set()   # words W appearing as -isa(W, ...)  (promote demand)
+
+  def visit(n, base):
+    if base == "has property" and len(n) >= 2 and isinstance(n[1], str):
+      hp.add(n[1])
+    elif base == "isa" and len(n) >= 2 and isinstance(n[1], str):
+      isa.add(n[1])
+      if n[0].startswith("-"):
+        isa_neg.add(n[1])
+  walk_result_atoms(result, visit)
+
+  # Nominal compounds = words the compound machinery decomposed to a noun head.
+  csub = set()
+  for c in result:
+    if isinstance(c, dict) and c.get("@name") == "compound_sub":
+      lg = c.get("@logic")
+      if (isinstance(lg, list) and lg and isinstance(lg[0], list)
+          and len(lg[0]) >= 2 and isinstance(lg[0][1], str)):
+        csub.add(lg[0][1])
+
+  axioms = []
+  def safe(src, prop):
+    axioms.append({"@name": "frm_propclass",
+                   "@logic": [["-isa", src, "?:X"],
+                              ["has property", prop, "?:X", "?:C"]]})
+  # SAFE same-word: isa(W) -> has_property(W)
+  for w in sorted(hp & isa):
+    safe(w, w)
+  # SAFE compound-modifier: isa("A N") -> has_property(A), A = adjectival modifier
+  # (in has_property) of the compound class "A N".
+  for a in sorted(hp):
+    for cc in isa:
+      if cc != a and cc.startswith(a + " "):
+        safe(cc, a)
+  # PROMOTE has_property(W) -> isa(W): nominal compound (compound_sub) demanded as -isa.
+  for w in sorted(hp):
+    if w in isa_neg and w in csub:
+      axioms.append({"@name": "frm_propclass",
+                     "@logic": [["-has property", w, "?:X", "?:C"],
+                                ["isa", w, "?:X"]]})
+  return axioms
+
+
+# ======== numeric-literal typing (P3, -numtype) ========
+#
+# Two related steps for problems that reason about numbers:
+#   parse_numeric_literals  -- rewrite a pure-numeral string argument ("34",
+#       "5.5", "-3") to an int/float, so numbers are numbers (consistent
+#       unification across clauses, and gk can use them arithmetically).
+#   inject_number_typing    -- when a numeric literal N is DEMANDED as a guard
+#       -isa(TYPE,N) (TYPE a number-like type) but never supplied positively,
+#       materialize the ground fact isa(TYPE,N).  Always sound (N is a number);
+#       demand-gated, so it only fires where a rule actually needs the typing.
+# gk has no built-in isa(number,N), so the fact must be asserted.
+
+import re as _re_num
+_NUMBER_TYPES = frozenset({"number", "integer", "int", "float", "real",
+                           "decimal", "natural number", "whole number", "digit"})
+_INT_RE = _re_num.compile(r"^-?\d+$")
+_FLOAT_RE = _re_num.compile(r"^-?\d+\.\d+$")
+
+def _to_number(s):
+  if isinstance(s, str):
+    if _INT_RE.match(s):
+      return int(s)
+    if _FLOAT_RE.match(s):
+      return float(s)
+  return s
+
+def _is_number(x):
+  return isinstance(x, (int, float)) or (
+      isinstance(x, str) and (_INT_RE.match(x) or _FLOAT_RE.match(x)))
+
+def _parse_numeric_node(node):
+  if isinstance(node, list):
+    if node and isinstance(node[0], str):   # atom: keep predicate name, convert args
+      return [node[0]] + [_parse_numeric_node(a) if isinstance(a, list) else _to_number(a)
+                          for a in node[1:]]
+    return [_parse_numeric_node(x) for x in node]
+  return node
+
+def parse_numeric_literals(result):
+  """Rewrite pure-numeral string arguments to int/float in every clause (in place).
+  Entity names that merely contain digits (e.g. "Symphony No. 9 1") are NOT pure
+  numerals, so they are untouched."""
+  for c in result:
+    if isinstance(c, dict):
+      if isinstance(c.get("@logic"), list):
+        c["@logic"] = _parse_numeric_node(c["@logic"])
+      if c.get("@question") is not None:
+        c["@question"] = _parse_numeric_node(c["@question"])
+
+def _clause_atoms(body, acc):
+  if isinstance(body, list) and body and isinstance(body[0], str):
+    acc.append(body)
+    for x in body[1:]:
+      _clause_atoms(x, acc)
+  elif isinstance(body, list):
+    for x in body:
+      _clause_atoms(x, acc)
+
+def inject_number_typing(result):
+  """Materialize isa(TYPE,N) for a number-like TYPE demanded as a guard but never
+  supplied positively.  The demand is recognised both directly (`-isa(TYPE,N)`) and
+  through an equality binding in the same clause (`-isa(TYPE,V)` with `-=(V,N)`, the
+  `isa(number,Y) ∧ Y=N → …` rule shape).  Sound (N is a number); demand-gated."""
+  supplied = set()
+  demanded = set()
+  def is_var(x):
+    return isinstance(x, str) and x.startswith("?:")
+  for c in result:
+    if not isinstance(c, dict):
+      continue
+    body = c.get("@logic") if c.get("@logic") is not None else c.get("@question")
+    atoms = []
+    _clause_atoms(body, atoms)
+    # variable -> numeric literal bindings from -=(V,N)/-=(N,V) guards in this clause
+    binds = {}
+    for a in atoms:
+      base = a[0][1:] if a[0].startswith("-") else a[0]
+      if base == "=" and len(a) >= 3:
+        v, w = a[1], a[2]
+        if is_var(v) and _is_number(w):
+          binds[v] = _to_number(w)
+        elif is_var(w) and _is_number(v):
+          binds[w] = _to_number(v)
+    for a in atoms:
+      if not (len(a) >= 3 and isinstance(a[0], str)):
+        continue
+      neg = a[0].startswith("-")
+      if (a[0][1:] if neg else a[0]) != "isa" or not isinstance(a[1], str) or a[1] not in _NUMBER_TYPES:
+        continue
+      arg = a[2]
+      if _is_number(arg):
+        (demanded if neg else supplied).add((a[1], _to_number(arg)))
+      elif neg and is_var(arg) and arg in binds:
+        demanded.add((a[1], binds[arg]))
+  return [{"@name": "frm_numtype", "@logic": ["isa", t, v]}
+          for (t, v) in sorted(demanded - supplied, key=str)]
+
+
+# ======== comparative asymmetry (P3, -compasym) ========
+#
+# The flat / -simpleprops fold collapses a degree-comparative
+# has_degree_rel2(R,X,Y,high) into a plain is_rel2(R,X,Y), which bypasses the
+# comparative-order axioms in axioms_std.js §3/§3.1 (those key on has_degree_rel2
+# with degree=high).  For a STRICT-SCALAR adjective R (height, size, speed, age,
+# value, price, ...) the binary relation "X is more-R than Y" is asymmetric, so we
+# re-emit that order axiom for the flat is_rel2 form.  R is restricted to a curated
+# positive list (comparable_adjectives.txt) because gradables.txt also contains
+# SYMMETRIC relations (similar, near, equal, different, adjacent) and relational/
+# attitude verbs (love, need, want, like) for which asymmetry is FALSE.
+
+def _load_comparable_adjs():
+  import os as _os
+  path = _os.path.join(_os.path.dirname(_os.path.abspath(__file__)),
+                       "comparable_adjectives.txt")
+  out = set()
+  try:
+    with open(path, encoding="utf-8") as fh:
+      for line in fh:
+        w = line.strip()
+        if w and not w.startswith("#"):
+          out.add(w.lower())
+  except OSError:
+    pass
+  return frozenset(out)
+
+COMPARABLE_ADJS = _load_comparable_adjs()
+
+def inject_comparative_axioms(result):
+  """For each strict-scalar adjective R that occurs as a binary is_rel2(R,X,Y),
+  emit the comparative ANTISYMMETRY  is_rel2(R,X,Y) & is_rel2(R,Y,X) -> X=Y  and the
+  flat property bridge  is_rel2(R,X,Y) -> has_property(R,X)  (the latter only when a
+  has_property(R,*) consumer is present).  Gated on R present as is_rel2, so it fires
+  only where a comparison actually occurs.
+
+  Antisymmetry (not strict asymmetry): two distinct entities cannot each be more-R
+  than the other (refutes comparison cycles via entity UNA), but a reflexive
+  self-comparison is_rel2(R,A,A) is left consistent.  The reflexive case arises when
+  abstraction collapses a "more-R than before" temporal comparison onto one constant
+  (e.g. "Harry is smarter than before" -> is_rel2(smart,Harry,Harry), case 89); strict
+  asymmetry would wrongly make that self-contradictory."""
+  rel2 = set()       # adjectives used as binary is_rel2
+  hp_consumed = set()  # adjectives demanded as has_property (guards)
+  def visit(n, base):
+    if base == "is rel2" and len(n) >= 4 and isinstance(n[1], str) and n[1] in COMPARABLE_ADJS:
+      rel2.add(n[1])
+    elif base == "has property" and len(n) >= 2 and isinstance(n[1], str) and n[0].startswith("-"):
+      hp_consumed.add(n[1])
+  walk_result_atoms(result, visit)
+  axioms = []
+  for r in sorted(rel2):
+    axioms.append({"@name": "frm_compasym",
+                   "@logic": [["-is rel2", r, "?:X", "?:Y", "?:C"],
+                              ["-is rel2", r, "?:Y", "?:X", "?:C"],
+                              ["=", "?:X", "?:Y"]]})
+    if r in hp_consumed:
+      axioms.append({"@name": "frm_compasym",
+                     "@logic": [["-is rel2", r, "?:X", "?:Y", "?:C"],
+                                ["has property", r, "?:X", "?:C"]]})
+  return axioms
+
+
 # ======== attribute property↔relation bridges (case 901) ========
 #
 # A property VALUE that belongs to an attribute family (color/shape/material/

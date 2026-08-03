@@ -595,6 +595,8 @@ def main():
                   help="preset: as -abstract-roles + -prenorm (strongest abstraction)")
   ap.add_argument("-existfold", action="store_true",
                   help="(L2) fold exists Y.isa(C,Y)&has_part/have(X,Y) into has_property([$has_part/$have,C],X); named-witness bridge")
+  ap.add_argument("-noprenorm", dest="noprenorm", action="store_true",
+                  help="override: force prenorm OFF even under -abstract-max (prenorm ablation experiment)")
   # Additive abstraction primitives (compose with any -event base).
   ap.add_argument("-entitymerge", action="store_true", help="proper-noun entity canonicalization + set coreference")
   ap.add_argument("-typeenrich", action="store_true", help="taxonomy/isa enrichment (all six sub-gates)")
@@ -706,6 +708,13 @@ def main():
     run_opts["noproptypes_flag"] = True
     if args.abstract_max:
       run_opts["prenorm_flag"] = True
+      run_opts["propclass_flag"] = True
+      run_opts["numtype_flag"] = True
+      run_opts["compasym_flag"] = True
+      run_opts["nominalretry_flag"] = True
+      run_opts["negretry_flag"] = True
+  if args.noprenorm:                       # prenorm ablation: force OFF after presets
+    run_opts["prenorm_flag"] = False
   if args.existfold:
     run_opts["existfold_flag"] = True
   if args.entitymerge:

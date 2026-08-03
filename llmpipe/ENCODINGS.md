@@ -804,29 +804,42 @@ example, "Birds have wings" — a default that admits exceptions — becomes:
 This means: "birds have wings, but this conclusion can be defeated by a more
 specific rule."
 
-**Priority mechanism:** The priority `["$","bird",1]` has the form `["$", CLASS, N]`
-where CLASS is the subject class and N is a specificity count.  A rule with more
-conditions gets a higher N.  For example:
+**Priority mechanism:** The priority `["$","bird",1]` has the form `["$", CLASS, N]`.
+GK compares conflicting defaults in two steps:
+
+1. **Taxonomy class specificity.** CLASS names a class in the loaded WordNet
+   taxonomy.  A priority naming a more specific class — a descendant in the
+   taxonomy — defeats one naming a more general class: `["$","penguin",1]`
+   defeats `["$","bird",1]`.
+2. **Numeric tie-breaker.** When neither class is a descendant of the other,
+   or a name is not in the taxonomy, the numeric components N are compared as
+   plain priorities: the larger N defeats the strictly smaller one.  Equal
+   values do not defeat each other.
+
+llmpipe derives N as a condition count: a rule with more isa conditions gets a
+higher N.  For example:
 
 - "Birds have wings" → priority `["$","bird",1]` (1 isa condition)
 - "Plucked birds do not have wings" → priority `["$","bird",2]`
-  (isa plucked bird + isa bird = more specific)
+  (isa plucked bird + isa bird)
 
-When the prover finds conflicting conclusions for the same head atom, the rule
-with higher N wins — the exception overrides the general default.  This implements
-the specificity preference in defeasible reasoning.
+The full comparison rules, including mixed numeric/taxonomy priorities, are in
+the [gkreasoner how_gk_works.md](https://github.com/tammet/gkreasoner/blob/main/Doc/how_gk_works.md).
 
-GK extends the [GKC theorem prover](https://logictools.org/gk/) with
+GK extends the [GKC theorem prover](https://github.com/tammet/gkc) with
 [numeric confidences](https://link.springer.com/chapter/10.1007/978-3-030-79876-5_29)
 and [defeasible rules](https://link.springer.com/chapter/10.1007/978-3-031-10769-6_18).
 See also:
-- [Confidence and defeasible reasoning examples](http://logictools.org/confer/)
-- [GK tutorial](https://logictools.org/gk/tutorial.html)
+- [GK documentation and examples](https://github.com/tammet/gkreasoner)
 
 ### 3.6 Confidence
 
-Some clause dicts carry `"@confidence": 0.8` (from `@p` metadata).  The prover
-uses this to rank answers by certainty.
+Some clause dicts carry `"@confidence": 0.8` (from `@p` metadata).  GK uses
+input confidences in its proof-support calculation: derived clauses carry
+combined confidences, and positive and negative support for a conclusion are
+computed from the retained proofs.  The confidence reported for an answer is
+derived from that calculation; ranking answers by it is a later use of the
+result.
 
 ### 3.7 Transformations Applied
 
@@ -1032,7 +1045,7 @@ The clause list is serialized as JSON with `//` comment lines between ASU groups
 The GK input format is based on
 [JSON-LD Logic](https://github.com/tammet/json-ld-logic), a JSON encoding
 of first-order logic clauses.  See also:
-- [JSON-LD Logic specification and examples](https://logictools.org/json.html)
+- [GK input languages by example](https://github.com/tammet/gkreasoner/blob/main/Doc/input_languages.md)
 - Tammet, T. and Sutcliffe, G., 2021. Combining JSON-LD with First Order Logic.
   In *2021 IEEE 15th International Conference on Semantic Computing (ICSC)*
   (pp. 256–261). IEEE.
@@ -1393,7 +1406,9 @@ run inside `logconvert` (machinery reference: DOCUMENTATION.md §11).
 | `flatroles` | flat relational fold with an eventprop-tagged object `is_rel2(V, subj, ["eventprop", role, value])` (§6.7) |
 
 The additive primitives are `-entitymerge`, `-typeenrich[=GATES]`, `-guarddrop`, `-bridges`,
-`-dropdefinites`, `-localantonyms`, and `-existfold` (§6.2–6.5, §6.9).  Convenience presets
+`-dropdefinites`, `-localantonyms`, `-existfold`, `-propclass`, `-numtype`, and `-compasym`
+(§6.2–6.5, §6.9, §6.12–6.14); plus the parse-time `-nominalretry` Stage-2 retry (§6.15).
+Convenience presets
 (`-abstract`, `-abstract-roles`, `-abstract-max`) are pure CLI expansions into a fixed subset
 of these primitives (§6.10); they are never read in pipeline code.  Every gate is resolved once
 in `solver/lc_encoding.py` `EncodingConfig`, and the pipeline reads only that config.
@@ -1583,7 +1598,7 @@ is how the per-mechanism tables in the LPAR paper are produced).
 |---|---|
 | `-abstract` | `-event flat` + `-entitymerge` + `-guarddrop` + `-bridges` + `-dropdefinites` + `-typeenrich` + `-localantonyms` + `-simpleprops` |
 | `-abstract-roles` | as `-abstract` but `-event flatroles` |
-| `-abstract-max` | as `-abstract-roles` + `-prenorm` (strongest; the FOLIO ladder base) |
+| `-abstract-max` | as `-abstract-roles` + `-prenorm` + `-propclass` + `-numtype` + `-compasym` + `-nominalretry` (strongest; the FOLIO ladder base) |
 
 ### 6.11 `-prenorm` and `-nocrossstage`
 
@@ -1594,6 +1609,91 @@ guard-retry used alongside the flat bases.
 
 (The light shape-unification repair — predicate rename, shape bridges, compound composition,
 broad-supertype `isa` — is part of `-s2split`, not a separate flag; see DOCUMENTATION.md §12.4.)
+
+### 6.12 `-propclass`: property↔class canonicalization
+
+The flat fold sometimes leaves **one concept in both predicate shapes** — a class atom
+`isa(W,X)` and a property atom `has property(W,X,C)` — so a rule guard and the query (or two
+premises) silently fail to unify.  `-propclass` injects bridge axioms (named `frm_propclass`)
+that reconcile them, problem-locally, when both shapes occur:
+
+- **SAFE — `isa(W,X) → has property(W,X,?:C)`** (class ⇒ property).  Sound for *any* `W`
+  (a class member has the property in every context — hence the free context variable `?:C`),
+  so it is **ungated**.  Two trigger shapes:
+  - *same word* — `W` appears as both `isa(W,·)` and `has property(W,·)` (e.g. the adjective
+    `vertebrate` used as `isa` in one premise and `has property` in another);
+  - *adjective-compound-modifier* — `isa("A N",X) → has property(A,X,?:C)`, where the compound
+    class `"A N"` is present and its modifier `A` is used as a property (e.g. `isa("analog
+    media") → has property("analog")`).  Noun modifiers never appear as `has property`, so
+    noun-noun compounds (`music piece`) are excluded automatically.
+- **PROMOTE — `has property(W,X,C) → isa(W,X)`** (property ⇒ class).  This asserts *permanent
+  class membership*, so it is **gated**: emitted only when `W` is a kind-naming **nominal
+  compound** (it already has a `compound_sub` head, e.g. `animal lover → lover`) **and** is
+  demanded as a guard (`-isa(W,·)` occurs).  Gradable/stage-level properties never qualify
+  (they have no `compound_sub`, and gradables sit in `has degree property`, not `has property`),
+  so a time/location-dependent property is never promoted to a stable class.
+
+A single implication clause resolves both ways (modus ponens and modus tollens), so the SAFE
+form also refutes; the bridges are strict (predicate identity is not defeasible).  Mechanism
+and per-case design rationale: `analysis/P1_DESIGN.md`; injector reference: DOCUMENTATION.md
+§7.7.  Enabled by `-abstract-max`.
+
+### 6.13 `-numtype`: numeric-literal typing
+
+A problem may reason about a number-type guard (`isa(number, N)`) without ever asserting the
+typing fact, because gk has **no built-in `isa(number,·)`** — it is an ordinary predicate.
+`-numtype` does two things:
+
+- **parse** — rewrites pure-numeral string arguments (`"34"`, `"5.5"`, `"-3"`) to int/float
+  across all clauses, so numbers are numbers (consistent unification; usable by gk
+  arithmetically).  Entity names that merely *contain* digits ("Symphony No. 9 1") are not
+  pure numerals and are untouched.
+- **materialize** — emits a ground `isa(TYPE, N)` (named `frm_numtype`) when a number-like
+  `TYPE` (`number`, `integer`, `float`, `real`, `decimal`, `natural number`, …) is **demanded**
+  as a guard but never supplied.  The demand is read both directly (`-isa(TYPE,N)`) and through
+  an equality binding in the same clause (`-isa(TYPE,V)` with `-=(V,N)`, the
+  `isa(number,Y) ∧ Y=N → …` rule shape).  Always sound (`N` is a number); demand-gated, so it
+  fires only where a rule needs the typing.
+
+Fixes the FOLIO "begins-with-34" case where one plate's `isa(number,"35")` was asserted but
+the other's `isa(number,"34")` was only ever a guard.  Injector reference: DOCUMENTATION.md
+§7.7.  Enabled by `-abstract-max`.
+
+### 6.14 `-compasym`: comparative antisymmetry
+
+The flat / `-simpleprops` fold collapses a degree comparative `has_degree_rel2(R,X,Y,high)`
+into a plain `is_rel2(R,X,Y)`, which bypasses the comparative-order axioms in `axioms_std.js`
+§3/§3.1 (those key on `has_degree_rel2` with degree=high).  `-compasym` re-emits the order
+axiom for the flat form: for a relation `R` that occurs as a binary `is_rel2(R,X,Y)` and is a
+**strict-scalar dimensional adjective**, it injects (named `frm_compasym`)
+
+- **antisymmetry** `is_rel2(R,X,Y) ∧ is_rel2(R,Y,X) → X=Y` — two *distinct* entities cannot each
+  be more-`R` than the other (refutes comparison cycles via entity UNA), while a reflexive
+  self-comparison `is_rel2(R,A,A)` stays consistent.  (Antisymmetry, **not** strict asymmetry:
+  abstraction sometimes collapses a "more-`R` than before" temporal comparison onto one constant
+  — "Harry is smarter than before" → `is_rel2(smart,Harry,Harry)` — which strict asymmetry would
+  wrongly make self-contradictory.)
+- the flat **property bridge** `is_rel2(R,X,Y) → has_property(R,X)` when a `has_property(R,·)`
+  consumer exists (the "X taller than Y → X is tall" analogue of §3 for the flat form).
+
+`R` is restricted to a curated positive list, `solver/comparable_adjectives.txt`, because
+`gradables.txt` is contaminated for this purpose with **symmetric relations** (similar, near,
+close, far, equal, different, adjacent, parallel — asymmetry is false) and **relational/attitude
+verbs** (love, need, want, like — mutual).  No transitivity is emitted (problems that need it
+supply it; a blanket transitive `is_rel2` risks blow-ups).  Injector reference:
+DOCUMENTATION.md §7.7.  Enabled by `-abstract-max`.
+
+### 6.15 `-nominalretry`: dropped predicate-nominal Stage-2 retry
+
+Unlike the primitives above, this is **not an encoding gate** (no `EncodingConfig` field) — it is
+a parse-time **Stage-2 sanity check + corrective retry**.  Stage 1 may state a copular "ENT is a
+NOUN" predication ("Rock 2 is a pet of Peter 1"; "The output 2 of MT is a text sequence"), but
+Stage 2 sometimes drops the type — encoding only the entity category plus a relation
+(`isa(animal,Rock)+have(Peter,Rock)`), or binding the property to a fresh dangling existential
+(`exists Z. isa(text sequence, Z)`) instead of the named entity.  When the dropped `NOUN` is used
+elsewhere in the logic but never asserted of `ENT`, the check emits an issue that drives the
+existing corrective Stage-2 retry, which re-prompts the LLM to attach `isa(NOUN, ENT)`.  Full
+mechanism: DOCUMENTATION.md §7.8.  Enabled by `-abstract-max` (note: it can make live LLM retries).
 
 ---
 
@@ -1616,6 +1716,9 @@ is documented in DOCUMENTATION.md §11.0.
 | `-dropdefinites` | `dropdefinites_flag` | `dropdefinites` | skip `$theof1` definite reification; leave definites as plain relations (§6.4) |
 | `-localantonyms` | `localantonyms_flag` | `localantonyms` | restrict antonym folding to problem ∪ axiom vocabulary (§6.4) |
 | `-existfold` | `existfold_flag` | *(read from options)* | existential-attribute collapse + named-witness bridge (§6.9) |
+| `-propclass` | `propclass_flag` | `propclass` | property↔class canonicalization bridges `isa(W)↔has property(W)` (§6.12) |
+| `-numtype` | `numtype_flag` | `numtype` | parse numeral strings to numbers + materialize `isa(number/integer/…,N)` on demand (§6.13) |
+| `-compasym` | `compasym_flag` | `compasym` | comparative antisymmetry `is_rel2(R,X,Y)∧is_rel2(R,Y,X)→X=Y` for strict-scalar adjectives (§6.14) |
 | `-simpleprops` / `-simple` | `noproptypes_flag` | `simpleprops`, `collapse_degree` | degree predicates → simple (§5.3) |
 | `-nocontext` | `nocontext_flag` | *(read from options)* | context → constant `$c`; no worlds/tense (§5.1) |
 | `-noexceptions` | `noexceptions_flag` | *(read from options)* | strip `$block` defeaters from defeasible rules (§5.2) |
@@ -1627,5 +1730,7 @@ is documented in DOCUMENTATION.md §11.0.
 with `entitymerge`. The vestigial `coarse` field is always `False`.
 
 **Presets** `-abstract` / `-abstract-roles` / `-abstract-max` (§6.10) are pure CLI expansions
-into the primitive option keys above (the last also sets `prenorm_flag`); they are read nowhere
-in pipeline code.
+into the primitive option keys above (the last also sets `prenorm_flag`, `propclass_flag`,
+`numtype_flag`, `compasym_flag`, and `nominalretry_flag`); they are read nowhere in pipeline
+code.  `-nominalretry` is a parse-time Stage-2 retry (§6.15), not an `EncodingConfig` field, so
+it has no row above.

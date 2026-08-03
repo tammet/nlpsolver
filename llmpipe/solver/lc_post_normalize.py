@@ -57,6 +57,32 @@ def load_gradable_props():
     return frozenset()
 
 GRADABLE_PROPS = load_gradable_props()
+
+# ======== reflexive locative self-loop drop ========
+# Nothing is in / on / above / inside ... itself.  A reflexive locative atom
+# is_rel2(R, X, X) for an irreflexive spatial/containment relation R is always a
+# subject-collapse parse artifact, and with a "unique location" premise it
+# manufactures false entity identities (case 59: in(Montana,Montana) +
+# "a city is in only one state" ⇒ US=Montana).  Drop such unit assertions.
+_IRREFLEXIVE_LOC_RELS = frozenset({
+    "in", "inside", "within", "on", "outside", "contains", "part of",
+    "above", "below", "over", "under", "located in", "located on",
+    "in_front_of", "behind", "left_of", "right_of",
+})
+
+def drop_reflexive_locatives(result):
+  """Return a new clause list with unit clauses asserting a reflexive locative
+  self-loop is_rel2(R,X,X) (R irreflexive, X a constant) removed."""
+  out = []
+  for c in result:
+    lg = c.get("@logic") if isinstance(c, dict) else None
+    if (isinstance(lg, list) and len(lg) >= 4 and lg[0] == "is rel2"
+        and isinstance(lg[1], str) and lg[1] in _IRREFLEXIVE_LOC_RELS
+        and isinstance(lg[2], str) and lg[2] == lg[3]):
+      continue
+    out.append(c)
+  return out
+
 # ======== compound type rules ========
 
 def _walk_clause_dicts(extra_clauses, walk):

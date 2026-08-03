@@ -8,8 +8,9 @@ Run any example with:
 
     ./gk Examples/core/grandfather.js
 
-For a tutorial introduction, see `Doc/tutorial.md`.
-For the JSON-LD-LOGIC format specification, see `Doc/json_ld_logic.md`.
+For the input format reference, see `../Doc/input_languages.md`.
+A tutorial based on the current example set is in the
+[gkreasoner repository](https://github.com/tammet/gkreasoner/tree/main/Examples).
 
 
 Core Examples
@@ -17,8 +18,6 @@ Core Examples
 
 Basic classical logic: facts, rules, queries, and answer predicates.
 No confidence values or default rules.
-
-See also: `Doc/tutorial.md` Part 1 (Questions and Answers).
 
     core/grandfather.js
         Rules and inference. A grandfather rule derives grandfather(john,mark)
@@ -81,8 +80,6 @@ Confidence Examples
 Problems using @confidence values for uncertain reasoning. GK computes
 positive and negative evidence and cumulates confidence from multiple
 independent proofs.
-
-See also: `Doc/tutorial.md` Part 2 (Confidence Values).
 
 ### Basic confidence
 
@@ -205,8 +202,6 @@ Exception Examples
 Default rules with $block mechanism for defeasible reasoning.
 Rules can be overridden by more specific exceptions.
 
-See also: `Doc/tutorial.md` Part 3 (Default Rules and Exceptions).
-
 ### Basic defaults
 
     exceptions/trivial.js
@@ -240,8 +235,9 @@ See also: `Doc/tutorial.md` Part 3 (Default Rules and Exceptions).
     exceptions/classify.js
         Classification with default rules. Demonstrates how $block
         is used to classify entities into categories.
+        Uses taxonomy-based priorities (see the taxonomy section below).
 
-        ./gk Examples/exceptions/classify.js
+        ./gk Examples/exceptions/classify.js -taxonomy -datafolder Examples/exceptions
 
     exceptions/kingqueen.js
         Simple type rules (king/queen classification).
@@ -250,15 +246,17 @@ See also: `Doc/tutorial.md` Part 3 (Default Rules and Exceptions).
 
     exceptions/nixon.js
         The Nixon diamond: "Quakers are pacifists" vs "Republicans are
-        not pacifists" with equal strength. Neither default wins.
-        Expected result: "no answers found".
+        not pacifists" with equal strength. Neither default wins: GK
+        reports the opposition with a zero margin.
+        Expected result: "evidence below limit" at confidence 0.
 
         ./gk Examples/exceptions/nixon.js
 
     exceptions/nixon_taxonomy.js
         Nixon diamond using taxonomy-based strengths. Both defaults
         are incomparable in the taxonomy, so neither wins.
-        Expected result: "generic assumptions contradicted".
+        Expected result: "evidence below limit" at confidence 0.
+        Uses taxonomy-based priorities (see the taxonomy section below).
 
 ### Penguin variants
 
@@ -271,12 +269,13 @@ See also: `Doc/tutorial.md` Part 3 (Default Rules and Exceptions).
 
     exceptions/penguin3.js
         Same as penguin2 but using taxonomy-based $block priorities
-        like ["$","penguin",3]. Requires `-defaults` flag.
+        like ["$","penguin",3].
+        Uses taxonomy-based priorities (see the taxonomy section below).
 
     exceptions/penguin4.js
         Whether a grandfather of a penguin can fly. Uses nested function
         symbols (father(father(p))) and biconditional rules.
-        (From the logictools.org/gk/ examples.)
+        Uses taxonomy-based priorities (see the taxonomy section below).
 
 ### Situation calculus (frame problem)
 
@@ -285,17 +284,18 @@ See also: `Doc/tutorial.md` Part 3 (Default Rules and Exceptions).
         He wore a black suit. Then the man left the room."
         Models situations, events, and default persistence (frame axioms).
         Question: in which situations is there NOT a man in the room?
-        (From the logictools.org/gk/ examples.)
+        Uses taxonomy-based priorities (see the taxonomy section below).
 
-        ./gk Examples/exceptions/people_room.js
+        ./gk Examples/exceptions/people_room.js -taxonomy -datafolder Examples/exceptions
 
 ### Part-capability reasoning
 
 These examples explore how to encode "if a class has a component used
 for some capability, then an instance without that component lacks
 that capability" (e.g., birds without wings cannot fly).
-(From the "GK: implementing full first order default logic" paper, IJCAR 2022,
-and https://logictools.org/gk/)
+(From the "GK: implementing full first order default logic" paper, IJCAR 2022.)
+partcapability1 and partcapability2 use taxonomy-based priorities and
+require the taxonomy flags (see the taxonomy section below).
 
     exceptions/partcapability1.js
         Same priority for "birds have wings" and "birds can fly" leads
@@ -324,10 +324,16 @@ large constant sets. See https://logictools.org/gk/ for timing comparisons.
 
 ### Taxonomy-dependent examples
 
-These examples use taxonomy-based $block strengths (["$","bird"] instead
-of integer strengths) and require the `-defaults` flag with taxonomy files:
+Examples using taxonomy-based $block strengths (["$","bird"] instead of
+integer strengths) require the `-taxonomy` flag (`-defaults` is an
+accepted synonym) with the taxonomy data files:
 
-    ./gk Examples/exceptions/taxonomy.js -defaults -datafolder Examples/exceptions
+    ./gk Examples/exceptions/taxonomy.js -taxonomy -datafolder Examples/exceptions
+
+Running such an example without the flag is an error.  The examples in
+this folder that need it: classify.js, nixon_taxonomy.js, penguin3.js,
+penguin4.js, people_room.js, partcapability1.js, partcapability2.js,
+taxonomy.js.
 
     exceptions/taxonomy.js
         Bird/penguin/object hierarchy with taxonomy-based default comparison.
@@ -336,8 +342,7 @@ of integer strengths) and require the `-defaults` flag with taxonomy files:
         Nixon diamond with taxonomy-based strengths.
 
 The taxonomy data files (`gk_name_number.txt` and `gk_taxonomy_packed.txt`)
-are included in this folder.  Pre-built variants for larger knowledge
-bases are available at https://logictools.org/gk/.
+are included in this folder.
 
 
 Strategy Examples
@@ -345,9 +350,9 @@ Strategy Examples
 
 Strategy files control proof search. Pass them with `-strategy`:
 
-    ./gk <problem_file> -strategy Examples/strategy/runs.txt
+    ./gk Examples/core/grandfather.js -strategy Examples/strategy/runs.txt
 
-See also: `Doc/strategy_reference.md`.
+See also: `../Doc/strategy_reference.md`.
 
     strategy/runs.txt
         Comprehensive multi-run strategy with 63 sequential runs combining

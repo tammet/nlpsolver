@@ -3,7 +3,7 @@
 `llmpipe` is a pipeline that converts natural-language text into first-order predicate logic using
 LLMs, then hands the logic to the `gk` theorem prover to answer questions.  This document explains
 the pipeline end-to-end, describes every source file, and gives a thorough overview of the logic
-representation so that a developer or LLM can quickly start extending or modifying the system.
+representation so that maintainers and contributors can extend or modify the system.
 
 ---
 
@@ -196,10 +196,12 @@ llmpipe/
 │   ├── stage2_checklist_full.txt
 │   └── stage2_examples.txt
 │
-├── tests/               Test cases
-│   ├── tests_core.py    Core test suite ([text, expected_answer] pairs)
-│   ├── tests_medium_core.py
-│   └── tests_small.py
+├── tests/               Test cases ([id, text, expected_answer] triples)
+│   ├── tests_core.py    Core test suite
+│   ├── tests_core_100.py         100-case spread subset of the core suite
+│   ├── tests_core_challenging.py
+│   ├── tests_folio_v2.py         FOLIO benchmark test set
+│   └── FOLIO_yale/      FOLIO source data
 │
 ├── mkdata/              Synonym/antonym data builder (standalone, own venv)
 │   └── README.md        Full documentation for mkdata
@@ -212,11 +214,9 @@ llmpipe/
 ├── ask.py               Direct LLM call tool (uses solver/llmcall.py)
 ├── test.py              Test runner (single-LLM, resumable text output)
 ├── runtests.py          Batch runner — every case × N LLMs in parallel, one JSON per (case, llm)
-├── checkprompt.py       Validate JSON in prompt example files
 ├── README.md            User-facing overview and installation
 ├── DOCUMENTATION.md     Full developer documentation (this file)
 ├── ENCODINGS.md         Stage-1 / Stage-2 / GK clause-list encoding reference
-├── DEBUGGING.md         Debugging workflow and failure taxonomy
 ├── PROOF_RENDERING.md   How proofs are rendered as English explanations
 └── CLAUDE.md            Guidance for Claude Code agents working in this repo
 ```
@@ -713,7 +713,7 @@ list pipeline.  The computation is split across several files:
 | `lc_post_have.py` | Possessive `have` / `have`↔`has_part` bridges: `add_possessive_have`, `add_haspart_for_typed_have`, `inject_have_to_haspart_axioms` |
 | `lc_post_population.py` | Population-fact extraction and negative-witness walks: `populate_clauses` |
 | `lc_post_reify.py` | Post-clausification reification of definite descriptions and measurements: `rewrite_definites` (`$theof1`), `rewrite_measure_terms` (`$measure_of`/`$measure`/`less_measure`) |
-| `lc_post_inject.py` | Post-clausification dynamic axiom injection — the bridge/verb/world injectors: beneficiary↔`is rel2 "for"` bridge, carrier-vocabulary lift, verb-result-state bridges, acquire→have bridges, positional-preposition actor-location bridges (`inject_positional_actor_bridges`, case 670), `"filled with"`/`"full of"`→`in` containment bridges (`inject_containment_bridges`, case 673), attribute property↔relation bridges (color/shape/material/taste, `inject_attribute_relation_bridges`, case 901), stable-adjective past→present persistence (`inject_stable_adjective_persistence`, case 911 — see §7.14), world-graph geometry. The KB-driven synonym/exclusion injectors are split out (next row); all injectors traverse via `treewalk.walk_result_atoms` |
+| `lc_post_inject.py` | Post-clausification dynamic axiom injection — the bridge/verb/world injectors: beneficiary↔`is rel2 "for"` bridge, carrier-vocabulary lift, verb-result-state bridges, acquire→have bridges, positional-preposition actor-location bridges (`inject_positional_actor_bridges`, case 670), `"filled with"`/`"full of"`→`in` containment bridges (`inject_containment_bridges`, case 673), attribute property↔relation bridges (color/shape/material/taste, `inject_attribute_relation_bridges`, case 901), stable-adjective past→present persistence (`inject_stable_adjective_persistence`, case 911 — see §7.14), property↔class canonicalization (`inject_propclass_bridges`, `-propclass`/`-abstract-max` — see §7.7), numeric-literal typing (`parse_numeric_literals` + `inject_number_typing`, `-numtype`), comparative antisymmetry (`inject_comparative_axioms`, `-compasym`), world-graph geometry. The KB-driven synonym/exclusion injectors are split out (next row); all injectors traverse via `treewalk.walk_result_atoms` |
 | `lc_inject_synonyms.py` | KB-driven soft-synonym + exclusion/mutex injectors: `inject_soft_synonyms`, `inject_exclusion_axioms` (incl. noun-mutex via `_ISA_EXCL_GROUPS`), `inject_isa_cross_group_axioms`, `inject_verb_mutex_axioms`, `inject_kinship_mutex_axioms`. Re-exported through `lc_post_inject` so importers are unchanged |
 | `lc_inject_scan.py` | Shared clause-scan helpers used by the injectors: `collect_eligible_words`, `eligible_word` |
 | `treewalk.py` | Shared formula-tree traversal: `walk_result_atoms(result, visit)` calls `visit(atom, base)` on each predicate atom of every `@logic`/`@question` body — the scan all injectors share |
@@ -1151,7 +1151,7 @@ Several `_PRED_TABLE` entries call dedicated helpers instead of inline lambdas:
 #### Helper-predicate templates
 
 `_PRED_TABLE` includes situation-aware renderings for axiom helper
-predicates that previously fell through to the fallback:
+predicates:
 
 - `next(W, W2)` → `"the situation W is followed by the situation W2"`
 - `before(W, W2)` → `"the situation W is earlier than the situation W2"`
@@ -1256,6 +1256,11 @@ llmpipe/axioms_std.js          default axiom file
 ../gk/gk_taxonomy_packed.txt   taxonomy data
 ```
 
+The `../gk` folder is a local installation of the GK reasoner; the
+authoritative GK distribution (all-platform binaries, reference docs,
+examples) is https://github.com/tammet/gkreasoner. `../gk/README.md`
+summarises the installation and the exact invocation.
+
 ### 5.12 pretty.py
 
 **Role:** Human-readable pretty-printing of JSON structures.
@@ -1318,7 +1323,7 @@ prover_fname      = "../gk/gk"
 prover_axiomfile  = "axioms_std.js"
 prover_datafolder = "../gk"
 prover_infile     = "gk_infile.js"
-prover_params     = ["-defaults", "-confidence", "0.1", "-keepconfidence", "0.1"]
+prover_params     = ["-taxonomy", "-confidence", "0.1", "-keepconfidence", "0.1"]
 ```
 
 **`set_global_options(newoptions)`** — merge a dict into `options`; called by `solve.py` with
@@ -1729,6 +1734,9 @@ bridge representation gaps.
 | Containment bridge | `lc_post_inject.inject_containment_bridges` | "The cup filled with water fell. The cup contained water?" → emits `is_rel2("filled with", cup, water) → is_rel2("in", water, cup)` | "X filled with Y" / "X full of Y" entails Y is IN X. `_CONTAINMENT_RELS = {filled with, full of}`. When such a relation appears as `is_rel2`/`has_degree_rel2`, injects a STRICT one-way bridge `¬<rel>(X,Y) → is_rel2("in", Y, X)` per (relation, predicate-form) present — PRESERVING the original relation (an added entailment, NOT a rewrite; "Y in X" does not imply X full of Y), like the static `contains↔in` (axioms_std.js §1). The gpt variant that packs the content into the property NAME (`has_degree_property("filled with water", cup)`) is instead handled by `_check_stage2_multiword_property` (§5.17). Case 673. |
 | Attribute property↔relation bridge | `lc_post_inject.inject_attribute_relation_bridges` | "The car which John drove was red. What color was the car?" → emits `has_property(red, X) → is_rel2("color of", red, X)` / `is_rel2("color", X, red)` | A property VALUE in an attribute family equals the attribute RELATION. `_ATTRIBUTE_FAMILIES` = color (`COLOR_BASIC`+`COLOR_EXTRA`), shape (`SHAPE_BASIC`), material (`MATERIAL_BASIC`), taste (`TASTE`) — value-sets reused from `data_exclusions`; each carries its relation names (`color of`/`color`, `shape of`/`shape`, `material of`/`made of`/…, `taste of`/`flavor`/…). For each family whose relation is QUERIED (an `is_rel2` relation) and whose value is PRESENT as a property, injects BOTH arg-orders from the post-normalize `has_property` form. Generalises and replaces the dead static "red→color of" stub (axioms_std.js §8), which covered one colour/arg-order and fatally expected `has_degree_property` (colours normalise to `has_property`). Case 901 (2/4 → 4/4; bonus 987). |
 | Stable-adjective past→present persistence | `lc_post_inject.inject_stable_adjective_persistence` | "The man whom John saw is tall. Is the man short?" → emits `has_degree_property(tall, X, …, past@W) → has_degree_property(tall, X, …, present@W)` so the tall/short mutex meets the present query | See §7.14 — fills the assertion-side gap that the question-pinned tense bridges miss, for individual-level (stable) properties (`_STABLE_PERSIST_PROPS`: 83 stable adjectives + color/shape/material). Case 911. |
+| Property↔class canonicalization (`-propclass`) | `lc_post_inject.inject_propclass_bridges` | "No digital media are analog. Printed text is analog media." → `has_property(analog,X)` vs `isa("analog media",X)` never unify; emits `isa("analog media",X) → has_property(analog,X,?:C)`. "Pet owners love animals" (→`has_property(animal lover,X)`) vs "Animal lovers are nice" (→`isa(animal lover,X)`) → emits the promote `has_property(animal lover,X,C) → isa(animal lover,X)` | Reconciles one concept the flat fold left in **both** shapes (`isa(W,·)` class atom and `has_property(W,·,·)` property atom), so a rule guard and the query/fact unify. **SAFE** `isa(W,X)→has_property(W,X,?:C)` (class⇒property, sound for any W → ungated, free context var): fires for a *same word* `W` in both shapes, or for an *adjective-compound-modifier* `isa("A N")→has_property(A)` where modifier `A` is used as a property (noun modifiers never are, so noun-noun compounds like "music piece" are excluded). **PROMOTE** `has_property(W,X,C)→isa(W,X)` (property⇒class, asserts permanent membership → gated): only when `W` is a kind-naming **nominal compound** (it already has a `compound_sub` head, e.g. animal lover→lover) AND is demanded as a guard (`-isa(W,·)` present); gradable/stage-level properties never qualify (no `compound_sub`; gradables sit in `has_degree_property`). A single implication clause refutes too (modus tollens). Strict clauses, `@name="frm_propclass"`, gated on `EncodingConfig.propclass`. In `-abstract-max`. Fixes FOLIO 50/51/100/101/184, 0 regressions. Design: `analysis/P1_DESIGN.md`. |
+| Numeric-literal typing (`-numtype`) | `lc_post_inject.parse_numeric_literals` + `inject_number_typing` | "…begins with 34" with `isa(number,"35")` asserted but `isa(number,"34")` only a guard → materializes `isa(number, 34)` | Two steps: **parse** rewrites pure-numeral string args (`"34"`, `"5.5"`) to int/float across all clauses (entity names with digits like "Symphony No. 9 1" are untouched); **materialize** emits a ground `isa(TYPE, N)` (`@name="frm_numtype"`) for a number-like `TYPE` (number/integer/float/real/decimal/…) **demanded** but unsupplied. gk has no built-in `isa(number,·)`, so the fact must be asserted. The demand is read directly (`-isa(TYPE,N)`) and through an in-clause equality binding (`-isa(TYPE,V)` with `-=(V,N)`). Sound (N is a number); demand-gated. Gated on `EncodingConfig.numtype`. In `-abstract-max`. Fixes FOLIO 75, 0 regressions (17 numeric cases). |
+| Comparative antisymmetry (`-compasym`) | `lc_post_inject.inject_comparative_axioms` | "Peter is taller than Michael … is Peter shorter than a man in the class?" → emits `is_rel2(tall,X,Y)∧is_rel2(tall,Y,X)→X=Y` so the Peter↔man comparison cycle refutes via UNA | The flat/`-simpleprops` fold collapses `has_degree_rel2(R,X,Y,high)` to plain `is_rel2(R,X,Y)`, bypassing the §3/§3.1 comparative-order axioms. For a relation R used as binary `is_rel2(R,X,Y)` and listed in `solver/comparable_adjectives.txt` (curated strict-scalar dimensional adjectives — excludes symmetric relations similar/near/equal/… and attitude verbs love/need/…), emit **antisymmetry** `is_rel2(R,X,Y)∧is_rel2(R,Y,X)→X=Y` (NOT strict asymmetry: a reflexive "smarter than before" → `is_rel2(smart,Harry,Harry)` must stay consistent, case 89) + the flat property bridge `is_rel2(R,X,Y)→has_property(R,X)` when a `has_property(R,·)` consumer exists. No transitivity (problems supply it). `@name="frm_compasym"`, gated on `EncodingConfig.compasym`. In `-abstract-max`. Fixes FOLIO 115, 0 regressions. |
 | Kinship mutex injection | `lc_inject_synonyms.inject_kinship_mutex_axioms` | "Sara is the sister of Mike. Is Sara the brother of Mike?" → emits `isa(sister,X) ∧ isa(brother,X) → false` (and the matching `is_rel2 "X of"` mutex) | Dynamic gender-paired role mutex covering 16 pairs: kinship (sister/brother, daughter/son, mother/father, wife/husband, aunt/uncle, niece/nephew), grand- (grandmother/grandfather, granddaughter/grandson), step- (step{mother,father,daughter,son,sister,brother}), god- (godmother/godfather), status (widow/widower, bride/groom), royalty (queen/king, princess/prince).  Each pair emits two atom shapes: `isa` 3-arg (no `$ctxt`) and `is rel2 "X of"` 5-arg with shared `$ctxt`.  Interacts with the `$theof1` chain-rewrite guard above — without that guard, two definites carrying both kinship roles for the same entity would chain-collapse and the mutex would never fire. |
 | `@sourcetype` stripping | Serialisation (`clause_list_to_json`) | Population facts carry `@sourcetype:"populate"` internally for processing — stripped before the prover sees them | Internal `@sourcetype` tags are excluded from prover input |
 
@@ -1805,6 +1813,23 @@ LLMs/inputs where the retry doesn't land.
 The list of checks lives in `stage_sanity.py` (§5.17).  Adding a new check = one new
 `_check_stage<N>_*` function plus a call inside `check_stage<N>`; no change to `llmparse.py`
 is needed.
+
+**`-nominalretry`: dropped predicate-nominal retry (experimental, flag-gated).**
+`_check_stage2_dropped_predicate_nominal` (gated on `globals.options["nominalretry_flag"]`,
+set by `-nominalretry` and folded into `-abstract-max`) addresses a Stage-2 failure where a
+Stage-1 copular predication "ENT is a NOUN" loses its type.  `_extract_s1_copular_nominals`
+pulls `(entity, noun)` pairs from concrete fact units (`situation`/`real`), handling a subject
+with an `of …`/`'s …` postmodifier (the definite-description case) and multi-word nouns, and
+conservatively skipping negated / modal / disjunctive / quantified sentences.  The check fires
+when the `NOUN` appears elsewhere in the Stage-2 logic but is never asserted of `ENT` (no
+`isa/has property(NOUN, ENT)`), and emits a `dropped_predicate_nominal` issue that drives the
+corrective retry to add `isa(NOUN, ENT)`.  It covers two LLM failure modes: substituting the
+entity **category** for the predicate nominal (`isa(animal,Rock)+have(Peter,Rock)` for "Rock is
+Peter's pet", case 126), and binding the property to a **dangling existential**
+(`exists Z. isa(text sequence, Z)` for "The output of MT is a text sequence", case 91).
+Validated live: 91, 126 → gold, 0 regressions on the 14-case firing surface; cost ~14 live
+Stage-2 retries per full FOLIO run.  Unlike the encoding primitives, this is a parse-time retry,
+not an `EncodingConfig` gate, so it can make live LLM calls.  Design: `analysis/P3_TIER_A_PLAN.md`.
 
 ---
 
@@ -2181,7 +2206,7 @@ Helper functions in `lc_clausify.py`:
 
 Skolem type resolution for rendering (`proof_answer_format._resolve_skolem_entity`):
 1. **Fast path**: extract type from name via `skolem_type_from_name`
-2. **Fallback**: look up type from `compute_skolem_types` clause-list scan (handles old-format names and Skolem functions)
+2. **Fallback**: look up type from `compute_skolem_types` clause-list scan (handles names without a type suffix and Skolem functions)
 
 `compute_skolem_types(proof, logic=None)` in `proof_render.py` scans both the logic clause list (for types not used in the proof) and proof steps, populating `skolem_types` and `skolem_fn_types` tables.
 
@@ -2357,7 +2382,7 @@ skip `$ctxt` terms, and handle disjunctive clauses (list-of-lists). Controlled b
   verb pair, all four LLMs): fixes 1451 (×4) and 1498 (gpt/gemini, the spurious
   `swim→fly` negative removed). The unmasked "regressions" 1500/1501 and 1616
   (claude) were passing only because a bad chain coincidentally produced the
-  expected answer — see DEBUGGING / testfixlog 1451.
+  expected answer.
 
 *Exclusion axioms* (`inject_exclusion_axioms`):
 - Scans the clause list for words appearing in `EXCLUSION_INDEX`
@@ -2733,7 +2758,7 @@ following the pattern of `call_claude`, `call_gpt`, or `call_deepseek`, then dis
 
 There are two runners.  Both read the same test files, but each test file is now a list of
 `[id, input, expected]` triples (the leading integer `id` is required — it is the stable case
-number used across the runners and `testfixlog_may.txt`).
+number used across the runners and the result folders).
 
 **`test.py` — single LLM, human-readable, resumable.**  Writes a flat `test_output.txt`
 and re-uses prior results unless `-restart` is passed.
@@ -2824,8 +2849,8 @@ Every encoding gate in the pipeline reads a single resolved config.
 reads the live `globals.options`), exposes the derived booleans the rest of the
 pipeline consults: `flatten`, `eventprop`, `davidson`, `coarse`, `entitymerge`,
 `guarddrop`, `bridges`, `dropdefinites`, `localantonyms`, `simpleprops`,
-`collapse_degree`, `parse_canon`, `needs_coarsen`, `typeenrich`, plus a `te(gate)`
-method for the per-gate type-enrichment test.  Every encoding read site in
+`collapse_degree`, `parse_canon`, `needs_coarsen`, `typeenrich`, `propclass`, `numtype`,
+`compasym`, plus a `te(gate)` method for the per-gate type-enrichment test.  Every encoding read site in
 `logconvert.py`, `lc_sets.py`, `lc_coarse.py`, `semnormalize.py`, `lc_post_reify.py`
 and `solve.py` goes through this config, so the gating logic lives in exactly one place.
 
@@ -2838,9 +2863,11 @@ Population of the config:
   `davidson = base == davidson`.  `coarse` is always `False`.
 - **Additive primitives** — one option key each: `entitymerge_flag`, `guarddrop_flag`,
   `bridges_flag`, `dropdefinites_flag`, `localantonyms_flag`, `noproptypes_flag`
-  (`simpleprops`), and `typeenrich_flag` (+ optional `typeenrich_gates`).
-  `collapse_degree` rides with `simpleprops`; `parse_canon` rides with `entitymerge`
-  (parse-level entity canonicalization is self-contained, driven by `-entitymerge`).
+  (`simpleprops`), `propclass_flag` (`propclass`), `numtype_flag` (`numtype`), `compasym_flag`
+  (`compasym`), and `typeenrich_flag` (+ optional `typeenrich_gates`).  `collapse_degree` rides
+  with `simpleprops`; `parse_canon` rides with `entitymerge` (parse-level entity canonicalization
+  is self-contained, driven by `-entitymerge`).  (`-nominalretry` is a parse-time Stage-2 retry,
+  read from `globals.options` directly — not an `EncodingConfig` field; see §7.8.)
 - **`needs_coarsen`** — true iff any of `davidson`/`flatten`/`entitymerge`/`guarddrop`
   is set, i.e. whether `coarsen_events` runs at all.
 - **typeenrich gates** — `typeenrich_gates` is a frozenset over

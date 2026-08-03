@@ -240,7 +240,7 @@ def call_prover(logic, s1_json=None):
     params=params+["-seconds",str(secs)]
   params.append(infilename)
   params=params+globals.prover_params
-  params=params+["--datafolder",prover_datafolder]
+  params=params+["-datafolder",prover_datafolder]
   if options["prover_print_flag"] or options["show_prover_flag"]:
     print("\n=== prover params ===\n")
     print(" ".join(params))

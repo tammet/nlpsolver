@@ -45,9 +45,9 @@ The resulting string becomes the `system` prompt sent to the LLM.  The
 
 ## Combined single-stage prompts
 
-These drive the experimental ONE-call mode: the LLM reads English and
-emits the Stage-2 logic JSON directly, working the ASU analysis out "in
-the head" without printing it.  Selected explicitly on the command line
+These drive the experimental single-call mode: the LLM reads English and
+emits the Stage-2 logic JSON directly, without emitting the intermediate
+ASU representation.  Selected explicitly on the command line
 (`solve.py` / `runtests.py`):
 
 ```
@@ -63,13 +63,10 @@ two-stage texts):
 
 | File | Construction |
 |------|--------------|
-| `combined_minimal_instructions_full.txt` | `minimal` — cheapest: output-format signature and core conventions only (~10 KB), no per-case rules |
-| `combined_v2_instructions_full.txt`      | `v2` — structural condensation into two sequential PART blocks with the output contract hoisted to the top; rule wording unchanged |
+| `combined_minimal_instructions_full.txt` | `minimal` — smallest: output-format signature and core conventions only (~10 KB), no per-case rules |
+| `combined_v2_instructions_full.txt`      | `v2` — structural condensation into two sequential PART blocks; output rules appear first; rule wording unchanged |
 | `combined_v3_instructions_full.txt`      | `v3` — one continuously numbered spec (§0–§23) with the Step-1 ANALYSE and Step-2 ENCODE rules interleaved per phenomenon under shared topic banners |
 | `combined_answerfirst_instructions_full.txt` | `answer-first` — the model first decides the answer, then encodes premises + question (~13 KB; FOLIO experiment F4) |
-
-Earlier/alternate constructions that were never used in a shipped run
-(`v1`, `direct`, and the ASU-showing examples) have been moved to `archive/`.
 
 The matching examples file (`combined_examples_pure.txt` = 60 worked
 English → logic examples) and per-construction checklists

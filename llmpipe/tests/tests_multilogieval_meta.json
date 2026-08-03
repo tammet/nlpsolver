@@ -1,0 +1,11559 @@
+{
+"1": {
+"depth": "d1",
+"logic": "fol",
+"rule": "BD",
+"sample_id": 1,
+"answer": "yes"
+},
+"2": {
+"depth": "d1",
+"logic": "fol",
+"rule": "BD",
+"sample_id": 2,
+"answer": "yes"
+},
+"3": {
+"depth": "d1",
+"logic": "fol",
+"rule": "BD",
+"sample_id": 3,
+"answer": "yes"
+},
+"4": {
+"depth": "d1",
+"logic": "fol",
+"rule": "BD",
+"sample_id": 4,
+"answer": "yes"
+},
+"5": {
+"depth": "d1",
+"logic": "fol",
+"rule": "BD",
+"sample_id": 5,
+"answer": "yes"
+},
+"6": {
+"depth": "d1",
+"logic": "fol",
+"rule": "BD",
+"sample_id": 6,
+"answer": "yes"
+},
+"7": {
+"depth": "d1",
+"logic": "fol",
+"rule": "BD",
+"sample_id": 7,
+"answer": "yes"
+},
+"8": {
+"depth": "d1",
+"logic": "fol",
+"rule": "BD",
+"sample_id": 8,
+"answer": "yes"
+},
+"9": {
+"depth": "d1",
+"logic": "fol",
+"rule": "BD",
+"sample_id": 9,
+"answer": "yes"
+},
+"10": {
+"depth": "d1",
+"logic": "fol",
+"rule": "BD",
+"sample_id": 10,
+"answer": "yes"
+},
+"11": {
+"depth": "d1",
+"logic": "fol",
+"rule": "CD",
+"sample_id": 1,
+"answer": "yes"
+},
+"12": {
+"depth": "d1",
+"logic": "fol",
+"rule": "CD",
+"sample_id": 2,
+"answer": "yes"
+},
+"13": {
+"depth": "d1",
+"logic": "fol",
+"rule": "CD",
+"sample_id": 3,
+"answer": "yes"
+},
+"14": {
+"depth": "d1",
+"logic": "fol",
+"rule": "CD",
+"sample_id": 4,
+"answer": "yes"
+},
+"15": {
+"depth": "d1",
+"logic": "fol",
+"rule": "CD",
+"sample_id": 5,
+"answer": "yes"
+},
+"16": {
+"depth": "d1",
+"logic": "fol",
+"rule": "CD",
+"sample_id": 6,
+"answer": "yes"
+},
+"17": {
+"depth": "d1",
+"logic": "fol",
+"rule": "CD",
+"sample_id": 7,
+"answer": "yes"
+},
+"18": {
+"depth": "d1",
+"logic": "fol",
+"rule": "CD",
+"sample_id": 8,
+"answer": "yes"
+},
+"19": {
+"depth": "d1",
+"logic": "fol",
+"rule": "CD",
+"sample_id": 9,
+"answer": "yes"
+},
+"20": {
+"depth": "d1",
+"logic": "fol",
+"rule": "CD",
+"sample_id": 10,
+"answer": "yes"
+},
+"21": {
+"depth": "d1",
+"logic": "fol",
+"rule": "CO",
+"sample_id": 1,
+"answer": "yes"
+},
+"22": {
+"depth": "d1",
+"logic": "fol",
+"rule": "CO",
+"sample_id": 2,
+"answer": "yes"
+},
+"23": {
+"depth": "d1",
+"logic": "fol",
+"rule": "CO",
+"sample_id": 3,
+"answer": "yes"
+},
+"24": {
+"depth": "d1",
+"logic": "fol",
+"rule": "CO",
+"sample_id": 4,
+"answer": "yes"
+},
+"25": {
+"depth": "d1",
+"logic": "fol",
+"rule": "CO",
+"sample_id": 5,
+"answer": "yes"
+},
+"26": {
+"depth": "d1",
+"logic": "fol",
+"rule": "CO",
+"sample_id": 6,
+"answer": "yes"
+},
+"27": {
+"depth": "d1",
+"logic": "fol",
+"rule": "CO",
+"sample_id": 7,
+"answer": "yes"
+},
+"28": {
+"depth": "d1",
+"logic": "fol",
+"rule": "CO",
+"sample_id": 8,
+"answer": "yes"
+},
+"29": {
+"depth": "d1",
+"logic": "fol",
+"rule": "CO",
+"sample_id": 9,
+"answer": "yes"
+},
+"30": {
+"depth": "d1",
+"logic": "fol",
+"rule": "CO",
+"sample_id": 10,
+"answer": "yes"
+},
+"31": {
+"depth": "d1",
+"logic": "fol",
+"rule": "CT",
+"sample_id": 1,
+"answer": "yes"
+},
+"32": {
+"depth": "d1",
+"logic": "fol",
+"rule": "CT",
+"sample_id": 2,
+"answer": "yes"
+},
+"33": {
+"depth": "d1",
+"logic": "fol",
+"rule": "CT",
+"sample_id": 3,
+"answer": "yes"
+},
+"34": {
+"depth": "d1",
+"logic": "fol",
+"rule": "CT",
+"sample_id": 4,
+"answer": "yes"
+},
+"35": {
+"depth": "d1",
+"logic": "fol",
+"rule": "CT",
+"sample_id": 5,
+"answer": "yes"
+},
+"36": {
+"depth": "d1",
+"logic": "fol",
+"rule": "CT",
+"sample_id": 6,
+"answer": "yes"
+},
+"37": {
+"depth": "d1",
+"logic": "fol",
+"rule": "CT",
+"sample_id": 7,
+"answer": "yes"
+},
+"38": {
+"depth": "d1",
+"logic": "fol",
+"rule": "CT",
+"sample_id": 8,
+"answer": "yes"
+},
+"39": {
+"depth": "d1",
+"logic": "fol",
+"rule": "CT",
+"sample_id": 9,
+"answer": "yes"
+},
+"40": {
+"depth": "d1",
+"logic": "fol",
+"rule": "CT",
+"sample_id": 10,
+"answer": "yes"
+},
+"41": {
+"depth": "d1",
+"logic": "fol",
+"rule": "DD",
+"sample_id": 1,
+"answer": "yes"
+},
+"42": {
+"depth": "d1",
+"logic": "fol",
+"rule": "DD",
+"sample_id": 2,
+"answer": "yes"
+},
+"43": {
+"depth": "d1",
+"logic": "fol",
+"rule": "DD",
+"sample_id": 3,
+"answer": "yes"
+},
+"44": {
+"depth": "d1",
+"logic": "fol",
+"rule": "DD",
+"sample_id": 4,
+"answer": "yes"
+},
+"45": {
+"depth": "d1",
+"logic": "fol",
+"rule": "DD",
+"sample_id": 5,
+"answer": "yes"
+},
+"46": {
+"depth": "d1",
+"logic": "fol",
+"rule": "DD",
+"sample_id": 6,
+"answer": "yes"
+},
+"47": {
+"depth": "d1",
+"logic": "fol",
+"rule": "DD",
+"sample_id": 7,
+"answer": "yes"
+},
+"48": {
+"depth": "d1",
+"logic": "fol",
+"rule": "DD",
+"sample_id": 8,
+"answer": "yes"
+},
+"49": {
+"depth": "d1",
+"logic": "fol",
+"rule": "DD",
+"sample_id": 9,
+"answer": "yes"
+},
+"50": {
+"depth": "d1",
+"logic": "fol",
+"rule": "DD",
+"sample_id": 10,
+"answer": "yes"
+},
+"51": {
+"depth": "d1",
+"logic": "fol",
+"rule": "DMT",
+"sample_id": 1,
+"answer": "yes"
+},
+"52": {
+"depth": "d1",
+"logic": "fol",
+"rule": "DMT",
+"sample_id": 2,
+"answer": "yes"
+},
+"53": {
+"depth": "d1",
+"logic": "fol",
+"rule": "DMT",
+"sample_id": 3,
+"answer": "yes"
+},
+"54": {
+"depth": "d1",
+"logic": "fol",
+"rule": "DMT",
+"sample_id": 4,
+"answer": "yes"
+},
+"55": {
+"depth": "d1",
+"logic": "fol",
+"rule": "DMT",
+"sample_id": 5,
+"answer": "yes"
+},
+"56": {
+"depth": "d1",
+"logic": "fol",
+"rule": "DMT",
+"sample_id": 6,
+"answer": "yes"
+},
+"57": {
+"depth": "d1",
+"logic": "fol",
+"rule": "DMT",
+"sample_id": 7,
+"answer": "yes"
+},
+"58": {
+"depth": "d1",
+"logic": "fol",
+"rule": "DMT",
+"sample_id": 8,
+"answer": "yes"
+},
+"59": {
+"depth": "d1",
+"logic": "fol",
+"rule": "DMT",
+"sample_id": 9,
+"answer": "yes"
+},
+"60": {
+"depth": "d1",
+"logic": "fol",
+"rule": "DMT",
+"sample_id": 10,
+"answer": "yes"
+},
+"61": {
+"depth": "d1",
+"logic": "fol",
+"rule": "DS",
+"sample_id": 1,
+"answer": "yes"
+},
+"62": {
+"depth": "d1",
+"logic": "fol",
+"rule": "DS",
+"sample_id": 2,
+"answer": "yes"
+},
+"63": {
+"depth": "d1",
+"logic": "fol",
+"rule": "DS",
+"sample_id": 3,
+"answer": "yes"
+},
+"64": {
+"depth": "d1",
+"logic": "fol",
+"rule": "DS",
+"sample_id": 4,
+"answer": "yes"
+},
+"65": {
+"depth": "d1",
+"logic": "fol",
+"rule": "DS",
+"sample_id": 5,
+"answer": "yes"
+},
+"66": {
+"depth": "d1",
+"logic": "fol",
+"rule": "DS",
+"sample_id": 6,
+"answer": "yes"
+},
+"67": {
+"depth": "d1",
+"logic": "fol",
+"rule": "DS",
+"sample_id": 7,
+"answer": "yes"
+},
+"68": {
+"depth": "d1",
+"logic": "fol",
+"rule": "DS",
+"sample_id": 8,
+"answer": "yes"
+},
+"69": {
+"depth": "d1",
+"logic": "fol",
+"rule": "DS",
+"sample_id": 9,
+"answer": "yes"
+},
+"70": {
+"depth": "d1",
+"logic": "fol",
+"rule": "DS",
+"sample_id": 10,
+"answer": "yes"
+},
+"71": {
+"depth": "d1",
+"logic": "fol",
+"rule": "EG",
+"sample_id": 1,
+"answer": "yes"
+},
+"72": {
+"depth": "d1",
+"logic": "fol",
+"rule": "EG",
+"sample_id": 2,
+"answer": "yes"
+},
+"73": {
+"depth": "d1",
+"logic": "fol",
+"rule": "EG",
+"sample_id": 3,
+"answer": "yes"
+},
+"74": {
+"depth": "d1",
+"logic": "fol",
+"rule": "EG",
+"sample_id": 4,
+"answer": "yes"
+},
+"75": {
+"depth": "d1",
+"logic": "fol",
+"rule": "EG",
+"sample_id": 5,
+"answer": "yes"
+},
+"76": {
+"depth": "d1",
+"logic": "fol",
+"rule": "EG",
+"sample_id": 6,
+"answer": "yes"
+},
+"77": {
+"depth": "d1",
+"logic": "fol",
+"rule": "EG",
+"sample_id": 7,
+"answer": "yes"
+},
+"78": {
+"depth": "d1",
+"logic": "fol",
+"rule": "EG",
+"sample_id": 8,
+"answer": "yes"
+},
+"79": {
+"depth": "d1",
+"logic": "fol",
+"rule": "EG",
+"sample_id": 9,
+"answer": "yes"
+},
+"80": {
+"depth": "d1",
+"logic": "fol",
+"rule": "EG",
+"sample_id": 10,
+"answer": "yes"
+},
+"81": {
+"depth": "d1",
+"logic": "fol",
+"rule": "HS",
+"sample_id": 1,
+"answer": "yes"
+},
+"82": {
+"depth": "d1",
+"logic": "fol",
+"rule": "HS",
+"sample_id": 2,
+"answer": "yes"
+},
+"83": {
+"depth": "d1",
+"logic": "fol",
+"rule": "HS",
+"sample_id": 3,
+"answer": "yes"
+},
+"84": {
+"depth": "d1",
+"logic": "fol",
+"rule": "HS",
+"sample_id": 4,
+"answer": "yes"
+},
+"85": {
+"depth": "d1",
+"logic": "fol",
+"rule": "HS",
+"sample_id": 5,
+"answer": "yes"
+},
+"86": {
+"depth": "d1",
+"logic": "fol",
+"rule": "HS",
+"sample_id": 6,
+"answer": "yes"
+},
+"87": {
+"depth": "d1",
+"logic": "fol",
+"rule": "HS",
+"sample_id": 7,
+"answer": "yes"
+},
+"88": {
+"depth": "d1",
+"logic": "fol",
+"rule": "HS",
+"sample_id": 8,
+"answer": "yes"
+},
+"89": {
+"depth": "d1",
+"logic": "fol",
+"rule": "HS",
+"sample_id": 9,
+"answer": "yes"
+},
+"90": {
+"depth": "d1",
+"logic": "fol",
+"rule": "HS",
+"sample_id": 10,
+"answer": "yes"
+},
+"91": {
+"depth": "d1",
+"logic": "fol",
+"rule": "IM",
+"sample_id": 1,
+"answer": "yes"
+},
+"92": {
+"depth": "d1",
+"logic": "fol",
+"rule": "IM",
+"sample_id": 2,
+"answer": "yes"
+},
+"93": {
+"depth": "d1",
+"logic": "fol",
+"rule": "IM",
+"sample_id": 3,
+"answer": "yes"
+},
+"94": {
+"depth": "d1",
+"logic": "fol",
+"rule": "IM",
+"sample_id": 4,
+"answer": "yes"
+},
+"95": {
+"depth": "d1",
+"logic": "fol",
+"rule": "IM",
+"sample_id": 5,
+"answer": "yes"
+},
+"96": {
+"depth": "d1",
+"logic": "fol",
+"rule": "IM",
+"sample_id": 6,
+"answer": "yes"
+},
+"97": {
+"depth": "d1",
+"logic": "fol",
+"rule": "IM",
+"sample_id": 7,
+"answer": "yes"
+},
+"98": {
+"depth": "d1",
+"logic": "fol",
+"rule": "IM",
+"sample_id": 8,
+"answer": "yes"
+},
+"99": {
+"depth": "d1",
+"logic": "fol",
+"rule": "IM",
+"sample_id": 9,
+"answer": "yes"
+},
+"100": {
+"depth": "d1",
+"logic": "fol",
+"rule": "IM",
+"sample_id": 10,
+"answer": "yes"
+},
+"101": {
+"depth": "d1",
+"logic": "fol",
+"rule": "MP",
+"sample_id": 1,
+"answer": "yes"
+},
+"102": {
+"depth": "d1",
+"logic": "fol",
+"rule": "MP",
+"sample_id": 2,
+"answer": "yes"
+},
+"103": {
+"depth": "d1",
+"logic": "fol",
+"rule": "MP",
+"sample_id": 3,
+"answer": "yes"
+},
+"104": {
+"depth": "d1",
+"logic": "fol",
+"rule": "MP",
+"sample_id": 4,
+"answer": "yes"
+},
+"105": {
+"depth": "d1",
+"logic": "fol",
+"rule": "MP",
+"sample_id": 5,
+"answer": "yes"
+},
+"106": {
+"depth": "d1",
+"logic": "fol",
+"rule": "MP",
+"sample_id": 6,
+"answer": "yes"
+},
+"107": {
+"depth": "d1",
+"logic": "fol",
+"rule": "MP",
+"sample_id": 7,
+"answer": "yes"
+},
+"108": {
+"depth": "d1",
+"logic": "fol",
+"rule": "MP",
+"sample_id": 8,
+"answer": "yes"
+},
+"109": {
+"depth": "d1",
+"logic": "fol",
+"rule": "MP",
+"sample_id": 9,
+"answer": "yes"
+},
+"110": {
+"depth": "d1",
+"logic": "fol",
+"rule": "MP",
+"sample_id": 10,
+"answer": "yes"
+},
+"111": {
+"depth": "d1",
+"logic": "fol",
+"rule": "MT",
+"sample_id": 1,
+"answer": "no"
+},
+"112": {
+"depth": "d1",
+"logic": "fol",
+"rule": "MT",
+"sample_id": 2,
+"answer": "no"
+},
+"113": {
+"depth": "d1",
+"logic": "fol",
+"rule": "MT",
+"sample_id": 3,
+"answer": "no"
+},
+"114": {
+"depth": "d1",
+"logic": "fol",
+"rule": "MT",
+"sample_id": 4,
+"answer": "no"
+},
+"115": {
+"depth": "d1",
+"logic": "fol",
+"rule": "MT",
+"sample_id": 5,
+"answer": "no"
+},
+"116": {
+"depth": "d1",
+"logic": "fol",
+"rule": "MT",
+"sample_id": 6,
+"answer": "no"
+},
+"117": {
+"depth": "d1",
+"logic": "fol",
+"rule": "MT",
+"sample_id": 7,
+"answer": "no"
+},
+"118": {
+"depth": "d1",
+"logic": "fol",
+"rule": "MT",
+"sample_id": 8,
+"answer": "no"
+},
+"119": {
+"depth": "d1",
+"logic": "fol",
+"rule": "MT",
+"sample_id": 9,
+"answer": "no"
+},
+"120": {
+"depth": "d1",
+"logic": "fol",
+"rule": "MT",
+"sample_id": 10,
+"answer": "no"
+},
+"121": {
+"depth": "d1",
+"logic": "fol",
+"rule": "UI",
+"sample_id": 1,
+"answer": "yes"
+},
+"122": {
+"depth": "d1",
+"logic": "fol",
+"rule": "UI",
+"sample_id": 2,
+"answer": "yes"
+},
+"123": {
+"depth": "d1",
+"logic": "fol",
+"rule": "UI",
+"sample_id": 3,
+"answer": "yes"
+},
+"124": {
+"depth": "d1",
+"logic": "fol",
+"rule": "UI",
+"sample_id": 4,
+"answer": "yes"
+},
+"125": {
+"depth": "d1",
+"logic": "fol",
+"rule": "UI",
+"sample_id": 5,
+"answer": "yes"
+},
+"126": {
+"depth": "d1",
+"logic": "fol",
+"rule": "UI",
+"sample_id": 6,
+"answer": "yes"
+},
+"127": {
+"depth": "d1",
+"logic": "fol",
+"rule": "UI",
+"sample_id": 7,
+"answer": "yes"
+},
+"128": {
+"depth": "d1",
+"logic": "fol",
+"rule": "UI",
+"sample_id": 8,
+"answer": "yes"
+},
+"129": {
+"depth": "d1",
+"logic": "fol",
+"rule": "UI",
+"sample_id": 9,
+"answer": "yes"
+},
+"130": {
+"depth": "d1",
+"logic": "fol",
+"rule": "UI",
+"sample_id": 10,
+"answer": "yes"
+},
+"131": {
+"depth": "d1",
+"logic": "nm",
+"rule": "default_reasoning_default",
+"sample_id": 1,
+"answer": "yes"
+},
+"132": {
+"depth": "d1",
+"logic": "nm",
+"rule": "default_reasoning_default",
+"sample_id": 2,
+"answer": "yes"
+},
+"133": {
+"depth": "d1",
+"logic": "nm",
+"rule": "default_reasoning_default",
+"sample_id": 3,
+"answer": "yes"
+},
+"134": {
+"depth": "d1",
+"logic": "nm",
+"rule": "default_reasoning_default",
+"sample_id": 4,
+"answer": "yes"
+},
+"135": {
+"depth": "d1",
+"logic": "nm",
+"rule": "default_reasoning_default",
+"sample_id": 5,
+"answer": "yes"
+},
+"136": {
+"depth": "d1",
+"logic": "nm",
+"rule": "default_reasoning_default",
+"sample_id": 6,
+"answer": "yes"
+},
+"137": {
+"depth": "d1",
+"logic": "nm",
+"rule": "default_reasoning_default",
+"sample_id": 7,
+"answer": "yes"
+},
+"138": {
+"depth": "d1",
+"logic": "nm",
+"rule": "default_reasoning_default",
+"sample_id": 8,
+"answer": "yes"
+},
+"139": {
+"depth": "d1",
+"logic": "nm",
+"rule": "default_reasoning_default",
+"sample_id": 9,
+"answer": "yes"
+},
+"140": {
+"depth": "d1",
+"logic": "nm",
+"rule": "default_reasoning_default",
+"sample_id": 10,
+"answer": "yes"
+},
+"141": {
+"depth": "d1",
+"logic": "nm",
+"rule": "default_reasoning_default",
+"sample_id": 11,
+"answer": "yes"
+},
+"142": {
+"depth": "d1",
+"logic": "nm",
+"rule": "default_reasoning_default",
+"sample_id": 12,
+"answer": "yes"
+},
+"143": {
+"depth": "d1",
+"logic": "nm",
+"rule": "default_reasoning_default",
+"sample_id": 13,
+"answer": "yes"
+},
+"144": {
+"depth": "d1",
+"logic": "nm",
+"rule": "default_reasoning_default",
+"sample_id": 14,
+"answer": "yes"
+},
+"145": {
+"depth": "d1",
+"logic": "nm",
+"rule": "default_reasoning_default",
+"sample_id": 15,
+"answer": "yes"
+},
+"146": {
+"depth": "d1",
+"logic": "nm",
+"rule": "default_reasoning_default",
+"sample_id": 16,
+"answer": "yes"
+},
+"147": {
+"depth": "d1",
+"logic": "nm",
+"rule": "default_reasoning_default",
+"sample_id": 17,
+"answer": "yes"
+},
+"148": {
+"depth": "d1",
+"logic": "nm",
+"rule": "default_reasoning_default",
+"sample_id": 18,
+"answer": "yes"
+},
+"149": {
+"depth": "d1",
+"logic": "nm",
+"rule": "default_reasoning_default",
+"sample_id": 19,
+"answer": "yes"
+},
+"150": {
+"depth": "d1",
+"logic": "nm",
+"rule": "default_reasoning_default",
+"sample_id": 20,
+"answer": "yes"
+},
+"151": {
+"depth": "d1",
+"logic": "nm",
+"rule": "default_reasoning_irr",
+"sample_id": 1,
+"answer": "yes"
+},
+"152": {
+"depth": "d1",
+"logic": "nm",
+"rule": "default_reasoning_irr",
+"sample_id": 2,
+"answer": "yes"
+},
+"153": {
+"depth": "d1",
+"logic": "nm",
+"rule": "default_reasoning_irr",
+"sample_id": 3,
+"answer": "yes"
+},
+"154": {
+"depth": "d1",
+"logic": "nm",
+"rule": "default_reasoning_irr",
+"sample_id": 4,
+"answer": "yes"
+},
+"155": {
+"depth": "d1",
+"logic": "nm",
+"rule": "default_reasoning_irr",
+"sample_id": 5,
+"answer": "yes"
+},
+"156": {
+"depth": "d1",
+"logic": "nm",
+"rule": "default_reasoning_irr",
+"sample_id": 6,
+"answer": "yes"
+},
+"157": {
+"depth": "d1",
+"logic": "nm",
+"rule": "default_reasoning_irr",
+"sample_id": 7,
+"answer": "yes"
+},
+"158": {
+"depth": "d1",
+"logic": "nm",
+"rule": "default_reasoning_irr",
+"sample_id": 8,
+"answer": "yes"
+},
+"159": {
+"depth": "d1",
+"logic": "nm",
+"rule": "default_reasoning_irr",
+"sample_id": 9,
+"answer": "yes"
+},
+"160": {
+"depth": "d1",
+"logic": "nm",
+"rule": "default_reasoning_irr",
+"sample_id": 10,
+"answer": "yes"
+},
+"161": {
+"depth": "d1",
+"logic": "nm",
+"rule": "default_reasoning_irr",
+"sample_id": 11,
+"answer": "yes"
+},
+"162": {
+"depth": "d1",
+"logic": "nm",
+"rule": "default_reasoning_irr",
+"sample_id": 12,
+"answer": "yes"
+},
+"163": {
+"depth": "d1",
+"logic": "nm",
+"rule": "default_reasoning_irr",
+"sample_id": 13,
+"answer": "yes"
+},
+"164": {
+"depth": "d1",
+"logic": "nm",
+"rule": "default_reasoning_irr",
+"sample_id": 14,
+"answer": "yes"
+},
+"165": {
+"depth": "d1",
+"logic": "nm",
+"rule": "default_reasoning_irr",
+"sample_id": 15,
+"answer": "yes"
+},
+"166": {
+"depth": "d1",
+"logic": "nm",
+"rule": "default_reasoning_irr",
+"sample_id": 16,
+"answer": "yes"
+},
+"167": {
+"depth": "d1",
+"logic": "nm",
+"rule": "default_reasoning_irr",
+"sample_id": 17,
+"answer": "yes"
+},
+"168": {
+"depth": "d1",
+"logic": "nm",
+"rule": "default_reasoning_irr",
+"sample_id": 18,
+"answer": "yes"
+},
+"169": {
+"depth": "d1",
+"logic": "nm",
+"rule": "default_reasoning_irr",
+"sample_id": 19,
+"answer": "yes"
+},
+"170": {
+"depth": "d1",
+"logic": "nm",
+"rule": "default_reasoning_irr",
+"sample_id": 20,
+"answer": "yes"
+},
+"171": {
+"depth": "d1",
+"logic": "nm",
+"rule": "default_reasoning_several",
+"sample_id": 1,
+"answer": "yes"
+},
+"172": {
+"depth": "d1",
+"logic": "nm",
+"rule": "default_reasoning_several",
+"sample_id": 2,
+"answer": "yes"
+},
+"173": {
+"depth": "d1",
+"logic": "nm",
+"rule": "default_reasoning_several",
+"sample_id": 3,
+"answer": "yes"
+},
+"174": {
+"depth": "d1",
+"logic": "nm",
+"rule": "default_reasoning_several",
+"sample_id": 4,
+"answer": "yes"
+},
+"175": {
+"depth": "d1",
+"logic": "nm",
+"rule": "default_reasoning_several",
+"sample_id": 5,
+"answer": "yes"
+},
+"176": {
+"depth": "d1",
+"logic": "nm",
+"rule": "default_reasoning_several",
+"sample_id": 6,
+"answer": "yes"
+},
+"177": {
+"depth": "d1",
+"logic": "nm",
+"rule": "default_reasoning_several",
+"sample_id": 7,
+"answer": "yes"
+},
+"178": {
+"depth": "d1",
+"logic": "nm",
+"rule": "default_reasoning_several",
+"sample_id": 8,
+"answer": "yes"
+},
+"179": {
+"depth": "d1",
+"logic": "nm",
+"rule": "default_reasoning_several",
+"sample_id": 9,
+"answer": "yes"
+},
+"180": {
+"depth": "d1",
+"logic": "nm",
+"rule": "default_reasoning_several",
+"sample_id": 10,
+"answer": "yes"
+},
+"181": {
+"depth": "d1",
+"logic": "nm",
+"rule": "default_reasoning_several",
+"sample_id": 11,
+"answer": "yes"
+},
+"182": {
+"depth": "d1",
+"logic": "nm",
+"rule": "default_reasoning_several",
+"sample_id": 12,
+"answer": "yes"
+},
+"183": {
+"depth": "d1",
+"logic": "nm",
+"rule": "default_reasoning_several",
+"sample_id": 13,
+"answer": "yes"
+},
+"184": {
+"depth": "d1",
+"logic": "nm",
+"rule": "default_reasoning_several",
+"sample_id": 14,
+"answer": "yes"
+},
+"185": {
+"depth": "d1",
+"logic": "nm",
+"rule": "default_reasoning_several",
+"sample_id": 15,
+"answer": "yes"
+},
+"186": {
+"depth": "d1",
+"logic": "nm",
+"rule": "default_reasoning_several",
+"sample_id": 16,
+"answer": "yes"
+},
+"187": {
+"depth": "d1",
+"logic": "nm",
+"rule": "default_reasoning_several",
+"sample_id": 17,
+"answer": "yes"
+},
+"188": {
+"depth": "d1",
+"logic": "nm",
+"rule": "default_reasoning_several",
+"sample_id": 18,
+"answer": "yes"
+},
+"189": {
+"depth": "d1",
+"logic": "nm",
+"rule": "default_reasoning_several",
+"sample_id": 19,
+"answer": "yes"
+},
+"190": {
+"depth": "d1",
+"logic": "nm",
+"rule": "default_reasoning_several",
+"sample_id": 20,
+"answer": "yes"
+},
+"191": {
+"depth": "d1",
+"logic": "nm",
+"rule": "reasoning_about_exceptions_1",
+"sample_id": 1,
+"answer": "yes"
+},
+"192": {
+"depth": "d1",
+"logic": "nm",
+"rule": "reasoning_about_exceptions_1",
+"sample_id": 2,
+"answer": "yes"
+},
+"193": {
+"depth": "d1",
+"logic": "nm",
+"rule": "reasoning_about_exceptions_1",
+"sample_id": 3,
+"answer": "yes"
+},
+"194": {
+"depth": "d1",
+"logic": "nm",
+"rule": "reasoning_about_exceptions_1",
+"sample_id": 4,
+"answer": "yes"
+},
+"195": {
+"depth": "d1",
+"logic": "nm",
+"rule": "reasoning_about_exceptions_1",
+"sample_id": 5,
+"answer": "yes"
+},
+"196": {
+"depth": "d1",
+"logic": "nm",
+"rule": "reasoning_about_exceptions_1",
+"sample_id": 6,
+"answer": "yes"
+},
+"197": {
+"depth": "d1",
+"logic": "nm",
+"rule": "reasoning_about_exceptions_1",
+"sample_id": 7,
+"answer": "yes"
+},
+"198": {
+"depth": "d1",
+"logic": "nm",
+"rule": "reasoning_about_exceptions_1",
+"sample_id": 8,
+"answer": "yes"
+},
+"199": {
+"depth": "d1",
+"logic": "nm",
+"rule": "reasoning_about_exceptions_1",
+"sample_id": 9,
+"answer": "yes"
+},
+"200": {
+"depth": "d1",
+"logic": "nm",
+"rule": "reasoning_about_exceptions_1",
+"sample_id": 10,
+"answer": "yes"
+},
+"201": {
+"depth": "d1",
+"logic": "nm",
+"rule": "reasoning_about_exceptions_1",
+"sample_id": 11,
+"answer": "yes"
+},
+"202": {
+"depth": "d1",
+"logic": "nm",
+"rule": "reasoning_about_exceptions_1",
+"sample_id": 12,
+"answer": "yes"
+},
+"203": {
+"depth": "d1",
+"logic": "nm",
+"rule": "reasoning_about_exceptions_1",
+"sample_id": 13,
+"answer": "yes"
+},
+"204": {
+"depth": "d1",
+"logic": "nm",
+"rule": "reasoning_about_exceptions_1",
+"sample_id": 14,
+"answer": "yes"
+},
+"205": {
+"depth": "d1",
+"logic": "nm",
+"rule": "reasoning_about_exceptions_1",
+"sample_id": 15,
+"answer": "yes"
+},
+"206": {
+"depth": "d1",
+"logic": "nm",
+"rule": "reasoning_about_exceptions_1",
+"sample_id": 16,
+"answer": "yes"
+},
+"207": {
+"depth": "d1",
+"logic": "nm",
+"rule": "reasoning_about_exceptions_1",
+"sample_id": 17,
+"answer": "yes"
+},
+"208": {
+"depth": "d1",
+"logic": "nm",
+"rule": "reasoning_about_exceptions_1",
+"sample_id": 18,
+"answer": "yes"
+},
+"209": {
+"depth": "d1",
+"logic": "nm",
+"rule": "reasoning_about_exceptions_1",
+"sample_id": 19,
+"answer": "yes"
+},
+"210": {
+"depth": "d1",
+"logic": "nm",
+"rule": "reasoning_about_exceptions_1",
+"sample_id": 20,
+"answer": "yes"
+},
+"211": {
+"depth": "d1",
+"logic": "nm",
+"rule": "reasoning_about_exceptions_2",
+"sample_id": 1,
+"answer": "yes"
+},
+"212": {
+"depth": "d1",
+"logic": "nm",
+"rule": "reasoning_about_exceptions_2",
+"sample_id": 2,
+"answer": "yes"
+},
+"213": {
+"depth": "d1",
+"logic": "nm",
+"rule": "reasoning_about_exceptions_2",
+"sample_id": 3,
+"answer": "yes"
+},
+"214": {
+"depth": "d1",
+"logic": "nm",
+"rule": "reasoning_about_exceptions_2",
+"sample_id": 4,
+"answer": "yes"
+},
+"215": {
+"depth": "d1",
+"logic": "nm",
+"rule": "reasoning_about_exceptions_2",
+"sample_id": 5,
+"answer": "yes"
+},
+"216": {
+"depth": "d1",
+"logic": "nm",
+"rule": "reasoning_about_exceptions_2",
+"sample_id": 6,
+"answer": "no"
+},
+"217": {
+"depth": "d1",
+"logic": "nm",
+"rule": "reasoning_about_exceptions_2",
+"sample_id": 7,
+"answer": "yes"
+},
+"218": {
+"depth": "d1",
+"logic": "nm",
+"rule": "reasoning_about_exceptions_2",
+"sample_id": 8,
+"answer": "yes"
+},
+"219": {
+"depth": "d1",
+"logic": "nm",
+"rule": "reasoning_about_exceptions_2",
+"sample_id": 9,
+"answer": "yes"
+},
+"220": {
+"depth": "d1",
+"logic": "nm",
+"rule": "reasoning_about_exceptions_2",
+"sample_id": 10,
+"answer": "no"
+},
+"221": {
+"depth": "d1",
+"logic": "nm",
+"rule": "reasoning_about_exceptions_2",
+"sample_id": 11,
+"answer": "yes"
+},
+"222": {
+"depth": "d1",
+"logic": "nm",
+"rule": "reasoning_about_exceptions_2",
+"sample_id": 12,
+"answer": "yes"
+},
+"223": {
+"depth": "d1",
+"logic": "nm",
+"rule": "reasoning_about_exceptions_2",
+"sample_id": 13,
+"answer": "yes"
+},
+"224": {
+"depth": "d1",
+"logic": "nm",
+"rule": "reasoning_about_exceptions_2",
+"sample_id": 14,
+"answer": "yes"
+},
+"225": {
+"depth": "d1",
+"logic": "nm",
+"rule": "reasoning_about_exceptions_2",
+"sample_id": 15,
+"answer": "yes"
+},
+"226": {
+"depth": "d1",
+"logic": "nm",
+"rule": "reasoning_about_exceptions_2",
+"sample_id": 16,
+"answer": "yes"
+},
+"227": {
+"depth": "d1",
+"logic": "nm",
+"rule": "reasoning_about_exceptions_2",
+"sample_id": 17,
+"answer": "yes"
+},
+"228": {
+"depth": "d1",
+"logic": "nm",
+"rule": "reasoning_about_exceptions_2",
+"sample_id": 18,
+"answer": "yes"
+},
+"229": {
+"depth": "d1",
+"logic": "nm",
+"rule": "reasoning_about_exceptions_2",
+"sample_id": 19,
+"answer": "yes"
+},
+"230": {
+"depth": "d1",
+"logic": "nm",
+"rule": "reasoning_about_exceptions_2",
+"sample_id": 20,
+"answer": "yes"
+},
+"231": {
+"depth": "d1",
+"logic": "nm",
+"rule": "reasoning_about_exceptions_3",
+"sample_id": 1,
+"answer": "yes"
+},
+"232": {
+"depth": "d1",
+"logic": "nm",
+"rule": "reasoning_about_exceptions_3",
+"sample_id": 2,
+"answer": "no"
+},
+"233": {
+"depth": "d1",
+"logic": "nm",
+"rule": "reasoning_about_exceptions_3",
+"sample_id": 3,
+"answer": "no"
+},
+"234": {
+"depth": "d1",
+"logic": "nm",
+"rule": "reasoning_about_exceptions_3",
+"sample_id": 4,
+"answer": "yes"
+},
+"235": {
+"depth": "d1",
+"logic": "nm",
+"rule": "reasoning_about_exceptions_3",
+"sample_id": 5,
+"answer": "no"
+},
+"236": {
+"depth": "d1",
+"logic": "nm",
+"rule": "reasoning_about_exceptions_3",
+"sample_id": 6,
+"answer": "yes"
+},
+"237": {
+"depth": "d1",
+"logic": "nm",
+"rule": "reasoning_about_exceptions_3",
+"sample_id": 7,
+"answer": "yes"
+},
+"238": {
+"depth": "d1",
+"logic": "nm",
+"rule": "reasoning_about_exceptions_3",
+"sample_id": 8,
+"answer": "yes"
+},
+"239": {
+"depth": "d1",
+"logic": "nm",
+"rule": "reasoning_about_exceptions_3",
+"sample_id": 9,
+"answer": "yes"
+},
+"240": {
+"depth": "d1",
+"logic": "nm",
+"rule": "reasoning_about_exceptions_3",
+"sample_id": 10,
+"answer": "no"
+},
+"241": {
+"depth": "d1",
+"logic": "nm",
+"rule": "reasoning_about_exceptions_3",
+"sample_id": 11,
+"answer": "yes"
+},
+"242": {
+"depth": "d1",
+"logic": "nm",
+"rule": "reasoning_about_exceptions_3",
+"sample_id": 12,
+"answer": "yes"
+},
+"243": {
+"depth": "d1",
+"logic": "nm",
+"rule": "reasoning_about_exceptions_3",
+"sample_id": 13,
+"answer": "no"
+},
+"244": {
+"depth": "d1",
+"logic": "nm",
+"rule": "reasoning_about_exceptions_3",
+"sample_id": 14,
+"answer": "no"
+},
+"245": {
+"depth": "d1",
+"logic": "nm",
+"rule": "reasoning_about_exceptions_3",
+"sample_id": 15,
+"answer": "yes"
+},
+"246": {
+"depth": "d1",
+"logic": "nm",
+"rule": "reasoning_about_exceptions_3",
+"sample_id": 16,
+"answer": "yes"
+},
+"247": {
+"depth": "d1",
+"logic": "nm",
+"rule": "reasoning_about_exceptions_3",
+"sample_id": 17,
+"answer": "yes"
+},
+"248": {
+"depth": "d1",
+"logic": "nm",
+"rule": "reasoning_about_exceptions_3",
+"sample_id": 18,
+"answer": "yes"
+},
+"249": {
+"depth": "d1",
+"logic": "nm",
+"rule": "reasoning_about_exceptions_3",
+"sample_id": 19,
+"answer": "no"
+},
+"250": {
+"depth": "d1",
+"logic": "nm",
+"rule": "reasoning_about_exceptions_3",
+"sample_id": 20,
+"answer": "yes"
+},
+"251": {
+"depth": "d1",
+"logic": "nm",
+"rule": "reasoning_about_priority",
+"sample_id": 1,
+"answer": "yes"
+},
+"252": {
+"depth": "d1",
+"logic": "nm",
+"rule": "reasoning_about_priority",
+"sample_id": 2,
+"answer": "yes"
+},
+"253": {
+"depth": "d1",
+"logic": "nm",
+"rule": "reasoning_about_priority",
+"sample_id": 3,
+"answer": "yes"
+},
+"254": {
+"depth": "d1",
+"logic": "nm",
+"rule": "reasoning_about_priority",
+"sample_id": 4,
+"answer": "yes"
+},
+"255": {
+"depth": "d1",
+"logic": "nm",
+"rule": "reasoning_about_priority",
+"sample_id": 5,
+"answer": "yes"
+},
+"256": {
+"depth": "d1",
+"logic": "nm",
+"rule": "reasoning_about_priority",
+"sample_id": 6,
+"answer": "yes"
+},
+"257": {
+"depth": "d1",
+"logic": "nm",
+"rule": "reasoning_about_priority",
+"sample_id": 7,
+"answer": "yes"
+},
+"258": {
+"depth": "d1",
+"logic": "nm",
+"rule": "reasoning_about_priority",
+"sample_id": 8,
+"answer": "yes"
+},
+"259": {
+"depth": "d1",
+"logic": "nm",
+"rule": "reasoning_about_priority",
+"sample_id": 9,
+"answer": "yes"
+},
+"260": {
+"depth": "d1",
+"logic": "nm",
+"rule": "reasoning_about_priority",
+"sample_id": 10,
+"answer": "yes"
+},
+"261": {
+"depth": "d1",
+"logic": "nm",
+"rule": "reasoning_about_priority",
+"sample_id": 11,
+"answer": "yes"
+},
+"262": {
+"depth": "d1",
+"logic": "nm",
+"rule": "reasoning_about_priority",
+"sample_id": 12,
+"answer": "yes"
+},
+"263": {
+"depth": "d1",
+"logic": "nm",
+"rule": "reasoning_about_priority",
+"sample_id": 13,
+"answer": "yes"
+},
+"264": {
+"depth": "d1",
+"logic": "nm",
+"rule": "reasoning_about_priority",
+"sample_id": 14,
+"answer": "yes"
+},
+"265": {
+"depth": "d1",
+"logic": "nm",
+"rule": "reasoning_about_priority",
+"sample_id": 15,
+"answer": "yes"
+},
+"266": {
+"depth": "d1",
+"logic": "nm",
+"rule": "reasoning_about_priority",
+"sample_id": 16,
+"answer": "yes"
+},
+"267": {
+"depth": "d1",
+"logic": "nm",
+"rule": "reasoning_about_priority",
+"sample_id": 17,
+"answer": "yes"
+},
+"268": {
+"depth": "d1",
+"logic": "nm",
+"rule": "reasoning_about_priority",
+"sample_id": 18,
+"answer": "yes"
+},
+"269": {
+"depth": "d1",
+"logic": "nm",
+"rule": "reasoning_about_priority",
+"sample_id": 19,
+"answer": "yes"
+},
+"270": {
+"depth": "d1",
+"logic": "nm",
+"rule": "reasoning_about_priority",
+"sample_id": 20,
+"answer": "yes"
+},
+"271": {
+"depth": "d1",
+"logic": "pl",
+"rule": "BD",
+"sample_id": 1,
+"answer": "yes"
+},
+"272": {
+"depth": "d1",
+"logic": "pl",
+"rule": "BD",
+"sample_id": 2,
+"answer": "yes"
+},
+"273": {
+"depth": "d1",
+"logic": "pl",
+"rule": "BD",
+"sample_id": 3,
+"answer": "yes"
+},
+"274": {
+"depth": "d1",
+"logic": "pl",
+"rule": "BD",
+"sample_id": 4,
+"answer": "yes"
+},
+"275": {
+"depth": "d1",
+"logic": "pl",
+"rule": "BD",
+"sample_id": 5,
+"answer": "yes"
+},
+"276": {
+"depth": "d1",
+"logic": "pl",
+"rule": "BD",
+"sample_id": 6,
+"answer": "yes"
+},
+"277": {
+"depth": "d1",
+"logic": "pl",
+"rule": "BD",
+"sample_id": 7,
+"answer": "yes"
+},
+"278": {
+"depth": "d1",
+"logic": "pl",
+"rule": "BD",
+"sample_id": 8,
+"answer": "yes"
+},
+"279": {
+"depth": "d1",
+"logic": "pl",
+"rule": "BD",
+"sample_id": 9,
+"answer": "yes"
+},
+"280": {
+"depth": "d1",
+"logic": "pl",
+"rule": "BD",
+"sample_id": 10,
+"answer": "yes"
+},
+"281": {
+"depth": "d1",
+"logic": "pl",
+"rule": "CD",
+"sample_id": 1,
+"answer": "yes"
+},
+"282": {
+"depth": "d1",
+"logic": "pl",
+"rule": "CD",
+"sample_id": 2,
+"answer": "yes"
+},
+"283": {
+"depth": "d1",
+"logic": "pl",
+"rule": "CD",
+"sample_id": 3,
+"answer": "yes"
+},
+"284": {
+"depth": "d1",
+"logic": "pl",
+"rule": "CD",
+"sample_id": 4,
+"answer": "yes"
+},
+"285": {
+"depth": "d1",
+"logic": "pl",
+"rule": "CD",
+"sample_id": 5,
+"answer": "yes"
+},
+"286": {
+"depth": "d1",
+"logic": "pl",
+"rule": "CD",
+"sample_id": 6,
+"answer": "yes"
+},
+"287": {
+"depth": "d1",
+"logic": "pl",
+"rule": "CD",
+"sample_id": 7,
+"answer": "yes"
+},
+"288": {
+"depth": "d1",
+"logic": "pl",
+"rule": "CD",
+"sample_id": 8,
+"answer": "yes"
+},
+"289": {
+"depth": "d1",
+"logic": "pl",
+"rule": "CD",
+"sample_id": 9,
+"answer": "yes"
+},
+"290": {
+"depth": "d1",
+"logic": "pl",
+"rule": "CD",
+"sample_id": 10,
+"answer": "yes"
+},
+"291": {
+"depth": "d1",
+"logic": "pl",
+"rule": "CO",
+"sample_id": 1,
+"answer": "yes"
+},
+"292": {
+"depth": "d1",
+"logic": "pl",
+"rule": "CO",
+"sample_id": 2,
+"answer": "yes"
+},
+"293": {
+"depth": "d1",
+"logic": "pl",
+"rule": "CO",
+"sample_id": 3,
+"answer": "yes"
+},
+"294": {
+"depth": "d1",
+"logic": "pl",
+"rule": "CO",
+"sample_id": 4,
+"answer": "yes"
+},
+"295": {
+"depth": "d1",
+"logic": "pl",
+"rule": "CO",
+"sample_id": 5,
+"answer": "yes"
+},
+"296": {
+"depth": "d1",
+"logic": "pl",
+"rule": "CO",
+"sample_id": 6,
+"answer": "yes"
+},
+"297": {
+"depth": "d1",
+"logic": "pl",
+"rule": "CO",
+"sample_id": 7,
+"answer": "yes"
+},
+"298": {
+"depth": "d1",
+"logic": "pl",
+"rule": "CO",
+"sample_id": 8,
+"answer": "yes"
+},
+"299": {
+"depth": "d1",
+"logic": "pl",
+"rule": "CO",
+"sample_id": 9,
+"answer": "yes"
+},
+"300": {
+"depth": "d1",
+"logic": "pl",
+"rule": "CO",
+"sample_id": 10,
+"answer": "yes"
+},
+"301": {
+"depth": "d1",
+"logic": "pl",
+"rule": "DD",
+"sample_id": 1,
+"answer": "yes"
+},
+"302": {
+"depth": "d1",
+"logic": "pl",
+"rule": "DD",
+"sample_id": 2,
+"answer": "yes"
+},
+"303": {
+"depth": "d1",
+"logic": "pl",
+"rule": "DD",
+"sample_id": 3,
+"answer": "yes"
+},
+"304": {
+"depth": "d1",
+"logic": "pl",
+"rule": "DD",
+"sample_id": 4,
+"answer": "yes"
+},
+"305": {
+"depth": "d1",
+"logic": "pl",
+"rule": "DD",
+"sample_id": 5,
+"answer": "yes"
+},
+"306": {
+"depth": "d1",
+"logic": "pl",
+"rule": "DD",
+"sample_id": 6,
+"answer": "yes"
+},
+"307": {
+"depth": "d1",
+"logic": "pl",
+"rule": "DD",
+"sample_id": 7,
+"answer": "yes"
+},
+"308": {
+"depth": "d1",
+"logic": "pl",
+"rule": "DD",
+"sample_id": 8,
+"answer": "yes"
+},
+"309": {
+"depth": "d1",
+"logic": "pl",
+"rule": "DD",
+"sample_id": 9,
+"answer": "yes"
+},
+"310": {
+"depth": "d1",
+"logic": "pl",
+"rule": "DD",
+"sample_id": 10,
+"answer": "yes"
+},
+"311": {
+"depth": "d1",
+"logic": "pl",
+"rule": "DMT",
+"sample_id": 1,
+"answer": "yes"
+},
+"312": {
+"depth": "d1",
+"logic": "pl",
+"rule": "DMT",
+"sample_id": 2,
+"answer": "yes"
+},
+"313": {
+"depth": "d1",
+"logic": "pl",
+"rule": "DMT",
+"sample_id": 3,
+"answer": "yes"
+},
+"314": {
+"depth": "d1",
+"logic": "pl",
+"rule": "DMT",
+"sample_id": 4,
+"answer": "yes"
+},
+"315": {
+"depth": "d1",
+"logic": "pl",
+"rule": "DMT",
+"sample_id": 5,
+"answer": "yes"
+},
+"316": {
+"depth": "d1",
+"logic": "pl",
+"rule": "DMT",
+"sample_id": 6,
+"answer": "yes"
+},
+"317": {
+"depth": "d1",
+"logic": "pl",
+"rule": "DMT",
+"sample_id": 7,
+"answer": "yes"
+},
+"318": {
+"depth": "d1",
+"logic": "pl",
+"rule": "DMT",
+"sample_id": 8,
+"answer": "yes"
+},
+"319": {
+"depth": "d1",
+"logic": "pl",
+"rule": "DMT",
+"sample_id": 9,
+"answer": "yes"
+},
+"320": {
+"depth": "d1",
+"logic": "pl",
+"rule": "DMT",
+"sample_id": 10,
+"answer": "yes"
+},
+"321": {
+"depth": "d1",
+"logic": "pl",
+"rule": "DS",
+"sample_id": 1,
+"answer": "yes"
+},
+"322": {
+"depth": "d1",
+"logic": "pl",
+"rule": "DS",
+"sample_id": 2,
+"answer": "yes"
+},
+"323": {
+"depth": "d1",
+"logic": "pl",
+"rule": "DS",
+"sample_id": 3,
+"answer": "yes"
+},
+"324": {
+"depth": "d1",
+"logic": "pl",
+"rule": "DS",
+"sample_id": 4,
+"answer": "yes"
+},
+"325": {
+"depth": "d1",
+"logic": "pl",
+"rule": "DS",
+"sample_id": 5,
+"answer": "yes"
+},
+"326": {
+"depth": "d1",
+"logic": "pl",
+"rule": "DS",
+"sample_id": 6,
+"answer": "yes"
+},
+"327": {
+"depth": "d1",
+"logic": "pl",
+"rule": "DS",
+"sample_id": 7,
+"answer": "yes"
+},
+"328": {
+"depth": "d1",
+"logic": "pl",
+"rule": "DS",
+"sample_id": 8,
+"answer": "yes"
+},
+"329": {
+"depth": "d1",
+"logic": "pl",
+"rule": "DS",
+"sample_id": 9,
+"answer": "yes"
+},
+"330": {
+"depth": "d1",
+"logic": "pl",
+"rule": "DS",
+"sample_id": 10,
+"answer": "yes"
+},
+"331": {
+"depth": "d1",
+"logic": "pl",
+"rule": "HS",
+"sample_id": 1,
+"answer": "yes"
+},
+"332": {
+"depth": "d1",
+"logic": "pl",
+"rule": "HS",
+"sample_id": 2,
+"answer": "yes"
+},
+"333": {
+"depth": "d1",
+"logic": "pl",
+"rule": "HS",
+"sample_id": 3,
+"answer": "yes"
+},
+"334": {
+"depth": "d1",
+"logic": "pl",
+"rule": "HS",
+"sample_id": 4,
+"answer": "yes"
+},
+"335": {
+"depth": "d1",
+"logic": "pl",
+"rule": "HS",
+"sample_id": 5,
+"answer": "yes"
+},
+"336": {
+"depth": "d1",
+"logic": "pl",
+"rule": "HS",
+"sample_id": 6,
+"answer": "yes"
+},
+"337": {
+"depth": "d1",
+"logic": "pl",
+"rule": "HS",
+"sample_id": 7,
+"answer": "yes"
+},
+"338": {
+"depth": "d1",
+"logic": "pl",
+"rule": "HS",
+"sample_id": 8,
+"answer": "yes"
+},
+"339": {
+"depth": "d1",
+"logic": "pl",
+"rule": "HS",
+"sample_id": 9,
+"answer": "yes"
+},
+"340": {
+"depth": "d1",
+"logic": "pl",
+"rule": "HS",
+"sample_id": 10,
+"answer": "yes"
+},
+"341": {
+"depth": "d1",
+"logic": "pl",
+"rule": "IM",
+"sample_id": 1,
+"answer": "yes"
+},
+"342": {
+"depth": "d1",
+"logic": "pl",
+"rule": "IM",
+"sample_id": 2,
+"answer": "yes"
+},
+"343": {
+"depth": "d1",
+"logic": "pl",
+"rule": "IM",
+"sample_id": 3,
+"answer": "yes"
+},
+"344": {
+"depth": "d1",
+"logic": "pl",
+"rule": "IM",
+"sample_id": 4,
+"answer": "yes"
+},
+"345": {
+"depth": "d1",
+"logic": "pl",
+"rule": "IM",
+"sample_id": 5,
+"answer": "yes"
+},
+"346": {
+"depth": "d1",
+"logic": "pl",
+"rule": "IM",
+"sample_id": 6,
+"answer": "yes"
+},
+"347": {
+"depth": "d1",
+"logic": "pl",
+"rule": "IM",
+"sample_id": 7,
+"answer": "yes"
+},
+"348": {
+"depth": "d1",
+"logic": "pl",
+"rule": "IM",
+"sample_id": 8,
+"answer": "yes"
+},
+"349": {
+"depth": "d1",
+"logic": "pl",
+"rule": "IM",
+"sample_id": 9,
+"answer": "yes"
+},
+"350": {
+"depth": "d1",
+"logic": "pl",
+"rule": "IM",
+"sample_id": 10,
+"answer": "yes"
+},
+"351": {
+"depth": "d1",
+"logic": "pl",
+"rule": "MI",
+"sample_id": 1,
+"answer": "yes"
+},
+"352": {
+"depth": "d1",
+"logic": "pl",
+"rule": "MI",
+"sample_id": 2,
+"answer": "yes"
+},
+"353": {
+"depth": "d1",
+"logic": "pl",
+"rule": "MI",
+"sample_id": 3,
+"answer": "yes"
+},
+"354": {
+"depth": "d1",
+"logic": "pl",
+"rule": "MI",
+"sample_id": 4,
+"answer": "yes"
+},
+"355": {
+"depth": "d1",
+"logic": "pl",
+"rule": "MI",
+"sample_id": 5,
+"answer": "yes"
+},
+"356": {
+"depth": "d1",
+"logic": "pl",
+"rule": "MI",
+"sample_id": 6,
+"answer": "yes"
+},
+"357": {
+"depth": "d1",
+"logic": "pl",
+"rule": "MI",
+"sample_id": 7,
+"answer": "yes"
+},
+"358": {
+"depth": "d1",
+"logic": "pl",
+"rule": "MI",
+"sample_id": 8,
+"answer": "yes"
+},
+"359": {
+"depth": "d1",
+"logic": "pl",
+"rule": "MI",
+"sample_id": 9,
+"answer": "yes"
+},
+"360": {
+"depth": "d1",
+"logic": "pl",
+"rule": "MI",
+"sample_id": 10,
+"answer": "yes"
+},
+"361": {
+"depth": "d1",
+"logic": "pl",
+"rule": "MP",
+"sample_id": 1,
+"answer": "yes"
+},
+"362": {
+"depth": "d1",
+"logic": "pl",
+"rule": "MP",
+"sample_id": 2,
+"answer": "yes"
+},
+"363": {
+"depth": "d1",
+"logic": "pl",
+"rule": "MP",
+"sample_id": 3,
+"answer": "yes"
+},
+"364": {
+"depth": "d1",
+"logic": "pl",
+"rule": "MP",
+"sample_id": 4,
+"answer": "yes"
+},
+"365": {
+"depth": "d1",
+"logic": "pl",
+"rule": "MP",
+"sample_id": 5,
+"answer": "yes"
+},
+"366": {
+"depth": "d1",
+"logic": "pl",
+"rule": "MP",
+"sample_id": 6,
+"answer": "yes"
+},
+"367": {
+"depth": "d1",
+"logic": "pl",
+"rule": "MP",
+"sample_id": 7,
+"answer": "yes"
+},
+"368": {
+"depth": "d1",
+"logic": "pl",
+"rule": "MP",
+"sample_id": 8,
+"answer": "yes"
+},
+"369": {
+"depth": "d1",
+"logic": "pl",
+"rule": "MP",
+"sample_id": 9,
+"answer": "yes"
+},
+"370": {
+"depth": "d1",
+"logic": "pl",
+"rule": "MP",
+"sample_id": 10,
+"answer": "yes"
+},
+"371": {
+"depth": "d1",
+"logic": "pl",
+"rule": "MT",
+"sample_id": 1,
+"answer": "no"
+},
+"372": {
+"depth": "d1",
+"logic": "pl",
+"rule": "MT",
+"sample_id": 2,
+"answer": "no"
+},
+"373": {
+"depth": "d1",
+"logic": "pl",
+"rule": "MT",
+"sample_id": 3,
+"answer": "no"
+},
+"374": {
+"depth": "d1",
+"logic": "pl",
+"rule": "MT",
+"sample_id": 4,
+"answer": "no"
+},
+"375": {
+"depth": "d1",
+"logic": "pl",
+"rule": "MT",
+"sample_id": 5,
+"answer": "no"
+},
+"376": {
+"depth": "d1",
+"logic": "pl",
+"rule": "MT",
+"sample_id": 6,
+"answer": "no"
+},
+"377": {
+"depth": "d1",
+"logic": "pl",
+"rule": "MT",
+"sample_id": 7,
+"answer": "no"
+},
+"378": {
+"depth": "d1",
+"logic": "pl",
+"rule": "MT",
+"sample_id": 8,
+"answer": "no"
+},
+"379": {
+"depth": "d1",
+"logic": "pl",
+"rule": "MT",
+"sample_id": 9,
+"answer": "no"
+},
+"380": {
+"depth": "d1",
+"logic": "pl",
+"rule": "MT",
+"sample_id": 10,
+"answer": "no"
+},
+"381": {
+"depth": "d2",
+"logic": "fol",
+"rule": "BD_DS",
+"sample_id": 1,
+"answer": "no"
+},
+"382": {
+"depth": "d2",
+"logic": "fol",
+"rule": "BD_DS",
+"sample_id": 2,
+"answer": "no"
+},
+"383": {
+"depth": "d2",
+"logic": "fol",
+"rule": "BD_DS",
+"sample_id": 3,
+"answer": "no"
+},
+"384": {
+"depth": "d2",
+"logic": "fol",
+"rule": "BD_DS",
+"sample_id": 4,
+"answer": "no"
+},
+"385": {
+"depth": "d2",
+"logic": "fol",
+"rule": "BD_DS",
+"sample_id": 5,
+"answer": "no"
+},
+"386": {
+"depth": "d2",
+"logic": "fol",
+"rule": "BD_DS",
+"sample_id": 6,
+"answer": "no"
+},
+"387": {
+"depth": "d2",
+"logic": "fol",
+"rule": "BD_DS",
+"sample_id": 7,
+"answer": "no"
+},
+"388": {
+"depth": "d2",
+"logic": "fol",
+"rule": "BD_DS",
+"sample_id": 8,
+"answer": "no"
+},
+"389": {
+"depth": "d2",
+"logic": "fol",
+"rule": "BD_DS",
+"sample_id": 9,
+"answer": "no"
+},
+"390": {
+"depth": "d2",
+"logic": "fol",
+"rule": "BD_DS",
+"sample_id": 10,
+"answer": "no"
+},
+"391": {
+"depth": "d2",
+"logic": "fol",
+"rule": "BD_DS",
+"sample_id": 11,
+"answer": "no"
+},
+"392": {
+"depth": "d2",
+"logic": "fol",
+"rule": "BD_DS",
+"sample_id": 12,
+"answer": "no"
+},
+"393": {
+"depth": "d2",
+"logic": "fol",
+"rule": "BD_DS",
+"sample_id": 13,
+"answer": "no"
+},
+"394": {
+"depth": "d2",
+"logic": "fol",
+"rule": "BD_DS",
+"sample_id": 14,
+"answer": "no"
+},
+"395": {
+"depth": "d2",
+"logic": "fol",
+"rule": "BD_DS",
+"sample_id": 15,
+"answer": "no"
+},
+"396": {
+"depth": "d2",
+"logic": "fol",
+"rule": "CD_DS",
+"sample_id": 1,
+"answer": "yes"
+},
+"397": {
+"depth": "d2",
+"logic": "fol",
+"rule": "CD_DS",
+"sample_id": 2,
+"answer": "yes"
+},
+"398": {
+"depth": "d2",
+"logic": "fol",
+"rule": "CD_DS",
+"sample_id": 3,
+"answer": "yes"
+},
+"399": {
+"depth": "d2",
+"logic": "fol",
+"rule": "CD_DS",
+"sample_id": 4,
+"answer": "yes"
+},
+"400": {
+"depth": "d2",
+"logic": "fol",
+"rule": "CD_DS",
+"sample_id": 5,
+"answer": "yes"
+},
+"401": {
+"depth": "d2",
+"logic": "fol",
+"rule": "CD_DS",
+"sample_id": 6,
+"answer": "yes"
+},
+"402": {
+"depth": "d2",
+"logic": "fol",
+"rule": "CD_DS",
+"sample_id": 7,
+"answer": "yes"
+},
+"403": {
+"depth": "d2",
+"logic": "fol",
+"rule": "CD_DS",
+"sample_id": 8,
+"answer": "yes"
+},
+"404": {
+"depth": "d2",
+"logic": "fol",
+"rule": "CD_DS",
+"sample_id": 9,
+"answer": "yes"
+},
+"405": {
+"depth": "d2",
+"logic": "fol",
+"rule": "CD_DS",
+"sample_id": 10,
+"answer": "yes"
+},
+"406": {
+"depth": "d2",
+"logic": "fol",
+"rule": "CD_DS",
+"sample_id": 11,
+"answer": "yes"
+},
+"407": {
+"depth": "d2",
+"logic": "fol",
+"rule": "CD_DS",
+"sample_id": 12,
+"answer": "yes"
+},
+"408": {
+"depth": "d2",
+"logic": "fol",
+"rule": "CD_DS",
+"sample_id": 13,
+"answer": "yes"
+},
+"409": {
+"depth": "d2",
+"logic": "fol",
+"rule": "CD_DS",
+"sample_id": 14,
+"answer": "yes"
+},
+"410": {
+"depth": "d2",
+"logic": "fol",
+"rule": "CD_DS",
+"sample_id": 15,
+"answer": "yes"
+},
+"411": {
+"depth": "d2",
+"logic": "fol",
+"rule": "DD_DS",
+"sample_id": 1,
+"answer": "no"
+},
+"412": {
+"depth": "d2",
+"logic": "fol",
+"rule": "DD_DS",
+"sample_id": 2,
+"answer": "no"
+},
+"413": {
+"depth": "d2",
+"logic": "fol",
+"rule": "DD_DS",
+"sample_id": 3,
+"answer": "no"
+},
+"414": {
+"depth": "d2",
+"logic": "fol",
+"rule": "DD_DS",
+"sample_id": 4,
+"answer": "no"
+},
+"415": {
+"depth": "d2",
+"logic": "fol",
+"rule": "DD_DS",
+"sample_id": 5,
+"answer": "no"
+},
+"416": {
+"depth": "d2",
+"logic": "fol",
+"rule": "DD_DS",
+"sample_id": 6,
+"answer": "no"
+},
+"417": {
+"depth": "d2",
+"logic": "fol",
+"rule": "DD_DS",
+"sample_id": 7,
+"answer": "no"
+},
+"418": {
+"depth": "d2",
+"logic": "fol",
+"rule": "DD_DS",
+"sample_id": 8,
+"answer": "no"
+},
+"419": {
+"depth": "d2",
+"logic": "fol",
+"rule": "DD_DS",
+"sample_id": 9,
+"answer": "no"
+},
+"420": {
+"depth": "d2",
+"logic": "fol",
+"rule": "DD_DS",
+"sample_id": 10,
+"answer": "no"
+},
+"421": {
+"depth": "d2",
+"logic": "fol",
+"rule": "DD_DS",
+"sample_id": 11,
+"answer": "no"
+},
+"422": {
+"depth": "d2",
+"logic": "fol",
+"rule": "DD_DS",
+"sample_id": 12,
+"answer": "no"
+},
+"423": {
+"depth": "d2",
+"logic": "fol",
+"rule": "DD_DS",
+"sample_id": 13,
+"answer": "no"
+},
+"424": {
+"depth": "d2",
+"logic": "fol",
+"rule": "DD_DS",
+"sample_id": 14,
+"answer": "no"
+},
+"425": {
+"depth": "d2",
+"logic": "fol",
+"rule": "DD_DS",
+"sample_id": 15,
+"answer": "no"
+},
+"426": {
+"depth": "d2",
+"logic": "fol",
+"rule": "DS_MP",
+"sample_id": 1,
+"answer": "yes"
+},
+"427": {
+"depth": "d2",
+"logic": "fol",
+"rule": "DS_MP",
+"sample_id": 2,
+"answer": "yes"
+},
+"428": {
+"depth": "d2",
+"logic": "fol",
+"rule": "DS_MP",
+"sample_id": 3,
+"answer": "yes"
+},
+"429": {
+"depth": "d2",
+"logic": "fol",
+"rule": "DS_MP",
+"sample_id": 4,
+"answer": "yes"
+},
+"430": {
+"depth": "d2",
+"logic": "fol",
+"rule": "DS_MP",
+"sample_id": 5,
+"answer": "yes"
+},
+"431": {
+"depth": "d2",
+"logic": "fol",
+"rule": "DS_MP",
+"sample_id": 6,
+"answer": "yes"
+},
+"432": {
+"depth": "d2",
+"logic": "fol",
+"rule": "DS_MP",
+"sample_id": 7,
+"answer": "yes"
+},
+"433": {
+"depth": "d2",
+"logic": "fol",
+"rule": "DS_MP",
+"sample_id": 8,
+"answer": "yes"
+},
+"434": {
+"depth": "d2",
+"logic": "fol",
+"rule": "DS_MP",
+"sample_id": 9,
+"answer": "yes"
+},
+"435": {
+"depth": "d2",
+"logic": "fol",
+"rule": "DS_MP",
+"sample_id": 10,
+"answer": "yes"
+},
+"436": {
+"depth": "d2",
+"logic": "fol",
+"rule": "DS_MP",
+"sample_id": 11,
+"answer": "yes"
+},
+"437": {
+"depth": "d2",
+"logic": "fol",
+"rule": "DS_MP",
+"sample_id": 12,
+"answer": "yes"
+},
+"438": {
+"depth": "d2",
+"logic": "fol",
+"rule": "DS_MP",
+"sample_id": 13,
+"answer": "yes"
+},
+"439": {
+"depth": "d2",
+"logic": "fol",
+"rule": "DS_MP",
+"sample_id": 14,
+"answer": "yes"
+},
+"440": {
+"depth": "d2",
+"logic": "fol",
+"rule": "DS_MP",
+"sample_id": 15,
+"answer": "yes"
+},
+"441": {
+"depth": "d2",
+"logic": "fol",
+"rule": "HS_MP",
+"sample_id": 1,
+"answer": "yes"
+},
+"442": {
+"depth": "d2",
+"logic": "fol",
+"rule": "HS_MP",
+"sample_id": 2,
+"answer": "yes"
+},
+"443": {
+"depth": "d2",
+"logic": "fol",
+"rule": "HS_MP",
+"sample_id": 3,
+"answer": "yes"
+},
+"444": {
+"depth": "d2",
+"logic": "fol",
+"rule": "HS_MP",
+"sample_id": 4,
+"answer": "yes"
+},
+"445": {
+"depth": "d2",
+"logic": "fol",
+"rule": "HS_MP",
+"sample_id": 5,
+"answer": "yes"
+},
+"446": {
+"depth": "d2",
+"logic": "fol",
+"rule": "HS_MP",
+"sample_id": 6,
+"answer": "yes"
+},
+"447": {
+"depth": "d2",
+"logic": "fol",
+"rule": "HS_MP",
+"sample_id": 7,
+"answer": "yes"
+},
+"448": {
+"depth": "d2",
+"logic": "fol",
+"rule": "HS_MP",
+"sample_id": 8,
+"answer": "yes"
+},
+"449": {
+"depth": "d2",
+"logic": "fol",
+"rule": "HS_MP",
+"sample_id": 9,
+"answer": "yes"
+},
+"450": {
+"depth": "d2",
+"logic": "fol",
+"rule": "HS_MP",
+"sample_id": 10,
+"answer": "yes"
+},
+"451": {
+"depth": "d2",
+"logic": "fol",
+"rule": "HS_MP",
+"sample_id": 11,
+"answer": "yes"
+},
+"452": {
+"depth": "d2",
+"logic": "fol",
+"rule": "HS_MP",
+"sample_id": 12,
+"answer": "yes"
+},
+"453": {
+"depth": "d2",
+"logic": "fol",
+"rule": "HS_MP",
+"sample_id": 13,
+"answer": "yes"
+},
+"454": {
+"depth": "d2",
+"logic": "fol",
+"rule": "HS_MP",
+"sample_id": 14,
+"answer": "yes"
+},
+"455": {
+"depth": "d2",
+"logic": "fol",
+"rule": "HS_MP",
+"sample_id": 15,
+"answer": "yes"
+},
+"456": {
+"depth": "d2",
+"logic": "fol",
+"rule": "HS_MT",
+"sample_id": 1,
+"answer": "no"
+},
+"457": {
+"depth": "d2",
+"logic": "fol",
+"rule": "HS_MT",
+"sample_id": 2,
+"answer": "no"
+},
+"458": {
+"depth": "d2",
+"logic": "fol",
+"rule": "HS_MT",
+"sample_id": 3,
+"answer": "no"
+},
+"459": {
+"depth": "d2",
+"logic": "fol",
+"rule": "HS_MT",
+"sample_id": 4,
+"answer": "no"
+},
+"460": {
+"depth": "d2",
+"logic": "fol",
+"rule": "HS_MT",
+"sample_id": 5,
+"answer": "no"
+},
+"461": {
+"depth": "d2",
+"logic": "fol",
+"rule": "HS_MT",
+"sample_id": 6,
+"answer": "no"
+},
+"462": {
+"depth": "d2",
+"logic": "fol",
+"rule": "HS_MT",
+"sample_id": 7,
+"answer": "no"
+},
+"463": {
+"depth": "d2",
+"logic": "fol",
+"rule": "HS_MT",
+"sample_id": 8,
+"answer": "no"
+},
+"464": {
+"depth": "d2",
+"logic": "fol",
+"rule": "HS_MT",
+"sample_id": 9,
+"answer": "no"
+},
+"465": {
+"depth": "d2",
+"logic": "fol",
+"rule": "HS_MT",
+"sample_id": 10,
+"answer": "no"
+},
+"466": {
+"depth": "d2",
+"logic": "fol",
+"rule": "HS_MT",
+"sample_id": 11,
+"answer": "no"
+},
+"467": {
+"depth": "d2",
+"logic": "fol",
+"rule": "HS_MT",
+"sample_id": 12,
+"answer": "no"
+},
+"468": {
+"depth": "d2",
+"logic": "fol",
+"rule": "HS_MT",
+"sample_id": 13,
+"answer": "no"
+},
+"469": {
+"depth": "d2",
+"logic": "fol",
+"rule": "HS_MT",
+"sample_id": 14,
+"answer": "no"
+},
+"470": {
+"depth": "d2",
+"logic": "fol",
+"rule": "HS_MT",
+"sample_id": 15,
+"answer": "no"
+},
+"471": {
+"depth": "d2",
+"logic": "fol",
+"rule": "MT_DS",
+"sample_id": 1,
+"answer": "yes"
+},
+"472": {
+"depth": "d2",
+"logic": "fol",
+"rule": "MT_DS",
+"sample_id": 2,
+"answer": "yes"
+},
+"473": {
+"depth": "d2",
+"logic": "fol",
+"rule": "MT_DS",
+"sample_id": 3,
+"answer": "yes"
+},
+"474": {
+"depth": "d2",
+"logic": "fol",
+"rule": "MT_DS",
+"sample_id": 4,
+"answer": "yes"
+},
+"475": {
+"depth": "d2",
+"logic": "fol",
+"rule": "MT_DS",
+"sample_id": 5,
+"answer": "yes"
+},
+"476": {
+"depth": "d2",
+"logic": "fol",
+"rule": "MT_DS",
+"sample_id": 6,
+"answer": "yes"
+},
+"477": {
+"depth": "d2",
+"logic": "fol",
+"rule": "MT_DS",
+"sample_id": 7,
+"answer": "yes"
+},
+"478": {
+"depth": "d2",
+"logic": "fol",
+"rule": "MT_DS",
+"sample_id": 8,
+"answer": "yes"
+},
+"479": {
+"depth": "d2",
+"logic": "fol",
+"rule": "MT_DS",
+"sample_id": 9,
+"answer": "yes"
+},
+"480": {
+"depth": "d2",
+"logic": "fol",
+"rule": "MT_DS",
+"sample_id": 10,
+"answer": "yes"
+},
+"481": {
+"depth": "d2",
+"logic": "fol",
+"rule": "MT_DS",
+"sample_id": 11,
+"answer": "yes"
+},
+"482": {
+"depth": "d2",
+"logic": "fol",
+"rule": "MT_DS",
+"sample_id": 12,
+"answer": "yes"
+},
+"483": {
+"depth": "d2",
+"logic": "fol",
+"rule": "MT_DS",
+"sample_id": 13,
+"answer": "yes"
+},
+"484": {
+"depth": "d2",
+"logic": "fol",
+"rule": "MT_DS",
+"sample_id": 14,
+"answer": "yes"
+},
+"485": {
+"depth": "d2",
+"logic": "fol",
+"rule": "MT_DS",
+"sample_id": 15,
+"answer": "yes"
+},
+"486": {
+"depth": "d2",
+"logic": "mm",
+"rule": "BDR_MP",
+"sample_id": 1,
+"answer": "no"
+},
+"487": {
+"depth": "d2",
+"logic": "mm",
+"rule": "BDR_MP",
+"sample_id": 2,
+"answer": "yes"
+},
+"488": {
+"depth": "d2",
+"logic": "mm",
+"rule": "BDR_MP",
+"sample_id": 3,
+"answer": "yes"
+},
+"489": {
+"depth": "d2",
+"logic": "mm",
+"rule": "BDR_MP",
+"sample_id": 4,
+"answer": "yes"
+},
+"490": {
+"depth": "d2",
+"logic": "mm",
+"rule": "BDR_MP",
+"sample_id": 5,
+"answer": "yes"
+},
+"491": {
+"depth": "d2",
+"logic": "mm",
+"rule": "BDR_MP",
+"sample_id": 6,
+"answer": "no"
+},
+"492": {
+"depth": "d2",
+"logic": "mm",
+"rule": "BDR_MP",
+"sample_id": 7,
+"answer": "no"
+},
+"493": {
+"depth": "d2",
+"logic": "mm",
+"rule": "BDR_MP",
+"sample_id": 8,
+"answer": "no"
+},
+"494": {
+"depth": "d2",
+"logic": "mm",
+"rule": "BDR_MP",
+"sample_id": 9,
+"answer": "no"
+},
+"495": {
+"depth": "d2",
+"logic": "mm",
+"rule": "BDR_MP",
+"sample_id": 10,
+"answer": "no"
+},
+"496": {
+"depth": "d2",
+"logic": "mm",
+"rule": "BDR_MP",
+"sample_id": 11,
+"answer": "yes"
+},
+"497": {
+"depth": "d2",
+"logic": "mm",
+"rule": "BDR_MP",
+"sample_id": 12,
+"answer": "yes"
+},
+"498": {
+"depth": "d2",
+"logic": "mm",
+"rule": "BDR_MP",
+"sample_id": 13,
+"answer": "yes"
+},
+"499": {
+"depth": "d2",
+"logic": "mm",
+"rule": "BDR_MP",
+"sample_id": 14,
+"answer": "yes"
+},
+"500": {
+"depth": "d2",
+"logic": "mm",
+"rule": "BDR_MP",
+"sample_id": 15,
+"answer": "yes"
+},
+"501": {
+"depth": "d2",
+"logic": "mm",
+"rule": "BDR_MP",
+"sample_id": 16,
+"answer": "yes"
+},
+"502": {
+"depth": "d2",
+"logic": "mm",
+"rule": "BDR_MP",
+"sample_id": 17,
+"answer": "yes"
+},
+"503": {
+"depth": "d2",
+"logic": "mm",
+"rule": "BDR_MP",
+"sample_id": 18,
+"answer": "yes"
+},
+"504": {
+"depth": "d2",
+"logic": "mm",
+"rule": "BDR_MP",
+"sample_id": 19,
+"answer": "yes"
+},
+"505": {
+"depth": "d2",
+"logic": "mm",
+"rule": "BDR_MP",
+"sample_id": 20,
+"answer": "yes"
+},
+"506": {
+"depth": "d2",
+"logic": "mm",
+"rule": "BDR_MT",
+"sample_id": 1,
+"answer": "no"
+},
+"507": {
+"depth": "d2",
+"logic": "mm",
+"rule": "BDR_MT",
+"sample_id": 2,
+"answer": "no"
+},
+"508": {
+"depth": "d2",
+"logic": "mm",
+"rule": "BDR_MT",
+"sample_id": 3,
+"answer": "no"
+},
+"509": {
+"depth": "d2",
+"logic": "mm",
+"rule": "BDR_MT",
+"sample_id": 4,
+"answer": "no"
+},
+"510": {
+"depth": "d2",
+"logic": "mm",
+"rule": "BDR_MT",
+"sample_id": 5,
+"answer": "no"
+},
+"511": {
+"depth": "d2",
+"logic": "mm",
+"rule": "BDR_MT",
+"sample_id": 6,
+"answer": "no"
+},
+"512": {
+"depth": "d2",
+"logic": "mm",
+"rule": "BDR_MT",
+"sample_id": 7,
+"answer": "no"
+},
+"513": {
+"depth": "d2",
+"logic": "mm",
+"rule": "BDR_MT",
+"sample_id": 8,
+"answer": "no"
+},
+"514": {
+"depth": "d2",
+"logic": "mm",
+"rule": "BDR_MT",
+"sample_id": 9,
+"answer": "no"
+},
+"515": {
+"depth": "d2",
+"logic": "mm",
+"rule": "BDR_MT",
+"sample_id": 10,
+"answer": "no"
+},
+"516": {
+"depth": "d2",
+"logic": "mm",
+"rule": "BDR_MT",
+"sample_id": 11,
+"answer": "no"
+},
+"517": {
+"depth": "d2",
+"logic": "mm",
+"rule": "BDR_MT",
+"sample_id": 12,
+"answer": "no"
+},
+"518": {
+"depth": "d2",
+"logic": "mm",
+"rule": "BDR_MT",
+"sample_id": 13,
+"answer": "no"
+},
+"519": {
+"depth": "d2",
+"logic": "mm",
+"rule": "BDR_MT",
+"sample_id": 14,
+"answer": "no"
+},
+"520": {
+"depth": "d2",
+"logic": "mm",
+"rule": "BDR_MT",
+"sample_id": 15,
+"answer": "no"
+},
+"521": {
+"depth": "d2",
+"logic": "mm",
+"rule": "BDR_MT",
+"sample_id": 16,
+"answer": "no"
+},
+"522": {
+"depth": "d2",
+"logic": "mm",
+"rule": "BDR_MT",
+"sample_id": 17,
+"answer": "no"
+},
+"523": {
+"depth": "d2",
+"logic": "mm",
+"rule": "BDR_MT",
+"sample_id": 18,
+"answer": "no"
+},
+"524": {
+"depth": "d2",
+"logic": "mm",
+"rule": "BDR_MT",
+"sample_id": 19,
+"answer": "no"
+},
+"525": {
+"depth": "d2",
+"logic": "mm",
+"rule": "BDR_MT",
+"sample_id": 20,
+"answer": "no"
+},
+"526": {
+"depth": "d2",
+"logic": "mm",
+"rule": "DRD_MP",
+"sample_id": 1,
+"answer": "yes"
+},
+"527": {
+"depth": "d2",
+"logic": "mm",
+"rule": "DRD_MP",
+"sample_id": 2,
+"answer": "yes"
+},
+"528": {
+"depth": "d2",
+"logic": "mm",
+"rule": "DRD_MP",
+"sample_id": 3,
+"answer": "yes"
+},
+"529": {
+"depth": "d2",
+"logic": "mm",
+"rule": "DRD_MP",
+"sample_id": 4,
+"answer": "yes"
+},
+"530": {
+"depth": "d2",
+"logic": "mm",
+"rule": "DRD_MP",
+"sample_id": 5,
+"answer": "yes"
+},
+"531": {
+"depth": "d2",
+"logic": "mm",
+"rule": "DRD_MP",
+"sample_id": 6,
+"answer": "yes"
+},
+"532": {
+"depth": "d2",
+"logic": "mm",
+"rule": "DRD_MP",
+"sample_id": 7,
+"answer": "yes"
+},
+"533": {
+"depth": "d2",
+"logic": "mm",
+"rule": "DRD_MP",
+"sample_id": 8,
+"answer": "yes"
+},
+"534": {
+"depth": "d2",
+"logic": "mm",
+"rule": "DRD_MP",
+"sample_id": 9,
+"answer": "yes"
+},
+"535": {
+"depth": "d2",
+"logic": "mm",
+"rule": "DRD_MP",
+"sample_id": 10,
+"answer": "yes"
+},
+"536": {
+"depth": "d2",
+"logic": "mm",
+"rule": "DRD_MP",
+"sample_id": 11,
+"answer": "yes"
+},
+"537": {
+"depth": "d2",
+"logic": "mm",
+"rule": "DRD_MP",
+"sample_id": 12,
+"answer": "yes"
+},
+"538": {
+"depth": "d2",
+"logic": "mm",
+"rule": "DRD_MP",
+"sample_id": 13,
+"answer": "yes"
+},
+"539": {
+"depth": "d2",
+"logic": "mm",
+"rule": "DRD_MP",
+"sample_id": 14,
+"answer": "yes"
+},
+"540": {
+"depth": "d2",
+"logic": "mm",
+"rule": "DRD_MP",
+"sample_id": 15,
+"answer": "yes"
+},
+"541": {
+"depth": "d2",
+"logic": "mm",
+"rule": "DRD_MP",
+"sample_id": 16,
+"answer": "no"
+},
+"542": {
+"depth": "d2",
+"logic": "mm",
+"rule": "DRD_MP",
+"sample_id": 17,
+"answer": "yes"
+},
+"543": {
+"depth": "d2",
+"logic": "mm",
+"rule": "DRD_MP",
+"sample_id": 18,
+"answer": "yes"
+},
+"544": {
+"depth": "d2",
+"logic": "mm",
+"rule": "DRD_MP",
+"sample_id": 19,
+"answer": "yes"
+},
+"545": {
+"depth": "d2",
+"logic": "mm",
+"rule": "DRD_MP",
+"sample_id": 20,
+"answer": "yes"
+},
+"546": {
+"depth": "d2",
+"logic": "mm",
+"rule": "DRD_MT",
+"sample_id": 1,
+"answer": "no"
+},
+"547": {
+"depth": "d2",
+"logic": "mm",
+"rule": "DRD_MT",
+"sample_id": 2,
+"answer": "no"
+},
+"548": {
+"depth": "d2",
+"logic": "mm",
+"rule": "DRD_MT",
+"sample_id": 3,
+"answer": "no"
+},
+"549": {
+"depth": "d2",
+"logic": "mm",
+"rule": "DRD_MT",
+"sample_id": 4,
+"answer": "no"
+},
+"550": {
+"depth": "d2",
+"logic": "mm",
+"rule": "DRD_MT",
+"sample_id": 5,
+"answer": "no"
+},
+"551": {
+"depth": "d2",
+"logic": "mm",
+"rule": "DRD_MT",
+"sample_id": 6,
+"answer": "no"
+},
+"552": {
+"depth": "d2",
+"logic": "mm",
+"rule": "DRD_MT",
+"sample_id": 7,
+"answer": "no"
+},
+"553": {
+"depth": "d2",
+"logic": "mm",
+"rule": "DRD_MT",
+"sample_id": 8,
+"answer": "no"
+},
+"554": {
+"depth": "d2",
+"logic": "mm",
+"rule": "DRD_MT",
+"sample_id": 9,
+"answer": "no"
+},
+"555": {
+"depth": "d2",
+"logic": "mm",
+"rule": "DRD_MT",
+"sample_id": 10,
+"answer": "no"
+},
+"556": {
+"depth": "d2",
+"logic": "mm",
+"rule": "DRD_MT",
+"sample_id": 11,
+"answer": "no"
+},
+"557": {
+"depth": "d2",
+"logic": "mm",
+"rule": "DRD_MT",
+"sample_id": 12,
+"answer": "no"
+},
+"558": {
+"depth": "d2",
+"logic": "mm",
+"rule": "DRD_MT",
+"sample_id": 13,
+"answer": "no"
+},
+"559": {
+"depth": "d2",
+"logic": "mm",
+"rule": "DRD_MT",
+"sample_id": 14,
+"answer": "no"
+},
+"560": {
+"depth": "d2",
+"logic": "mm",
+"rule": "DRD_MT",
+"sample_id": 15,
+"answer": "no"
+},
+"561": {
+"depth": "d2",
+"logic": "mm",
+"rule": "DRD_MT",
+"sample_id": 16,
+"answer": "no"
+},
+"562": {
+"depth": "d2",
+"logic": "mm",
+"rule": "DRD_MT",
+"sample_id": 17,
+"answer": "no"
+},
+"563": {
+"depth": "d2",
+"logic": "mm",
+"rule": "DRD_MT",
+"sample_id": 18,
+"answer": "no"
+},
+"564": {
+"depth": "d2",
+"logic": "mm",
+"rule": "DRD_MT",
+"sample_id": 19,
+"answer": "no"
+},
+"565": {
+"depth": "d2",
+"logic": "mm",
+"rule": "DRD_MT",
+"sample_id": 20,
+"answer": "no"
+},
+"566": {
+"depth": "d2",
+"logic": "mm",
+"rule": "DRI_MP",
+"sample_id": 1,
+"answer": "yes"
+},
+"567": {
+"depth": "d2",
+"logic": "mm",
+"rule": "DRI_MP",
+"sample_id": 2,
+"answer": "yes"
+},
+"568": {
+"depth": "d2",
+"logic": "mm",
+"rule": "DRI_MP",
+"sample_id": 3,
+"answer": "yes"
+},
+"569": {
+"depth": "d2",
+"logic": "mm",
+"rule": "DRI_MP",
+"sample_id": 4,
+"answer": "yes"
+},
+"570": {
+"depth": "d2",
+"logic": "mm",
+"rule": "DRI_MP",
+"sample_id": 5,
+"answer": "yes"
+},
+"571": {
+"depth": "d2",
+"logic": "mm",
+"rule": "DRI_MP",
+"sample_id": 6,
+"answer": "yes"
+},
+"572": {
+"depth": "d2",
+"logic": "mm",
+"rule": "DRI_MP",
+"sample_id": 7,
+"answer": "yes"
+},
+"573": {
+"depth": "d2",
+"logic": "mm",
+"rule": "DRI_MP",
+"sample_id": 8,
+"answer": "yes"
+},
+"574": {
+"depth": "d2",
+"logic": "mm",
+"rule": "DRI_MP",
+"sample_id": 9,
+"answer": "yes"
+},
+"575": {
+"depth": "d2",
+"logic": "mm",
+"rule": "DRI_MP",
+"sample_id": 10,
+"answer": "yes"
+},
+"576": {
+"depth": "d2",
+"logic": "mm",
+"rule": "DRI_MP",
+"sample_id": 11,
+"answer": "yes"
+},
+"577": {
+"depth": "d2",
+"logic": "mm",
+"rule": "DRI_MP",
+"sample_id": 12,
+"answer": "yes"
+},
+"578": {
+"depth": "d2",
+"logic": "mm",
+"rule": "DRI_MP",
+"sample_id": 13,
+"answer": "yes"
+},
+"579": {
+"depth": "d2",
+"logic": "mm",
+"rule": "DRI_MP",
+"sample_id": 14,
+"answer": "yes"
+},
+"580": {
+"depth": "d2",
+"logic": "mm",
+"rule": "DRI_MP",
+"sample_id": 15,
+"answer": "yes"
+},
+"581": {
+"depth": "d2",
+"logic": "mm",
+"rule": "DRI_MP",
+"sample_id": 16,
+"answer": "yes"
+},
+"582": {
+"depth": "d2",
+"logic": "mm",
+"rule": "DRI_MP",
+"sample_id": 17,
+"answer": "yes"
+},
+"583": {
+"depth": "d2",
+"logic": "mm",
+"rule": "DRI_MP",
+"sample_id": 18,
+"answer": "yes"
+},
+"584": {
+"depth": "d2",
+"logic": "mm",
+"rule": "DRI_MP",
+"sample_id": 19,
+"answer": "yes"
+},
+"585": {
+"depth": "d2",
+"logic": "mm",
+"rule": "DRI_MP",
+"sample_id": 20,
+"answer": "yes"
+},
+"586": {
+"depth": "d2",
+"logic": "mm",
+"rule": "DRI_MT",
+"sample_id": 1,
+"answer": "no"
+},
+"587": {
+"depth": "d2",
+"logic": "mm",
+"rule": "DRI_MT",
+"sample_id": 2,
+"answer": "no"
+},
+"588": {
+"depth": "d2",
+"logic": "mm",
+"rule": "DRI_MT",
+"sample_id": 3,
+"answer": "no"
+},
+"589": {
+"depth": "d2",
+"logic": "mm",
+"rule": "DRI_MT",
+"sample_id": 4,
+"answer": "no"
+},
+"590": {
+"depth": "d2",
+"logic": "mm",
+"rule": "DRI_MT",
+"sample_id": 5,
+"answer": "no"
+},
+"591": {
+"depth": "d2",
+"logic": "mm",
+"rule": "DRI_MT",
+"sample_id": 6,
+"answer": "no"
+},
+"592": {
+"depth": "d2",
+"logic": "mm",
+"rule": "DRI_MT",
+"sample_id": 7,
+"answer": "no"
+},
+"593": {
+"depth": "d2",
+"logic": "mm",
+"rule": "DRI_MT",
+"sample_id": 8,
+"answer": "no"
+},
+"594": {
+"depth": "d2",
+"logic": "mm",
+"rule": "DRI_MT",
+"sample_id": 9,
+"answer": "no"
+},
+"595": {
+"depth": "d2",
+"logic": "mm",
+"rule": "DRI_MT",
+"sample_id": 10,
+"answer": "no"
+},
+"596": {
+"depth": "d2",
+"logic": "mm",
+"rule": "DRI_MT",
+"sample_id": 11,
+"answer": "no"
+},
+"597": {
+"depth": "d2",
+"logic": "mm",
+"rule": "DRI_MT",
+"sample_id": 12,
+"answer": "no"
+},
+"598": {
+"depth": "d2",
+"logic": "mm",
+"rule": "DRI_MT",
+"sample_id": 13,
+"answer": "no"
+},
+"599": {
+"depth": "d2",
+"logic": "mm",
+"rule": "DRI_MT",
+"sample_id": 14,
+"answer": "no"
+},
+"600": {
+"depth": "d2",
+"logic": "mm",
+"rule": "DRI_MT",
+"sample_id": 15,
+"answer": "no"
+},
+"601": {
+"depth": "d2",
+"logic": "mm",
+"rule": "DRI_MT",
+"sample_id": 16,
+"answer": "no"
+},
+"602": {
+"depth": "d2",
+"logic": "mm",
+"rule": "DRI_MT",
+"sample_id": 17,
+"answer": "no"
+},
+"603": {
+"depth": "d2",
+"logic": "mm",
+"rule": "DRI_MT",
+"sample_id": 18,
+"answer": "no"
+},
+"604": {
+"depth": "d2",
+"logic": "mm",
+"rule": "DRI_MT",
+"sample_id": 19,
+"answer": "no"
+},
+"605": {
+"depth": "d2",
+"logic": "mm",
+"rule": "DRI_MT",
+"sample_id": 20,
+"answer": "no"
+},
+"606": {
+"depth": "d2",
+"logic": "mm",
+"rule": "PBD_MP",
+"sample_id": 1,
+"answer": "yes"
+},
+"607": {
+"depth": "d2",
+"logic": "mm",
+"rule": "PBD_MP",
+"sample_id": 2,
+"answer": "yes"
+},
+"608": {
+"depth": "d2",
+"logic": "mm",
+"rule": "PBD_MP",
+"sample_id": 3,
+"answer": "yes"
+},
+"609": {
+"depth": "d2",
+"logic": "mm",
+"rule": "PBD_MP",
+"sample_id": 4,
+"answer": "yes"
+},
+"610": {
+"depth": "d2",
+"logic": "mm",
+"rule": "PBD_MP",
+"sample_id": 5,
+"answer": "yes"
+},
+"611": {
+"depth": "d2",
+"logic": "mm",
+"rule": "PBD_MP",
+"sample_id": 6,
+"answer": "yes"
+},
+"612": {
+"depth": "d2",
+"logic": "mm",
+"rule": "PBD_MP",
+"sample_id": 7,
+"answer": "yes"
+},
+"613": {
+"depth": "d2",
+"logic": "mm",
+"rule": "PBD_MP",
+"sample_id": 8,
+"answer": "yes"
+},
+"614": {
+"depth": "d2",
+"logic": "mm",
+"rule": "PBD_MP",
+"sample_id": 9,
+"answer": "yes"
+},
+"615": {
+"depth": "d2",
+"logic": "mm",
+"rule": "PBD_MP",
+"sample_id": 10,
+"answer": "yes"
+},
+"616": {
+"depth": "d2",
+"logic": "mm",
+"rule": "PBD_MP",
+"sample_id": 11,
+"answer": "yes"
+},
+"617": {
+"depth": "d2",
+"logic": "mm",
+"rule": "PBD_MP",
+"sample_id": 12,
+"answer": "yes"
+},
+"618": {
+"depth": "d2",
+"logic": "mm",
+"rule": "PBD_MP",
+"sample_id": 13,
+"answer": "yes"
+},
+"619": {
+"depth": "d2",
+"logic": "mm",
+"rule": "PBD_MP",
+"sample_id": 14,
+"answer": "yes"
+},
+"620": {
+"depth": "d2",
+"logic": "mm",
+"rule": "PBD_MP",
+"sample_id": 15,
+"answer": "yes"
+},
+"621": {
+"depth": "d2",
+"logic": "mm",
+"rule": "PBD_MP",
+"sample_id": 16,
+"answer": "yes"
+},
+"622": {
+"depth": "d2",
+"logic": "mm",
+"rule": "PBD_MP",
+"sample_id": 17,
+"answer": "yes"
+},
+"623": {
+"depth": "d2",
+"logic": "mm",
+"rule": "PBD_MP",
+"sample_id": 18,
+"answer": "yes"
+},
+"624": {
+"depth": "d2",
+"logic": "mm",
+"rule": "PBD_MP",
+"sample_id": 19,
+"answer": "yes"
+},
+"625": {
+"depth": "d2",
+"logic": "mm",
+"rule": "PBD_MP",
+"sample_id": 20,
+"answer": "yes"
+},
+"626": {
+"depth": "d2",
+"logic": "mm",
+"rule": "PBD_MT",
+"sample_id": 1,
+"answer": "no"
+},
+"627": {
+"depth": "d2",
+"logic": "mm",
+"rule": "PBD_MT",
+"sample_id": 2,
+"answer": "no"
+},
+"628": {
+"depth": "d2",
+"logic": "mm",
+"rule": "PBD_MT",
+"sample_id": 3,
+"answer": "no"
+},
+"629": {
+"depth": "d2",
+"logic": "mm",
+"rule": "PBD_MT",
+"sample_id": 4,
+"answer": "no"
+},
+"630": {
+"depth": "d2",
+"logic": "mm",
+"rule": "PBD_MT",
+"sample_id": 5,
+"answer": "no"
+},
+"631": {
+"depth": "d2",
+"logic": "mm",
+"rule": "PBD_MT",
+"sample_id": 6,
+"answer": "no"
+},
+"632": {
+"depth": "d2",
+"logic": "mm",
+"rule": "PBD_MT",
+"sample_id": 7,
+"answer": "no"
+},
+"633": {
+"depth": "d2",
+"logic": "mm",
+"rule": "PBD_MT",
+"sample_id": 8,
+"answer": "no"
+},
+"634": {
+"depth": "d2",
+"logic": "mm",
+"rule": "PBD_MT",
+"sample_id": 9,
+"answer": "no"
+},
+"635": {
+"depth": "d2",
+"logic": "mm",
+"rule": "PBD_MT",
+"sample_id": 10,
+"answer": "no"
+},
+"636": {
+"depth": "d2",
+"logic": "mm",
+"rule": "PBD_MT",
+"sample_id": 11,
+"answer": "yes"
+},
+"637": {
+"depth": "d2",
+"logic": "mm",
+"rule": "PBD_MT",
+"sample_id": 12,
+"answer": "no"
+},
+"638": {
+"depth": "d2",
+"logic": "mm",
+"rule": "PBD_MT",
+"sample_id": 13,
+"answer": "yes"
+},
+"639": {
+"depth": "d2",
+"logic": "mm",
+"rule": "PBD_MT",
+"sample_id": 14,
+"answer": "yes"
+},
+"640": {
+"depth": "d2",
+"logic": "mm",
+"rule": "PBD_MT",
+"sample_id": 15,
+"answer": "no"
+},
+"641": {
+"depth": "d2",
+"logic": "mm",
+"rule": "PBD_MT",
+"sample_id": 16,
+"answer": "no"
+},
+"642": {
+"depth": "d2",
+"logic": "mm",
+"rule": "PBD_MT",
+"sample_id": 17,
+"answer": "no"
+},
+"643": {
+"depth": "d2",
+"logic": "mm",
+"rule": "PBD_MT",
+"sample_id": 18,
+"answer": "no"
+},
+"644": {
+"depth": "d2",
+"logic": "mm",
+"rule": "PBD_MT",
+"sample_id": 19,
+"answer": "no"
+},
+"645": {
+"depth": "d2",
+"logic": "mm",
+"rule": "PBD_MT",
+"sample_id": 20,
+"answer": "no"
+},
+"646": {
+"depth": "d2",
+"logic": "mm",
+"rule": "REII_MP",
+"sample_id": 1,
+"answer": "no"
+},
+"647": {
+"depth": "d2",
+"logic": "mm",
+"rule": "REII_MP",
+"sample_id": 2,
+"answer": "no"
+},
+"648": {
+"depth": "d2",
+"logic": "mm",
+"rule": "REII_MP",
+"sample_id": 3,
+"answer": "no"
+},
+"649": {
+"depth": "d2",
+"logic": "mm",
+"rule": "REII_MP",
+"sample_id": 4,
+"answer": "no"
+},
+"650": {
+"depth": "d2",
+"logic": "mm",
+"rule": "REII_MP",
+"sample_id": 5,
+"answer": "no"
+},
+"651": {
+"depth": "d2",
+"logic": "mm",
+"rule": "REII_MP",
+"sample_id": 6,
+"answer": "no"
+},
+"652": {
+"depth": "d2",
+"logic": "mm",
+"rule": "REII_MP",
+"sample_id": 7,
+"answer": "no"
+},
+"653": {
+"depth": "d2",
+"logic": "mm",
+"rule": "REII_MP",
+"sample_id": 8,
+"answer": "no"
+},
+"654": {
+"depth": "d2",
+"logic": "mm",
+"rule": "REII_MP",
+"sample_id": 9,
+"answer": "no"
+},
+"655": {
+"depth": "d2",
+"logic": "mm",
+"rule": "REII_MP",
+"sample_id": 10,
+"answer": "no"
+},
+"656": {
+"depth": "d2",
+"logic": "mm",
+"rule": "REII_MP",
+"sample_id": 11,
+"answer": "no"
+},
+"657": {
+"depth": "d2",
+"logic": "mm",
+"rule": "REII_MP",
+"sample_id": 12,
+"answer": "no"
+},
+"658": {
+"depth": "d2",
+"logic": "mm",
+"rule": "REII_MP",
+"sample_id": 13,
+"answer": "no"
+},
+"659": {
+"depth": "d2",
+"logic": "mm",
+"rule": "REII_MP",
+"sample_id": 14,
+"answer": "no"
+},
+"660": {
+"depth": "d2",
+"logic": "mm",
+"rule": "REII_MP",
+"sample_id": 15,
+"answer": "no"
+},
+"661": {
+"depth": "d2",
+"logic": "mm",
+"rule": "REII_MP",
+"sample_id": 16,
+"answer": "no"
+},
+"662": {
+"depth": "d2",
+"logic": "mm",
+"rule": "REII_MP",
+"sample_id": 17,
+"answer": "no"
+},
+"663": {
+"depth": "d2",
+"logic": "mm",
+"rule": "REII_MP",
+"sample_id": 18,
+"answer": "no"
+},
+"664": {
+"depth": "d2",
+"logic": "mm",
+"rule": "REII_MP",
+"sample_id": 19,
+"answer": "no"
+},
+"665": {
+"depth": "d2",
+"logic": "mm",
+"rule": "REII_MP",
+"sample_id": 20,
+"answer": "no"
+},
+"666": {
+"depth": "d2",
+"logic": "mm",
+"rule": "REII_MT",
+"sample_id": 1,
+"answer": "no"
+},
+"667": {
+"depth": "d2",
+"logic": "mm",
+"rule": "REII_MT",
+"sample_id": 2,
+"answer": "no"
+},
+"668": {
+"depth": "d2",
+"logic": "mm",
+"rule": "REII_MT",
+"sample_id": 3,
+"answer": "no"
+},
+"669": {
+"depth": "d2",
+"logic": "mm",
+"rule": "REII_MT",
+"sample_id": 4,
+"answer": "no"
+},
+"670": {
+"depth": "d2",
+"logic": "mm",
+"rule": "REII_MT",
+"sample_id": 5,
+"answer": "no"
+},
+"671": {
+"depth": "d2",
+"logic": "mm",
+"rule": "REII_MT",
+"sample_id": 6,
+"answer": "no"
+},
+"672": {
+"depth": "d2",
+"logic": "mm",
+"rule": "REII_MT",
+"sample_id": 7,
+"answer": "no"
+},
+"673": {
+"depth": "d2",
+"logic": "mm",
+"rule": "REII_MT",
+"sample_id": 8,
+"answer": "no"
+},
+"674": {
+"depth": "d2",
+"logic": "mm",
+"rule": "REII_MT",
+"sample_id": 9,
+"answer": "no"
+},
+"675": {
+"depth": "d2",
+"logic": "mm",
+"rule": "REII_MT",
+"sample_id": 10,
+"answer": "no"
+},
+"676": {
+"depth": "d2",
+"logic": "mm",
+"rule": "REII_MT",
+"sample_id": 11,
+"answer": "no"
+},
+"677": {
+"depth": "d2",
+"logic": "mm",
+"rule": "REII_MT",
+"sample_id": 12,
+"answer": "no"
+},
+"678": {
+"depth": "d2",
+"logic": "mm",
+"rule": "REII_MT",
+"sample_id": 13,
+"answer": "no"
+},
+"679": {
+"depth": "d2",
+"logic": "mm",
+"rule": "REII_MT",
+"sample_id": 14,
+"answer": "no"
+},
+"680": {
+"depth": "d2",
+"logic": "mm",
+"rule": "REII_MT",
+"sample_id": 15,
+"answer": "no"
+},
+"681": {
+"depth": "d2",
+"logic": "mm",
+"rule": "REII_MT",
+"sample_id": 16,
+"answer": "no"
+},
+"682": {
+"depth": "d2",
+"logic": "mm",
+"rule": "REII_MT",
+"sample_id": 17,
+"answer": "no"
+},
+"683": {
+"depth": "d2",
+"logic": "mm",
+"rule": "REII_MT",
+"sample_id": 18,
+"answer": "no"
+},
+"684": {
+"depth": "d2",
+"logic": "mm",
+"rule": "REII_MT",
+"sample_id": 19,
+"answer": "no"
+},
+"685": {
+"depth": "d2",
+"logic": "mm",
+"rule": "REII_MT",
+"sample_id": 20,
+"answer": "no"
+},
+"686": {
+"depth": "d2",
+"logic": "mm",
+"rule": "REI_MP",
+"sample_id": 1,
+"answer": "yes"
+},
+"687": {
+"depth": "d2",
+"logic": "mm",
+"rule": "REI_MP",
+"sample_id": 2,
+"answer": "yes"
+},
+"688": {
+"depth": "d2",
+"logic": "mm",
+"rule": "REI_MP",
+"sample_id": 3,
+"answer": "yes"
+},
+"689": {
+"depth": "d2",
+"logic": "mm",
+"rule": "REI_MP",
+"sample_id": 4,
+"answer": "yes"
+},
+"690": {
+"depth": "d2",
+"logic": "mm",
+"rule": "REI_MP",
+"sample_id": 5,
+"answer": "yes"
+},
+"691": {
+"depth": "d2",
+"logic": "mm",
+"rule": "REI_MP",
+"sample_id": 6,
+"answer": "yes"
+},
+"692": {
+"depth": "d2",
+"logic": "mm",
+"rule": "REI_MP",
+"sample_id": 7,
+"answer": "yes"
+},
+"693": {
+"depth": "d2",
+"logic": "mm",
+"rule": "REI_MP",
+"sample_id": 8,
+"answer": "yes"
+},
+"694": {
+"depth": "d2",
+"logic": "mm",
+"rule": "REI_MP",
+"sample_id": 9,
+"answer": "yes"
+},
+"695": {
+"depth": "d2",
+"logic": "mm",
+"rule": "REI_MP",
+"sample_id": 10,
+"answer": "yes"
+},
+"696": {
+"depth": "d2",
+"logic": "mm",
+"rule": "REI_MP",
+"sample_id": 11,
+"answer": "no"
+},
+"697": {
+"depth": "d2",
+"logic": "mm",
+"rule": "REI_MP",
+"sample_id": 12,
+"answer": "yes"
+},
+"698": {
+"depth": "d2",
+"logic": "mm",
+"rule": "REI_MP",
+"sample_id": 13,
+"answer": "yes"
+},
+"699": {
+"depth": "d2",
+"logic": "mm",
+"rule": "REI_MP",
+"sample_id": 14,
+"answer": "yes"
+},
+"700": {
+"depth": "d2",
+"logic": "mm",
+"rule": "REI_MP",
+"sample_id": 15,
+"answer": "yes"
+},
+"701": {
+"depth": "d2",
+"logic": "mm",
+"rule": "REI_MP",
+"sample_id": 16,
+"answer": "yes"
+},
+"702": {
+"depth": "d2",
+"logic": "mm",
+"rule": "REI_MT",
+"sample_id": 1,
+"answer": "no"
+},
+"703": {
+"depth": "d2",
+"logic": "mm",
+"rule": "REI_MT",
+"sample_id": 2,
+"answer": "no"
+},
+"704": {
+"depth": "d2",
+"logic": "mm",
+"rule": "REI_MT",
+"sample_id": 3,
+"answer": "no"
+},
+"705": {
+"depth": "d2",
+"logic": "mm",
+"rule": "REI_MT",
+"sample_id": 4,
+"answer": "no"
+},
+"706": {
+"depth": "d2",
+"logic": "mm",
+"rule": "REI_MT",
+"sample_id": 5,
+"answer": "no"
+},
+"707": {
+"depth": "d2",
+"logic": "mm",
+"rule": "REI_MT",
+"sample_id": 6,
+"answer": "no"
+},
+"708": {
+"depth": "d2",
+"logic": "mm",
+"rule": "REI_MT",
+"sample_id": 7,
+"answer": "no"
+},
+"709": {
+"depth": "d2",
+"logic": "mm",
+"rule": "REI_MT",
+"sample_id": 8,
+"answer": "no"
+},
+"710": {
+"depth": "d2",
+"logic": "mm",
+"rule": "REI_MT",
+"sample_id": 9,
+"answer": "no"
+},
+"711": {
+"depth": "d2",
+"logic": "mm",
+"rule": "REI_MT",
+"sample_id": 10,
+"answer": "no"
+},
+"712": {
+"depth": "d2",
+"logic": "mm",
+"rule": "REI_MT",
+"sample_id": 11,
+"answer": "no"
+},
+"713": {
+"depth": "d2",
+"logic": "mm",
+"rule": "REI_MT",
+"sample_id": 12,
+"answer": "no"
+},
+"714": {
+"depth": "d2",
+"logic": "mm",
+"rule": "REI_MT",
+"sample_id": 13,
+"answer": "no"
+},
+"715": {
+"depth": "d2",
+"logic": "mm",
+"rule": "REI_MT",
+"sample_id": 14,
+"answer": "no"
+},
+"716": {
+"depth": "d2",
+"logic": "mm",
+"rule": "REI_MT",
+"sample_id": 15,
+"answer": "no"
+},
+"717": {
+"depth": "d2",
+"logic": "mm",
+"rule": "REI_MT",
+"sample_id": 16,
+"answer": "no"
+},
+"718": {
+"depth": "d2",
+"logic": "mm",
+"rule": "REI_MT",
+"sample_id": 17,
+"answer": "no"
+},
+"719": {
+"depth": "d2",
+"logic": "mm",
+"rule": "REI_MT",
+"sample_id": 18,
+"answer": "no"
+},
+"720": {
+"depth": "d2",
+"logic": "mm",
+"rule": "REI_MT",
+"sample_id": 19,
+"answer": "no"
+},
+"721": {
+"depth": "d2",
+"logic": "mm",
+"rule": "REI_MT",
+"sample_id": 20,
+"answer": "no"
+},
+"722": {
+"depth": "d2",
+"logic": "pl",
+"rule": "BD_DS",
+"sample_id": 1,
+"answer": "no"
+},
+"723": {
+"depth": "d2",
+"logic": "pl",
+"rule": "BD_DS",
+"sample_id": 2,
+"answer": "no"
+},
+"724": {
+"depth": "d2",
+"logic": "pl",
+"rule": "BD_DS",
+"sample_id": 3,
+"answer": "no"
+},
+"725": {
+"depth": "d2",
+"logic": "pl",
+"rule": "BD_DS",
+"sample_id": 4,
+"answer": "no"
+},
+"726": {
+"depth": "d2",
+"logic": "pl",
+"rule": "BD_DS",
+"sample_id": 5,
+"answer": "no"
+},
+"727": {
+"depth": "d2",
+"logic": "pl",
+"rule": "BD_DS",
+"sample_id": 6,
+"answer": "no"
+},
+"728": {
+"depth": "d2",
+"logic": "pl",
+"rule": "BD_DS",
+"sample_id": 7,
+"answer": "no"
+},
+"729": {
+"depth": "d2",
+"logic": "pl",
+"rule": "BD_DS",
+"sample_id": 8,
+"answer": "no"
+},
+"730": {
+"depth": "d2",
+"logic": "pl",
+"rule": "BD_DS",
+"sample_id": 9,
+"answer": "no"
+},
+"731": {
+"depth": "d2",
+"logic": "pl",
+"rule": "BD_DS",
+"sample_id": 10,
+"answer": "no"
+},
+"732": {
+"depth": "d2",
+"logic": "pl",
+"rule": "BD_DS",
+"sample_id": 11,
+"answer": "no"
+},
+"733": {
+"depth": "d2",
+"logic": "pl",
+"rule": "BD_DS",
+"sample_id": 12,
+"answer": "no"
+},
+"734": {
+"depth": "d2",
+"logic": "pl",
+"rule": "BD_DS",
+"sample_id": 13,
+"answer": "no"
+},
+"735": {
+"depth": "d2",
+"logic": "pl",
+"rule": "BD_DS",
+"sample_id": 14,
+"answer": "no"
+},
+"736": {
+"depth": "d2",
+"logic": "pl",
+"rule": "BD_DS",
+"sample_id": 15,
+"answer": "no"
+},
+"737": {
+"depth": "d2",
+"logic": "pl",
+"rule": "CD_DS",
+"sample_id": 1,
+"answer": "yes"
+},
+"738": {
+"depth": "d2",
+"logic": "pl",
+"rule": "CD_DS",
+"sample_id": 2,
+"answer": "yes"
+},
+"739": {
+"depth": "d2",
+"logic": "pl",
+"rule": "CD_DS",
+"sample_id": 3,
+"answer": "yes"
+},
+"740": {
+"depth": "d2",
+"logic": "pl",
+"rule": "CD_DS",
+"sample_id": 4,
+"answer": "yes"
+},
+"741": {
+"depth": "d2",
+"logic": "pl",
+"rule": "CD_DS",
+"sample_id": 5,
+"answer": "yes"
+},
+"742": {
+"depth": "d2",
+"logic": "pl",
+"rule": "CD_DS",
+"sample_id": 6,
+"answer": "yes"
+},
+"743": {
+"depth": "d2",
+"logic": "pl",
+"rule": "CD_DS",
+"sample_id": 7,
+"answer": "yes"
+},
+"744": {
+"depth": "d2",
+"logic": "pl",
+"rule": "CD_DS",
+"sample_id": 8,
+"answer": "yes"
+},
+"745": {
+"depth": "d2",
+"logic": "pl",
+"rule": "CD_DS",
+"sample_id": 9,
+"answer": "yes"
+},
+"746": {
+"depth": "d2",
+"logic": "pl",
+"rule": "CD_DS",
+"sample_id": 10,
+"answer": "yes"
+},
+"747": {
+"depth": "d2",
+"logic": "pl",
+"rule": "CD_DS",
+"sample_id": 11,
+"answer": "yes"
+},
+"748": {
+"depth": "d2",
+"logic": "pl",
+"rule": "CD_DS",
+"sample_id": 12,
+"answer": "yes"
+},
+"749": {
+"depth": "d2",
+"logic": "pl",
+"rule": "CD_DS",
+"sample_id": 13,
+"answer": "yes"
+},
+"750": {
+"depth": "d2",
+"logic": "pl",
+"rule": "CD_DS",
+"sample_id": 14,
+"answer": "yes"
+},
+"751": {
+"depth": "d2",
+"logic": "pl",
+"rule": "CD_DS",
+"sample_id": 15,
+"answer": "yes"
+},
+"752": {
+"depth": "d2",
+"logic": "pl",
+"rule": "DD_DS",
+"sample_id": 1,
+"answer": "no"
+},
+"753": {
+"depth": "d2",
+"logic": "pl",
+"rule": "DD_DS",
+"sample_id": 2,
+"answer": "no"
+},
+"754": {
+"depth": "d2",
+"logic": "pl",
+"rule": "DD_DS",
+"sample_id": 3,
+"answer": "no"
+},
+"755": {
+"depth": "d2",
+"logic": "pl",
+"rule": "DD_DS",
+"sample_id": 4,
+"answer": "no"
+},
+"756": {
+"depth": "d2",
+"logic": "pl",
+"rule": "DD_DS",
+"sample_id": 5,
+"answer": "no"
+},
+"757": {
+"depth": "d2",
+"logic": "pl",
+"rule": "DD_DS",
+"sample_id": 6,
+"answer": "no"
+},
+"758": {
+"depth": "d2",
+"logic": "pl",
+"rule": "DD_DS",
+"sample_id": 7,
+"answer": "no"
+},
+"759": {
+"depth": "d2",
+"logic": "pl",
+"rule": "DD_DS",
+"sample_id": 8,
+"answer": "no"
+},
+"760": {
+"depth": "d2",
+"logic": "pl",
+"rule": "DD_DS",
+"sample_id": 9,
+"answer": "no"
+},
+"761": {
+"depth": "d2",
+"logic": "pl",
+"rule": "DD_DS",
+"sample_id": 10,
+"answer": "no"
+},
+"762": {
+"depth": "d2",
+"logic": "pl",
+"rule": "DD_DS",
+"sample_id": 11,
+"answer": "no"
+},
+"763": {
+"depth": "d2",
+"logic": "pl",
+"rule": "DD_DS",
+"sample_id": 12,
+"answer": "no"
+},
+"764": {
+"depth": "d2",
+"logic": "pl",
+"rule": "DD_DS",
+"sample_id": 13,
+"answer": "no"
+},
+"765": {
+"depth": "d2",
+"logic": "pl",
+"rule": "DD_DS",
+"sample_id": 14,
+"answer": "no"
+},
+"766": {
+"depth": "d2",
+"logic": "pl",
+"rule": "DD_DS",
+"sample_id": 15,
+"answer": "no"
+},
+"767": {
+"depth": "d2",
+"logic": "pl",
+"rule": "DS_MP",
+"sample_id": 1,
+"answer": "yes"
+},
+"768": {
+"depth": "d2",
+"logic": "pl",
+"rule": "DS_MP",
+"sample_id": 2,
+"answer": "yes"
+},
+"769": {
+"depth": "d2",
+"logic": "pl",
+"rule": "DS_MP",
+"sample_id": 3,
+"answer": "yes"
+},
+"770": {
+"depth": "d2",
+"logic": "pl",
+"rule": "DS_MP",
+"sample_id": 4,
+"answer": "yes"
+},
+"771": {
+"depth": "d2",
+"logic": "pl",
+"rule": "DS_MP",
+"sample_id": 5,
+"answer": "yes"
+},
+"772": {
+"depth": "d2",
+"logic": "pl",
+"rule": "DS_MP",
+"sample_id": 6,
+"answer": "yes"
+},
+"773": {
+"depth": "d2",
+"logic": "pl",
+"rule": "DS_MP",
+"sample_id": 7,
+"answer": "yes"
+},
+"774": {
+"depth": "d2",
+"logic": "pl",
+"rule": "DS_MP",
+"sample_id": 8,
+"answer": "yes"
+},
+"775": {
+"depth": "d2",
+"logic": "pl",
+"rule": "DS_MP",
+"sample_id": 9,
+"answer": "yes"
+},
+"776": {
+"depth": "d2",
+"logic": "pl",
+"rule": "DS_MP",
+"sample_id": 10,
+"answer": "yes"
+},
+"777": {
+"depth": "d2",
+"logic": "pl",
+"rule": "DS_MP",
+"sample_id": 11,
+"answer": "yes"
+},
+"778": {
+"depth": "d2",
+"logic": "pl",
+"rule": "DS_MP",
+"sample_id": 12,
+"answer": "yes"
+},
+"779": {
+"depth": "d2",
+"logic": "pl",
+"rule": "DS_MP",
+"sample_id": 13,
+"answer": "yes"
+},
+"780": {
+"depth": "d2",
+"logic": "pl",
+"rule": "DS_MP",
+"sample_id": 14,
+"answer": "yes"
+},
+"781": {
+"depth": "d2",
+"logic": "pl",
+"rule": "DS_MP",
+"sample_id": 15,
+"answer": "yes"
+},
+"782": {
+"depth": "d2",
+"logic": "pl",
+"rule": "HS_MP",
+"sample_id": 1,
+"answer": "yes"
+},
+"783": {
+"depth": "d2",
+"logic": "pl",
+"rule": "HS_MP",
+"sample_id": 2,
+"answer": "yes"
+},
+"784": {
+"depth": "d2",
+"logic": "pl",
+"rule": "HS_MP",
+"sample_id": 3,
+"answer": "yes"
+},
+"785": {
+"depth": "d2",
+"logic": "pl",
+"rule": "HS_MP",
+"sample_id": 4,
+"answer": "yes"
+},
+"786": {
+"depth": "d2",
+"logic": "pl",
+"rule": "HS_MP",
+"sample_id": 5,
+"answer": "yes"
+},
+"787": {
+"depth": "d2",
+"logic": "pl",
+"rule": "HS_MP",
+"sample_id": 6,
+"answer": "yes"
+},
+"788": {
+"depth": "d2",
+"logic": "pl",
+"rule": "HS_MP",
+"sample_id": 7,
+"answer": "yes"
+},
+"789": {
+"depth": "d2",
+"logic": "pl",
+"rule": "HS_MP",
+"sample_id": 8,
+"answer": "yes"
+},
+"790": {
+"depth": "d2",
+"logic": "pl",
+"rule": "HS_MP",
+"sample_id": 9,
+"answer": "yes"
+},
+"791": {
+"depth": "d2",
+"logic": "pl",
+"rule": "HS_MP",
+"sample_id": 10,
+"answer": "yes"
+},
+"792": {
+"depth": "d2",
+"logic": "pl",
+"rule": "HS_MP",
+"sample_id": 11,
+"answer": "yes"
+},
+"793": {
+"depth": "d2",
+"logic": "pl",
+"rule": "HS_MP",
+"sample_id": 12,
+"answer": "yes"
+},
+"794": {
+"depth": "d2",
+"logic": "pl",
+"rule": "HS_MP",
+"sample_id": 13,
+"answer": "yes"
+},
+"795": {
+"depth": "d2",
+"logic": "pl",
+"rule": "HS_MP",
+"sample_id": 14,
+"answer": "yes"
+},
+"796": {
+"depth": "d2",
+"logic": "pl",
+"rule": "HS_MP",
+"sample_id": 15,
+"answer": "yes"
+},
+"797": {
+"depth": "d2",
+"logic": "pl",
+"rule": "HS_MT",
+"sample_id": 1,
+"answer": "no"
+},
+"798": {
+"depth": "d2",
+"logic": "pl",
+"rule": "HS_MT",
+"sample_id": 2,
+"answer": "no"
+},
+"799": {
+"depth": "d2",
+"logic": "pl",
+"rule": "HS_MT",
+"sample_id": 3,
+"answer": "no"
+},
+"800": {
+"depth": "d2",
+"logic": "pl",
+"rule": "HS_MT",
+"sample_id": 4,
+"answer": "no"
+},
+"801": {
+"depth": "d2",
+"logic": "pl",
+"rule": "HS_MT",
+"sample_id": 5,
+"answer": "no"
+},
+"802": {
+"depth": "d2",
+"logic": "pl",
+"rule": "HS_MT",
+"sample_id": 6,
+"answer": "no"
+},
+"803": {
+"depth": "d2",
+"logic": "pl",
+"rule": "HS_MT",
+"sample_id": 7,
+"answer": "no"
+},
+"804": {
+"depth": "d2",
+"logic": "pl",
+"rule": "HS_MT",
+"sample_id": 8,
+"answer": "no"
+},
+"805": {
+"depth": "d2",
+"logic": "pl",
+"rule": "HS_MT",
+"sample_id": 9,
+"answer": "no"
+},
+"806": {
+"depth": "d2",
+"logic": "pl",
+"rule": "HS_MT",
+"sample_id": 10,
+"answer": "no"
+},
+"807": {
+"depth": "d2",
+"logic": "pl",
+"rule": "HS_MT",
+"sample_id": 11,
+"answer": "no"
+},
+"808": {
+"depth": "d2",
+"logic": "pl",
+"rule": "HS_MT",
+"sample_id": 12,
+"answer": "no"
+},
+"809": {
+"depth": "d2",
+"logic": "pl",
+"rule": "HS_MT",
+"sample_id": 13,
+"answer": "no"
+},
+"810": {
+"depth": "d2",
+"logic": "pl",
+"rule": "HS_MT",
+"sample_id": 14,
+"answer": "no"
+},
+"811": {
+"depth": "d2",
+"logic": "pl",
+"rule": "HS_MT",
+"sample_id": 15,
+"answer": "no"
+},
+"812": {
+"depth": "d2",
+"logic": "pl",
+"rule": "MT_DS",
+"sample_id": 1,
+"answer": "yes"
+},
+"813": {
+"depth": "d2",
+"logic": "pl",
+"rule": "MT_DS",
+"sample_id": 2,
+"answer": "yes"
+},
+"814": {
+"depth": "d2",
+"logic": "pl",
+"rule": "MT_DS",
+"sample_id": 3,
+"answer": "yes"
+},
+"815": {
+"depth": "d2",
+"logic": "pl",
+"rule": "MT_DS",
+"sample_id": 4,
+"answer": "yes"
+},
+"816": {
+"depth": "d2",
+"logic": "pl",
+"rule": "MT_DS",
+"sample_id": 5,
+"answer": "yes"
+},
+"817": {
+"depth": "d2",
+"logic": "pl",
+"rule": "MT_DS",
+"sample_id": 6,
+"answer": "yes"
+},
+"818": {
+"depth": "d2",
+"logic": "pl",
+"rule": "MT_DS",
+"sample_id": 7,
+"answer": "yes"
+},
+"819": {
+"depth": "d2",
+"logic": "pl",
+"rule": "MT_DS",
+"sample_id": 8,
+"answer": "yes"
+},
+"820": {
+"depth": "d2",
+"logic": "pl",
+"rule": "MT_DS",
+"sample_id": 9,
+"answer": "yes"
+},
+"821": {
+"depth": "d2",
+"logic": "pl",
+"rule": "MT_DS",
+"sample_id": 10,
+"answer": "yes"
+},
+"822": {
+"depth": "d2",
+"logic": "pl",
+"rule": "MT_DS",
+"sample_id": 11,
+"answer": "yes"
+},
+"823": {
+"depth": "d2",
+"logic": "pl",
+"rule": "MT_DS",
+"sample_id": 12,
+"answer": "yes"
+},
+"824": {
+"depth": "d2",
+"logic": "pl",
+"rule": "MT_DS",
+"sample_id": 13,
+"answer": "yes"
+},
+"825": {
+"depth": "d2",
+"logic": "pl",
+"rule": "MT_DS",
+"sample_id": 14,
+"answer": "yes"
+},
+"826": {
+"depth": "d2",
+"logic": "pl",
+"rule": "MT_DS",
+"sample_id": 15,
+"answer": "yes"
+},
+"827": {
+"depth": "d3",
+"logic": "fol",
+"rule": "BD_C_DS",
+"sample_id": 1,
+"answer": "yes"
+},
+"828": {
+"depth": "d3",
+"logic": "fol",
+"rule": "BD_C_DS",
+"sample_id": 2,
+"answer": "yes"
+},
+"829": {
+"depth": "d3",
+"logic": "fol",
+"rule": "BD_C_DS",
+"sample_id": 3,
+"answer": "yes"
+},
+"830": {
+"depth": "d3",
+"logic": "fol",
+"rule": "BD_C_DS",
+"sample_id": 4,
+"answer": "yes"
+},
+"831": {
+"depth": "d3",
+"logic": "fol",
+"rule": "BD_C_DS",
+"sample_id": 5,
+"answer": "yes"
+},
+"832": {
+"depth": "d3",
+"logic": "fol",
+"rule": "BD_C_DS",
+"sample_id": 6,
+"answer": "yes"
+},
+"833": {
+"depth": "d3",
+"logic": "fol",
+"rule": "BD_C_DS",
+"sample_id": 7,
+"answer": "yes"
+},
+"834": {
+"depth": "d3",
+"logic": "fol",
+"rule": "BD_C_DS",
+"sample_id": 8,
+"answer": "yes"
+},
+"835": {
+"depth": "d3",
+"logic": "fol",
+"rule": "BD_C_DS",
+"sample_id": 9,
+"answer": "yes"
+},
+"836": {
+"depth": "d3",
+"logic": "fol",
+"rule": "BD_C_DS",
+"sample_id": 10,
+"answer": "yes"
+},
+"837": {
+"depth": "d3",
+"logic": "fol",
+"rule": "BD_C_DS",
+"sample_id": 11,
+"answer": "yes"
+},
+"838": {
+"depth": "d3",
+"logic": "fol",
+"rule": "BD_C_DS",
+"sample_id": 12,
+"answer": "yes"
+},
+"839": {
+"depth": "d3",
+"logic": "fol",
+"rule": "BD_C_DS",
+"sample_id": 13,
+"answer": "yes"
+},
+"840": {
+"depth": "d3",
+"logic": "fol",
+"rule": "BD_C_DS",
+"sample_id": 14,
+"answer": "yes"
+},
+"841": {
+"depth": "d3",
+"logic": "fol",
+"rule": "BD_C_DS",
+"sample_id": 15,
+"answer": "yes"
+},
+"842": {
+"depth": "d3",
+"logic": "fol",
+"rule": "BD_DS_MT",
+"sample_id": 1,
+"answer": "no"
+},
+"843": {
+"depth": "d3",
+"logic": "fol",
+"rule": "BD_DS_MT",
+"sample_id": 2,
+"answer": "no"
+},
+"844": {
+"depth": "d3",
+"logic": "fol",
+"rule": "BD_DS_MT",
+"sample_id": 3,
+"answer": "no"
+},
+"845": {
+"depth": "d3",
+"logic": "fol",
+"rule": "BD_DS_MT",
+"sample_id": 4,
+"answer": "no"
+},
+"846": {
+"depth": "d3",
+"logic": "fol",
+"rule": "BD_DS_MT",
+"sample_id": 5,
+"answer": "no"
+},
+"847": {
+"depth": "d3",
+"logic": "fol",
+"rule": "BD_DS_MT",
+"sample_id": 6,
+"answer": "no"
+},
+"848": {
+"depth": "d3",
+"logic": "fol",
+"rule": "BD_DS_MT",
+"sample_id": 7,
+"answer": "no"
+},
+"849": {
+"depth": "d3",
+"logic": "fol",
+"rule": "BD_DS_MT",
+"sample_id": 8,
+"answer": "no"
+},
+"850": {
+"depth": "d3",
+"logic": "fol",
+"rule": "BD_DS_MT",
+"sample_id": 9,
+"answer": "no"
+},
+"851": {
+"depth": "d3",
+"logic": "fol",
+"rule": "BD_DS_MT",
+"sample_id": 10,
+"answer": "no"
+},
+"852": {
+"depth": "d3",
+"logic": "fol",
+"rule": "BD_DS_MT",
+"sample_id": 11,
+"answer": "no"
+},
+"853": {
+"depth": "d3",
+"logic": "fol",
+"rule": "BD_DS_MT",
+"sample_id": 12,
+"answer": "no"
+},
+"854": {
+"depth": "d3",
+"logic": "fol",
+"rule": "BD_DS_MT",
+"sample_id": 13,
+"answer": "no"
+},
+"855": {
+"depth": "d3",
+"logic": "fol",
+"rule": "BD_DS_MT",
+"sample_id": 14,
+"answer": "no"
+},
+"856": {
+"depth": "d3",
+"logic": "fol",
+"rule": "BD_DS_MT",
+"sample_id": 15,
+"answer": "no"
+},
+"857": {
+"depth": "d3",
+"logic": "fol",
+"rule": "CD_C_DS",
+"sample_id": 1,
+"answer": "yes"
+},
+"858": {
+"depth": "d3",
+"logic": "fol",
+"rule": "CD_C_DS",
+"sample_id": 2,
+"answer": "yes"
+},
+"859": {
+"depth": "d3",
+"logic": "fol",
+"rule": "CD_C_DS",
+"sample_id": 3,
+"answer": "yes"
+},
+"860": {
+"depth": "d3",
+"logic": "fol",
+"rule": "CD_C_DS",
+"sample_id": 4,
+"answer": "yes"
+},
+"861": {
+"depth": "d3",
+"logic": "fol",
+"rule": "CD_C_DS",
+"sample_id": 5,
+"answer": "yes"
+},
+"862": {
+"depth": "d3",
+"logic": "fol",
+"rule": "CD_C_DS",
+"sample_id": 6,
+"answer": "yes"
+},
+"863": {
+"depth": "d3",
+"logic": "fol",
+"rule": "CD_C_DS",
+"sample_id": 7,
+"answer": "yes"
+},
+"864": {
+"depth": "d3",
+"logic": "fol",
+"rule": "CD_C_DS",
+"sample_id": 8,
+"answer": "yes"
+},
+"865": {
+"depth": "d3",
+"logic": "fol",
+"rule": "CD_C_DS",
+"sample_id": 9,
+"answer": "yes"
+},
+"866": {
+"depth": "d3",
+"logic": "fol",
+"rule": "CD_C_DS",
+"sample_id": 10,
+"answer": "yes"
+},
+"867": {
+"depth": "d3",
+"logic": "fol",
+"rule": "CD_C_DS",
+"sample_id": 11,
+"answer": "yes"
+},
+"868": {
+"depth": "d3",
+"logic": "fol",
+"rule": "CD_C_DS",
+"sample_id": 12,
+"answer": "yes"
+},
+"869": {
+"depth": "d3",
+"logic": "fol",
+"rule": "CD_C_DS",
+"sample_id": 13,
+"answer": "yes"
+},
+"870": {
+"depth": "d3",
+"logic": "fol",
+"rule": "CD_C_DS",
+"sample_id": 14,
+"answer": "yes"
+},
+"871": {
+"depth": "d3",
+"logic": "fol",
+"rule": "CD_C_DS",
+"sample_id": 15,
+"answer": "yes"
+},
+"872": {
+"depth": "d3",
+"logic": "fol",
+"rule": "CD_DS_MP",
+"sample_id": 1,
+"answer": "yes"
+},
+"873": {
+"depth": "d3",
+"logic": "fol",
+"rule": "CD_DS_MP",
+"sample_id": 2,
+"answer": "yes"
+},
+"874": {
+"depth": "d3",
+"logic": "fol",
+"rule": "CD_DS_MP",
+"sample_id": 3,
+"answer": "yes"
+},
+"875": {
+"depth": "d3",
+"logic": "fol",
+"rule": "CD_DS_MP",
+"sample_id": 4,
+"answer": "yes"
+},
+"876": {
+"depth": "d3",
+"logic": "fol",
+"rule": "CD_DS_MP",
+"sample_id": 5,
+"answer": "yes"
+},
+"877": {
+"depth": "d3",
+"logic": "fol",
+"rule": "CD_DS_MP",
+"sample_id": 6,
+"answer": "yes"
+},
+"878": {
+"depth": "d3",
+"logic": "fol",
+"rule": "CD_DS_MP",
+"sample_id": 7,
+"answer": "yes"
+},
+"879": {
+"depth": "d3",
+"logic": "fol",
+"rule": "CD_DS_MP",
+"sample_id": 8,
+"answer": "yes"
+},
+"880": {
+"depth": "d3",
+"logic": "fol",
+"rule": "CD_DS_MP",
+"sample_id": 9,
+"answer": "yes"
+},
+"881": {
+"depth": "d3",
+"logic": "fol",
+"rule": "CD_DS_MP",
+"sample_id": 10,
+"answer": "yes"
+},
+"882": {
+"depth": "d3",
+"logic": "fol",
+"rule": "CD_DS_MP",
+"sample_id": 11,
+"answer": "yes"
+},
+"883": {
+"depth": "d3",
+"logic": "fol",
+"rule": "CD_DS_MP",
+"sample_id": 12,
+"answer": "yes"
+},
+"884": {
+"depth": "d3",
+"logic": "fol",
+"rule": "CD_DS_MP",
+"sample_id": 13,
+"answer": "yes"
+},
+"885": {
+"depth": "d3",
+"logic": "fol",
+"rule": "CD_DS_MP",
+"sample_id": 14,
+"answer": "yes"
+},
+"886": {
+"depth": "d3",
+"logic": "fol",
+"rule": "CD_DS_MP",
+"sample_id": 15,
+"answer": "yes"
+},
+"887": {
+"depth": "d3",
+"logic": "fol",
+"rule": "DD_DS_MT",
+"sample_id": 1,
+"answer": "no"
+},
+"888": {
+"depth": "d3",
+"logic": "fol",
+"rule": "DD_DS_MT",
+"sample_id": 2,
+"answer": "no"
+},
+"889": {
+"depth": "d3",
+"logic": "fol",
+"rule": "DD_DS_MT",
+"sample_id": 3,
+"answer": "no"
+},
+"890": {
+"depth": "d3",
+"logic": "fol",
+"rule": "DD_DS_MT",
+"sample_id": 4,
+"answer": "no"
+},
+"891": {
+"depth": "d3",
+"logic": "fol",
+"rule": "DD_DS_MT",
+"sample_id": 5,
+"answer": "no"
+},
+"892": {
+"depth": "d3",
+"logic": "fol",
+"rule": "DD_DS_MT",
+"sample_id": 6,
+"answer": "no"
+},
+"893": {
+"depth": "d3",
+"logic": "fol",
+"rule": "DD_DS_MT",
+"sample_id": 7,
+"answer": "no"
+},
+"894": {
+"depth": "d3",
+"logic": "fol",
+"rule": "DD_DS_MT",
+"sample_id": 8,
+"answer": "no"
+},
+"895": {
+"depth": "d3",
+"logic": "fol",
+"rule": "DD_DS_MT",
+"sample_id": 9,
+"answer": "no"
+},
+"896": {
+"depth": "d3",
+"logic": "fol",
+"rule": "DD_DS_MT",
+"sample_id": 10,
+"answer": "no"
+},
+"897": {
+"depth": "d3",
+"logic": "fol",
+"rule": "DD_DS_MT",
+"sample_id": 11,
+"answer": "no"
+},
+"898": {
+"depth": "d3",
+"logic": "fol",
+"rule": "DD_DS_MT",
+"sample_id": 12,
+"answer": "no"
+},
+"899": {
+"depth": "d3",
+"logic": "fol",
+"rule": "DD_DS_MT",
+"sample_id": 13,
+"answer": "no"
+},
+"900": {
+"depth": "d3",
+"logic": "fol",
+"rule": "DD_DS_MT",
+"sample_id": 14,
+"answer": "no"
+},
+"901": {
+"depth": "d3",
+"logic": "fol",
+"rule": "DD_DS_MT",
+"sample_id": 15,
+"answer": "no"
+},
+"902": {
+"depth": "d3",
+"logic": "fol",
+"rule": "DMT_CO_MT",
+"sample_id": 1,
+"answer": "no"
+},
+"903": {
+"depth": "d3",
+"logic": "fol",
+"rule": "DMT_CO_MT",
+"sample_id": 2,
+"answer": "no"
+},
+"904": {
+"depth": "d3",
+"logic": "fol",
+"rule": "DMT_CO_MT",
+"sample_id": 3,
+"answer": "no"
+},
+"905": {
+"depth": "d3",
+"logic": "fol",
+"rule": "DMT_CO_MT",
+"sample_id": 4,
+"answer": "no"
+},
+"906": {
+"depth": "d3",
+"logic": "fol",
+"rule": "DMT_CO_MT",
+"sample_id": 5,
+"answer": "no"
+},
+"907": {
+"depth": "d3",
+"logic": "fol",
+"rule": "DMT_CO_MT",
+"sample_id": 6,
+"answer": "no"
+},
+"908": {
+"depth": "d3",
+"logic": "fol",
+"rule": "DMT_CO_MT",
+"sample_id": 7,
+"answer": "no"
+},
+"909": {
+"depth": "d3",
+"logic": "fol",
+"rule": "DMT_CO_MT",
+"sample_id": 8,
+"answer": "no"
+},
+"910": {
+"depth": "d3",
+"logic": "fol",
+"rule": "DMT_CO_MT",
+"sample_id": 9,
+"answer": "no"
+},
+"911": {
+"depth": "d3",
+"logic": "fol",
+"rule": "DMT_CO_MT",
+"sample_id": 10,
+"answer": "no"
+},
+"912": {
+"depth": "d3",
+"logic": "fol",
+"rule": "DMT_CO_MT",
+"sample_id": 11,
+"answer": "no"
+},
+"913": {
+"depth": "d3",
+"logic": "fol",
+"rule": "DMT_CO_MT",
+"sample_id": 12,
+"answer": "no"
+},
+"914": {
+"depth": "d3",
+"logic": "fol",
+"rule": "DMT_CO_MT",
+"sample_id": 13,
+"answer": "no"
+},
+"915": {
+"depth": "d3",
+"logic": "fol",
+"rule": "DMT_CO_MT",
+"sample_id": 14,
+"answer": "no"
+},
+"916": {
+"depth": "d3",
+"logic": "fol",
+"rule": "DMT_CO_MT",
+"sample_id": 15,
+"answer": "no"
+},
+"917": {
+"depth": "d3",
+"logic": "fol",
+"rule": "HS_CD_DS",
+"sample_id": 1,
+"answer": "yes"
+},
+"918": {
+"depth": "d3",
+"logic": "fol",
+"rule": "HS_CD_DS",
+"sample_id": 2,
+"answer": "yes"
+},
+"919": {
+"depth": "d3",
+"logic": "fol",
+"rule": "HS_CD_DS",
+"sample_id": 3,
+"answer": "yes"
+},
+"920": {
+"depth": "d3",
+"logic": "fol",
+"rule": "HS_CD_DS",
+"sample_id": 4,
+"answer": "yes"
+},
+"921": {
+"depth": "d3",
+"logic": "fol",
+"rule": "HS_CD_DS",
+"sample_id": 5,
+"answer": "yes"
+},
+"922": {
+"depth": "d3",
+"logic": "fol",
+"rule": "HS_CD_DS",
+"sample_id": 6,
+"answer": "yes"
+},
+"923": {
+"depth": "d3",
+"logic": "fol",
+"rule": "HS_CD_DS",
+"sample_id": 7,
+"answer": "yes"
+},
+"924": {
+"depth": "d3",
+"logic": "fol",
+"rule": "HS_CD_DS",
+"sample_id": 8,
+"answer": "yes"
+},
+"925": {
+"depth": "d3",
+"logic": "fol",
+"rule": "HS_CD_DS",
+"sample_id": 9,
+"answer": "yes"
+},
+"926": {
+"depth": "d3",
+"logic": "fol",
+"rule": "HS_CD_DS",
+"sample_id": 10,
+"answer": "yes"
+},
+"927": {
+"depth": "d3",
+"logic": "fol",
+"rule": "HS_CD_DS",
+"sample_id": 11,
+"answer": "yes"
+},
+"928": {
+"depth": "d3",
+"logic": "fol",
+"rule": "HS_CD_DS",
+"sample_id": 12,
+"answer": "yes"
+},
+"929": {
+"depth": "d3",
+"logic": "fol",
+"rule": "HS_CD_DS",
+"sample_id": 13,
+"answer": "yes"
+},
+"930": {
+"depth": "d3",
+"logic": "fol",
+"rule": "HS_CD_DS",
+"sample_id": 14,
+"answer": "yes"
+},
+"931": {
+"depth": "d3",
+"logic": "fol",
+"rule": "HS_CD_DS",
+"sample_id": 15,
+"answer": "yes"
+},
+"932": {
+"depth": "d3",
+"logic": "fol",
+"rule": "HS_MP_MP",
+"sample_id": 1,
+"answer": "yes"
+},
+"933": {
+"depth": "d3",
+"logic": "fol",
+"rule": "HS_MP_MP",
+"sample_id": 2,
+"answer": "yes"
+},
+"934": {
+"depth": "d3",
+"logic": "fol",
+"rule": "HS_MP_MP",
+"sample_id": 3,
+"answer": "yes"
+},
+"935": {
+"depth": "d3",
+"logic": "fol",
+"rule": "HS_MP_MP",
+"sample_id": 4,
+"answer": "yes"
+},
+"936": {
+"depth": "d3",
+"logic": "fol",
+"rule": "HS_MP_MP",
+"sample_id": 5,
+"answer": "yes"
+},
+"937": {
+"depth": "d3",
+"logic": "fol",
+"rule": "HS_MP_MP",
+"sample_id": 6,
+"answer": "yes"
+},
+"938": {
+"depth": "d3",
+"logic": "fol",
+"rule": "HS_MP_MP",
+"sample_id": 7,
+"answer": "yes"
+},
+"939": {
+"depth": "d3",
+"logic": "fol",
+"rule": "HS_MP_MP",
+"sample_id": 8,
+"answer": "yes"
+},
+"940": {
+"depth": "d3",
+"logic": "fol",
+"rule": "HS_MP_MP",
+"sample_id": 9,
+"answer": "yes"
+},
+"941": {
+"depth": "d3",
+"logic": "fol",
+"rule": "HS_MP_MP",
+"sample_id": 10,
+"answer": "yes"
+},
+"942": {
+"depth": "d3",
+"logic": "fol",
+"rule": "HS_MP_MP",
+"sample_id": 11,
+"answer": "yes"
+},
+"943": {
+"depth": "d3",
+"logic": "fol",
+"rule": "HS_MP_MP",
+"sample_id": 12,
+"answer": "yes"
+},
+"944": {
+"depth": "d3",
+"logic": "fol",
+"rule": "HS_MP_MP",
+"sample_id": 13,
+"answer": "yes"
+},
+"945": {
+"depth": "d3",
+"logic": "fol",
+"rule": "HS_MP_MP",
+"sample_id": 14,
+"answer": "yes"
+},
+"946": {
+"depth": "d3",
+"logic": "fol",
+"rule": "HS_MP_MP",
+"sample_id": 15,
+"answer": "yes"
+},
+"947": {
+"depth": "d3",
+"logic": "fol",
+"rule": "HS_MT_DS",
+"sample_id": 1,
+"answer": "yes"
+},
+"948": {
+"depth": "d3",
+"logic": "fol",
+"rule": "HS_MT_DS",
+"sample_id": 2,
+"answer": "yes"
+},
+"949": {
+"depth": "d3",
+"logic": "fol",
+"rule": "HS_MT_DS",
+"sample_id": 3,
+"answer": "yes"
+},
+"950": {
+"depth": "d3",
+"logic": "fol",
+"rule": "HS_MT_DS",
+"sample_id": 4,
+"answer": "yes"
+},
+"951": {
+"depth": "d3",
+"logic": "fol",
+"rule": "HS_MT_DS",
+"sample_id": 5,
+"answer": "yes"
+},
+"952": {
+"depth": "d3",
+"logic": "fol",
+"rule": "HS_MT_DS",
+"sample_id": 6,
+"answer": "yes"
+},
+"953": {
+"depth": "d3",
+"logic": "fol",
+"rule": "HS_MT_DS",
+"sample_id": 7,
+"answer": "yes"
+},
+"954": {
+"depth": "d3",
+"logic": "fol",
+"rule": "HS_MT_DS",
+"sample_id": 8,
+"answer": "yes"
+},
+"955": {
+"depth": "d3",
+"logic": "fol",
+"rule": "HS_MT_DS",
+"sample_id": 9,
+"answer": "yes"
+},
+"956": {
+"depth": "d3",
+"logic": "fol",
+"rule": "HS_MT_DS",
+"sample_id": 10,
+"answer": "yes"
+},
+"957": {
+"depth": "d3",
+"logic": "fol",
+"rule": "HS_MT_DS",
+"sample_id": 11,
+"answer": "yes"
+},
+"958": {
+"depth": "d3",
+"logic": "fol",
+"rule": "HS_MT_DS",
+"sample_id": 12,
+"answer": "yes"
+},
+"959": {
+"depth": "d3",
+"logic": "fol",
+"rule": "HS_MT_DS",
+"sample_id": 13,
+"answer": "yes"
+},
+"960": {
+"depth": "d3",
+"logic": "fol",
+"rule": "HS_MT_DS",
+"sample_id": 14,
+"answer": "yes"
+},
+"961": {
+"depth": "d3",
+"logic": "fol",
+"rule": "HS_MT_DS",
+"sample_id": 15,
+"answer": "yes"
+},
+"962": {
+"depth": "d3",
+"logic": "nm",
+"rule": "d3_1",
+"sample_id": 1,
+"answer": "yes"
+},
+"963": {
+"depth": "d3",
+"logic": "nm",
+"rule": "d3_1",
+"sample_id": 2,
+"answer": "no"
+},
+"964": {
+"depth": "d3",
+"logic": "nm",
+"rule": "d3_1",
+"sample_id": 3,
+"answer": "yes"
+},
+"965": {
+"depth": "d3",
+"logic": "nm",
+"rule": "d3_1",
+"sample_id": 4,
+"answer": "no"
+},
+"966": {
+"depth": "d3",
+"logic": "nm",
+"rule": "d3_1",
+"sample_id": 5,
+"answer": "yes"
+},
+"967": {
+"depth": "d3",
+"logic": "nm",
+"rule": "d3_1",
+"sample_id": 6,
+"answer": "no"
+},
+"968": {
+"depth": "d3",
+"logic": "nm",
+"rule": "d3_1",
+"sample_id": 7,
+"answer": "yes"
+},
+"969": {
+"depth": "d3",
+"logic": "nm",
+"rule": "d3_1",
+"sample_id": 8,
+"answer": "no"
+},
+"970": {
+"depth": "d3",
+"logic": "nm",
+"rule": "d3_1",
+"sample_id": 9,
+"answer": "yes"
+},
+"971": {
+"depth": "d3",
+"logic": "nm",
+"rule": "d3_1",
+"sample_id": 10,
+"answer": "no"
+},
+"972": {
+"depth": "d3",
+"logic": "nm",
+"rule": "d3_1",
+"sample_id": 11,
+"answer": "yes"
+},
+"973": {
+"depth": "d3",
+"logic": "nm",
+"rule": "d3_1",
+"sample_id": 12,
+"answer": "no"
+},
+"974": {
+"depth": "d3",
+"logic": "nm",
+"rule": "d3_1",
+"sample_id": 13,
+"answer": "yes"
+},
+"975": {
+"depth": "d3",
+"logic": "nm",
+"rule": "d3_1",
+"sample_id": 14,
+"answer": "no"
+},
+"976": {
+"depth": "d3",
+"logic": "nm",
+"rule": "d3_1",
+"sample_id": 15,
+"answer": "yes"
+},
+"977": {
+"depth": "d3",
+"logic": "nm",
+"rule": "d3_1",
+"sample_id": 16,
+"answer": "no"
+},
+"978": {
+"depth": "d3",
+"logic": "nm",
+"rule": "d3_1",
+"sample_id": 17,
+"answer": "yes"
+},
+"979": {
+"depth": "d3",
+"logic": "nm",
+"rule": "d3_1",
+"sample_id": 18,
+"answer": "no"
+},
+"980": {
+"depth": "d3",
+"logic": "nm",
+"rule": "d3_1",
+"sample_id": 19,
+"answer": "yes"
+},
+"981": {
+"depth": "d3",
+"logic": "nm",
+"rule": "d3_1",
+"sample_id": 20,
+"answer": "no"
+},
+"982": {
+"depth": "d3",
+"logic": "nm",
+"rule": "d3_2",
+"sample_id": 1,
+"answer": "yes"
+},
+"983": {
+"depth": "d3",
+"logic": "nm",
+"rule": "d3_2",
+"sample_id": 2,
+"answer": "no"
+},
+"984": {
+"depth": "d3",
+"logic": "nm",
+"rule": "d3_2",
+"sample_id": 3,
+"answer": "yes"
+},
+"985": {
+"depth": "d3",
+"logic": "nm",
+"rule": "d3_2",
+"sample_id": 4,
+"answer": "no"
+},
+"986": {
+"depth": "d3",
+"logic": "nm",
+"rule": "d3_2",
+"sample_id": 5,
+"answer": "yes"
+},
+"987": {
+"depth": "d3",
+"logic": "nm",
+"rule": "d3_2",
+"sample_id": 6,
+"answer": "no"
+},
+"988": {
+"depth": "d3",
+"logic": "nm",
+"rule": "d3_2",
+"sample_id": 7,
+"answer": "yes"
+},
+"989": {
+"depth": "d3",
+"logic": "nm",
+"rule": "d3_2",
+"sample_id": 8,
+"answer": "no"
+},
+"990": {
+"depth": "d3",
+"logic": "nm",
+"rule": "d3_2",
+"sample_id": 9,
+"answer": "yes"
+},
+"991": {
+"depth": "d3",
+"logic": "nm",
+"rule": "d3_2",
+"sample_id": 10,
+"answer": "no"
+},
+"992": {
+"depth": "d3",
+"logic": "nm",
+"rule": "d3_2",
+"sample_id": 11,
+"answer": "yes"
+},
+"993": {
+"depth": "d3",
+"logic": "nm",
+"rule": "d3_2",
+"sample_id": 12,
+"answer": "no"
+},
+"994": {
+"depth": "d3",
+"logic": "nm",
+"rule": "d3_2",
+"sample_id": 13,
+"answer": "yes"
+},
+"995": {
+"depth": "d3",
+"logic": "nm",
+"rule": "d3_2",
+"sample_id": 14,
+"answer": "no"
+},
+"996": {
+"depth": "d3",
+"logic": "nm",
+"rule": "d3_2",
+"sample_id": 15,
+"answer": "yes"
+},
+"997": {
+"depth": "d3",
+"logic": "nm",
+"rule": "d3_2",
+"sample_id": 16,
+"answer": "no"
+},
+"998": {
+"depth": "d3",
+"logic": "nm",
+"rule": "d3_2",
+"sample_id": 17,
+"answer": "yes"
+},
+"999": {
+"depth": "d3",
+"logic": "nm",
+"rule": "d3_2",
+"sample_id": 18,
+"answer": "no"
+},
+"1000": {
+"depth": "d3",
+"logic": "nm",
+"rule": "d3_2",
+"sample_id": 19,
+"answer": "yes"
+},
+"1001": {
+"depth": "d3",
+"logic": "nm",
+"rule": "d3_2",
+"sample_id": 20,
+"answer": "no"
+},
+"1002": {
+"depth": "d3",
+"logic": "pl",
+"rule": "BD_C_DS",
+"sample_id": 1,
+"answer": "yes"
+},
+"1003": {
+"depth": "d3",
+"logic": "pl",
+"rule": "BD_C_DS",
+"sample_id": 2,
+"answer": "yes"
+},
+"1004": {
+"depth": "d3",
+"logic": "pl",
+"rule": "BD_C_DS",
+"sample_id": 3,
+"answer": "yes"
+},
+"1005": {
+"depth": "d3",
+"logic": "pl",
+"rule": "BD_C_DS",
+"sample_id": 4,
+"answer": "yes"
+},
+"1006": {
+"depth": "d3",
+"logic": "pl",
+"rule": "BD_C_DS",
+"sample_id": 5,
+"answer": "yes"
+},
+"1007": {
+"depth": "d3",
+"logic": "pl",
+"rule": "BD_C_DS",
+"sample_id": 6,
+"answer": "yes"
+},
+"1008": {
+"depth": "d3",
+"logic": "pl",
+"rule": "BD_C_DS",
+"sample_id": 7,
+"answer": "yes"
+},
+"1009": {
+"depth": "d3",
+"logic": "pl",
+"rule": "BD_C_DS",
+"sample_id": 8,
+"answer": "yes"
+},
+"1010": {
+"depth": "d3",
+"logic": "pl",
+"rule": "BD_C_DS",
+"sample_id": 9,
+"answer": "yes"
+},
+"1011": {
+"depth": "d3",
+"logic": "pl",
+"rule": "BD_C_DS",
+"sample_id": 10,
+"answer": "yes"
+},
+"1012": {
+"depth": "d3",
+"logic": "pl",
+"rule": "BD_C_DS",
+"sample_id": 11,
+"answer": "yes"
+},
+"1013": {
+"depth": "d3",
+"logic": "pl",
+"rule": "BD_C_DS",
+"sample_id": 12,
+"answer": "yes"
+},
+"1014": {
+"depth": "d3",
+"logic": "pl",
+"rule": "BD_C_DS",
+"sample_id": 13,
+"answer": "yes"
+},
+"1015": {
+"depth": "d3",
+"logic": "pl",
+"rule": "BD_C_DS",
+"sample_id": 14,
+"answer": "yes"
+},
+"1016": {
+"depth": "d3",
+"logic": "pl",
+"rule": "BD_C_DS",
+"sample_id": 15,
+"answer": "yes"
+},
+"1017": {
+"depth": "d3",
+"logic": "pl",
+"rule": "BD_DS_MT",
+"sample_id": 1,
+"answer": "no"
+},
+"1018": {
+"depth": "d3",
+"logic": "pl",
+"rule": "BD_DS_MT",
+"sample_id": 2,
+"answer": "no"
+},
+"1019": {
+"depth": "d3",
+"logic": "pl",
+"rule": "BD_DS_MT",
+"sample_id": 3,
+"answer": "no"
+},
+"1020": {
+"depth": "d3",
+"logic": "pl",
+"rule": "BD_DS_MT",
+"sample_id": 4,
+"answer": "no"
+},
+"1021": {
+"depth": "d3",
+"logic": "pl",
+"rule": "BD_DS_MT",
+"sample_id": 5,
+"answer": "no"
+},
+"1022": {
+"depth": "d3",
+"logic": "pl",
+"rule": "BD_DS_MT",
+"sample_id": 6,
+"answer": "no"
+},
+"1023": {
+"depth": "d3",
+"logic": "pl",
+"rule": "BD_DS_MT",
+"sample_id": 7,
+"answer": "no"
+},
+"1024": {
+"depth": "d3",
+"logic": "pl",
+"rule": "BD_DS_MT",
+"sample_id": 8,
+"answer": "no"
+},
+"1025": {
+"depth": "d3",
+"logic": "pl",
+"rule": "BD_DS_MT",
+"sample_id": 9,
+"answer": "no"
+},
+"1026": {
+"depth": "d3",
+"logic": "pl",
+"rule": "BD_DS_MT",
+"sample_id": 10,
+"answer": "no"
+},
+"1027": {
+"depth": "d3",
+"logic": "pl",
+"rule": "BD_DS_MT",
+"sample_id": 11,
+"answer": "no"
+},
+"1028": {
+"depth": "d3",
+"logic": "pl",
+"rule": "BD_DS_MT",
+"sample_id": 12,
+"answer": "no"
+},
+"1029": {
+"depth": "d3",
+"logic": "pl",
+"rule": "BD_DS_MT",
+"sample_id": 13,
+"answer": "no"
+},
+"1030": {
+"depth": "d3",
+"logic": "pl",
+"rule": "BD_DS_MT",
+"sample_id": 14,
+"answer": "no"
+},
+"1031": {
+"depth": "d3",
+"logic": "pl",
+"rule": "BD_DS_MT",
+"sample_id": 15,
+"answer": "no"
+},
+"1032": {
+"depth": "d3",
+"logic": "pl",
+"rule": "CD_C_DS",
+"sample_id": 1,
+"answer": "yes"
+},
+"1033": {
+"depth": "d3",
+"logic": "pl",
+"rule": "CD_C_DS",
+"sample_id": 2,
+"answer": "yes"
+},
+"1034": {
+"depth": "d3",
+"logic": "pl",
+"rule": "CD_C_DS",
+"sample_id": 3,
+"answer": "yes"
+},
+"1035": {
+"depth": "d3",
+"logic": "pl",
+"rule": "CD_C_DS",
+"sample_id": 4,
+"answer": "yes"
+},
+"1036": {
+"depth": "d3",
+"logic": "pl",
+"rule": "CD_C_DS",
+"sample_id": 5,
+"answer": "yes"
+},
+"1037": {
+"depth": "d3",
+"logic": "pl",
+"rule": "CD_C_DS",
+"sample_id": 6,
+"answer": "yes"
+},
+"1038": {
+"depth": "d3",
+"logic": "pl",
+"rule": "CD_C_DS",
+"sample_id": 7,
+"answer": "yes"
+},
+"1039": {
+"depth": "d3",
+"logic": "pl",
+"rule": "CD_C_DS",
+"sample_id": 8,
+"answer": "yes"
+},
+"1040": {
+"depth": "d3",
+"logic": "pl",
+"rule": "CD_C_DS",
+"sample_id": 9,
+"answer": "yes"
+},
+"1041": {
+"depth": "d3",
+"logic": "pl",
+"rule": "CD_C_DS",
+"sample_id": 10,
+"answer": "yes"
+},
+"1042": {
+"depth": "d3",
+"logic": "pl",
+"rule": "CD_C_DS",
+"sample_id": 11,
+"answer": "yes"
+},
+"1043": {
+"depth": "d3",
+"logic": "pl",
+"rule": "CD_C_DS",
+"sample_id": 12,
+"answer": "yes"
+},
+"1044": {
+"depth": "d3",
+"logic": "pl",
+"rule": "CD_C_DS",
+"sample_id": 13,
+"answer": "yes"
+},
+"1045": {
+"depth": "d3",
+"logic": "pl",
+"rule": "CD_C_DS",
+"sample_id": 14,
+"answer": "yes"
+},
+"1046": {
+"depth": "d3",
+"logic": "pl",
+"rule": "CD_C_DS",
+"sample_id": 15,
+"answer": "yes"
+},
+"1047": {
+"depth": "d3",
+"logic": "pl",
+"rule": "CD_DS_MP",
+"sample_id": 1,
+"answer": "yes"
+},
+"1048": {
+"depth": "d3",
+"logic": "pl",
+"rule": "CD_DS_MP",
+"sample_id": 2,
+"answer": "yes"
+},
+"1049": {
+"depth": "d3",
+"logic": "pl",
+"rule": "CD_DS_MP",
+"sample_id": 3,
+"answer": "yes"
+},
+"1050": {
+"depth": "d3",
+"logic": "pl",
+"rule": "CD_DS_MP",
+"sample_id": 4,
+"answer": "yes"
+},
+"1051": {
+"depth": "d3",
+"logic": "pl",
+"rule": "CD_DS_MP",
+"sample_id": 5,
+"answer": "yes"
+},
+"1052": {
+"depth": "d3",
+"logic": "pl",
+"rule": "CD_DS_MP",
+"sample_id": 6,
+"answer": "yes"
+},
+"1053": {
+"depth": "d3",
+"logic": "pl",
+"rule": "CD_DS_MP",
+"sample_id": 7,
+"answer": "yes"
+},
+"1054": {
+"depth": "d3",
+"logic": "pl",
+"rule": "CD_DS_MP",
+"sample_id": 8,
+"answer": "yes"
+},
+"1055": {
+"depth": "d3",
+"logic": "pl",
+"rule": "CD_DS_MP",
+"sample_id": 9,
+"answer": "yes"
+},
+"1056": {
+"depth": "d3",
+"logic": "pl",
+"rule": "CD_DS_MP",
+"sample_id": 10,
+"answer": "yes"
+},
+"1057": {
+"depth": "d3",
+"logic": "pl",
+"rule": "CD_DS_MP",
+"sample_id": 11,
+"answer": "yes"
+},
+"1058": {
+"depth": "d3",
+"logic": "pl",
+"rule": "CD_DS_MP",
+"sample_id": 12,
+"answer": "yes"
+},
+"1059": {
+"depth": "d3",
+"logic": "pl",
+"rule": "CD_DS_MP",
+"sample_id": 13,
+"answer": "yes"
+},
+"1060": {
+"depth": "d3",
+"logic": "pl",
+"rule": "CD_DS_MP",
+"sample_id": 14,
+"answer": "yes"
+},
+"1061": {
+"depth": "d3",
+"logic": "pl",
+"rule": "CD_DS_MP",
+"sample_id": 15,
+"answer": "yes"
+},
+"1062": {
+"depth": "d3",
+"logic": "pl",
+"rule": "DD_DS_MT",
+"sample_id": 1,
+"answer": "no"
+},
+"1063": {
+"depth": "d3",
+"logic": "pl",
+"rule": "DD_DS_MT",
+"sample_id": 2,
+"answer": "no"
+},
+"1064": {
+"depth": "d3",
+"logic": "pl",
+"rule": "DD_DS_MT",
+"sample_id": 3,
+"answer": "no"
+},
+"1065": {
+"depth": "d3",
+"logic": "pl",
+"rule": "DD_DS_MT",
+"sample_id": 4,
+"answer": "no"
+},
+"1066": {
+"depth": "d3",
+"logic": "pl",
+"rule": "DD_DS_MT",
+"sample_id": 5,
+"answer": "no"
+},
+"1067": {
+"depth": "d3",
+"logic": "pl",
+"rule": "DD_DS_MT",
+"sample_id": 6,
+"answer": "no"
+},
+"1068": {
+"depth": "d3",
+"logic": "pl",
+"rule": "DD_DS_MT",
+"sample_id": 7,
+"answer": "no"
+},
+"1069": {
+"depth": "d3",
+"logic": "pl",
+"rule": "DD_DS_MT",
+"sample_id": 8,
+"answer": "no"
+},
+"1070": {
+"depth": "d3",
+"logic": "pl",
+"rule": "DD_DS_MT",
+"sample_id": 9,
+"answer": "no"
+},
+"1071": {
+"depth": "d3",
+"logic": "pl",
+"rule": "DD_DS_MT",
+"sample_id": 10,
+"answer": "no"
+},
+"1072": {
+"depth": "d3",
+"logic": "pl",
+"rule": "DD_DS_MT",
+"sample_id": 11,
+"answer": "no"
+},
+"1073": {
+"depth": "d3",
+"logic": "pl",
+"rule": "DD_DS_MT",
+"sample_id": 12,
+"answer": "no"
+},
+"1074": {
+"depth": "d3",
+"logic": "pl",
+"rule": "DD_DS_MT",
+"sample_id": 13,
+"answer": "no"
+},
+"1075": {
+"depth": "d3",
+"logic": "pl",
+"rule": "DD_DS_MT",
+"sample_id": 14,
+"answer": "no"
+},
+"1076": {
+"depth": "d3",
+"logic": "pl",
+"rule": "DD_DS_MT",
+"sample_id": 15,
+"answer": "no"
+},
+"1077": {
+"depth": "d3",
+"logic": "pl",
+"rule": "DMT_CO_MT",
+"sample_id": 1,
+"answer": "no"
+},
+"1078": {
+"depth": "d3",
+"logic": "pl",
+"rule": "DMT_CO_MT",
+"sample_id": 2,
+"answer": "no"
+},
+"1079": {
+"depth": "d3",
+"logic": "pl",
+"rule": "DMT_CO_MT",
+"sample_id": 3,
+"answer": "no"
+},
+"1080": {
+"depth": "d3",
+"logic": "pl",
+"rule": "DMT_CO_MT",
+"sample_id": 4,
+"answer": "no"
+},
+"1081": {
+"depth": "d3",
+"logic": "pl",
+"rule": "DMT_CO_MT",
+"sample_id": 5,
+"answer": "no"
+},
+"1082": {
+"depth": "d3",
+"logic": "pl",
+"rule": "DMT_CO_MT",
+"sample_id": 6,
+"answer": "no"
+},
+"1083": {
+"depth": "d3",
+"logic": "pl",
+"rule": "DMT_CO_MT",
+"sample_id": 7,
+"answer": "no"
+},
+"1084": {
+"depth": "d3",
+"logic": "pl",
+"rule": "DMT_CO_MT",
+"sample_id": 8,
+"answer": "no"
+},
+"1085": {
+"depth": "d3",
+"logic": "pl",
+"rule": "DMT_CO_MT",
+"sample_id": 9,
+"answer": "no"
+},
+"1086": {
+"depth": "d3",
+"logic": "pl",
+"rule": "DMT_CO_MT",
+"sample_id": 10,
+"answer": "no"
+},
+"1087": {
+"depth": "d3",
+"logic": "pl",
+"rule": "DMT_CO_MT",
+"sample_id": 11,
+"answer": "no"
+},
+"1088": {
+"depth": "d3",
+"logic": "pl",
+"rule": "DMT_CO_MT",
+"sample_id": 12,
+"answer": "no"
+},
+"1089": {
+"depth": "d3",
+"logic": "pl",
+"rule": "DMT_CO_MT",
+"sample_id": 13,
+"answer": "no"
+},
+"1090": {
+"depth": "d3",
+"logic": "pl",
+"rule": "DMT_CO_MT",
+"sample_id": 14,
+"answer": "no"
+},
+"1091": {
+"depth": "d3",
+"logic": "pl",
+"rule": "DMT_CO_MT",
+"sample_id": 15,
+"answer": "no"
+},
+"1092": {
+"depth": "d3",
+"logic": "pl",
+"rule": "HS_CD_DS",
+"sample_id": 1,
+"answer": "yes"
+},
+"1093": {
+"depth": "d3",
+"logic": "pl",
+"rule": "HS_CD_DS",
+"sample_id": 2,
+"answer": "yes"
+},
+"1094": {
+"depth": "d3",
+"logic": "pl",
+"rule": "HS_CD_DS",
+"sample_id": 3,
+"answer": "yes"
+},
+"1095": {
+"depth": "d3",
+"logic": "pl",
+"rule": "HS_CD_DS",
+"sample_id": 4,
+"answer": "yes"
+},
+"1096": {
+"depth": "d3",
+"logic": "pl",
+"rule": "HS_CD_DS",
+"sample_id": 5,
+"answer": "yes"
+},
+"1097": {
+"depth": "d3",
+"logic": "pl",
+"rule": "HS_CD_DS",
+"sample_id": 6,
+"answer": "yes"
+},
+"1098": {
+"depth": "d3",
+"logic": "pl",
+"rule": "HS_CD_DS",
+"sample_id": 7,
+"answer": "yes"
+},
+"1099": {
+"depth": "d3",
+"logic": "pl",
+"rule": "HS_CD_DS",
+"sample_id": 8,
+"answer": "yes"
+},
+"1100": {
+"depth": "d3",
+"logic": "pl",
+"rule": "HS_CD_DS",
+"sample_id": 9,
+"answer": "yes"
+},
+"1101": {
+"depth": "d3",
+"logic": "pl",
+"rule": "HS_CD_DS",
+"sample_id": 10,
+"answer": "yes"
+},
+"1102": {
+"depth": "d3",
+"logic": "pl",
+"rule": "HS_CD_DS",
+"sample_id": 11,
+"answer": "yes"
+},
+"1103": {
+"depth": "d3",
+"logic": "pl",
+"rule": "HS_CD_DS",
+"sample_id": 12,
+"answer": "yes"
+},
+"1104": {
+"depth": "d3",
+"logic": "pl",
+"rule": "HS_CD_DS",
+"sample_id": 13,
+"answer": "yes"
+},
+"1105": {
+"depth": "d3",
+"logic": "pl",
+"rule": "HS_CD_DS",
+"sample_id": 14,
+"answer": "yes"
+},
+"1106": {
+"depth": "d3",
+"logic": "pl",
+"rule": "HS_CD_DS",
+"sample_id": 15,
+"answer": "yes"
+},
+"1107": {
+"depth": "d3",
+"logic": "pl",
+"rule": "HS_MP_MP",
+"sample_id": 1,
+"answer": "yes"
+},
+"1108": {
+"depth": "d3",
+"logic": "pl",
+"rule": "HS_MP_MP",
+"sample_id": 2,
+"answer": "yes"
+},
+"1109": {
+"depth": "d3",
+"logic": "pl",
+"rule": "HS_MP_MP",
+"sample_id": 3,
+"answer": "yes"
+},
+"1110": {
+"depth": "d3",
+"logic": "pl",
+"rule": "HS_MP_MP",
+"sample_id": 4,
+"answer": "yes"
+},
+"1111": {
+"depth": "d3",
+"logic": "pl",
+"rule": "HS_MP_MP",
+"sample_id": 5,
+"answer": "yes"
+},
+"1112": {
+"depth": "d3",
+"logic": "pl",
+"rule": "HS_MP_MP",
+"sample_id": 6,
+"answer": "yes"
+},
+"1113": {
+"depth": "d3",
+"logic": "pl",
+"rule": "HS_MP_MP",
+"sample_id": 7,
+"answer": "yes"
+},
+"1114": {
+"depth": "d3",
+"logic": "pl",
+"rule": "HS_MP_MP",
+"sample_id": 8,
+"answer": "yes"
+},
+"1115": {
+"depth": "d3",
+"logic": "pl",
+"rule": "HS_MP_MP",
+"sample_id": 9,
+"answer": "yes"
+},
+"1116": {
+"depth": "d3",
+"logic": "pl",
+"rule": "HS_MP_MP",
+"sample_id": 10,
+"answer": "yes"
+},
+"1117": {
+"depth": "d3",
+"logic": "pl",
+"rule": "HS_MP_MP",
+"sample_id": 11,
+"answer": "yes"
+},
+"1118": {
+"depth": "d3",
+"logic": "pl",
+"rule": "HS_MP_MP",
+"sample_id": 12,
+"answer": "yes"
+},
+"1119": {
+"depth": "d3",
+"logic": "pl",
+"rule": "HS_MP_MP",
+"sample_id": 13,
+"answer": "yes"
+},
+"1120": {
+"depth": "d3",
+"logic": "pl",
+"rule": "HS_MP_MP",
+"sample_id": 14,
+"answer": "yes"
+},
+"1121": {
+"depth": "d3",
+"logic": "pl",
+"rule": "HS_MP_MP",
+"sample_id": 15,
+"answer": "yes"
+},
+"1122": {
+"depth": "d3",
+"logic": "pl",
+"rule": "HS_MT_DS",
+"sample_id": 1,
+"answer": "yes"
+},
+"1123": {
+"depth": "d3",
+"logic": "pl",
+"rule": "HS_MT_DS",
+"sample_id": 2,
+"answer": "yes"
+},
+"1124": {
+"depth": "d3",
+"logic": "pl",
+"rule": "HS_MT_DS",
+"sample_id": 3,
+"answer": "yes"
+},
+"1125": {
+"depth": "d3",
+"logic": "pl",
+"rule": "HS_MT_DS",
+"sample_id": 4,
+"answer": "yes"
+},
+"1126": {
+"depth": "d3",
+"logic": "pl",
+"rule": "HS_MT_DS",
+"sample_id": 5,
+"answer": "yes"
+},
+"1127": {
+"depth": "d3",
+"logic": "pl",
+"rule": "HS_MT_DS",
+"sample_id": 6,
+"answer": "yes"
+},
+"1128": {
+"depth": "d3",
+"logic": "pl",
+"rule": "HS_MT_DS",
+"sample_id": 7,
+"answer": "yes"
+},
+"1129": {
+"depth": "d3",
+"logic": "pl",
+"rule": "HS_MT_DS",
+"sample_id": 8,
+"answer": "yes"
+},
+"1130": {
+"depth": "d3",
+"logic": "pl",
+"rule": "HS_MT_DS",
+"sample_id": 9,
+"answer": "yes"
+},
+"1131": {
+"depth": "d3",
+"logic": "pl",
+"rule": "HS_MT_DS",
+"sample_id": 10,
+"answer": "yes"
+},
+"1132": {
+"depth": "d3",
+"logic": "pl",
+"rule": "HS_MT_DS",
+"sample_id": 11,
+"answer": "yes"
+},
+"1133": {
+"depth": "d3",
+"logic": "pl",
+"rule": "HS_MT_DS",
+"sample_id": 12,
+"answer": "yes"
+},
+"1134": {
+"depth": "d3",
+"logic": "pl",
+"rule": "HS_MT_DS",
+"sample_id": 13,
+"answer": "yes"
+},
+"1135": {
+"depth": "d3",
+"logic": "pl",
+"rule": "HS_MT_DS",
+"sample_id": 14,
+"answer": "yes"
+},
+"1136": {
+"depth": "d3",
+"logic": "pl",
+"rule": "HS_MT_DS",
+"sample_id": 15,
+"answer": "yes"
+},
+"1137": {
+"depth": "d4",
+"logic": "fol",
+"rule": "BD_C_DS_MP",
+"sample_id": 1,
+"answer": "yes"
+},
+"1138": {
+"depth": "d4",
+"logic": "fol",
+"rule": "BD_C_DS_MP",
+"sample_id": 2,
+"answer": "yes"
+},
+"1139": {
+"depth": "d4",
+"logic": "fol",
+"rule": "BD_C_DS_MP",
+"sample_id": 3,
+"answer": "yes"
+},
+"1140": {
+"depth": "d4",
+"logic": "fol",
+"rule": "BD_C_DS_MP",
+"sample_id": 4,
+"answer": "yes"
+},
+"1141": {
+"depth": "d4",
+"logic": "fol",
+"rule": "BD_C_DS_MP",
+"sample_id": 5,
+"answer": "yes"
+},
+"1142": {
+"depth": "d4",
+"logic": "fol",
+"rule": "BD_C_DS_MP",
+"sample_id": 6,
+"answer": "yes"
+},
+"1143": {
+"depth": "d4",
+"logic": "fol",
+"rule": "BD_C_DS_MP",
+"sample_id": 7,
+"answer": "yes"
+},
+"1144": {
+"depth": "d4",
+"logic": "fol",
+"rule": "BD_C_DS_MP",
+"sample_id": 8,
+"answer": "yes"
+},
+"1145": {
+"depth": "d4",
+"logic": "fol",
+"rule": "BD_C_DS_MP",
+"sample_id": 9,
+"answer": "yes"
+},
+"1146": {
+"depth": "d4",
+"logic": "fol",
+"rule": "BD_C_DS_MP",
+"sample_id": 10,
+"answer": "yes"
+},
+"1147": {
+"depth": "d4",
+"logic": "fol",
+"rule": "BD_C_DS_MP",
+"sample_id": 11,
+"answer": "yes"
+},
+"1148": {
+"depth": "d4",
+"logic": "fol",
+"rule": "BD_C_DS_MP",
+"sample_id": 12,
+"answer": "yes"
+},
+"1149": {
+"depth": "d4",
+"logic": "fol",
+"rule": "BD_C_DS_MP",
+"sample_id": 13,
+"answer": "yes"
+},
+"1150": {
+"depth": "d4",
+"logic": "fol",
+"rule": "BD_C_DS_MP",
+"sample_id": 14,
+"answer": "yes"
+},
+"1151": {
+"depth": "d4",
+"logic": "fol",
+"rule": "BD_C_DS_MP",
+"sample_id": 15,
+"answer": "yes"
+},
+"1152": {
+"depth": "d4",
+"logic": "fol",
+"rule": "BD_DS_MT_DS",
+"sample_id": 1,
+"answer": "yes"
+},
+"1153": {
+"depth": "d4",
+"logic": "fol",
+"rule": "BD_DS_MT_DS",
+"sample_id": 2,
+"answer": "yes"
+},
+"1154": {
+"depth": "d4",
+"logic": "fol",
+"rule": "BD_DS_MT_DS",
+"sample_id": 3,
+"answer": "yes"
+},
+"1155": {
+"depth": "d4",
+"logic": "fol",
+"rule": "BD_DS_MT_DS",
+"sample_id": 4,
+"answer": "yes"
+},
+"1156": {
+"depth": "d4",
+"logic": "fol",
+"rule": "BD_DS_MT_DS",
+"sample_id": 5,
+"answer": "yes"
+},
+"1157": {
+"depth": "d4",
+"logic": "fol",
+"rule": "BD_DS_MT_DS",
+"sample_id": 6,
+"answer": "yes"
+},
+"1158": {
+"depth": "d4",
+"logic": "fol",
+"rule": "BD_DS_MT_DS",
+"sample_id": 7,
+"answer": "yes"
+},
+"1159": {
+"depth": "d4",
+"logic": "fol",
+"rule": "BD_DS_MT_DS",
+"sample_id": 8,
+"answer": "yes"
+},
+"1160": {
+"depth": "d4",
+"logic": "fol",
+"rule": "BD_DS_MT_DS",
+"sample_id": 9,
+"answer": "yes"
+},
+"1161": {
+"depth": "d4",
+"logic": "fol",
+"rule": "BD_DS_MT_DS",
+"sample_id": 10,
+"answer": "yes"
+},
+"1162": {
+"depth": "d4",
+"logic": "fol",
+"rule": "BD_DS_MT_DS",
+"sample_id": 11,
+"answer": "yes"
+},
+"1163": {
+"depth": "d4",
+"logic": "fol",
+"rule": "BD_DS_MT_DS",
+"sample_id": 12,
+"answer": "yes"
+},
+"1164": {
+"depth": "d4",
+"logic": "fol",
+"rule": "BD_DS_MT_DS",
+"sample_id": 13,
+"answer": "yes"
+},
+"1165": {
+"depth": "d4",
+"logic": "fol",
+"rule": "BD_DS_MT_DS",
+"sample_id": 14,
+"answer": "yes"
+},
+"1166": {
+"depth": "d4",
+"logic": "fol",
+"rule": "BD_DS_MT_DS",
+"sample_id": 15,
+"answer": "yes"
+},
+"1167": {
+"depth": "d4",
+"logic": "fol",
+"rule": "BD_DS_MT_MT",
+"sample_id": 1,
+"answer": "no"
+},
+"1168": {
+"depth": "d4",
+"logic": "fol",
+"rule": "BD_DS_MT_MT",
+"sample_id": 2,
+"answer": "no"
+},
+"1169": {
+"depth": "d4",
+"logic": "fol",
+"rule": "BD_DS_MT_MT",
+"sample_id": 3,
+"answer": "no"
+},
+"1170": {
+"depth": "d4",
+"logic": "fol",
+"rule": "BD_DS_MT_MT",
+"sample_id": 4,
+"answer": "no"
+},
+"1171": {
+"depth": "d4",
+"logic": "fol",
+"rule": "BD_DS_MT_MT",
+"sample_id": 5,
+"answer": "no"
+},
+"1172": {
+"depth": "d4",
+"logic": "fol",
+"rule": "BD_DS_MT_MT",
+"sample_id": 6,
+"answer": "no"
+},
+"1173": {
+"depth": "d4",
+"logic": "fol",
+"rule": "BD_DS_MT_MT",
+"sample_id": 7,
+"answer": "no"
+},
+"1174": {
+"depth": "d4",
+"logic": "fol",
+"rule": "BD_DS_MT_MT",
+"sample_id": 8,
+"answer": "no"
+},
+"1175": {
+"depth": "d4",
+"logic": "fol",
+"rule": "BD_DS_MT_MT",
+"sample_id": 9,
+"answer": "no"
+},
+"1176": {
+"depth": "d4",
+"logic": "fol",
+"rule": "BD_DS_MT_MT",
+"sample_id": 10,
+"answer": "no"
+},
+"1177": {
+"depth": "d4",
+"logic": "fol",
+"rule": "BD_DS_MT_MT",
+"sample_id": 11,
+"answer": "no"
+},
+"1178": {
+"depth": "d4",
+"logic": "fol",
+"rule": "BD_DS_MT_MT",
+"sample_id": 12,
+"answer": "no"
+},
+"1179": {
+"depth": "d4",
+"logic": "fol",
+"rule": "BD_DS_MT_MT",
+"sample_id": 13,
+"answer": "no"
+},
+"1180": {
+"depth": "d4",
+"logic": "fol",
+"rule": "BD_DS_MT_MT",
+"sample_id": 14,
+"answer": "no"
+},
+"1181": {
+"depth": "d4",
+"logic": "fol",
+"rule": "BD_DS_MT_MT",
+"sample_id": 15,
+"answer": "no"
+},
+"1182": {
+"depth": "d4",
+"logic": "fol",
+"rule": "CD_C_DS_MP",
+"sample_id": 1,
+"answer": "yes"
+},
+"1183": {
+"depth": "d4",
+"logic": "fol",
+"rule": "CD_C_DS_MP",
+"sample_id": 2,
+"answer": "yes"
+},
+"1184": {
+"depth": "d4",
+"logic": "fol",
+"rule": "CD_C_DS_MP",
+"sample_id": 3,
+"answer": "yes"
+},
+"1185": {
+"depth": "d4",
+"logic": "fol",
+"rule": "CD_C_DS_MP",
+"sample_id": 4,
+"answer": "yes"
+},
+"1186": {
+"depth": "d4",
+"logic": "fol",
+"rule": "CD_C_DS_MP",
+"sample_id": 5,
+"answer": "yes"
+},
+"1187": {
+"depth": "d4",
+"logic": "fol",
+"rule": "CD_C_DS_MP",
+"sample_id": 6,
+"answer": "yes"
+},
+"1188": {
+"depth": "d4",
+"logic": "fol",
+"rule": "CD_C_DS_MP",
+"sample_id": 7,
+"answer": "yes"
+},
+"1189": {
+"depth": "d4",
+"logic": "fol",
+"rule": "CD_C_DS_MP",
+"sample_id": 8,
+"answer": "yes"
+},
+"1190": {
+"depth": "d4",
+"logic": "fol",
+"rule": "CD_C_DS_MP",
+"sample_id": 9,
+"answer": "yes"
+},
+"1191": {
+"depth": "d4",
+"logic": "fol",
+"rule": "CD_C_DS_MP",
+"sample_id": 10,
+"answer": "yes"
+},
+"1192": {
+"depth": "d4",
+"logic": "fol",
+"rule": "CD_C_DS_MP",
+"sample_id": 11,
+"answer": "yes"
+},
+"1193": {
+"depth": "d4",
+"logic": "fol",
+"rule": "CD_C_DS_MP",
+"sample_id": 12,
+"answer": "yes"
+},
+"1194": {
+"depth": "d4",
+"logic": "fol",
+"rule": "CD_C_DS_MP",
+"sample_id": 13,
+"answer": "yes"
+},
+"1195": {
+"depth": "d4",
+"logic": "fol",
+"rule": "CD_C_DS_MP",
+"sample_id": 14,
+"answer": "yes"
+},
+"1196": {
+"depth": "d4",
+"logic": "fol",
+"rule": "CD_C_DS_MP",
+"sample_id": 15,
+"answer": "yes"
+},
+"1197": {
+"depth": "d4",
+"logic": "fol",
+"rule": "CD_DS_MP_MP",
+"sample_id": 1,
+"answer": "yes"
+},
+"1198": {
+"depth": "d4",
+"logic": "fol",
+"rule": "CD_DS_MP_MP",
+"sample_id": 2,
+"answer": "yes"
+},
+"1199": {
+"depth": "d4",
+"logic": "fol",
+"rule": "CD_DS_MP_MP",
+"sample_id": 3,
+"answer": "yes"
+},
+"1200": {
+"depth": "d4",
+"logic": "fol",
+"rule": "CD_DS_MP_MP",
+"sample_id": 4,
+"answer": "yes"
+},
+"1201": {
+"depth": "d4",
+"logic": "fol",
+"rule": "CD_DS_MP_MP",
+"sample_id": 5,
+"answer": "yes"
+},
+"1202": {
+"depth": "d4",
+"logic": "fol",
+"rule": "CD_DS_MP_MP",
+"sample_id": 6,
+"answer": "yes"
+},
+"1203": {
+"depth": "d4",
+"logic": "fol",
+"rule": "CD_DS_MP_MP",
+"sample_id": 7,
+"answer": "yes"
+},
+"1204": {
+"depth": "d4",
+"logic": "fol",
+"rule": "CD_DS_MP_MP",
+"sample_id": 8,
+"answer": "yes"
+},
+"1205": {
+"depth": "d4",
+"logic": "fol",
+"rule": "CD_DS_MP_MP",
+"sample_id": 9,
+"answer": "yes"
+},
+"1206": {
+"depth": "d4",
+"logic": "fol",
+"rule": "CD_DS_MP_MP",
+"sample_id": 10,
+"answer": "yes"
+},
+"1207": {
+"depth": "d4",
+"logic": "fol",
+"rule": "CD_DS_MP_MP",
+"sample_id": 11,
+"answer": "yes"
+},
+"1208": {
+"depth": "d4",
+"logic": "fol",
+"rule": "CD_DS_MP_MP",
+"sample_id": 12,
+"answer": "yes"
+},
+"1209": {
+"depth": "d4",
+"logic": "fol",
+"rule": "CD_DS_MP_MP",
+"sample_id": 13,
+"answer": "yes"
+},
+"1210": {
+"depth": "d4",
+"logic": "fol",
+"rule": "CD_DS_MP_MP",
+"sample_id": 14,
+"answer": "yes"
+},
+"1211": {
+"depth": "d4",
+"logic": "fol",
+"rule": "CD_DS_MP_MP",
+"sample_id": 15,
+"answer": "yes"
+},
+"1212": {
+"depth": "d4",
+"logic": "fol",
+"rule": "HS_CD_DS_MP",
+"sample_id": 1,
+"answer": "yes"
+},
+"1213": {
+"depth": "d4",
+"logic": "fol",
+"rule": "HS_CD_DS_MP",
+"sample_id": 2,
+"answer": "yes"
+},
+"1214": {
+"depth": "d4",
+"logic": "fol",
+"rule": "HS_CD_DS_MP",
+"sample_id": 3,
+"answer": "yes"
+},
+"1215": {
+"depth": "d4",
+"logic": "fol",
+"rule": "HS_CD_DS_MP",
+"sample_id": 4,
+"answer": "yes"
+},
+"1216": {
+"depth": "d4",
+"logic": "fol",
+"rule": "HS_CD_DS_MP",
+"sample_id": 5,
+"answer": "yes"
+},
+"1217": {
+"depth": "d4",
+"logic": "fol",
+"rule": "HS_CD_DS_MP",
+"sample_id": 6,
+"answer": "yes"
+},
+"1218": {
+"depth": "d4",
+"logic": "fol",
+"rule": "HS_CD_DS_MP",
+"sample_id": 7,
+"answer": "yes"
+},
+"1219": {
+"depth": "d4",
+"logic": "fol",
+"rule": "HS_CD_DS_MP",
+"sample_id": 8,
+"answer": "yes"
+},
+"1220": {
+"depth": "d4",
+"logic": "fol",
+"rule": "HS_CD_DS_MP",
+"sample_id": 9,
+"answer": "yes"
+},
+"1221": {
+"depth": "d4",
+"logic": "fol",
+"rule": "HS_CD_DS_MP",
+"sample_id": 10,
+"answer": "yes"
+},
+"1222": {
+"depth": "d4",
+"logic": "fol",
+"rule": "HS_CD_DS_MP",
+"sample_id": 11,
+"answer": "yes"
+},
+"1223": {
+"depth": "d4",
+"logic": "fol",
+"rule": "HS_CD_DS_MP",
+"sample_id": 12,
+"answer": "yes"
+},
+"1224": {
+"depth": "d4",
+"logic": "fol",
+"rule": "HS_CD_DS_MP",
+"sample_id": 13,
+"answer": "yes"
+},
+"1225": {
+"depth": "d4",
+"logic": "fol",
+"rule": "HS_CD_DS_MP",
+"sample_id": 14,
+"answer": "yes"
+},
+"1226": {
+"depth": "d4",
+"logic": "fol",
+"rule": "HS_CD_DS_MP",
+"sample_id": 15,
+"answer": "yes"
+},
+"1227": {
+"depth": "d4",
+"logic": "fol",
+"rule": "HS_MT_DS_MP",
+"sample_id": 1,
+"answer": "yes"
+},
+"1228": {
+"depth": "d4",
+"logic": "fol",
+"rule": "HS_MT_DS_MP",
+"sample_id": 2,
+"answer": "yes"
+},
+"1229": {
+"depth": "d4",
+"logic": "fol",
+"rule": "HS_MT_DS_MP",
+"sample_id": 3,
+"answer": "yes"
+},
+"1230": {
+"depth": "d4",
+"logic": "fol",
+"rule": "HS_MT_DS_MP",
+"sample_id": 4,
+"answer": "yes"
+},
+"1231": {
+"depth": "d4",
+"logic": "fol",
+"rule": "HS_MT_DS_MP",
+"sample_id": 5,
+"answer": "yes"
+},
+"1232": {
+"depth": "d4",
+"logic": "fol",
+"rule": "HS_MT_DS_MP",
+"sample_id": 6,
+"answer": "yes"
+},
+"1233": {
+"depth": "d4",
+"logic": "fol",
+"rule": "HS_MT_DS_MP",
+"sample_id": 7,
+"answer": "yes"
+},
+"1234": {
+"depth": "d4",
+"logic": "fol",
+"rule": "HS_MT_DS_MP",
+"sample_id": 8,
+"answer": "yes"
+},
+"1235": {
+"depth": "d4",
+"logic": "fol",
+"rule": "HS_MT_DS_MP",
+"sample_id": 9,
+"answer": "yes"
+},
+"1236": {
+"depth": "d4",
+"logic": "fol",
+"rule": "HS_MT_DS_MP",
+"sample_id": 10,
+"answer": "yes"
+},
+"1237": {
+"depth": "d4",
+"logic": "fol",
+"rule": "HS_MT_DS_MP",
+"sample_id": 11,
+"answer": "yes"
+},
+"1238": {
+"depth": "d4",
+"logic": "fol",
+"rule": "HS_MT_DS_MP",
+"sample_id": 12,
+"answer": "yes"
+},
+"1239": {
+"depth": "d4",
+"logic": "fol",
+"rule": "HS_MT_DS_MP",
+"sample_id": 13,
+"answer": "yes"
+},
+"1240": {
+"depth": "d4",
+"logic": "fol",
+"rule": "HS_MT_DS_MP",
+"sample_id": 14,
+"answer": "yes"
+},
+"1241": {
+"depth": "d4",
+"logic": "fol",
+"rule": "HS_MT_DS_MP",
+"sample_id": 15,
+"answer": "yes"
+},
+"1242": {
+"depth": "d4",
+"logic": "fol",
+"rule": "I_MT_DMT_DS",
+"sample_id": 1,
+"answer": "no"
+},
+"1243": {
+"depth": "d4",
+"logic": "fol",
+"rule": "I_MT_DMT_DS",
+"sample_id": 2,
+"answer": "no"
+},
+"1244": {
+"depth": "d4",
+"logic": "fol",
+"rule": "I_MT_DMT_DS",
+"sample_id": 3,
+"answer": "no"
+},
+"1245": {
+"depth": "d4",
+"logic": "fol",
+"rule": "I_MT_DMT_DS",
+"sample_id": 4,
+"answer": "no"
+},
+"1246": {
+"depth": "d4",
+"logic": "fol",
+"rule": "I_MT_DMT_DS",
+"sample_id": 5,
+"answer": "no"
+},
+"1247": {
+"depth": "d4",
+"logic": "fol",
+"rule": "I_MT_DMT_DS",
+"sample_id": 6,
+"answer": "no"
+},
+"1248": {
+"depth": "d4",
+"logic": "fol",
+"rule": "I_MT_DMT_DS",
+"sample_id": 7,
+"answer": "no"
+},
+"1249": {
+"depth": "d4",
+"logic": "fol",
+"rule": "I_MT_DMT_DS",
+"sample_id": 8,
+"answer": "no"
+},
+"1250": {
+"depth": "d4",
+"logic": "fol",
+"rule": "I_MT_DMT_DS",
+"sample_id": 9,
+"answer": "no"
+},
+"1251": {
+"depth": "d4",
+"logic": "fol",
+"rule": "I_MT_DMT_DS",
+"sample_id": 10,
+"answer": "no"
+},
+"1252": {
+"depth": "d4",
+"logic": "fol",
+"rule": "I_MT_DMT_DS",
+"sample_id": 11,
+"answer": "no"
+},
+"1253": {
+"depth": "d4",
+"logic": "fol",
+"rule": "I_MT_DMT_DS",
+"sample_id": 12,
+"answer": "no"
+},
+"1254": {
+"depth": "d4",
+"logic": "fol",
+"rule": "I_MT_DMT_DS",
+"sample_id": 13,
+"answer": "no"
+},
+"1255": {
+"depth": "d4",
+"logic": "fol",
+"rule": "I_MT_DMT_DS",
+"sample_id": 14,
+"answer": "no"
+},
+"1256": {
+"depth": "d4",
+"logic": "fol",
+"rule": "I_MT_DMT_DS",
+"sample_id": 15,
+"answer": "no"
+},
+"1257": {
+"depth": "d4",
+"logic": "nm",
+"rule": "d4_1",
+"sample_id": 1,
+"answer": "yes"
+},
+"1258": {
+"depth": "d4",
+"logic": "nm",
+"rule": "d4_1",
+"sample_id": 2,
+"answer": "no"
+},
+"1259": {
+"depth": "d4",
+"logic": "nm",
+"rule": "d4_1",
+"sample_id": 3,
+"answer": "yes"
+},
+"1260": {
+"depth": "d4",
+"logic": "nm",
+"rule": "d4_1",
+"sample_id": 4,
+"answer": "no"
+},
+"1261": {
+"depth": "d4",
+"logic": "nm",
+"rule": "d4_1",
+"sample_id": 5,
+"answer": "yes"
+},
+"1262": {
+"depth": "d4",
+"logic": "nm",
+"rule": "d4_1",
+"sample_id": 6,
+"answer": "no"
+},
+"1263": {
+"depth": "d4",
+"logic": "nm",
+"rule": "d4_1",
+"sample_id": 7,
+"answer": "yes"
+},
+"1264": {
+"depth": "d4",
+"logic": "nm",
+"rule": "d4_1",
+"sample_id": 8,
+"answer": "no"
+},
+"1265": {
+"depth": "d4",
+"logic": "nm",
+"rule": "d4_1",
+"sample_id": 9,
+"answer": "yes"
+},
+"1266": {
+"depth": "d4",
+"logic": "nm",
+"rule": "d4_1",
+"sample_id": 10,
+"answer": "no"
+},
+"1267": {
+"depth": "d4",
+"logic": "nm",
+"rule": "d4_1",
+"sample_id": 11,
+"answer": "yes"
+},
+"1268": {
+"depth": "d4",
+"logic": "nm",
+"rule": "d4_1",
+"sample_id": 12,
+"answer": "no"
+},
+"1269": {
+"depth": "d4",
+"logic": "nm",
+"rule": "d4_1",
+"sample_id": 13,
+"answer": "yes"
+},
+"1270": {
+"depth": "d4",
+"logic": "nm",
+"rule": "d4_1",
+"sample_id": 14,
+"answer": "no"
+},
+"1271": {
+"depth": "d4",
+"logic": "nm",
+"rule": "d4_1",
+"sample_id": 15,
+"answer": "yes"
+},
+"1272": {
+"depth": "d4",
+"logic": "nm",
+"rule": "d4_1",
+"sample_id": 16,
+"answer": "no"
+},
+"1273": {
+"depth": "d4",
+"logic": "nm",
+"rule": "d4_1",
+"sample_id": 17,
+"answer": "yes"
+},
+"1274": {
+"depth": "d4",
+"logic": "nm",
+"rule": "d4_1",
+"sample_id": 18,
+"answer": "no"
+},
+"1275": {
+"depth": "d4",
+"logic": "nm",
+"rule": "d4_1",
+"sample_id": 19,
+"answer": "yes"
+},
+"1276": {
+"depth": "d4",
+"logic": "nm",
+"rule": "d4_1",
+"sample_id": 20,
+"answer": "no"
+},
+"1277": {
+"depth": "d4",
+"logic": "nm",
+"rule": "d4_2",
+"sample_id": 1,
+"answer": "yes"
+},
+"1278": {
+"depth": "d4",
+"logic": "nm",
+"rule": "d4_2",
+"sample_id": 2,
+"answer": "no"
+},
+"1279": {
+"depth": "d4",
+"logic": "nm",
+"rule": "d4_2",
+"sample_id": 3,
+"answer": "yes"
+},
+"1280": {
+"depth": "d4",
+"logic": "nm",
+"rule": "d4_2",
+"sample_id": 4,
+"answer": "no"
+},
+"1281": {
+"depth": "d4",
+"logic": "nm",
+"rule": "d4_2",
+"sample_id": 5,
+"answer": "yes"
+},
+"1282": {
+"depth": "d4",
+"logic": "nm",
+"rule": "d4_2",
+"sample_id": 6,
+"answer": "no"
+},
+"1283": {
+"depth": "d4",
+"logic": "nm",
+"rule": "d4_2",
+"sample_id": 7,
+"answer": "yes"
+},
+"1284": {
+"depth": "d4",
+"logic": "nm",
+"rule": "d4_2",
+"sample_id": 8,
+"answer": "no"
+},
+"1285": {
+"depth": "d4",
+"logic": "nm",
+"rule": "d4_2",
+"sample_id": 9,
+"answer": "yes"
+},
+"1286": {
+"depth": "d4",
+"logic": "nm",
+"rule": "d4_2",
+"sample_id": 10,
+"answer": "no"
+},
+"1287": {
+"depth": "d4",
+"logic": "nm",
+"rule": "d4_2",
+"sample_id": 11,
+"answer": "yes"
+},
+"1288": {
+"depth": "d4",
+"logic": "nm",
+"rule": "d4_2",
+"sample_id": 12,
+"answer": "no"
+},
+"1289": {
+"depth": "d4",
+"logic": "nm",
+"rule": "d4_2",
+"sample_id": 13,
+"answer": "yes"
+},
+"1290": {
+"depth": "d4",
+"logic": "nm",
+"rule": "d4_2",
+"sample_id": 14,
+"answer": "no"
+},
+"1291": {
+"depth": "d4",
+"logic": "nm",
+"rule": "d4_2",
+"sample_id": 15,
+"answer": "yes"
+},
+"1292": {
+"depth": "d4",
+"logic": "nm",
+"rule": "d4_2",
+"sample_id": 16,
+"answer": "no"
+},
+"1293": {
+"depth": "d4",
+"logic": "nm",
+"rule": "d4_2",
+"sample_id": 17,
+"answer": "yes"
+},
+"1294": {
+"depth": "d4",
+"logic": "nm",
+"rule": "d4_2",
+"sample_id": 18,
+"answer": "no"
+},
+"1295": {
+"depth": "d4",
+"logic": "nm",
+"rule": "d4_2",
+"sample_id": 19,
+"answer": "yes"
+},
+"1296": {
+"depth": "d4",
+"logic": "nm",
+"rule": "d4_2",
+"sample_id": 20,
+"answer": "no"
+},
+"1297": {
+"depth": "d4",
+"logic": "pl",
+"rule": "BD_C_DS_MP",
+"sample_id": 1,
+"answer": "yes"
+},
+"1298": {
+"depth": "d4",
+"logic": "pl",
+"rule": "BD_C_DS_MP",
+"sample_id": 2,
+"answer": "yes"
+},
+"1299": {
+"depth": "d4",
+"logic": "pl",
+"rule": "BD_C_DS_MP",
+"sample_id": 3,
+"answer": "yes"
+},
+"1300": {
+"depth": "d4",
+"logic": "pl",
+"rule": "BD_C_DS_MP",
+"sample_id": 4,
+"answer": "yes"
+},
+"1301": {
+"depth": "d4",
+"logic": "pl",
+"rule": "BD_C_DS_MP",
+"sample_id": 5,
+"answer": "yes"
+},
+"1302": {
+"depth": "d4",
+"logic": "pl",
+"rule": "BD_C_DS_MP",
+"sample_id": 6,
+"answer": "yes"
+},
+"1303": {
+"depth": "d4",
+"logic": "pl",
+"rule": "BD_C_DS_MP",
+"sample_id": 7,
+"answer": "yes"
+},
+"1304": {
+"depth": "d4",
+"logic": "pl",
+"rule": "BD_C_DS_MP",
+"sample_id": 8,
+"answer": "yes"
+},
+"1305": {
+"depth": "d4",
+"logic": "pl",
+"rule": "BD_C_DS_MP",
+"sample_id": 9,
+"answer": "yes"
+},
+"1306": {
+"depth": "d4",
+"logic": "pl",
+"rule": "BD_C_DS_MP",
+"sample_id": 10,
+"answer": "yes"
+},
+"1307": {
+"depth": "d4",
+"logic": "pl",
+"rule": "BD_C_DS_MP",
+"sample_id": 11,
+"answer": "yes"
+},
+"1308": {
+"depth": "d4",
+"logic": "pl",
+"rule": "BD_C_DS_MP",
+"sample_id": 12,
+"answer": "yes"
+},
+"1309": {
+"depth": "d4",
+"logic": "pl",
+"rule": "BD_C_DS_MP",
+"sample_id": 13,
+"answer": "yes"
+},
+"1310": {
+"depth": "d4",
+"logic": "pl",
+"rule": "BD_C_DS_MP",
+"sample_id": 14,
+"answer": "yes"
+},
+"1311": {
+"depth": "d4",
+"logic": "pl",
+"rule": "BD_C_DS_MP",
+"sample_id": 15,
+"answer": "yes"
+},
+"1312": {
+"depth": "d4",
+"logic": "pl",
+"rule": "BD_DS_MT_DS",
+"sample_id": 1,
+"answer": "yes"
+},
+"1313": {
+"depth": "d4",
+"logic": "pl",
+"rule": "BD_DS_MT_DS",
+"sample_id": 2,
+"answer": "yes"
+},
+"1314": {
+"depth": "d4",
+"logic": "pl",
+"rule": "BD_DS_MT_DS",
+"sample_id": 3,
+"answer": "yes"
+},
+"1315": {
+"depth": "d4",
+"logic": "pl",
+"rule": "BD_DS_MT_DS",
+"sample_id": 4,
+"answer": "yes"
+},
+"1316": {
+"depth": "d4",
+"logic": "pl",
+"rule": "BD_DS_MT_DS",
+"sample_id": 5,
+"answer": "yes"
+},
+"1317": {
+"depth": "d4",
+"logic": "pl",
+"rule": "BD_DS_MT_DS",
+"sample_id": 6,
+"answer": "yes"
+},
+"1318": {
+"depth": "d4",
+"logic": "pl",
+"rule": "BD_DS_MT_DS",
+"sample_id": 7,
+"answer": "yes"
+},
+"1319": {
+"depth": "d4",
+"logic": "pl",
+"rule": "BD_DS_MT_DS",
+"sample_id": 8,
+"answer": "yes"
+},
+"1320": {
+"depth": "d4",
+"logic": "pl",
+"rule": "BD_DS_MT_DS",
+"sample_id": 9,
+"answer": "yes"
+},
+"1321": {
+"depth": "d4",
+"logic": "pl",
+"rule": "BD_DS_MT_DS",
+"sample_id": 10,
+"answer": "yes"
+},
+"1322": {
+"depth": "d4",
+"logic": "pl",
+"rule": "BD_DS_MT_DS",
+"sample_id": 11,
+"answer": "yes"
+},
+"1323": {
+"depth": "d4",
+"logic": "pl",
+"rule": "BD_DS_MT_DS",
+"sample_id": 12,
+"answer": "yes"
+},
+"1324": {
+"depth": "d4",
+"logic": "pl",
+"rule": "BD_DS_MT_DS",
+"sample_id": 13,
+"answer": "yes"
+},
+"1325": {
+"depth": "d4",
+"logic": "pl",
+"rule": "BD_DS_MT_DS",
+"sample_id": 14,
+"answer": "yes"
+},
+"1326": {
+"depth": "d4",
+"logic": "pl",
+"rule": "BD_DS_MT_DS",
+"sample_id": 15,
+"answer": "yes"
+},
+"1327": {
+"depth": "d4",
+"logic": "pl",
+"rule": "BD_DS_MT_MT",
+"sample_id": 1,
+"answer": "no"
+},
+"1328": {
+"depth": "d4",
+"logic": "pl",
+"rule": "BD_DS_MT_MT",
+"sample_id": 2,
+"answer": "no"
+},
+"1329": {
+"depth": "d4",
+"logic": "pl",
+"rule": "BD_DS_MT_MT",
+"sample_id": 3,
+"answer": "no"
+},
+"1330": {
+"depth": "d4",
+"logic": "pl",
+"rule": "BD_DS_MT_MT",
+"sample_id": 4,
+"answer": "no"
+},
+"1331": {
+"depth": "d4",
+"logic": "pl",
+"rule": "BD_DS_MT_MT",
+"sample_id": 5,
+"answer": "no"
+},
+"1332": {
+"depth": "d4",
+"logic": "pl",
+"rule": "BD_DS_MT_MT",
+"sample_id": 6,
+"answer": "no"
+},
+"1333": {
+"depth": "d4",
+"logic": "pl",
+"rule": "BD_DS_MT_MT",
+"sample_id": 7,
+"answer": "no"
+},
+"1334": {
+"depth": "d4",
+"logic": "pl",
+"rule": "BD_DS_MT_MT",
+"sample_id": 8,
+"answer": "no"
+},
+"1335": {
+"depth": "d4",
+"logic": "pl",
+"rule": "BD_DS_MT_MT",
+"sample_id": 9,
+"answer": "no"
+},
+"1336": {
+"depth": "d4",
+"logic": "pl",
+"rule": "BD_DS_MT_MT",
+"sample_id": 10,
+"answer": "no"
+},
+"1337": {
+"depth": "d4",
+"logic": "pl",
+"rule": "BD_DS_MT_MT",
+"sample_id": 11,
+"answer": "no"
+},
+"1338": {
+"depth": "d4",
+"logic": "pl",
+"rule": "BD_DS_MT_MT",
+"sample_id": 12,
+"answer": "no"
+},
+"1339": {
+"depth": "d4",
+"logic": "pl",
+"rule": "BD_DS_MT_MT",
+"sample_id": 13,
+"answer": "no"
+},
+"1340": {
+"depth": "d4",
+"logic": "pl",
+"rule": "BD_DS_MT_MT",
+"sample_id": 14,
+"answer": "no"
+},
+"1341": {
+"depth": "d4",
+"logic": "pl",
+"rule": "BD_DS_MT_MT",
+"sample_id": 15,
+"answer": "no"
+},
+"1342": {
+"depth": "d4",
+"logic": "pl",
+"rule": "CD_C_DS_MP",
+"sample_id": 1,
+"answer": "yes"
+},
+"1343": {
+"depth": "d4",
+"logic": "pl",
+"rule": "CD_C_DS_MP",
+"sample_id": 2,
+"answer": "yes"
+},
+"1344": {
+"depth": "d4",
+"logic": "pl",
+"rule": "CD_C_DS_MP",
+"sample_id": 3,
+"answer": "yes"
+},
+"1345": {
+"depth": "d4",
+"logic": "pl",
+"rule": "CD_C_DS_MP",
+"sample_id": 4,
+"answer": "yes"
+},
+"1346": {
+"depth": "d4",
+"logic": "pl",
+"rule": "CD_C_DS_MP",
+"sample_id": 5,
+"answer": "yes"
+},
+"1347": {
+"depth": "d4",
+"logic": "pl",
+"rule": "CD_C_DS_MP",
+"sample_id": 6,
+"answer": "yes"
+},
+"1348": {
+"depth": "d4",
+"logic": "pl",
+"rule": "CD_C_DS_MP",
+"sample_id": 7,
+"answer": "yes"
+},
+"1349": {
+"depth": "d4",
+"logic": "pl",
+"rule": "CD_C_DS_MP",
+"sample_id": 8,
+"answer": "yes"
+},
+"1350": {
+"depth": "d4",
+"logic": "pl",
+"rule": "CD_C_DS_MP",
+"sample_id": 9,
+"answer": "yes"
+},
+"1351": {
+"depth": "d4",
+"logic": "pl",
+"rule": "CD_C_DS_MP",
+"sample_id": 10,
+"answer": "yes"
+},
+"1352": {
+"depth": "d4",
+"logic": "pl",
+"rule": "CD_C_DS_MP",
+"sample_id": 11,
+"answer": "yes"
+},
+"1353": {
+"depth": "d4",
+"logic": "pl",
+"rule": "CD_C_DS_MP",
+"sample_id": 12,
+"answer": "yes"
+},
+"1354": {
+"depth": "d4",
+"logic": "pl",
+"rule": "CD_C_DS_MP",
+"sample_id": 13,
+"answer": "yes"
+},
+"1355": {
+"depth": "d4",
+"logic": "pl",
+"rule": "CD_C_DS_MP",
+"sample_id": 14,
+"answer": "yes"
+},
+"1356": {
+"depth": "d4",
+"logic": "pl",
+"rule": "CD_C_DS_MP",
+"sample_id": 15,
+"answer": "yes"
+},
+"1357": {
+"depth": "d4",
+"logic": "pl",
+"rule": "CD_DS_MP_MP",
+"sample_id": 1,
+"answer": "yes"
+},
+"1358": {
+"depth": "d4",
+"logic": "pl",
+"rule": "CD_DS_MP_MP",
+"sample_id": 2,
+"answer": "yes"
+},
+"1359": {
+"depth": "d4",
+"logic": "pl",
+"rule": "CD_DS_MP_MP",
+"sample_id": 3,
+"answer": "yes"
+},
+"1360": {
+"depth": "d4",
+"logic": "pl",
+"rule": "CD_DS_MP_MP",
+"sample_id": 4,
+"answer": "yes"
+},
+"1361": {
+"depth": "d4",
+"logic": "pl",
+"rule": "CD_DS_MP_MP",
+"sample_id": 5,
+"answer": "yes"
+},
+"1362": {
+"depth": "d4",
+"logic": "pl",
+"rule": "CD_DS_MP_MP",
+"sample_id": 6,
+"answer": "yes"
+},
+"1363": {
+"depth": "d4",
+"logic": "pl",
+"rule": "CD_DS_MP_MP",
+"sample_id": 7,
+"answer": "yes"
+},
+"1364": {
+"depth": "d4",
+"logic": "pl",
+"rule": "CD_DS_MP_MP",
+"sample_id": 8,
+"answer": "yes"
+},
+"1365": {
+"depth": "d4",
+"logic": "pl",
+"rule": "CD_DS_MP_MP",
+"sample_id": 9,
+"answer": "yes"
+},
+"1366": {
+"depth": "d4",
+"logic": "pl",
+"rule": "CD_DS_MP_MP",
+"sample_id": 10,
+"answer": "yes"
+},
+"1367": {
+"depth": "d4",
+"logic": "pl",
+"rule": "CD_DS_MP_MP",
+"sample_id": 11,
+"answer": "yes"
+},
+"1368": {
+"depth": "d4",
+"logic": "pl",
+"rule": "CD_DS_MP_MP",
+"sample_id": 12,
+"answer": "yes"
+},
+"1369": {
+"depth": "d4",
+"logic": "pl",
+"rule": "CD_DS_MP_MP",
+"sample_id": 13,
+"answer": "yes"
+},
+"1370": {
+"depth": "d4",
+"logic": "pl",
+"rule": "CD_DS_MP_MP",
+"sample_id": 14,
+"answer": "yes"
+},
+"1371": {
+"depth": "d4",
+"logic": "pl",
+"rule": "CD_DS_MP_MP",
+"sample_id": 15,
+"answer": "yes"
+},
+"1372": {
+"depth": "d4",
+"logic": "pl",
+"rule": "HS_CD_DS_MP",
+"sample_id": 1,
+"answer": "yes"
+},
+"1373": {
+"depth": "d4",
+"logic": "pl",
+"rule": "HS_CD_DS_MP",
+"sample_id": 2,
+"answer": "yes"
+},
+"1374": {
+"depth": "d4",
+"logic": "pl",
+"rule": "HS_CD_DS_MP",
+"sample_id": 3,
+"answer": "yes"
+},
+"1375": {
+"depth": "d4",
+"logic": "pl",
+"rule": "HS_CD_DS_MP",
+"sample_id": 4,
+"answer": "yes"
+},
+"1376": {
+"depth": "d4",
+"logic": "pl",
+"rule": "HS_CD_DS_MP",
+"sample_id": 5,
+"answer": "yes"
+},
+"1377": {
+"depth": "d4",
+"logic": "pl",
+"rule": "HS_CD_DS_MP",
+"sample_id": 6,
+"answer": "yes"
+},
+"1378": {
+"depth": "d4",
+"logic": "pl",
+"rule": "HS_CD_DS_MP",
+"sample_id": 7,
+"answer": "yes"
+},
+"1379": {
+"depth": "d4",
+"logic": "pl",
+"rule": "HS_CD_DS_MP",
+"sample_id": 8,
+"answer": "yes"
+},
+"1380": {
+"depth": "d4",
+"logic": "pl",
+"rule": "HS_CD_DS_MP",
+"sample_id": 9,
+"answer": "yes"
+},
+"1381": {
+"depth": "d4",
+"logic": "pl",
+"rule": "HS_CD_DS_MP",
+"sample_id": 10,
+"answer": "yes"
+},
+"1382": {
+"depth": "d4",
+"logic": "pl",
+"rule": "HS_CD_DS_MP",
+"sample_id": 11,
+"answer": "yes"
+},
+"1383": {
+"depth": "d4",
+"logic": "pl",
+"rule": "HS_CD_DS_MP",
+"sample_id": 12,
+"answer": "yes"
+},
+"1384": {
+"depth": "d4",
+"logic": "pl",
+"rule": "HS_CD_DS_MP",
+"sample_id": 13,
+"answer": "yes"
+},
+"1385": {
+"depth": "d4",
+"logic": "pl",
+"rule": "HS_CD_DS_MP",
+"sample_id": 14,
+"answer": "yes"
+},
+"1386": {
+"depth": "d4",
+"logic": "pl",
+"rule": "HS_CD_DS_MP",
+"sample_id": 15,
+"answer": "yes"
+},
+"1387": {
+"depth": "d4",
+"logic": "pl",
+"rule": "HS_MT_DS_MP",
+"sample_id": 1,
+"answer": "yes"
+},
+"1388": {
+"depth": "d4",
+"logic": "pl",
+"rule": "HS_MT_DS_MP",
+"sample_id": 2,
+"answer": "yes"
+},
+"1389": {
+"depth": "d4",
+"logic": "pl",
+"rule": "HS_MT_DS_MP",
+"sample_id": 3,
+"answer": "yes"
+},
+"1390": {
+"depth": "d4",
+"logic": "pl",
+"rule": "HS_MT_DS_MP",
+"sample_id": 4,
+"answer": "yes"
+},
+"1391": {
+"depth": "d4",
+"logic": "pl",
+"rule": "HS_MT_DS_MP",
+"sample_id": 5,
+"answer": "yes"
+},
+"1392": {
+"depth": "d4",
+"logic": "pl",
+"rule": "HS_MT_DS_MP",
+"sample_id": 6,
+"answer": "yes"
+},
+"1393": {
+"depth": "d4",
+"logic": "pl",
+"rule": "HS_MT_DS_MP",
+"sample_id": 7,
+"answer": "yes"
+},
+"1394": {
+"depth": "d4",
+"logic": "pl",
+"rule": "HS_MT_DS_MP",
+"sample_id": 8,
+"answer": "yes"
+},
+"1395": {
+"depth": "d4",
+"logic": "pl",
+"rule": "HS_MT_DS_MP",
+"sample_id": 9,
+"answer": "yes"
+},
+"1396": {
+"depth": "d4",
+"logic": "pl",
+"rule": "HS_MT_DS_MP",
+"sample_id": 10,
+"answer": "yes"
+},
+"1397": {
+"depth": "d4",
+"logic": "pl",
+"rule": "HS_MT_DS_MP",
+"sample_id": 11,
+"answer": "yes"
+},
+"1398": {
+"depth": "d4",
+"logic": "pl",
+"rule": "HS_MT_DS_MP",
+"sample_id": 12,
+"answer": "yes"
+},
+"1399": {
+"depth": "d4",
+"logic": "pl",
+"rule": "HS_MT_DS_MP",
+"sample_id": 13,
+"answer": "yes"
+},
+"1400": {
+"depth": "d4",
+"logic": "pl",
+"rule": "HS_MT_DS_MP",
+"sample_id": 14,
+"answer": "yes"
+},
+"1401": {
+"depth": "d4",
+"logic": "pl",
+"rule": "HS_MT_DS_MP",
+"sample_id": 15,
+"answer": "yes"
+},
+"1402": {
+"depth": "d4",
+"logic": "pl",
+"rule": "I_MT_DMT_DS",
+"sample_id": 1,
+"answer": "no"
+},
+"1403": {
+"depth": "d4",
+"logic": "pl",
+"rule": "I_MT_DMT_DS",
+"sample_id": 2,
+"answer": "no"
+},
+"1404": {
+"depth": "d4",
+"logic": "pl",
+"rule": "I_MT_DMT_DS",
+"sample_id": 3,
+"answer": "no"
+},
+"1405": {
+"depth": "d4",
+"logic": "pl",
+"rule": "I_MT_DMT_DS",
+"sample_id": 4,
+"answer": "no"
+},
+"1406": {
+"depth": "d4",
+"logic": "pl",
+"rule": "I_MT_DMT_DS",
+"sample_id": 5,
+"answer": "no"
+},
+"1407": {
+"depth": "d4",
+"logic": "pl",
+"rule": "I_MT_DMT_DS",
+"sample_id": 6,
+"answer": "no"
+},
+"1408": {
+"depth": "d4",
+"logic": "pl",
+"rule": "I_MT_DMT_DS",
+"sample_id": 7,
+"answer": "no"
+},
+"1409": {
+"depth": "d4",
+"logic": "pl",
+"rule": "I_MT_DMT_DS",
+"sample_id": 8,
+"answer": "no"
+},
+"1410": {
+"depth": "d4",
+"logic": "pl",
+"rule": "I_MT_DMT_DS",
+"sample_id": 9,
+"answer": "no"
+},
+"1411": {
+"depth": "d4",
+"logic": "pl",
+"rule": "I_MT_DMT_DS",
+"sample_id": 10,
+"answer": "no"
+},
+"1412": {
+"depth": "d4",
+"logic": "pl",
+"rule": "I_MT_DMT_DS",
+"sample_id": 11,
+"answer": "no"
+},
+"1413": {
+"depth": "d4",
+"logic": "pl",
+"rule": "I_MT_DMT_DS",
+"sample_id": 12,
+"answer": "no"
+},
+"1414": {
+"depth": "d4",
+"logic": "pl",
+"rule": "I_MT_DMT_DS",
+"sample_id": 13,
+"answer": "no"
+},
+"1415": {
+"depth": "d4",
+"logic": "pl",
+"rule": "I_MT_DMT_DS",
+"sample_id": 14,
+"answer": "no"
+},
+"1416": {
+"depth": "d4",
+"logic": "pl",
+"rule": "I_MT_DMT_DS",
+"sample_id": 15,
+"answer": "no"
+},
+"1417": {
+"depth": "d5",
+"logic": "fol",
+"rule": "BD_C_DS_MP_MP",
+"sample_id": 1,
+"answer": "yes"
+},
+"1418": {
+"depth": "d5",
+"logic": "fol",
+"rule": "BD_C_DS_MP_MP",
+"sample_id": 2,
+"answer": "yes"
+},
+"1419": {
+"depth": "d5",
+"logic": "fol",
+"rule": "BD_C_DS_MP_MP",
+"sample_id": 3,
+"answer": "yes"
+},
+"1420": {
+"depth": "d5",
+"logic": "fol",
+"rule": "BD_C_DS_MP_MP",
+"sample_id": 4,
+"answer": "yes"
+},
+"1421": {
+"depth": "d5",
+"logic": "fol",
+"rule": "BD_C_DS_MP_MP",
+"sample_id": 5,
+"answer": "yes"
+},
+"1422": {
+"depth": "d5",
+"logic": "fol",
+"rule": "BD_C_DS_MP_MP",
+"sample_id": 6,
+"answer": "yes"
+},
+"1423": {
+"depth": "d5",
+"logic": "fol",
+"rule": "BD_C_DS_MP_MP",
+"sample_id": 7,
+"answer": "yes"
+},
+"1424": {
+"depth": "d5",
+"logic": "fol",
+"rule": "BD_C_DS_MP_MP",
+"sample_id": 8,
+"answer": "yes"
+},
+"1425": {
+"depth": "d5",
+"logic": "fol",
+"rule": "BD_C_DS_MP_MP",
+"sample_id": 9,
+"answer": "yes"
+},
+"1426": {
+"depth": "d5",
+"logic": "fol",
+"rule": "BD_C_DS_MP_MP",
+"sample_id": 10,
+"answer": "yes"
+},
+"1427": {
+"depth": "d5",
+"logic": "fol",
+"rule": "BD_C_DS_MP_MP",
+"sample_id": 11,
+"answer": "yes"
+},
+"1428": {
+"depth": "d5",
+"logic": "fol",
+"rule": "BD_C_DS_MP_MP",
+"sample_id": 12,
+"answer": "yes"
+},
+"1429": {
+"depth": "d5",
+"logic": "fol",
+"rule": "BD_C_DS_MP_MP",
+"sample_id": 13,
+"answer": "yes"
+},
+"1430": {
+"depth": "d5",
+"logic": "fol",
+"rule": "BD_C_DS_MP_MP",
+"sample_id": 14,
+"answer": "yes"
+},
+"1431": {
+"depth": "d5",
+"logic": "fol",
+"rule": "BD_C_DS_MP_MP",
+"sample_id": 15,
+"answer": "yes"
+},
+"1432": {
+"depth": "d5",
+"logic": "fol",
+"rule": "CD_C_DS_MP_MP",
+"sample_id": 1,
+"answer": "yes"
+},
+"1433": {
+"depth": "d5",
+"logic": "fol",
+"rule": "CD_C_DS_MP_MP",
+"sample_id": 2,
+"answer": "yes"
+},
+"1434": {
+"depth": "d5",
+"logic": "fol",
+"rule": "CD_C_DS_MP_MP",
+"sample_id": 3,
+"answer": "yes"
+},
+"1435": {
+"depth": "d5",
+"logic": "fol",
+"rule": "CD_C_DS_MP_MP",
+"sample_id": 4,
+"answer": "yes"
+},
+"1436": {
+"depth": "d5",
+"logic": "fol",
+"rule": "CD_C_DS_MP_MP",
+"sample_id": 5,
+"answer": "yes"
+},
+"1437": {
+"depth": "d5",
+"logic": "fol",
+"rule": "CD_C_DS_MP_MP",
+"sample_id": 6,
+"answer": "yes"
+},
+"1438": {
+"depth": "d5",
+"logic": "fol",
+"rule": "CD_C_DS_MP_MP",
+"sample_id": 7,
+"answer": "yes"
+},
+"1439": {
+"depth": "d5",
+"logic": "fol",
+"rule": "CD_C_DS_MP_MP",
+"sample_id": 8,
+"answer": "yes"
+},
+"1440": {
+"depth": "d5",
+"logic": "fol",
+"rule": "CD_C_DS_MP_MP",
+"sample_id": 9,
+"answer": "yes"
+},
+"1441": {
+"depth": "d5",
+"logic": "fol",
+"rule": "CD_C_DS_MP_MP",
+"sample_id": 10,
+"answer": "yes"
+},
+"1442": {
+"depth": "d5",
+"logic": "fol",
+"rule": "CD_C_DS_MP_MP",
+"sample_id": 11,
+"answer": "yes"
+},
+"1443": {
+"depth": "d5",
+"logic": "fol",
+"rule": "CD_C_DS_MP_MP",
+"sample_id": 12,
+"answer": "yes"
+},
+"1444": {
+"depth": "d5",
+"logic": "fol",
+"rule": "CD_C_DS_MP_MP",
+"sample_id": 13,
+"answer": "yes"
+},
+"1445": {
+"depth": "d5",
+"logic": "fol",
+"rule": "CD_C_DS_MP_MP",
+"sample_id": 14,
+"answer": "yes"
+},
+"1446": {
+"depth": "d5",
+"logic": "fol",
+"rule": "CD_C_DS_MP_MP",
+"sample_id": 15,
+"answer": "yes"
+},
+"1447": {
+"depth": "d5",
+"logic": "fol",
+"rule": "HS_MT_DS_MP_MP",
+"sample_id": 1,
+"answer": "yes"
+},
+"1448": {
+"depth": "d5",
+"logic": "fol",
+"rule": "HS_MT_DS_MP_MP",
+"sample_id": 2,
+"answer": "yes"
+},
+"1449": {
+"depth": "d5",
+"logic": "fol",
+"rule": "HS_MT_DS_MP_MP",
+"sample_id": 3,
+"answer": "yes"
+},
+"1450": {
+"depth": "d5",
+"logic": "fol",
+"rule": "HS_MT_DS_MP_MP",
+"sample_id": 4,
+"answer": "yes"
+},
+"1451": {
+"depth": "d5",
+"logic": "fol",
+"rule": "HS_MT_DS_MP_MP",
+"sample_id": 5,
+"answer": "yes"
+},
+"1452": {
+"depth": "d5",
+"logic": "fol",
+"rule": "HS_MT_DS_MP_MP",
+"sample_id": 6,
+"answer": "yes"
+},
+"1453": {
+"depth": "d5",
+"logic": "fol",
+"rule": "HS_MT_DS_MP_MP",
+"sample_id": 7,
+"answer": "yes"
+},
+"1454": {
+"depth": "d5",
+"logic": "fol",
+"rule": "HS_MT_DS_MP_MP",
+"sample_id": 8,
+"answer": "yes"
+},
+"1455": {
+"depth": "d5",
+"logic": "fol",
+"rule": "HS_MT_DS_MP_MP",
+"sample_id": 9,
+"answer": "yes"
+},
+"1456": {
+"depth": "d5",
+"logic": "fol",
+"rule": "HS_MT_DS_MP_MP",
+"sample_id": 10,
+"answer": "yes"
+},
+"1457": {
+"depth": "d5",
+"logic": "fol",
+"rule": "HS_MT_DS_MP_MP",
+"sample_id": 11,
+"answer": "yes"
+},
+"1458": {
+"depth": "d5",
+"logic": "fol",
+"rule": "HS_MT_DS_MP_MP",
+"sample_id": 12,
+"answer": "yes"
+},
+"1459": {
+"depth": "d5",
+"logic": "fol",
+"rule": "HS_MT_DS_MP_MP",
+"sample_id": 13,
+"answer": "yes"
+},
+"1460": {
+"depth": "d5",
+"logic": "fol",
+"rule": "HS_MT_DS_MP_MP",
+"sample_id": 14,
+"answer": "yes"
+},
+"1461": {
+"depth": "d5",
+"logic": "fol",
+"rule": "HS_MT_DS_MP_MP",
+"sample_id": 15,
+"answer": "yes"
+},
+"1462": {
+"depth": "d5",
+"logic": "nm",
+"rule": "d5_1",
+"sample_id": 1,
+"answer": "yes"
+},
+"1463": {
+"depth": "d5",
+"logic": "nm",
+"rule": "d5_1",
+"sample_id": 2,
+"answer": "no"
+},
+"1464": {
+"depth": "d5",
+"logic": "nm",
+"rule": "d5_1",
+"sample_id": 3,
+"answer": "yes"
+},
+"1465": {
+"depth": "d5",
+"logic": "nm",
+"rule": "d5_1",
+"sample_id": 4,
+"answer": "no"
+},
+"1466": {
+"depth": "d5",
+"logic": "nm",
+"rule": "d5_1",
+"sample_id": 5,
+"answer": "yes"
+},
+"1467": {
+"depth": "d5",
+"logic": "nm",
+"rule": "d5_1",
+"sample_id": 6,
+"answer": "no"
+},
+"1468": {
+"depth": "d5",
+"logic": "nm",
+"rule": "d5_1",
+"sample_id": 7,
+"answer": "yes"
+},
+"1469": {
+"depth": "d5",
+"logic": "nm",
+"rule": "d5_1",
+"sample_id": 8,
+"answer": "no"
+},
+"1470": {
+"depth": "d5",
+"logic": "nm",
+"rule": "d5_1",
+"sample_id": 9,
+"answer": "yes"
+},
+"1471": {
+"depth": "d5",
+"logic": "nm",
+"rule": "d5_1",
+"sample_id": 10,
+"answer": "no"
+},
+"1472": {
+"depth": "d5",
+"logic": "nm",
+"rule": "d5_1",
+"sample_id": 11,
+"answer": "yes"
+},
+"1473": {
+"depth": "d5",
+"logic": "nm",
+"rule": "d5_1",
+"sample_id": 12,
+"answer": "no"
+},
+"1474": {
+"depth": "d5",
+"logic": "nm",
+"rule": "d5_1",
+"sample_id": 13,
+"answer": "yes"
+},
+"1475": {
+"depth": "d5",
+"logic": "nm",
+"rule": "d5_1",
+"sample_id": 14,
+"answer": "no"
+},
+"1476": {
+"depth": "d5",
+"logic": "nm",
+"rule": "d5_1",
+"sample_id": 15,
+"answer": "yes"
+},
+"1477": {
+"depth": "d5",
+"logic": "nm",
+"rule": "d5_1",
+"sample_id": 16,
+"answer": "no"
+},
+"1478": {
+"depth": "d5",
+"logic": "nm",
+"rule": "d5_1",
+"sample_id": 17,
+"answer": "yes"
+},
+"1479": {
+"depth": "d5",
+"logic": "nm",
+"rule": "d5_1",
+"sample_id": 18,
+"answer": "no"
+},
+"1480": {
+"depth": "d5",
+"logic": "nm",
+"rule": "d5_1",
+"sample_id": 19,
+"answer": "yes"
+},
+"1481": {
+"depth": "d5",
+"logic": "nm",
+"rule": "d5_1",
+"sample_id": 20,
+"answer": "no"
+},
+"1482": {
+"depth": "d5",
+"logic": "pl",
+"rule": "CD_C_DS_MP_MP",
+"sample_id": 1,
+"answer": "yes"
+},
+"1483": {
+"depth": "d5",
+"logic": "pl",
+"rule": "CD_C_DS_MP_MP",
+"sample_id": 2,
+"answer": "yes"
+},
+"1484": {
+"depth": "d5",
+"logic": "pl",
+"rule": "CD_C_DS_MP_MP",
+"sample_id": 3,
+"answer": "yes"
+},
+"1485": {
+"depth": "d5",
+"logic": "pl",
+"rule": "CD_C_DS_MP_MP",
+"sample_id": 4,
+"answer": "yes"
+},
+"1486": {
+"depth": "d5",
+"logic": "pl",
+"rule": "CD_C_DS_MP_MP",
+"sample_id": 5,
+"answer": "yes"
+},
+"1487": {
+"depth": "d5",
+"logic": "pl",
+"rule": "CD_C_DS_MP_MP",
+"sample_id": 6,
+"answer": "yes"
+},
+"1488": {
+"depth": "d5",
+"logic": "pl",
+"rule": "CD_C_DS_MP_MP",
+"sample_id": 7,
+"answer": "yes"
+},
+"1489": {
+"depth": "d5",
+"logic": "pl",
+"rule": "CD_C_DS_MP_MP",
+"sample_id": 8,
+"answer": "yes"
+},
+"1490": {
+"depth": "d5",
+"logic": "pl",
+"rule": "CD_C_DS_MP_MP",
+"sample_id": 9,
+"answer": "yes"
+},
+"1491": {
+"depth": "d5",
+"logic": "pl",
+"rule": "CD_C_DS_MP_MP",
+"sample_id": 10,
+"answer": "yes"
+},
+"1492": {
+"depth": "d5",
+"logic": "pl",
+"rule": "CD_C_DS_MP_MP",
+"sample_id": 11,
+"answer": "yes"
+},
+"1493": {
+"depth": "d5",
+"logic": "pl",
+"rule": "CD_C_DS_MP_MP",
+"sample_id": 12,
+"answer": "yes"
+},
+"1494": {
+"depth": "d5",
+"logic": "pl",
+"rule": "CD_C_DS_MP_MP",
+"sample_id": 13,
+"answer": "yes"
+},
+"1495": {
+"depth": "d5",
+"logic": "pl",
+"rule": "CD_C_DS_MP_MP",
+"sample_id": 14,
+"answer": "yes"
+},
+"1496": {
+"depth": "d5",
+"logic": "pl",
+"rule": "CD_C_DS_MP_MP",
+"sample_id": 15,
+"answer": "yes"
+},
+"1497": {
+"depth": "d5",
+"logic": "pl",
+"rule": "HS_MT_DS_MP_MP",
+"sample_id": 1,
+"answer": "yes"
+},
+"1498": {
+"depth": "d5",
+"logic": "pl",
+"rule": "HS_MT_DS_MP_MP",
+"sample_id": 2,
+"answer": "yes"
+},
+"1499": {
+"depth": "d5",
+"logic": "pl",
+"rule": "HS_MT_DS_MP_MP",
+"sample_id": 3,
+"answer": "yes"
+},
+"1500": {
+"depth": "d5",
+"logic": "pl",
+"rule": "HS_MT_DS_MP_MP",
+"sample_id": 4,
+"answer": "yes"
+},
+"1501": {
+"depth": "d5",
+"logic": "pl",
+"rule": "HS_MT_DS_MP_MP",
+"sample_id": 5,
+"answer": "yes"
+},
+"1502": {
+"depth": "d5",
+"logic": "pl",
+"rule": "HS_MT_DS_MP_MP",
+"sample_id": 6,
+"answer": "yes"
+},
+"1503": {
+"depth": "d5",
+"logic": "pl",
+"rule": "HS_MT_DS_MP_MP",
+"sample_id": 7,
+"answer": "yes"
+},
+"1504": {
+"depth": "d5",
+"logic": "pl",
+"rule": "HS_MT_DS_MP_MP",
+"sample_id": 8,
+"answer": "yes"
+},
+"1505": {
+"depth": "d5",
+"logic": "pl",
+"rule": "HS_MT_DS_MP_MP",
+"sample_id": 9,
+"answer": "yes"
+},
+"1506": {
+"depth": "d5",
+"logic": "pl",
+"rule": "HS_MT_DS_MP_MP",
+"sample_id": 10,
+"answer": "yes"
+},
+"1507": {
+"depth": "d5",
+"logic": "pl",
+"rule": "HS_MT_DS_MP_MP",
+"sample_id": 11,
+"answer": "yes"
+},
+"1508": {
+"depth": "d5",
+"logic": "pl",
+"rule": "HS_MT_DS_MP_MP",
+"sample_id": 12,
+"answer": "yes"
+},
+"1509": {
+"depth": "d5",
+"logic": "pl",
+"rule": "HS_MT_DS_MP_MP",
+"sample_id": 13,
+"answer": "yes"
+},
+"1510": {
+"depth": "d5",
+"logic": "pl",
+"rule": "HS_MT_DS_MP_MP",
+"sample_id": 14,
+"answer": "yes"
+},
+"1511": {
+"depth": "d5",
+"logic": "pl",
+"rule": "HS_MT_DS_MP_MP",
+"sample_id": 15,
+"answer": "yes"
+},
+"1512": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "1",
+"sample_id": 1,
+"answer": "yes"
+},
+"1513": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "1",
+"sample_id": 2,
+"answer": "yes"
+},
+"1514": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "1",
+"sample_id": 3,
+"answer": "yes"
+},
+"1515": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "1",
+"sample_id": 4,
+"answer": "yes"
+},
+"1516": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "1",
+"sample_id": 5,
+"answer": "yes"
+},
+"1517": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "1",
+"sample_id": 6,
+"answer": "yes"
+},
+"1518": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "1",
+"sample_id": 7,
+"answer": "yes"
+},
+"1519": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "1",
+"sample_id": 8,
+"answer": "yes"
+},
+"1520": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "1",
+"sample_id": 9,
+"answer": "yes"
+},
+"1521": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "1",
+"sample_id": 10,
+"answer": "yes"
+},
+"1522": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "1",
+"sample_id": 11,
+"answer": "yes"
+},
+"1523": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "1",
+"sample_id": 12,
+"answer": "yes"
+},
+"1524": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "1",
+"sample_id": 13,
+"answer": "yes"
+},
+"1525": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "1",
+"sample_id": 14,
+"answer": "yes"
+},
+"1526": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "1",
+"sample_id": 15,
+"answer": "yes"
+},
+"1527": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "1",
+"sample_id": 16,
+"answer": "yes"
+},
+"1528": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "1",
+"sample_id": 17,
+"answer": "yes"
+},
+"1529": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "1",
+"sample_id": 18,
+"answer": "yes"
+},
+"1530": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "1",
+"sample_id": 19,
+"answer": "yes"
+},
+"1531": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "1",
+"sample_id": 20,
+"answer": "yes"
+},
+"1532": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "2",
+"sample_id": 1,
+"answer": "no"
+},
+"1533": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "2",
+"sample_id": 2,
+"answer": "no"
+},
+"1534": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "2",
+"sample_id": 3,
+"answer": "no"
+},
+"1535": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "2",
+"sample_id": 4,
+"answer": "no"
+},
+"1536": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "2",
+"sample_id": 5,
+"answer": "no"
+},
+"1537": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "2",
+"sample_id": 6,
+"answer": "no"
+},
+"1538": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "2",
+"sample_id": 7,
+"answer": "no"
+},
+"1539": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "2",
+"sample_id": 8,
+"answer": "no"
+},
+"1540": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "2",
+"sample_id": 9,
+"answer": "no"
+},
+"1541": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "2",
+"sample_id": 10,
+"answer": "no"
+},
+"1542": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "2",
+"sample_id": 11,
+"answer": "no"
+},
+"1543": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "2",
+"sample_id": 12,
+"answer": "no"
+},
+"1544": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "2",
+"sample_id": 13,
+"answer": "no"
+},
+"1545": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "2",
+"sample_id": 14,
+"answer": "no"
+},
+"1546": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "2",
+"sample_id": 15,
+"answer": "no"
+},
+"1547": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "2",
+"sample_id": 16,
+"answer": "no"
+},
+"1548": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "2",
+"sample_id": 17,
+"answer": "no"
+},
+"1549": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "2",
+"sample_id": 18,
+"answer": "no"
+},
+"1550": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "2",
+"sample_id": 19,
+"answer": "no"
+},
+"1551": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "2",
+"sample_id": 20,
+"answer": "no"
+},
+"1552": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "3",
+"sample_id": 1,
+"answer": "yes"
+},
+"1553": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "3",
+"sample_id": 2,
+"answer": "yes"
+},
+"1554": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "3",
+"sample_id": 3,
+"answer": "yes"
+},
+"1555": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "3",
+"sample_id": 4,
+"answer": "yes"
+},
+"1556": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "3",
+"sample_id": 5,
+"answer": "yes"
+},
+"1557": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "3",
+"sample_id": 6,
+"answer": "yes"
+},
+"1558": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "3",
+"sample_id": 7,
+"answer": "yes"
+},
+"1559": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "3",
+"sample_id": 8,
+"answer": "yes"
+},
+"1560": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "3",
+"sample_id": 9,
+"answer": "yes"
+},
+"1561": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "3",
+"sample_id": 10,
+"answer": "yes"
+},
+"1562": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "3",
+"sample_id": 11,
+"answer": "yes"
+},
+"1563": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "3",
+"sample_id": 12,
+"answer": "yes"
+},
+"1564": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "3",
+"sample_id": 13,
+"answer": "yes"
+},
+"1565": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "3",
+"sample_id": 14,
+"answer": "yes"
+},
+"1566": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "3",
+"sample_id": 15,
+"answer": "yes"
+},
+"1567": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "3",
+"sample_id": 16,
+"answer": "yes"
+},
+"1568": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "3",
+"sample_id": 17,
+"answer": "yes"
+},
+"1569": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "3",
+"sample_id": 18,
+"answer": "yes"
+},
+"1570": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "3",
+"sample_id": 19,
+"answer": "yes"
+},
+"1571": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "3",
+"sample_id": 20,
+"answer": "yes"
+},
+"1572": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "4",
+"sample_id": 1,
+"answer": "yes"
+},
+"1573": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "4",
+"sample_id": 2,
+"answer": "yes"
+},
+"1574": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "4",
+"sample_id": 3,
+"answer": "yes"
+},
+"1575": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "4",
+"sample_id": 4,
+"answer": "yes"
+},
+"1576": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "4",
+"sample_id": 5,
+"answer": "yes"
+},
+"1577": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "4",
+"sample_id": 6,
+"answer": "yes"
+},
+"1578": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "4",
+"sample_id": 7,
+"answer": "yes"
+},
+"1579": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "4",
+"sample_id": 8,
+"answer": "yes"
+},
+"1580": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "4",
+"sample_id": 9,
+"answer": "yes"
+},
+"1581": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "4",
+"sample_id": 10,
+"answer": "yes"
+},
+"1582": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "4",
+"sample_id": 11,
+"answer": "yes"
+},
+"1583": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "4",
+"sample_id": 12,
+"answer": "yes"
+},
+"1584": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "4",
+"sample_id": 13,
+"answer": "yes"
+},
+"1585": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "4",
+"sample_id": 14,
+"answer": "yes"
+},
+"1586": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "4",
+"sample_id": 15,
+"answer": "yes"
+},
+"1587": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "4",
+"sample_id": 16,
+"answer": "yes"
+},
+"1588": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "4",
+"sample_id": 17,
+"answer": "yes"
+},
+"1589": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "4",
+"sample_id": 18,
+"answer": "yes"
+},
+"1590": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "4",
+"sample_id": 19,
+"answer": "yes"
+},
+"1591": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "4",
+"sample_id": 20,
+"answer": "yes"
+},
+"1592": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "5",
+"sample_id": 1,
+"answer": "yes"
+},
+"1593": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "5",
+"sample_id": 2,
+"answer": "yes"
+},
+"1594": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "5",
+"sample_id": 3,
+"answer": "yes"
+},
+"1595": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "5",
+"sample_id": 4,
+"answer": "yes"
+},
+"1596": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "5",
+"sample_id": 5,
+"answer": "yes"
+},
+"1597": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "5",
+"sample_id": 6,
+"answer": "yes"
+},
+"1598": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "5",
+"sample_id": 7,
+"answer": "yes"
+},
+"1599": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "5",
+"sample_id": 8,
+"answer": "yes"
+},
+"1600": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "5",
+"sample_id": 9,
+"answer": "yes"
+},
+"1601": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "5",
+"sample_id": 10,
+"answer": "yes"
+},
+"1602": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "5",
+"sample_id": 11,
+"answer": "yes"
+},
+"1603": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "5",
+"sample_id": 12,
+"answer": "yes"
+},
+"1604": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "5",
+"sample_id": 13,
+"answer": "yes"
+},
+"1605": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "5",
+"sample_id": 14,
+"answer": "yes"
+},
+"1606": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "5",
+"sample_id": 15,
+"answer": "yes"
+},
+"1607": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "5",
+"sample_id": 16,
+"answer": "yes"
+},
+"1608": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "5",
+"sample_id": 17,
+"answer": "yes"
+},
+"1609": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "5",
+"sample_id": 18,
+"answer": "yes"
+},
+"1610": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "5",
+"sample_id": 19,
+"answer": "yes"
+},
+"1611": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "5",
+"sample_id": 20,
+"answer": "yes"
+},
+"1612": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "6",
+"sample_id": 1,
+"answer": "yes"
+},
+"1613": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "6",
+"sample_id": 2,
+"answer": "yes"
+},
+"1614": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "6",
+"sample_id": 3,
+"answer": "yes"
+},
+"1615": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "6",
+"sample_id": 4,
+"answer": "yes"
+},
+"1616": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "6",
+"sample_id": 5,
+"answer": "yes"
+},
+"1617": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "6",
+"sample_id": 6,
+"answer": "yes"
+},
+"1618": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "6",
+"sample_id": 7,
+"answer": "yes"
+},
+"1619": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "6",
+"sample_id": 8,
+"answer": "yes"
+},
+"1620": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "6",
+"sample_id": 9,
+"answer": "yes"
+},
+"1621": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "6",
+"sample_id": 10,
+"answer": "yes"
+},
+"1622": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "6",
+"sample_id": 11,
+"answer": "yes"
+},
+"1623": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "6",
+"sample_id": 12,
+"answer": "yes"
+},
+"1624": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "6",
+"sample_id": 13,
+"answer": "yes"
+},
+"1625": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "6",
+"sample_id": 14,
+"answer": "yes"
+},
+"1626": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "6",
+"sample_id": 15,
+"answer": "yes"
+},
+"1627": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "6",
+"sample_id": 16,
+"answer": "yes"
+},
+"1628": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "6",
+"sample_id": 17,
+"answer": "yes"
+},
+"1629": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "6",
+"sample_id": 18,
+"answer": "yes"
+},
+"1630": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "6",
+"sample_id": 19,
+"answer": "yes"
+},
+"1631": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "6",
+"sample_id": 20,
+"answer": "yes"
+},
+"1632": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "7",
+"sample_id": 1,
+"answer": "yes"
+},
+"1633": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "7",
+"sample_id": 2,
+"answer": "yes"
+},
+"1634": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "7",
+"sample_id": 3,
+"answer": "yes"
+},
+"1635": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "7",
+"sample_id": 4,
+"answer": "yes"
+},
+"1636": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "7",
+"sample_id": 5,
+"answer": "yes"
+},
+"1637": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "7",
+"sample_id": 6,
+"answer": "yes"
+},
+"1638": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "7",
+"sample_id": 7,
+"answer": "yes"
+},
+"1639": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "7",
+"sample_id": 8,
+"answer": "yes"
+},
+"1640": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "7",
+"sample_id": 9,
+"answer": "yes"
+},
+"1641": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "7",
+"sample_id": 10,
+"answer": "yes"
+},
+"1642": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "7",
+"sample_id": 11,
+"answer": "yes"
+},
+"1643": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "7",
+"sample_id": 12,
+"answer": "yes"
+},
+"1644": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "7",
+"sample_id": 13,
+"answer": "yes"
+},
+"1645": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "7",
+"sample_id": 14,
+"answer": "yes"
+},
+"1646": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "7",
+"sample_id": 15,
+"answer": "yes"
+},
+"1647": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "7",
+"sample_id": 16,
+"answer": "yes"
+},
+"1648": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "7",
+"sample_id": 17,
+"answer": "yes"
+},
+"1649": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "7",
+"sample_id": 18,
+"answer": "yes"
+},
+"1650": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "7",
+"sample_id": 19,
+"answer": "yes"
+},
+"1651": {
+"depth": "-",
+"logic": "multivar_fol",
+"rule": "7",
+"sample_id": 20,
+"answer": "yes"
+}
+}

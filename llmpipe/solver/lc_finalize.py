@@ -167,15 +167,23 @@ def finalize_strict_clauses(result):
       # Treat a list of literals (or a single top-level "or") as a clause.
       if isinstance(body[0], list) or body[0] == "or":
         lits = _flatten_ors(body if isinstance(body[0], list) else [body])
-        # 0b: drop $block/typical meta literals.  Track whether a POSITIVE meta
-        # literal was present: a defeasible-generic rule like "Dogs bark" folds
-        # (davidson) to a clause [-isa(dog,X), typical(handle), $block] whose only
-        # positive content is the typicality marker.  Stripping it leaves the
-        # headless all-negative [-isa(dog,X)] = the unsound "nothing is a dog"
-        # unit (the bark event itself is asserted by its own clause).  Drop such
-        # a headless clause instead of emitting the spurious antecedent-negation.
-        had_pos_meta = any(_is_meta_lit(l) and isinstance(l[0], str)
-                           and not l[0].startswith("-") for l in lits)
+        # 0b: drop $block/typical meta literals.  Track whether a POSITIVE
+        # `typical` literal was present: a defeasible-generic rule like "Dogs
+        # bark" folds (davidson) to a clause [-isa(dog,X), typical(handle),
+        # $block] whose only positive content is the typicality marker.
+        # Stripping it leaves the headless all-negative [-isa(dog,X)] = the
+        # unsound "nothing is a dog" unit (the bark event itself is asserted by
+        # its own clause).  Drop such a headless clause instead of emitting the
+        # spurious antecedent-negation.
+        # Key on `typical`, NOT on $block: $block is the defeasibility anchor of
+        # EVERY defeasible rule, so a sound rule whose consequent is a negated
+        # literal ("all bees do not reproduce" -> [-isa(bee,X),
+        # -has_property(reproduce,X), $block]) is all-negative after the meta
+        # strip yet must survive -- the negative literal IS the consequent, not
+        # a headless antecedent.  Using $block as the signal wrongly deleted the
+        # whole normally(not(exists ...)) rule family (FOLIO G1).
+        had_pos_typical = any(isinstance(l, list) and l and l[0] == "typical"
+                              for l in lits)
         lits = [l for l in lits if not _is_meta_lit(l)]   # 0b: drop $block/typical
         # Reflexive equality left by substitution: =(X,X) is always true (the
         # clause is a tautology -> drop it); -=(X,X) is always false (drop the
@@ -188,8 +196,8 @@ def finalize_strict_clauses(result):
                         and l[0] == "-=" and l[1] == l[2])]
         if not lits:                                       # clause emptied -> drop
           continue
-        if had_pos_meta and all(isinstance(l, list) and l and isinstance(l[0], str)
-                                and l[0].startswith("-") for l in lits):
+        if had_pos_typical and all(isinstance(l, list) and l and isinstance(l[0], str)
+                                   and l[0].startswith("-") for l in lits):
           continue                  # headless defeasibility-marker clause -> drop
         # Drop the whole clause if it is a tautology (L and -L both present).
         if any(_complementary(lits[i], lits[j])

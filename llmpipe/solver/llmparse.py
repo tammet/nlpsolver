@@ -29,6 +29,7 @@ from llmcall import call_llm
 import pretty
 from stage_sanity import (
   check_stage1 as _check_stage1,
+  check_dropped_question_negation as _check_dropped_question_negation,
   check_stage2 as _check_stage2,
   check_stage2_id_coverage as _check_id_coverage,
   format_retry_suffix as _format_retry_suffix,
@@ -80,6 +81,14 @@ _combined_loaded_key = None
 # property / relation is always worded identically.  Set True (by solve.py's
 # -prenorm flag) to enable.  Cached like any other LLM call.
 prenorm_enabled = False
+
+# (negretry) Prenorm-negation-fallback: prenorm can strip a sentential negation
+# from the conclusion question ("X is not a Y?" -> "Is X a Y?"), flipping the
+# answer.  When the produced query unit dropped a negation present in the
+# ORIGINAL question, re-parse from the original (pre-prenorm) text.  Set True by
+# solve.py's -negretry flag (folded into -abstract-max).  Only meaningful when
+# prenorm actually changed the text.
+negretry_enabled = False
 
 # (entity canon) Aggressive entity-name canonicalization over the Stage-1 output.
 canon_entities_enabled = False
@@ -631,6 +640,28 @@ def parse_text(text, llm=None, version=None, tokens=None, think=None):
   s1_json, s2_json = _stage1_then_stage2(text)
   if s1_json is None:
     return (None, None, stats)
+
+  # (negretry) Prenorm-negation-fallback: prenorm rewrites "X is not a Y?" into
+  # the positive "Is X a Y?", so Stage-1 parses a positive question and the
+  # answer flips (cases 80/127/189/200).  If the query unit dropped a negation
+  # present in the ORIGINAL question, re-parse from the original (pre-prenorm)
+  # text -- Stage-1 preserves the negation when it actually sees the "not".
+  # Only when prenorm changed the text (text != orig_text); re-parsing the same
+  # text would just reproduce the drop.
+  if negretry_enabled and text != orig_text and s1_json is not None:
+    negissues = _check_dropped_question_negation(s1_json, orig_text)
+    if negissues:
+      stats["negretry"] = [it.location for it in negissues]
+      _debug_write("NEGRETRY: prenorm dropped a question negation; "
+                   "re-parsing from original text")
+      ns1, ns2 = _stage1_then_stage2(orig_text)
+      # Keep the re-parse iff it actually preserved the negation.
+      if ns1 is not None and not _check_dropped_question_negation(ns1, orig_text):
+        s1_json, s2_json = ns1, ns2
+        stats["negretry_applied"] = True
+        _debug_write("NEGRETRY: applied (negation preserved)")
+      else:
+        _debug_write("NEGRETRY: re-parse did not preserve negation; kept original")
 
   # (entity canon, once) Unsatisfiable-guard cross-stage retry: a rule antecedent
   # names a class/property/relation that nothing states or derives (a likely

@@ -32,16 +32,22 @@ explanation after the answer.  The explanation has three sections:
 3. **Proof steps** — the logical derivation in English, optionally with
    formal logic notation underneath each step
 
-The rendering pipeline is split across three modules:
+The rendering code is split across these modules (`proof_render.py`
+re-exports their public API; see DOCUMENTATION.md §5.9 for the full
+per-module reference):
 
 | Module | Responsibility |
 |--------|---------------|
+| `proof_render.py` | Re-exports the public API of the modules below |
 | `proof_utils.py` | Entity naming; Skolem resolution; render context state |
-| `proof_english.py` | Atom/clause → English; table-driven predicate dispatch |
+| `proof_english.py` | Atom/clause → English; per-predicate rendering table |
+| `proof_terms.py` | Term rendering (`$count`/`$setof`/`$theof1`/`$measure`, arithmetic) |
 | `proof_logic.py` | Traditional/JSON logic syntax rendering |
 | `proof_explain.py` | Proof structure: step numbering, sentence map, explanation assembly |
 | `entity_map.py` | Display names for entities from Stage-1 metadata |
-| `procproofs.py` | Answer extraction, formatting, confidence display |
+| `procproofs.py` | Entry point for post-processing prover output |
+| `proof_answer_select.py` | Answer filtering and tier selection |
+| `proof_answer_format.py` | Answer formatting and confidence display |
 
 ---
 
@@ -71,11 +77,11 @@ Skolem constants and functions are rendered with their type (e.g., "the house" i
 
 1. **Name suffix** (typed constants only): `skolem_type_from_name("sk0_house")` → `"house"`.  Fast path, always available for constants generated from existentials with `isa` in the body.
 2. **Clause list scan**: `compute_skolem_types(proof, logic=logic)` scans all `@logic` clauses (not just proof steps) for `isa(TYPE, skolem)` atoms.  This catches types that appear in the clause list but are not used in the proof itself (e.g., `isa("house", ["sk0","?:X"])` in a rule clause).
-3. **Proof step scan**: Same function also scans proof steps.  This is the original fallback for old-format names (`sk0` without suffix) and for types derived during the proof.
+3. **Proof step scan**: Same function also scans proof steps.  This covers names without a type suffix (`sk0`) and types derived during the proof.
 
 For Skolem functions, `_skolem_fn_to_name` renders event Skolems using verb/actor/target from the proof (e.g., "the eating by Greg of Mike"), and object Skolems using the type lookup (e.g., "a house" or "the house of X").  Falls back to "the event" when no type is found.
 
-In answer formatting for where/when queries, `_resolve_skolem_entity` in `procproofs.py` uses the same resolution chain to render Skolem answer entities (e.g., `$ans("in", "sk0_house")` → "In the house.").
+In answer formatting for where/when queries, `_resolve_skolem_entity` in `proof_answer_format.py` uses the same resolution chain to render Skolem answer entities (e.g., `$ans("in", "sk0_house")` → "In the house.").
 
 ### 2.3 Proof Mode
 
@@ -95,7 +101,7 @@ When `-json` is set, `entity_name()` returns raw logic IDs
 
 ## 3. Atom-to-English Translation
 
-Atoms are rendered by `_render_atom()` using the table-driven `_PRED_TABLE`.
+Atoms are rendered by `_render_atom()` using the `_PRED_TABLE` lookup table.
 Each predicate maps to `(min_args, pos_renderer, neg_renderer)`.
 
 ### 3.1 Predicate Table

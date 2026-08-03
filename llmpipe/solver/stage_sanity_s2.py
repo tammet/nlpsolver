@@ -4,6 +4,7 @@
 # Licensed under the Apache License, Version 2.0.
 #----------------------------------------------------------------
 
+import json
 import re
 from stage_sanity_core import Issue, safe_json
 
@@ -1710,6 +1711,111 @@ def _check_stage2_constant_vs_class(logic, s1_json):
 
 
 
+# ======== dropped predicate-nominal type (-nominalretry, experimental) ========
+#
+# Stage 1 may state a copular predication "ENT is a NOUN [of Y]" (e.g.
+# "Rock 2 is a pet of Peter 1"), but Stage 2 sometimes encodes only the entity
+# CATEGORY plus a relation (isa(animal,Rock) + have(Peter,Rock)) and drops the
+# predicate nominal, never asserting isa(pet,Rock).  When that NOUN is used
+# elsewhere in the logic (e.g. as a rule guard) but is missing on ENT, the type
+# is load-bearing and its omission silently kills the derivation (case 126).
+# This is detection only -> a corrective Stage-2 RETRY (not a clause-level patch,
+# which can't tell the intended type from co-occurring guards).  Gated on
+# -nominalretry so the default pipeline and existing cached runs are unchanged.
+
+_S1_NOMINAL_RE = re.compile(r"\bis an?\s+([a-z][a-z]+)\b")
+_NOMINAL_STOP = (" not ", "n't", "cannot", " can ", " could ", " may ", " might ",
+                 " must ", " should ", " or ", " neither ", " no ", " every ",
+                 " all ", " any ", " some ", " if ")
+_S1_FACT_TYPES = ("situation", "real")
+# noun phrase after "is a/an", stopping at a postmodifier / clause boundary so
+# "a pet of Peter 1" -> "pet" and "a text sequence." -> "text sequence".
+_COPULA_NOUN_RE = re.compile(
+    r"\bis an?\s+([a-z][a-z ]*?)(?:\s+of\b|\s+that\b|\s+which\b|\s+with\b|[,.?!]|$)")
+
+def _extract_s1_copular_nominals(s1_json):
+  """(entity_id, noun) pairs for affirmative copular predications "ENT [of ...] is
+  a NOUN" in concrete Stage-1 fact units (situation/real).  Handles a subject with
+  an "of ..."/"'s ..." postmodifier (the definite-description case, e.g. "The output
+  2 of MT is a text sequence" -> output 2 / text sequence) and multi-word nouns.
+  Conservative: skips negated / modal / disjunctive / quantified sentences and
+  non-concrete subjects."""
+  out = []
+  if not isinstance(s1_json, list):
+    return out
+  for pkg in s1_json:
+    if not isinstance(pkg, dict):
+      continue
+    for asu in pkg.get("units", []) or []:
+      if not isinstance(asu, dict) or asu.get("type") not in _S1_FACT_TYPES:
+        continue
+      text = asu.get("text")
+      if not isinstance(text, str):
+        continue
+      low = " " + text.lower() + " "
+      if any(w in low for w in _NOMINAL_STOP):
+        continue
+      m = _COPULA_NOUN_RE.search(text)
+      if not m:
+        continue
+      noun = m.group(1).strip()
+      if not noun:
+        continue
+      # subject = the first concrete entity id occurring before the copula
+      subj = None
+      subj_pos = None
+      for ent in asu.get("entities", []) or []:
+        if not (isinstance(ent, dict) and ent.get("type") == "concrete"):
+          continue
+        eid = ent.get("id")
+        if not isinstance(eid, str) or not eid:
+          continue
+        p = text.find(eid)
+        if 0 <= p < m.start() and (subj_pos is None or p < subj_pos):
+          subj, subj_pos = eid, p
+      if subj and subj != noun:
+        out.append((subj, noun))
+  return out
+
+def _check_stage2_dropped_predicate_nominal(logic, s1_json):
+  """Detect a Stage-1 'ENT is a NOUN' predication whose NOUN is used elsewhere
+  in Stage-2 but never asserted of ENT (no isa/has property(NOUN,ENT)).  Gated
+  on the -nominalretry flag; emits an Issue that drives the Stage-2 retry."""
+  import globals as _g
+  if not _g.options.get("nominalretry_flag"):
+    return []
+  if not isinstance(logic, list) or not isinstance(s1_json, list):
+    return []
+  preds = _extract_s1_copular_nominals(s1_json)
+  if not preds:
+    return []
+  s2str = safe_json(logic)
+  issues = []
+  seen = set()
+  for ent, noun in preds:
+    if (ent, noun) in seen:
+      continue
+    seen.add((ent, noun))
+    # already typed on ENT (isa or has property)?
+    if re.search(r'"(isa|has property)",\s*"' + re.escape(noun)
+                 + r'",\s*"' + re.escape(ent) + r'"', s2str):
+      continue
+    # NOUN must be known to Stage-2 (used elsewhere) -> dropping it here is an inconsistency
+    if ('"' + noun + '"') not in s2str:
+      continue
+    issues.append(Issue(
+      kind="dropped_predicate_nominal",
+      location="S1:" + ent,
+      description=("Stage-1 states '" + ent + " is a " + noun + "', and '" + noun
+                   + "' appears elsewhere in your logic, but this entity is not "
+                   "asserted to be a '" + noun + "'. Add isa('" + noun + "', '"
+                   + ent + "') so '" + ent + "' carries the type the sentence gives "
+                   "it (in addition to any relation such as have/of)."),
+      evidence=safe_json([ent, noun]),
+    ))
+  return issues
+
+
 def check_stage2(logic, s1_json=None):
   """Run all registered Stage-2 sanity checks and return the combined
   issue list.  s1_json provides ASU context for checks that need it
@@ -1732,6 +1838,7 @@ def check_stage2(logic, s1_json=None):
   issues.extend(_check_stage2_either_or_not_xor(logic, s1_json))
   issues.extend(_check_stage2_entity_id_typos(logic))
   issues.extend(_check_stage2_possessive_without_ownership(logic, s1_json))
+  issues.extend(_check_stage2_dropped_predicate_nominal(logic, s1_json))
   return issues
 
 

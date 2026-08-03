@@ -1,389 +1,257 @@
-Strategy File Reference
-=======================
+# Strategy Reference
+
+A strategy controls proof search: clause selection, inference restrictions,
+resource limits, and answer limits. It does not change the input logic.
 
-Strategy files are JSON files that control GK's proof search algorithm.
-Pass them with `-strategy <filename>` or `-strategytext '<json>'`.
+## Automatic strategy
 
-Example:
+When neither `-strategy` nor `-strategytext` is given, GK constructs a strategy
+sequence from the parsed problem. Each strategy has an initial time in which to
+find a proof. A strategy that finds none is stopped at that limit. The first
+successful strategy receives the remaining search time and is then used for
+the query's blocker checks and searches for explicit negation.
 
-    {
-      "max_seconds": 10,
-      "strategy": ["query_focus", "negative_pref"],
-      "query_preference": 1,
-      "max_answers": 5
-    }
+The first strategy depends on the problem size: negative-clause preference for
+small problems and query-focused selection for large ones. Alternatives use
+the other selection method, unit restriction, query focus with SINE filtering
+for larger axiom sets, and hardness preference. By default the first strategy
+gets half of the search budget before it is abandoned without a proof; the
+alternatives share the rest. With `-explore`, or automatically when `-seconds`
+exceeds 30, every strategy gets the same short initial limit.
 
+Use an explicit strategy when the search configuration must remain fixed.
 
-Timeout Parameters
-------------------
+`-parallel <n>` uses `n` total processes (1 to 8, Unix) for automatic
+selection. The default is 1, with no parallel search. If several strategies
+succeed, GK uses the first one in the order above. Explicit strategies disable
+parallel search.
 
-    max_seconds (integer)
-        Maximum runtime for this strategy run in seconds.
+```sh
+gk Examples/exceptions/penguin.gkp
+```
 
-    total_seconds (integer)
-        Total cumulative timeout across all runs.
+## Multi-run strategies
 
-    max_dseconds (integer)
-        Maximum runtime in deciseconds (tenths of seconds).
-        When < 20, triggers strong unit cutoff optimization.
+A strategy object may contain a `runs` array. Each element is a complete or
+partial strategy. GK tries the runs in order and stops when a run answers the
+query. Top-level values act as defaults for the individual runs.
 
+```json
+{
+  "total_seconds": 20,
+  "runs": [
+    {"max_seconds": 1, "strategy": ["unit"],
+     "query_preference": 0},
+    {"max_seconds": 4, "strategy": ["negative_pref"],
+     "query_preference": 1},
+    {"max_seconds": 15, "strategy": ["query_focus"],
+     "query_preference": 1, "sine": 1}
+  ]
+}
+```
 
-Answer Limits
--------------
+```sh
+gk Examples/exceptions/penguin.gkp \
+  -strategy Examples/strategy/runs.json
+```
 
-    max_answers (integer, default: unlimited)
-        Stop after finding this many answers.
+Short restricted searches belong first; broader searches belong later. A
+restricted run such as unit resolution is incomplete, so failure in one run
+does not imply that the problem has no proof.
 
+## Single-run strategies
 
-Strategy Selection
-------------------
+A single-run file is one JSON object:
 
-    strategy (string or array of strings)
-        Selects the resolution/derivation strategy. Can be a single
-        strategy name or an array combining multiple strategies.
+```json
+{
+  "max_seconds": 10,
+  "strategy": ["query_focus"],
+  "query_preference": 1,
+  "max_distinct_answers": 10
+}
+```
 
-Available strategy names:
+Pass the file with `-strategy`:
 
-    negative_pref
-        Prefer negative clauses in resolution. Good general-purpose
-        strategy, used as default.
+```sh
+gk Examples/exceptions/penguin.gkp \
+  -strategy Examples/strategy/query_focus.json
+```
 
-    positive_pref
-        Prefer positive clauses in resolution.
+The same object can be supplied inline:
 
-    query_focus
-        Focus search on goal/query clauses. Good for query answering.
+```sh
+gk Examples/exceptions/penguin.gkp \
+  -strategytext '{"strategy":["query_focus"],"query_preference":1}'
+```
 
-    hyper
-        Use hyperresolution (resolve multiple literals at once).
+Strategy files contain configuration only; running one as a logic problem
+produces a missing-question error.
 
-    unit
-        Restrict to unit resolution (only resolve with single-literal
-        clauses). Fast but incomplete.
+## Time limits
 
-    pure_unit
-        Strict unit resolution without paramodulation on longer clauses.
+### `max_seconds`
 
-    double
-        Allow resolution arguments up to length 2.
+Maximum time for one run, in seconds. The command-line `-seconds` value is used
+by the automatic strategy.
 
-    triple
-        Allow resolution arguments up to length 3.
+### `total_seconds`
 
-    hardness_pref
-        Prefer clauses with lower computational hardness.
+Maximum cumulative time across all runs.
 
-    knuthbendix_pref
-        Use Knuth-Bendix term ordering preference. Useful for
-        equational reasoning.
+### `giveup_dseconds`
 
-    prohibit_nested_para
-        Prevent nested paramodulation steps.
+No-proof give-up limit for one run, in tenths of a second. The run ends at
+this limit only while it has proved nothing; once any proof is found, the run
+continues under the ordinary limits, collecting further proofs and answers.
+The automatic strategy sequence uses this key. It can also be used in
+hand-written multi-run strategies.
 
-    posunitpara
-        Restrict paramodulation to positive unit clauses.
+## Answer and proof limits
 
-    max_ground_weight
-        Use maximum ground weight ordering.
+### `max_answers`
 
-Combining strategies:
+Maximum number of stored proofs in total. Several proofs of one answer each
+count. The automatic strategy commonly sets this to 10.
 
-    "strategy": ["query_focus", "positive_pref"]
+### `max_total_proofs`
 
+Synonym for `max_answers`.
 
-Clause Selection and Queue Control
-------------------------------------
+### `max_distinct_answers`
 
-    query_preference (integer, 0-4)
-        Controls how clauses are partitioned into selection queues:
+Stop after this many distinct answer substitutions have been found. This
+corresponds to command-line `-maxanswers`.
 
-        0  Single queue for all clauses
-        1  Exactly as marked by roles (goal/assumption/axiom)
-        2  Non-included axioms become assumptions; positive goals
-           become assumptions
-        3  Only fully negative goal clauses stay as goals; rest
-           become axioms
-        4  All clauses treated as axioms regardless of role
-
-    given_queue_ratio (integer, 1+)
-        Ratio for selecting from different clause queues.
-        Alias: weight_select_ratio.
-
-    reverse_clauselist (integer, 0 or 1)
-        Reverse initial clause list without sorting (for non-query
-        problems).
-
-
-Clause Roles and Strategy
--------------------------
-
-Each input clause carries a role assigned via the `@role` key (or
-inferred from `@question`). The role influences the proof search
-only through queue placement in the given-clause loop:
-
-  * **Goal roles** (`conjecture`, `negated_conjecture`, `question`)
-    → GOAL queue
-  * **Assumption roles** (`assumption`, `hypothesis`)
-    → ASSUMPTIONS queue
-  * **Axiom roles** (`axiom`, `extaxiom`)
-    → AXIOMS queue
-  * **Derived clauses** with mixed parents → a mixed queue matching
-    the highest-priority parent class.
-
-Whether these queues are actually kept separate depends on
-`query_preference`:
-
-    0   All clauses share one queue; role is only a label.
-    1   Queues are kept separate exactly as marked by roles.
-    2   Positive goal units are demoted to assumptions;
-        non-included axioms are promoted to assumptions.
-    3   Only fully negative goal clauses stay as goals; assumptions
-        are demoted to axioms.
-    4   Every clause is forced to axiom; role is ignored entirely.
-
-The named strategy `query_focus` is the one that actually exploits
-role-based queue separation — it prefers GOAL-queue clauses during
-given-clause selection. `negative_pref`, `positive_pref`, and
-`hardness_pref` use orthogonal preferences and do not key off role
-directly.
+### `max_proofs`
 
+Retain at most this many proofs per distinct answer. This corresponds to
+command-line `-maxproofs` and does not stop search by itself.
 
-Role Semantics (Bottom Line)
-----------------------------
+## Selection methods
 
-A short summary of how `@role` and `@question` interact at parse
-time (the full discussion is in `Doc/json_ld_logic.md`):
+The `strategy` value is a string or an array of strings. Array entries enable
+several compatible preferences.
 
-  * `@question` and `@role` are **mutually exclusive** in the same
-    object — this is enforced by the parser, not a convention.
-  * `@question` is macro-expanded to `@role: "question"` plus
-    `@logic: <formula>`.
-  * `@role: "question"` is internally rewritten to
-    `negated_conjecture`: the formula is negated automatically, and
-    free variables are wrapped in `$ans(...)` for answer collection.
-  * `conjecture` and `negated_conjecture` share one internal role
-    number; they differ only in whether the parser negates the
-    formula (`conjecture` is negated, `negated_conjecture` is taken
-    as-is).
-  * `hypothesis` and `assumption` are indistinguishable internally.
-  * Role affects search **only** when the active strategy reads
-    queue position — i.e. `query_focus`, or any non-zero
-    `query_preference`.
+```json
+{"strategy": ["query_focus", "positive_pref"]}
+```
 
+| Name | Effect |
+|---|---|
+| `negative_pref` | Prefer clauses containing negative literals |
+| `positive_pref` | Prefer clauses containing positive literals |
+| `query_focus` | Prefer clauses in the query/goal queues |
+| `hardness_pref` | Prefer clauses whose literals are estimated cheap to resolve away; the estimate uses literal size, new variables, and the number of complementary-polarity occurrences of the predicate |
+| `knuthbendix_pref` | Use a Knuth-Bendix-oriented preference for equational problems |
+| `hyper` | Enable hyperresolution |
+| `unit` | Restrict resolution arguments to unit clauses |
+| `double` | Allow resolution arguments of length at most 2 |
+| `triple` | Allow resolution arguments of length at most 3 |
 
-axiom vs extaxiom
------------------
+`unit`, `double`, and `triple` impose inference restrictions and can make the
+search incomplete.
 
-`extaxiom` is an "imported / background axiom" marker. A clause gets
-extaxiom role in two ways:
+## Query and clause queues
 
-  * explicit `@role: "extaxiom"`; or
-  * `@role: "axiom"` (or no role) when the clause comes from an
-    included file — the parser prefixes its `@name` with `$inc_` and
-    auto-upgrades the role. In practice this happens for clauses
-    loaded via the shared-memory KB (`-readkb` / `-usekb`), not for
-    a plain `./gk file.js` run.
+Clauses have goal, assumption, or axiom roles. `query_preference` (integer
+0 to 4; default 0) determines how those roles map to selection queues:
 
-The two roles share storage, weighting, indexing, SINE filtering,
-and confidence handling. They also collapse to the same derived-
-clause role (`FROMAXIOM`) after the first inference — the extaxiom
-marker does not propagate to children.
+| Value | Treatment |
+|---:|---|
+| `0` | Put all clauses in one queue |
+| `1` | Keep the queues as marked by their roles |
+| `2` | Move positive goal units and non-included axioms to the assumption queue |
+| `3` | Keep only fully negative goal clauses in the goal queue |
+| `4` | Treat all clauses as axioms regardless of role |
 
-The **one behavioural difference** during search is in initial
-clause activation under `query_preference: 2`:
+`query_focus` is the selection method that gives direct preference to the goal
+queue.
 
-  * normal `axiom` clauses are suppressed from initial activation
-    (they are pushed back into the regular selection queue);
-  * `extaxiom` clauses are always initially activated.
+### `weight_select_ratio`
 
-This is the "trust the background library more than the problem
-axioms" hook: when a large imported KB is available and
-`query_preference: 2` is in effect, the library's clauses are
-activated immediately while the problem's own axioms are held back.
-Under `query_preference` 0, 1, 3, or 4 there is no behavioural
-difference between the two roles.
+Integer, 1 or greater; default 5. Ratio of priority-queue picks to
+simple-order picks when the given clause is selected from a queue. The
+accepted synonym is `given_queue_ratio`.
 
-Proof output preserves the label (`axiom` vs `extaxiom`), so the
-distinction remains useful for provenance even when it has no
-operational effect.
+## Derived-clause limits
 
+Each key takes an integer, 0 or greater; 0 disables the corresponding
+limit, and 0 is the default.
 
-Clause Size and Complexity Limits
-----------------------------------
+| Key | Limit |
+|---|---|
+| `max_size` | number of literals in a retained clause |
+| `max_depth` | term nesting depth in a retained clause |
+| `max_length` | number of arguments (the length) of a term in a retained clause |
+| `max_weight` | calculated clause weight |
 
-These limits control which derived clauses are kept. Setting a value
-to 0 means no limit for that dimension.
+Restrictive values reduce memory use but may remove all proofs of an answer.
 
-    max_size (integer, 0+)
-        Maximum number of literals in a kept clause.
+## Equality and relevance filtering
 
-    max_depth (integer, 0+)
-        Maximum term nesting depth in a kept clause.
+### `equality`
 
-    max_length (integer, 0+)
-        Maximum arity/length of terms in a kept clause.
+Use `1` to enable equality reasoning and paramodulation, or `0` to disable it.
+The automatic strategy enables it when required by the input.
 
-    max_weight (integer, 0+)
-        Maximum total weight of a kept clause.
+### `rewrite`
 
+Use `1` to rewrite terms with oriented equalities, or `0` to disable rewriting.
 
-Clause Weighting
------------------
+### `sine`
 
-These parameters control how clause weight is calculated, affecting
-which clauses are selected first.
+Apply SINE relevance filtering to the initial axioms:
 
-    depth_penalty (integer)
-        Weight penalty per unit of term depth.
+| Value | Meaning |
+|---:|---|
+| `0` | no SINE filtering |
+| `1` | weak filtering |
+| `2` | strong filtering |
 
-    length_penalty (integer)
-        Weight penalty per unit of term length.
+SINE is mainly useful for a small query against a large axiom set.
 
-    var_weight (integer)
-        Weight assigned to each variable occurrence.
+## Confidence-related keys
 
-    repeat_var_weight (integer)
-        Additional weight for repeated variable occurrences.
+### `independence`
 
+Integer, 0 to 100. In the provenance-aware retained-proof calculation, `0`
+disables the combination of alternative proofs and any nonzero value
+enables it; the overlap is measured from activation-event sets. With
+`-oldcumulate`, the percentage scales the dependency-ratio discounting of
+that option's noisy-or calculation.
 
-Equality and Rewriting
------------------------
+### `keepconfidence`
 
-    equality (integer, 0 or 1)
-        Enable equality reasoning (paramodulation). Default depends
-        on whether the problem contains equalities.
+Minimum confidence for retained derived clauses, as an integer percentage from
+0 to 100.
 
-    rewrite (integer, 0 or 1)
-        Enable term rewriting using oriented equalities.
+### `raw_proofs`
 
+Set to `1` for raw-proof collection. The command-line form is `-rawproofs`.
 
-Advanced Search Methods
-------------------------
+## Arithmetic instantiation
 
-    instgen (integer, 0 or 1)
-        Use instantiation-based generation method.
+### `arith_instantiation`
 
-    propgen (integer, 0 or 1)
-        Use propositional generation with SAT solver integration.
+| Value | Meaning |
+|---:|---|
+| `0` | disabled |
+| `1` | conservative one-variable instantiation |
+| `2` | extended mode, including selected two-variable conditions |
 
+The arithmetic README gives complete commands and examples. Additional
+`arith_inst_*` limit keys exist for controlled experiments, but the three modes
+above are the stable public interface.
 
-SINE Filtering
---------------
+## Supplied strategy files
 
-SINE (Sufficent axiom Inclusiveness for Natural Efficiency) filters
-axioms by relevance to the goal, useful for large axiom sets.
+| File | Contents |
+|---|---|
+| [`query_focus.json`](https://github.com/tammet/gkreasoner/blob/main/Examples/strategy/query_focus.json) | query-focused single run |
+| [`negative_pref.json`](https://github.com/tammet/gkreasoner/blob/main/Examples/strategy/negative_pref.json) | negative-clause-preference single run |
+| [`runs.json`](https://github.com/tammet/gkreasoner/blob/main/Examples/strategy/runs.json) | three runs from restricted to broader search |
 
-    sine (integer, 0-2)
-
-        0  No SINE filtering (use all axioms)
-        1  Weak SINE filtering
-        2  Strong SINE filtering
-
-
-Confidence Parameters
----------------------
-
-    independence (integer, 0-100)
-        Independence coefficient for confidence cumulation, as a
-        percentage. 0 = fully dependent (no cumulation),
-        100 = fully independent (full cumulation). Default: 50.
-
-    keepconfidence (integer, 0-100)
-        Minimum confidence threshold for keeping derived clauses,
-        as a percentage.
-
-    cumulate_method (integer, 0-10)
-        Method for combining confidence values:
-        0  Use independence only, not ratios
-        1  List membership percentage
-        2  Probabilities ratio
-        3+ Experimental methods
-
-
-Output Control
---------------
-
-    print (integer, 0 or 1)
-        Enable basic printout.
-
-    print_level (integer, 0+)
-        Verbosity level (higher = more output). Default: 15.
-
-    print_json (integer, 0 or 1)
-        Output in JSON format.
-
-    print_tptp (integer, 0 or 1)
-        Output in TPTP format.
-
-
-Multiple Runs
--------------
-
-The `runs` key specifies an array of strategy configurations to try
-sequentially. Each run is independent with its own timeout and parameters.
-If an earlier run finds the answer, later runs are skipped.
-
-    {
-      "runs": [
-        {"max_seconds": 1, "strategy": ["unit"], "query_preference": 0},
-        {"max_seconds": 5, "strategy": ["query_focus"], "query_preference": 1},
-        {"max_seconds": 30, "strategy": ["negative_pref"], "query_preference": 2}
-      ]
-    }
-
-Parameters at the top level apply to all runs as defaults, unless
-overridden within a specific run.
-
-See `Examples/runs.txt` for a comprehensive real-world example with
-63 sequential runs combining different strategies, query preferences,
-and depth limits. Use it with:
-
-    ./gk problem.txt -strategy Examples/runs.txt
-
-
-Default Strategy
------------------
-
-When no strategy file is specified, GK automatically selects a strategy
-based on analysis of the input clauses. The automatic strategy is likely
-to be changed in future versions. Use `-print 13` to see the
-automatically constructed strategy.
-
-For **JSON-LD-LOGIC input** (the typical gk case), the automatic
-strategy is:
-
-  * `max_answers`: 10 (or 1 if `-firstanswer` is set)
-  * `independence`: 100
-  * `max_seconds`: value of `-seconds` flag (default 10)
-  * Strategy selection based on clause count:
-    - **> 1000 clauses**: `"strategy": ["query_focus"], "query_preference": 1`
-    - **<= 1000 clauses**: `"strategy": ["negative_pref"], "query_preference": 1`
-
-For **TPTP input** (classical theorem proving), the automatic strategy
-uses `negative_pref` with no clause size limits and constructs a
-multi-run strategy trying various combinations of strategies,
-queue ratios, and clause limits.
-
-If the automatic strategy is not used (e.g., when a strategy file is
-given but contains no strategy key), the hardcoded fallback is:
-
-    {
-      "print": 1,
-      "print_level": 15,
-      "strategy": "negative_pref"
-    }
-
-
-Tips
-----
-
-  * For small problems: `"strategy": ["unit"]` is fast but incomplete
-  * For query answering: `"strategy": ["query_focus"]` with
-    `"query_preference": 1`
-  * For equational reasoning: add `"equality": 1` and
-    `"strategy": ["knuthbendix_pref"]`
-  * For large knowledge bases: use SINE filtering with `"sine": 1` or `2`
-  * For finding multiple answers: set `"max_answers": 10` and increase
-    `"max_seconds"`
-  * For confidence problems: adjust `"independence"` based on how
-    independent your evidence sources are
+The files are described and exercised in
+[`../Examples/strategy/README.md`](https://github.com/tammet/gkreasoner/blob/main/Examples/strategy/README.md).

@@ -3,7 +3,7 @@
 Test files for the llmpipe pipeline.  Each file is a Python literal — a
 list of `[id, input, expected]` triples.  The leading `id` is an integer
 case number (required, and stable across runs) used by `test.py`,
-`runtests.py`, `examine.py`, and `testfixlog_may.txt`.  `input` is the
+`runtests.py`, and the result folders.  `input` is the
 English text and `expected` is the expected answer.  Run with
 `python3 test.py <file>` (single LLM) or `python3 runtests.py <file>`
 (all LLMs in parallel) from the parent directory.

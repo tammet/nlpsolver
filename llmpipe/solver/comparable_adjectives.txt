@@ -1,0 +1,100 @@
+# Strict-scalar comparative adjectives: dimensional adjectives whose comparative
+# is a STRICT order ("X is more-R than Y" is asymmetric and irreflexive), so a
+# binary is_rel2(R,X,Y) may carry the asymmetry axiom  is_rel2(R,X,Y) -> -is_rel2(R,Y,X).
+#
+# Hand-curated (NOT generated).  Deliberately a positive list, because gradables.txt
+# is contaminated for this purpose with (a) symmetric relations — similar, near,
+# close, far, equal, different, adjacent, parallel, perpendicular, compatible,
+# proportional — for which asymmetry is FALSE, and (b) relational/attitude verbs —
+# love, need, want, like, hate — which are mutual and route through the attitude
+# mutex injector, not comparison.  Used by lc_post_inject.inject_comparative_axioms
+# (P3, -compasym).  One adjective per line.
+ancient
+attractive
+bad
+beautiful
+big
+brief
+bright
+brilliant
+broad
+cheap
+clean
+clever
+cold
+common
+cool
+costly
+dangerous
+dark
+deep
+difficult
+dim
+dirty
+dumb
+easy
+enormous
+excellent
+expensive
+fast
+fine
+giant
+good
+great
+happy
+hard
+healthy
+heavy
+high
+hot
+huge
+important
+intelligent
+large
+light
+little
+long
+loud
+low
+massive
+modern
+narrow
+new
+nice
+old
+poor
+powerful
+pretty
+quick
+quiet
+rapid
+rare
+recent
+rich
+sad
+safe
+shallow
+short
+sick
+significant
+simple
+slow
+small
+smart
+soft
+speedy
+strong
+stupid
+swift
+tall
+terrible
+thick
+thin
+tiny
+tough
+ugly
+warm
+weak
+wealthy
+wide
+young

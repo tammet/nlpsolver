@@ -457,11 +457,170 @@ def _check_stage1_split_conditional(s1_json):
 
 
 
+# ======== dropped-question-negation check (prenorm-negation-fallback) ========
+#
+# A yes/no conclusion carrying sentential negation ("X is not a Y", "X does
+# not V", "neither ... nor") must keep that negation so Stage-2 negates the
+# WHOLE predication.  Under -prenorm (the -abstract-max default), the pre-Stage-1
+# normalization LLM strips the negation and rewrites the conclusion into the
+# POSITIVE question ("Yuri is not an American ..." -> "Is Yuri an American
+# ...?"); Stage-1 then faithfully parses that positive input and every
+# downstream stage answers the opposite question, flipping the final answer
+# (FOLIO cases 80, 127, 189, 200).  Verified: gpt's Stage-1 preserves the
+# negation when given the ORIGINAL text, so the recovery is to re-parse from the
+# original (pre-prenorm) wording -- done at the parse_text level.
+#
+# This checker is the detector for that fallback: it compares the ORIGINAL
+# question text (orig_text) against the produced query unit.  The negation must
+# be read off orig_text because prenorm rewrote it away in both the unit `text`
+# AND the package `raw`.
+#
+# Detection (all must hold):
+#   1. The original question sentence (a "?"-terminated sentence in orig_text)
+#      contains a sentential-negation cue.
+#   2. A query unit exists whose OWN text carries NO negation cue -- i.e. the
+#      negation was fully DROPPED, not merely mis-scoped.  If the unit text
+#      still has a "not", the LLM kept some negation; a scope error there is a
+#      different, out-of-scope problem and must NOT trigger a blind retry.
+# The zero-negation-in-unit guard is what makes this safe: it fires only on a
+# TOTAL drop, so the retry can never introduce a double negation.
+
+_NEG_CUE_RE = re.compile(
+    r"\b(not|never|neither|nor|none|cannot)\b|n['’]t\b", re.IGNORECASE)
+
+# Function words dropped when extracting the content tokens that anchor a query
+# unit's question clause inside the (possibly run-on) original sentence.
+_QUESTION_STOPWORDS = frozenset({
+  "is", "are", "was", "were", "am", "be", "been", "being", "do", "does", "did",
+  "has", "have", "had", "will", "would", "shall", "should", "can", "could",
+  "may", "might", "must", "a", "an", "the", "of", "in", "on", "at", "for",
+  "to", "with", "and", "or", "not", "that", "this", "these", "those", "his",
+  "her", "its", "their", "he", "she", "it", "they", "them", "him", "who",
+  "whom", "whose", "which", "what", "where", "when", "why", "how", "as", "by",
+  "from", "any", "some", "no",
+})
+
+
+def _has_negation_cue(text):
+  """True if `text` contains a sentential-negation cue word."""
+  return bool(isinstance(text, str) and _NEG_CUE_RE.search(text))
+
+
+def _question_sentences(text):
+  """Return the list of '?'-terminated sentences in the raw input, each
+  trimmed to the fragment following the previous sentence terminator."""
+  if not isinstance(text, str):
+    return []
+  out = []
+  buf = []
+  for ch in text:
+    buf.append(ch)
+    if ch in ".?!":
+      seg = "".join(buf).strip()
+      if seg.endswith("?"):
+        out.append(seg)
+      buf = []
+  tail = "".join(buf).strip()
+  if tail.endswith("?"):
+    out.append(tail)
+  return out
+
+
+def _content_tokens(text):
+  """Lowercase alphanumeric content tokens of `text`, minus function words and
+  bare numbers (Stage-1 entity-id suffixes like the '1' in 'Yuri 1')."""
+  out = []
+  for w in re.findall(r"[a-z0-9]+", (text or "").lower()):
+    if w.isdigit() or w in _QUESTION_STOPWORDS:
+      continue
+    out.append(w)
+  return out
+
+
+def _question_clause_negated(orig_q, unit_text):
+  """True if the actual question clause of `orig_q` carries a negation cue.
+
+  FOLIO inputs sometimes omit the period between the last premise and the
+  conclusion, so `orig_q` can be a run-on premise+question whose negation
+  belongs to the PREMISE, not the question (cases 102/108, where the premise
+  'Luke ... does not live with strangers' runs straight into the positive
+  question 'Luke spends a lot of time ...?').  Anchor the question clause to
+  the query subject -- the unit's leading content token -- and inspect from its
+  LAST occurrence (the run-on repeats the subject, so the earliest occurrence
+  is the premise's).  Returns False if the subject can't be located (can't
+  align -> stay conservative and do not fire)."""
+  anchors = _content_tokens(unit_text)
+  if not anchors:
+    return False
+  subj = anchors[0]                 # the query subject's leading content word
+  start = orig_q.lower().rfind(subj)
+  if start < 0:
+    return False
+  return _has_negation_cue(orig_q[start:])
+
+
+def _check_stage1_dropped_question_negation(s1_json, orig_text=None):
+  """Flag a query unit that dropped a sentential negation present in the
+  original question (prenorm-negation-fallback detector).  Gated on the
+  -negretry flag.  No-op when orig_text is unavailable.  See cases
+  80/127/189/200 (gpt)."""
+  import globals as _g
+  if not _g.options.get("negretry_flag"):
+    return []
+  if not isinstance(s1_json, list) or not orig_text:
+    return []
+  questions = _question_sentences(orig_text)
+  if not questions:
+    return []
+  orig_q = questions[-1]                      # FOLIO: the conclusion question
+  issues = []
+  for pkg in s1_json:
+    if not isinstance(pkg, dict):
+      continue
+    for unit in pkg.get("units", []) or []:
+      if not isinstance(unit, dict) or unit.get("type") != "query":
+        continue
+      unit_text = unit.get("text", "")
+      # If the unit kept ANY negation (in its own text), the LLM did not drop
+      # it -- leave it alone (mis-scope is a separate, out-of-scope problem).
+      if _has_negation_cue(unit_text):
+        continue
+      # Fire only if the QUESTION CLAUSE (anchored to the unit's content) is
+      # negated -- not a run-on premise's negation swept in by the sentence
+      # split (cases 102/108 false positives).
+      if not _question_clause_negated(orig_q, unit_text):
+        continue
+      uid = unit.get("unit_id", "?")
+      issues.append(Issue(
+        kind="dropped_question_negation",
+        location="@id:" + str(uid),
+        description=("The question is NEGATED in the input: \"" + orig_q
+                     + "\". But query unit " + str(uid) + " (\""
+                     + str(unit_text) + "\") dropped the negation and asks the "
+                     "POSITIVE question. Preserve the negation in the query "
+                     "unit's text so the WHOLE predication is negated (e.g. "
+                     "\"Is X NOT a Y?\" / \"Does X NOT play ...?\"), not the "
+                     "affirmative form. The negation scopes over the entire "
+                     "statement; do not move it onto a single inner word."),
+        evidence=safe_json(unit),
+      ))
+  return issues
+
+
+
+
 # ======== public API ========
 
 def check_stage1(s1_json):
   """Run all registered Stage-1 sanity checks and return the combined
-  issue list."""
+  issue list.
+
+  Note: the dropped-question-negation check is NOT run here.  Under -prenorm
+  (the -abstract-max default) the negation is stripped by prenorm BEFORE Stage
+  1, so the Stage-1 input is already positive and there is nothing to detect at
+  this point.  The recovery is driven at the parse_text level instead, by
+  re-parsing from the original (pre-prenorm) text -- see llmparse.parse_text
+  and check_dropped_question_negation()."""
   issues = []
   issues.extend(_check_stage1_missing_wh_placeholder(s1_json))
   issues.extend(_check_stage1_entity_used_as_location(s1_json))
@@ -469,3 +628,10 @@ def check_stage1(s1_json):
   issues.extend(_check_stage1_spurious_wh_placeholder(s1_json))
   issues.extend(_check_stage1_split_conditional(s1_json))
   return issues
+
+
+def check_dropped_question_negation(s1_json, orig_text):
+  """Public entry for the prenorm-negation-fallback (llmparse.parse_text):
+  return issues if a query unit dropped a sentential negation present in the
+  ORIGINAL question text.  Gated on the -negretry flag inside the checker."""
+  return _check_stage1_dropped_question_negation(s1_json, orig_text)

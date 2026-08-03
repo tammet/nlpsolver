@@ -20,7 +20,7 @@ class EncodingConfig:
     "event_base", "flatten", "eventprop", "davidson",
     "entitymerge", "guarddrop", "bridges", "dropdefinites", "localantonyms",
     "simpleprops", "collapse_degree", "parse_canon", "needs_coarsen",
-    "typeenrich", "typeenrich_gates",
+    "typeenrich", "typeenrich_gates", "propclass", "numtype", "compasym",
   )
 
   def __init__(self, o):
@@ -39,6 +39,9 @@ class EncodingConfig:
     self.dropdefinites = bool(o.get("dropdefinites_flag")) # SKIP $theof1 definite reification
     self.localantonyms = bool(o.get("localantonyms_flag")) # restrict antonym-fold vocabulary
     self.simpleprops   = bool(o.get("noproptypes_flag"))   # degree predicates -> simple
+    self.propclass     = bool(o.get("propclass_flag"))     # property<->class canonicalization (P1)
+    self.numtype       = bool(o.get("numtype_flag"))       # numeric-literal parse + isa(number,N) typing (P3)
+    self.compasym      = bool(o.get("compasym_flag"))      # comparative asymmetry for binary is_rel2(R,X,Y) (P3)
 
     # Degree collapse inside the fold rides with simpleprops; parse-level entity
     # canonicalization rides with entitymerge (the primitive is self-contained).

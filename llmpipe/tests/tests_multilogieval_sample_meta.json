@@ -1,0 +1,142 @@
+{
+ "1": {
+  "depth": "-",
+  "logic": "multivar_fol",
+  "rule": "1",
+  "answer": "yes",
+  "file": "multivariable_fol_Data/fol_multi_1.json"
+ },
+ "2": {
+  "depth": "d1",
+  "logic": "fol",
+  "rule": "BD",
+  "answer": "yes",
+  "file": "d1_Data/fol/BD.json"
+ },
+ "3": {
+  "depth": "d1",
+  "logic": "nm",
+  "rule": "default_reasoning_default",
+  "answer": "yes",
+  "file": "d1_Data/nm/default_reasoning_default.json"
+ },
+ "4": {
+  "depth": "d1",
+  "logic": "pl",
+  "rule": "BD",
+  "answer": "yes",
+  "file": "d1_Data/pl/BD.json"
+ },
+ "5": {
+  "depth": "d2",
+  "logic": "fol",
+  "rule": "CD_DS",
+  "answer": "yes",
+  "file": "d2_Data/fol/CD_DS.json"
+ },
+ "6": {
+  "depth": "d2",
+  "logic": "mm",
+  "rule": "BDR_MP",
+  "answer": "yes",
+  "file": "d2_Data/nm/BDR_MP.json"
+ },
+ "7": {
+  "depth": "d2",
+  "logic": "pl",
+  "rule": "CD_DS",
+  "answer": "yes",
+  "file": "d2_Data/pl/CD_DS.json"
+ },
+ "8": {
+  "depth": "d3",
+  "logic": "fol",
+  "rule": "BD_C_DS",
+  "answer": "yes",
+  "file": "d3_Data/fol/BD_C_DS.json"
+ },
+ "9": {
+  "depth": "d3",
+  "logic": "nm",
+  "rule": "d3_1",
+  "answer": "yes",
+  "file": "d3_Data/nm/d3_1.json"
+ },
+ "10": {
+  "depth": "d3",
+  "logic": "pl",
+  "rule": "BD_C_DS",
+  "answer": "yes",
+  "file": "d3_Data/pl/BD_C_DS.json"
+ },
+ "11": {
+  "depth": "-",
+  "logic": "multivar_fol",
+  "rule": "2",
+  "answer": "no",
+  "file": "multivariable_fol_Data/fol_multi_2.json"
+ },
+ "12": {
+  "depth": "d1",
+  "logic": "fol",
+  "rule": "MT",
+  "answer": "no",
+  "file": "d1_Data/fol/MT.json"
+ },
+ "13": {
+  "depth": "d1",
+  "logic": "nm",
+  "rule": "reasoning_about_exceptions_2",
+  "answer": "no",
+  "file": "d1_Data/nm/reasoning_about_exceptions_2.json"
+ },
+ "14": {
+  "depth": "d1",
+  "logic": "pl",
+  "rule": "MT",
+  "answer": "no",
+  "file": "d1_Data/pl/MT.json"
+ },
+ "15": {
+  "depth": "d2",
+  "logic": "fol",
+  "rule": "BD_DS",
+  "answer": "no",
+  "file": "d2_Data/fol/BD_DS.json"
+ },
+ "16": {
+  "depth": "d2",
+  "logic": "mm",
+  "rule": "BDR_MP",
+  "answer": "no",
+  "file": "d2_Data/nm/BDR_MP.json"
+ },
+ "17": {
+  "depth": "d2",
+  "logic": "pl",
+  "rule": "BD_DS",
+  "answer": "no",
+  "file": "d2_Data/pl/BD_DS.json"
+ },
+ "18": {
+  "depth": "d3",
+  "logic": "fol",
+  "rule": "BD_DS_MT",
+  "answer": "no",
+  "file": "d3_Data/fol/BD_DS_MT.json"
+ },
+ "19": {
+  "depth": "d3",
+  "logic": "nm",
+  "rule": "d3_1",
+  "answer": "no",
+  "file": "d3_Data/nm/d3_1.json"
+ },
+ "20": {
+  "depth": "d3",
+  "logic": "pl",
+  "rule": "BD_DS_MT",
+  "answer": "no",
+  "file": "d3_Data/pl/BD_DS_MT.json"
+ }
+}

@@ -12,7 +12,7 @@ Detailed reference lives in DOCUMENTATION.md; this file stays concise.
 **Tracked (committed):** `solver/` (pipeline code), `tests/` (canonical test sets + `FOLIO_yale/` source data), `prompts/` (Stage-1/2 + combined prompts), `mkdata/` (solver-data generators), `axioms_std.js`, the `*.md` docs, and the top-level runners `runtests.py` / `test.py` / `ask.py`.
 
 **Untracked / gitignored (local working data):**
-- `testresults/` — per-run batch results. Run folders are named `<benchmark>_<shape>_<date>` (e.g. `core_two-stage_2026-06-03`, `folio_two-stage-abstracted_2026-06-14`) and mirror the published `/opt/nlformtasks` package; also holds the experiment overviews/memos. See `testresults/README.md`.
+- `testresults/` — per-run batch results. Run folders are named `<benchmark>_<shape>_<date>` (e.g. `core_two-stage_2026-06-03`, `folio_two-stage-abstracted_2026-06-14`) and mirror the published [nlformtasks](https://github.com/tammet/nlformtasks) package; also holds the experiment overviews/memos. See `testresults/README.md`.
 - `fixlogs/` — `testfixlog_*.txt` fix logs (hand-maintained).
 - `memos/` — dated session memos and notes.
 - `debug/` — `examine.py` output + FOLIO scratch; `elogs/` — experiment logs.
@@ -20,7 +20,7 @@ Detailed reference lives in DOCUMENTATION.md; this file stays concise.
 - `ideas/`, `lparpaper/`, `nesypaper/` — research / paper material.
 - `cache.db` — SQLite LLM+prover cache; `examine.py` / `compare_runtests_json.py` / `tools/` — local utility scripts.
 
-`/opt/nlformtasks` is the standalone published release of the test sets and their results (renamed there: `tests_<x>` → `<x>_tests`).
+[nlformtasks](https://github.com/tammet/nlformtasks) (locally `/opt/nlformtasks`) is the standalone published release of the test sets and their results (renamed there: `tests_<x>` → `<x>_tests`).
 
 ## Running the Pipeline
 
@@ -210,7 +210,7 @@ temperature      = 0
 default_max_tokens = 8000
 ```
 
-API keys are read from JSON files at `../secrets/{gpt,claude,gemini,deepseek}_secrets.txt`.
+API keys are read from plain-text files at `../secrets/{gpt,claude,gemini,deepseek}_secrets.txt` (each file holds just the raw key string).
 LLM responses are cached by default in `cache.db` (SQLite), keyed on provider, version, temperature, max_tokens, sysprompt and input. Use `-nollmcache` to disable.
 
 ### Dependencies
@@ -222,6 +222,9 @@ llmpipe/axioms_std.js
 ../gk/gk_name_number.txt
 ../gk/gk_taxonomy_packed.txt
 ```
+The authoritative GK distribution (binaries, docs, examples) is
+https://github.com/tammet/gkreasoner; `../gk/README.md` summarises the
+local installation.
 Full solver data: http://logictools.org/data/nlpsolver_data.tar.gz
 
 ### Test Data

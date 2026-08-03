@@ -99,6 +99,7 @@ from lc_questions import (
 #   lc_post_inject.py    — generate per-problem axioms (synonyms, exclusions, ...)
 from lc_post_normalize import (
   populate_clauses as _populate_clauses,
+  drop_reflexive_locatives as _drop_reflexive_locatives,
   build_compound_subsumption as _build_compound_subsumption,
   coerce_relclass as _coerce_relclass,
   normalize_gradable_predicates as _normalize_gradable_predicates,
@@ -130,6 +131,10 @@ from lc_post_inject import (
   inject_occasion_location_bridges as _inject_occasion_location_bridges,
   inject_in_haspart_bridge as _inject_in_haspart_bridge,
   inject_reflexive_property_bridge as _inject_reflexive_property_bridge,
+  inject_propclass_bridges as _inject_propclass_bridges,
+  parse_numeric_literals as _parse_numeric_literals,
+  inject_number_typing as _inject_number_typing,
+  inject_comparative_axioms as _inject_comparative_axioms,
   inject_s2split_shape_bridges as _inject_s2split_shape_bridges,
   inject_attribute_relation_bridges as _inject_attribute_relation_bridges,
   inject_stable_adjective_persistence as _inject_stable_adjective_persistence,
@@ -580,6 +585,23 @@ def rawlogic_convert(logic, s1_json=None, fixes=None):
   result.extend(background)
   result.extend(sem_axioms)
 
+  # (P1, -propclass) property<->class canonicalization bridges.  Runs after
+  # `background` (so compound_sub clauses are present for the nominal-compound
+  # promote gate) and scans the full clause list for both predicate shapes.
+  if lc_encoding.current().propclass:
+    result.extend(_inject_propclass_bridges(result))
+
+  # (P3, -numtype) parse numeral strings to numbers, then materialize a type fact
+  # isa(number/integer/...,N) when a guard -isa(...,N) demands it but nothing supplies it.
+  if lc_encoding.current().numtype:
+    _parse_numeric_literals(result)
+    result.extend(_inject_number_typing(result))
+
+  # (P3, -compasym) comparative asymmetry for strict-scalar adjectives used as
+  # binary is_rel2(R,X,Y) (restores the §3.1 order axioms the flat fold drops).
+  if lc_encoding.current().compasym:
+    result.extend(_inject_comparative_axioms(result))
+
   # Dynamic measure_of -> "<noun> of" relational bridge (replaces the former
   # static block in axioms_std.js).  Emitted per measure noun only when both a
   # $measure_of(N,...) fact and an is_rel2 "N of" atom are present.  Runs
@@ -702,6 +724,10 @@ def rawlogic_convert(logic, s1_json=None, fixes=None):
       for noun in sorted(present):
         result.append({"@name": "frm_gender",
                        "@logic": [["-isa", noun, "?:Xg"], ["isa", _GN[noun], "?:Xg"]]})
+
+  # Drop reflexive locative self-loops is_rel2(in/on/...,X,X) (subject-collapse
+  # artifacts that manufacture false identities under a unique-location rule, case 59).
+  result = _drop_reflexive_locatives(result)
 
   # UNA wrapping: prefix every Stage-1 numbered entity with "#:" so the gk
   # prover treats distinct entity constants as definitely unequal. Required

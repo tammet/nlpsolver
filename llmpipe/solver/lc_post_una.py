@@ -46,9 +46,10 @@ def collect_stage1_entities(s1_json):
   concrete entity id that matches the surface-form regex and is not
   Skolem-shaped.
   """
-  out = set()
+  # id -> whether it is EVER annotated with a category in Stage 1.
+  cand = {}
   if not s1_json or not isinstance(s1_json, list):
-    return out
+    return set()
   for pkg in s1_json:
     if not isinstance(pkg, dict):
       continue
@@ -63,8 +64,15 @@ def collect_stage1_entities(s1_json):
             and _STAGE1_REGEX.match(eid) is not None
             and _SKOLEM_PREFIX.match(eid) is None
             and not eid.startswith(('$', '?:', '#:'))):
-          out.add(eid)
-  return out
+          cand[eid] = cand.get(eid, False) or bool(ent.get("category"))
+  # UNA applies to RIGID designators only: proper-noun named individuals
+  # (uppercase-initial id) and any entity carrying a category (concrete object
+  # instances, the X2 direct-support case).  Exclude lowercase common-noun
+  # reifications with no category — these are non-rigid DEFINITE DESCRIPTIONS
+  # ("Mia's favorite season", "the output of MT") that can co-refer with a named
+  # entity, so UNA must not declare them distinct by name (case 48).
+  return {eid for eid, has_cat in cand.items()
+          if eid[:1].isupper() or has_cat}
 
 
 def apply_una(clauses, stage1_set):

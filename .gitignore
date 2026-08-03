@@ -24,6 +24,7 @@ secrets/*secrets*
 /llmpipe/nesypaper/
 /llmpipe/tools/
 /llmpipe/examine.py
+/llmpipe/DEBUGGING.md
 /llmpipe/compare_runtests_json.py
 /nlp/
 /llama/

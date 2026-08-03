@@ -54,10 +54,15 @@ options={
   "bridges_flag":False,      # frame/bridge axioms: rel2<->event equivalence, occasion-location, in-haspart, reflexive-property
   "dropdefinites_flag":False, # skip $theof1 definite reification -> leave definites as plain relations
   "localantonyms_flag":False, # restrict antonym folding to pairs whose words occur in the problem + axiom vocabulary
+  "propclass_flag":False,    # property<->class canonicalization (P1): bridge isa(W,X)<->has_property(W,X) for one concept that the flat fold left in both shapes. SAFE isa->has_property always; PROMOTE has_property->isa only for a nominal compound (compound_sub) demanded as -isa. See analysis/P1_DESIGN.md
+  "numtype_flag":False,      # numeric-literal typing (P3): parse pure-numeral string args ("34") to int/float, and materialize a ground isa(TYPE,N) (TYPE in number/integer/float/...) when -isa(TYPE,N) is demanded but never supplied. See analysis/P3_TIER_A_PLAN.md
+  "compasym_flag":False,     # comparative asymmetry (P3): for a relation R that occurs as binary is_rel2(R,X,Y) and is a strict-scalar dimensional adjective (solver/comparable_adjectives.txt), emit asymmetry is_rel2(R,X,Y)->-is_rel2(R,Y,X) (+ flat property bridge). Restores the §3.1 comparative-order axioms the flat/simpleprops fold drops. See analysis/P3_TIER_A_PLAN.md
   "api_timeout":0,  # hard wall-clock cap (seconds) on the LLM-parse + clause-conversion phase (disarmed before the prover); 0 disables
   "prenorm_flag":False,  # if True, run an experimental pre-Stage-1 LLM phase that unifies repeated entity/property/relation wordings
   "s2split_flag":False,  # if True, run Stage 2 sentence-by-sentence (one LLM call per Stage-1 sentence package, outputs joined, worlds renumbered per rule c'), and apply the cross-sentence shape-unification repair (off-inventory predicate rename, shape bridges, compound composition, broad-supertype isa) that reconciles the divergent per-sentence parses
   "crossstage_retry_flag":True,  # if False, disable the abstraction cross-stage unsatisfiable-guard retry (avoids live corrective LLM calls)
+  "nominalretry_flag":False,  # (experimental) if True, a Stage-2 sanity check flags a Stage-1 copular "ENT is a NOUN" predication whose NOUN is dropped from ENT in Stage-2 (but used elsewhere), triggering a corrective Stage-2 retry. See analysis/P3_TIER_A_PLAN.md (case 126)
+  "negretry_flag":False,      # (experimental) prenorm-negation-fallback: if True and prenorm dropped a sentential negation from the conclusion question ("X is not a Y?" rewritten to the positive "Is X a Y?"), re-parse from the original (pre-prenorm) text so the negation survives. General correctness fix (not encoding-specific); currently gated so it can later be promoted to default. See analysis/FOLIO_GPT_FAILURES.md G2 (cases 80/127/189/200)
   "prover_axiomfiles":False,  # if not False, use these as axioms instead of the default prover_axiomfile below
   "prover_print":False,  # if not False, use the argument integer for gk printout level, instead of the default
   "prover_strategy":False,  # if not False, use the argument as a gk strategy file, instead of the default
@@ -118,7 +123,7 @@ prover_fname=os.path.join(_root, "../gk/gk")  # gk binary
 prover_datafolder=os.path.join(_root, "../gk")  # where gk_name_number.txt etc are located
 prover_infile="gk_infile.js"
 prover_axiomfile=os.path.join(_root, "axioms_std.js")
-prover_params=["-defaults","-confidence","0.1","-keepconfidence","0.1"] # additional prover params, always appended
+prover_params=["-taxonomy","-confidence","0.1","-keepconfidence","0.1"] # additional prover params, always appended
 
 
 def set_global_options(newoptions):
