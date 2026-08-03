@@ -824,7 +824,7 @@ higher N.  For example:
   (isa plucked bird + isa bird)
 
 The full comparison rules, including mixed numeric/taxonomy priorities, are in
-the [gkreasoner how_gk_works.md](https://github.com/tammet/gkreasoner/blob/main/Doc/how_gk_works.md).
+the [gkreasoner how_gk_works.md](https://github.com/tammet/gkreasoner/blob/master/Doc/how_gk_works.md).
 
 GK extends the [GKC theorem prover](https://github.com/tammet/gkc) with
 [numeric confidences](https://link.springer.com/chapter/10.1007/978-3-030-79876-5_29)
@@ -1045,7 +1045,7 @@ The clause list is serialized as JSON with `//` comment lines between ASU groups
 The GK input format is based on
 [JSON-LD Logic](https://github.com/tammet/json-ld-logic), a JSON encoding
 of first-order logic clauses.  See also:
-- [GK input languages by example](https://github.com/tammet/gkreasoner/blob/main/Doc/input_languages.md)
+- [GK input languages by example](https://github.com/tammet/gkreasoner/blob/master/Doc/input_languages.md)
 - Tammet, T. and Sutcliffe, G., 2021. Combining JSON-LD with First Order Logic.
   In *2021 IEEE 15th International Conference on Semantic Computing (ICSC)*
   (pp. 256–261). IEEE.

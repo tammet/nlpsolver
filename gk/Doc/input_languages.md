@@ -6,10 +6,10 @@ examples.
 
 | Notation | Suffixes | Description | Example file |
 |---|---|---|---|
-| GKP | `.gkp`, `.pl`, `.pro`, `.prolog` | Prolog-style surface notation | [`penguin.gkp`](https://github.com/tammet/gkreasoner/blob/main/Examples/exceptions/penguin.gkp) |
-| JSON-LD-LOGIC | `.js` | Native JSON representation | [`coin1.js`](https://github.com/tammet/gkreasoner/blob/main/Examples/confidences/coin1.js) |
-| GKS | `.gks` | Premise-to-consequence notation | [`grandfather.gks`](https://github.com/tammet/gkreasoner/blob/main/Examples/core/grandfather.gks) |
-| TPTP CNF | `.p`, `.ax`, `.tptp`, `.cnf` | TPTP clauses with GK annotations | [`bird_penguin.p`](https://github.com/tammet/gkreasoner/blob/main/Examples/exceptions/bird_penguin.p) |
+| GKP | `.gkp`, `.pl`, `.pro`, `.prolog` | Prolog-style surface notation | [`penguin.gkp`](https://github.com/tammet/gkreasoner/blob/master/Examples/exceptions/penguin.gkp) |
+| JSON-LD-LOGIC | `.js` | Native JSON representation | [`coin1.js`](https://github.com/tammet/gkreasoner/blob/master/Examples/confidences/coin1.js) |
+| GKS | `.gks` | Premise-to-consequence notation | [`grandfather.gks`](https://github.com/tammet/gkreasoner/blob/master/Examples/core/grandfather.gks) |
+| TPTP CNF | `.p`, `.ax`, `.tptp`, `.cnf` | TPTP clauses with GK annotations | [`bird_penguin.p`](https://github.com/tammet/gkreasoner/blob/master/Examples/exceptions/bird_penguin.p) |
 
 Use `-informat json`, `prolog`, `simple`, or `tptp` to override automatic
 detection. `-writejson` prints the converted JSON-LD-LOGIC input without
@@ -99,7 +99,7 @@ A priority naming a more specific class defeats one naming a more general
 class: `tax(penguin)` defeats `tax(bird)`. The shipped taxonomy is the
 WordNet noun hierarchy.
 Taxonomy priorities require `-taxonomy` (synonym `-defaults`) and the
-data files in [`../data/`](https://github.com/tammet/gkreasoner/blob/main/data/README.md); without them GK stops with
+data files in [`../data/`](https://github.com/tammet/gkreasoner/blob/master/data/README.md); without them GK stops with
 an error. `tax(name, N)` adds a numeric tie-breaker used when the
 taxonomy does not order the two classes; the comparison rules are listed
 in the defaults section of [`how_gk_works.md`](how_gk_works.md). An `unless` expression without a priority makes no priority
@@ -120,7 +120,7 @@ johnhad(X) :- X + 2 = 10.
 Comparisons are `<`, `>`, `=<`, and `>=`. Arithmetic expressions use `+`, `-`,
 `*`, and `/`. Ground expressions are evaluated directly. Finding numeric
 values for variables requires the bounded arithmetic strategy described in
-[`../Examples/arithmetic/README.md`](https://github.com/tammet/gkreasoner/blob/main/Examples/arithmetic/README.md).
+[`../Examples/arithmetic/README.md`](https://github.com/tammet/gkreasoner/blob/master/Examples/arithmetic/README.md).
 
 ### Names, roles, includes, and comments
 
@@ -196,7 +196,7 @@ flies(X) :- bird(X), unless(-flies(X), 2).
 A taxonomy-form priority replaces the number with a `$` term:
 `["$", "bird"]` is the JSON spelling of `tax(bird)` and
 `["$", "bird", 1]` of `tax(bird, 1)`, as in
-[`../Examples/exceptions/penguin3.js`](https://github.com/tammet/gkreasoner/blob/main/Examples/exceptions/penguin3.js).
+[`../Examples/exceptions/penguin3.js`](https://github.com/tammet/gkreasoner/blob/master/Examples/exceptions/penguin3.js).
 
 The example files use predicate arrays of this form. JSON-LD-LOGIC also
 supports graph-oriented objects, but those are not needed for the introductory

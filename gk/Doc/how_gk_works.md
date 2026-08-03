@@ -240,7 +240,7 @@ combined numerically. The retained proof is used to decide whether this
 assessment is relevant and supported, and supplies the fallback proof pools
 if the assessment cannot be completed.
 
-[`net_premise.js`](https://github.com/tammet/gkreasoner/blob/main/Examples/confidences/net_premise.js) is equivalent to:
+[`net_premise.js`](https://github.com/tammet/gkreasoner/blob/master/Examples/confidences/net_premise.js) is equivalent to:
 
 ```prolog
 0.5::bird(a).
@@ -258,9 +258,9 @@ prove `-flies(a)`. With `-detail`, `bird(a)` is listed as a conflict source.
 A reading of input confidences as independent clause-activation probabilities
 gives a different number for this example (0.45: the premise is provable in
 half the sampled worlds, and nothing derives the negated conclusion). The
-[Monte Carlo checks](https://github.com/tammet/gkreasoner/blob/main/montecarlo/README.md) compare both readings with
+[Monte Carlo checks](https://github.com/tammet/gkreasoner/blob/master/montecarlo/README.md) compare both readings with
 GK's on the repository examples; the Differences section of
-[`../montecarlo/comparison.md`](https://github.com/tammet/gkreasoner/blob/main/montecarlo/comparison.md) works through
+[`../montecarlo/comparison.md`](https://github.com/tammet/gkreasoner/blob/master/montecarlo/comparison.md) works through
 this example, the uncertain-exception case, and the recursive-rule case, and
 identifies the modelling decision each disagreement turns on.
 
@@ -334,7 +334,7 @@ atom, the 0.9 is ignorance.
 Opposition to an exception condition — a fact or a derived conclusion — is
 resolved recursively, within the relevant predecessor configuration, before
 the exception can block. The `bird_counter*` examples in
-[`../Examples/exceptions/README.md`](https://github.com/tammet/gkreasoner/blob/main/Examples/exceptions/README.md) show
+[`../Examples/exceptions/README.md`](https://github.com/tammet/gkreasoner/blob/master/Examples/exceptions/README.md) show
 the calculation.
 
 Blockers have priorities. A blocking proof may itself depend on defaults, and
@@ -357,7 +357,7 @@ The comparison rules:
   Against a bare `tax(name)`, a number makes no claim.
 
 Taxonomy terms require `-taxonomy` (synonym `-defaults`) and the data
-files in [`../data/`](https://github.com/tammet/gkreasoner/blob/main/data/README.md), which encode the WordNet noun
+files in [`../data/`](https://github.com/tammet/gkreasoner/blob/master/data/README.md), which encode the WordNet noun
 hierarchy; class names are WordNet-style names such as `penguin` or
 `bird.n.01`. An input using taxonomy terms without the flag is an error.
 Taxonomy priorities are compared by the blocker-priority check; the
@@ -433,4 +433,4 @@ Common result strings are:
 
 The command-line options are listed in [`cli_reference.md`](cli_reference.md).
 Input examples are in [`input_languages.md`](input_languages.md), and runnable
-algorithm examples are indexed by [`../Examples/README.md`](https://github.com/tammet/gkreasoner/blob/main/Examples/README.md).
+algorithm examples are indexed by [`../Examples/README.md`](https://github.com/tammet/gkreasoner/blob/master/Examples/README.md).

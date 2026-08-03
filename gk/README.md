@@ -108,11 +108,11 @@ repository.
 In the gkreasoner repository:
 
   * [Overview and proof-search structure](https://github.com/tammet/gkreasoner)
-  * [Examples grouped by feature](https://github.com/tammet/gkreasoner/tree/main/Examples),
+  * [Examples grouped by feature](https://github.com/tammet/gkreasoner/tree/master/Examples),
     including the logic generated from English by llmpipe
-  * [Comparison with other systems](https://github.com/tammet/gkreasoner/blob/main/Doc/comparison_with_other_systems.md),
-    [sampling comparisons](https://github.com/tammet/gkreasoner/tree/main/montecarlo),
-    and [comparison inputs and outputs](https://github.com/tammet/gkreasoner/tree/main/comparisons)
+  * [Comparison with other systems](https://github.com/tammet/gkreasoner/blob/master/Doc/comparison_with_other_systems.md),
+    [sampling comparisons](https://github.com/tammet/gkreasoner/tree/master/montecarlo),
+    and [comparison inputs and outputs](https://github.com/tammet/gkreasoner/tree/master/comparisons)
 
 
 References

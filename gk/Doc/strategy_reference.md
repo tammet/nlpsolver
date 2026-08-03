@@ -249,9 +249,9 @@ above are the stable public interface.
 
 | File | Contents |
 |---|---|
-| [`query_focus.json`](https://github.com/tammet/gkreasoner/blob/main/Examples/strategy/query_focus.json) | query-focused single run |
-| [`negative_pref.json`](https://github.com/tammet/gkreasoner/blob/main/Examples/strategy/negative_pref.json) | negative-clause-preference single run |
-| [`runs.json`](https://github.com/tammet/gkreasoner/blob/main/Examples/strategy/runs.json) | three runs from restricted to broader search |
+| [`query_focus.json`](https://github.com/tammet/gkreasoner/blob/master/Examples/strategy/query_focus.json) | query-focused single run |
+| [`negative_pref.json`](https://github.com/tammet/gkreasoner/blob/master/Examples/strategy/negative_pref.json) | negative-clause-preference single run |
+| [`runs.json`](https://github.com/tammet/gkreasoner/blob/master/Examples/strategy/runs.json) | three runs from restricted to broader search |
 
 The files are described and exercised in
-[`../Examples/strategy/README.md`](https://github.com/tammet/gkreasoner/blob/main/Examples/strategy/README.md).
+[`../Examples/strategy/README.md`](https://github.com/tammet/gkreasoner/blob/master/Examples/strategy/README.md).

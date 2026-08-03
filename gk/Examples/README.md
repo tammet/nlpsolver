@@ -10,7 +10,7 @@ Run any example with:
 
 For the input format reference, see `../Doc/input_languages.md`.
 A tutorial based on the current example set is in the
-[gkreasoner repository](https://github.com/tammet/gkreasoner/tree/main/Examples).
+[gkreasoner repository](https://github.com/tammet/gkreasoner/tree/master/Examples).
 
 
 Core Examples

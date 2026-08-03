@@ -216,7 +216,7 @@ gk_name_number.txt
 gk_taxonomy_packed.txt
 ```
 
-The canonical copies are in [`../data/`](https://github.com/tammet/gkreasoner/blob/main/data/README.md). The two
+The canonical copies are in [`../data/`](https://github.com/tammet/gkreasoner/blob/master/data/README.md). The two
 files form one generated pair and are validated together; a missing or
 mismatched file is an error with a nonzero exit. An input that uses
 taxonomy-form priorities without this flag is an error; numeric
