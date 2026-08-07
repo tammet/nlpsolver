@@ -325,3 +325,256 @@ def strip_definite_tags(tree):
           for child in tree]
 
 
+
+# ======== question-packaging repair (plan fix 5) ========
+
+_ASSERTION_TYPES = frozenset(["real", "situation", "strict_rule", "normal_rule"])
+_WH_WORDS = frozenset(["who", "whom", "what", "which", "where", "when", "whose", "why", "how"])
+
+
+def _s1_unit_index(s1_json):
+  """unit_id -> ASU dict."""
+  out = {}
+  for pkg in s1_json if isinstance(s1_json, list) else []:
+    if not isinstance(pkg, dict):
+      continue
+    for u in pkg.get("units", []) or []:
+      if isinstance(u, dict) and u.get("unit_id"):
+        out[str(u["unit_id"])] = u
+  return out
+
+
+def _has_wh_word(text):
+  if not isinstance(text, str):
+    return False
+  return any(w in _WH_WORDS for w in re.findall(r"[a-z]+", text.lower()))
+
+
+def repair_question_packaging(logic, s1_json):
+  """(fix 5) Deterministic last-resort repair of query packaging.
+
+  The Stage-2 sanity checks already flag `multiple_questions` and
+  `missing_question` and re-prompt once; this runs when the model did not
+  comply (gpt-luna repeats the mistake, so the retry loop stops on
+  persistence).  Stage 1 declares exactly which ASU is the query, so the
+  correct packaging is determined without re-reading the English:
+
+    * a `question`/`ask` head on an ASU Stage 1 typed as an assertion
+      -> ["holds", W, F]  (W from the ASU's pre_state, else "W0")
+    * no query package anywhere, exactly one ASU typed `query`
+      -> that ASU's package becomes ["question", F]
+    * an answer variable on a query whose Stage-1 text has no wh-word
+      -> ["ask", V, F] becomes ["question", ["exists", V, F]] — sound, and
+         unlike simply dropping V it keeps F's occurrences of V bound.
+
+  All three require exactly one Stage-1 `query` ASU; with zero or several the
+  repair has no ground truth and does nothing.
+  """
+  from globals import options as _opts
+  if (_opts.get("nofix_questionpkg") or not isinstance(logic, list)
+      or not isinstance(s1_json, list)):
+    return logic
+  units = _s1_unit_index(s1_json)
+  query_ids = [uid for uid, u in units.items() if u.get("type") == "query"]
+  if len(query_ids) != 1:
+    return logic
+  qid = query_ids[0]
+
+  def head_of(pkg):
+    return pkg[0] if isinstance(pkg, list) and pkg and isinstance(pkg[0], str) else None
+
+  # Locate the @id items and their package heads.
+  items = []
+  for i, item in enumerate(logic):
+    if isinstance(item, list) and len(item) >= 3 and item[0] == "@id":
+      items.append((i, str(item[1]), item))
+  if not items:
+    return logic
+
+  changed = False
+  out = list(logic)
+
+  # (a) query package on an assertion ASU -> holds
+  for i, sid, item in items:
+    if sid == qid:
+      continue
+    u = units.get(sid)
+    if u is None or u.get("type") not in _ASSERTION_TYPES:
+      continue
+    pkg = item[2]
+    h = head_of(pkg)
+    if h == "question" and len(pkg) >= 2:
+      world = u.get("pre_state") if isinstance(u.get("pre_state"), str) else "W0"
+      out[i] = [item[0], item[1], ["holds", world, pkg[1]]] + list(item[3:])
+      changed = True
+    elif h == "ask" and len(pkg) >= 3:
+      world = u.get("pre_state") if isinstance(u.get("pre_state"), str) else "W0"
+      out[i] = [item[0], item[1],
+                ["holds", world, ["exists", pkg[1], pkg[2]]]] + list(item[3:])
+      changed = True
+
+  # (b) no query package anywhere -> wrap the Stage-1 query ASU
+  def any_query(tree):
+    if isinstance(tree, list) and tree:
+      if isinstance(tree[0], str) and tree[0] in ("question", "ask"):
+        return True
+      return any(any_query(c) for c in tree if isinstance(c, list))
+    return False
+
+  if not any(any_query(it[2]) for it in items):
+    for i, sid, item in items:
+      if sid != qid:
+        continue
+      pkg = item[2]
+      body = pkg[2] if (head_of(pkg) == "holds" and len(pkg) >= 3) else pkg
+      out[i] = [item[0], item[1], ["question", body]] + list(item[3:])
+      changed = True
+      break
+
+  # (c) answer variable on a yes/no query -> question(exists V, F)
+  qtext = units.get(qid, {}).get("text")
+  if not _has_wh_word(qtext):
+    for i, sid, item in items:
+      if sid != qid:
+        continue
+      pkg = out[i][2]
+      if head_of(pkg) == "ask" and len(pkg) >= 3:
+        out[i] = [item[0], item[1],
+                  ["question", ["exists", pkg[1], pkg[2]]]] + list(item[3:])
+        changed = True
+      break
+
+  return out if changed else logic
+
+
+# ======== comparative canonicalisation (plan fix 7d) ========
+
+# "taller than" -> ("tall", "high"): the adjective plus the degree direction.
+_COMPARATIVE_SUFFIX_RE = re.compile(r"^(.+?)(?:er)\s+than$", re.IGNORECASE)
+_COMPARATIVE_MORE_RE = re.compile(r"^more\s+(.+?)\s+than$", re.IGNORECASE)
+_COMPARATIVE_LESS_RE = re.compile(r"^less\s+(.+?)\s+than$", re.IGNORECASE)
+
+# Irregular comparatives worth handling; anything else falls through untouched.
+_IRREGULAR_COMPARATIVES = {
+  "better than": ("good", "high"),
+  "worse than": ("good", "low"),
+  "further than": ("far", "high"),
+  "farther than": ("far", "high"),
+  "more than": None,          # quantity, not a gradable adjective — skip
+  "less than": None,
+  "older than": ("old", "high"),
+  "younger than": ("old", "low"),
+}
+
+
+def _gradable_set():
+  """Known gradable adjectives, used to validate a comparative stem."""
+  global _GRADABLE_CACHE
+  if _GRADABLE_CACHE is None:
+    try:
+      _GRADABLE_CACHE = frozenset(x.lower() for x in _GRADABLE_PROPS)
+    except Exception:
+      _GRADABLE_CACHE = frozenset()
+  return _GRADABLE_CACHE
+
+
+_GRADABLE_CACHE = None
+
+
+def _stem_candidates(comp):
+  """Plausible base adjectives for a comparative form ending in -er."""
+  out = [comp]
+  if comp.endswith("e"):
+    out.append(comp[:-1])
+  if len(comp) > 2 and comp[-1] == comp[-2] and comp[-1] not in "aeiou":
+    out.append(comp[:-1])          # bigger -> big
+  if comp.endswith("i"):
+    out.append(comp[:-1] + "y")    # happier -> happy
+  out.append(comp + "e")           # nicer -> nice  (stem was "nic")
+  return out
+
+
+def _pick_stem(comp):
+  """Choose the base adjective for a comparative stem, preferring a known
+  gradable.  Returns None when nothing plausible is known — better to leave
+  the relation alone than to invent a predicate."""
+  grad = _gradable_set()
+  cands = _stem_candidates(comp)
+  for c in cands:
+    if c in grad:
+      return c
+  return None
+
+
+def _comparative_parts(rel):
+  """('taller than') -> ('tall', 'high'), or None when not a comparative.
+
+  The stem is validated against the gradable-adjective lexicon, because
+  English comparative morphology is not invertible by rule: "taller" could
+  stem to "tall" or "tal", "bigger" to "big" or "bigg".
+  """
+  if not isinstance(rel, str):
+    return None
+  key = rel.strip().lower()
+  if key in _IRREGULAR_COMPARATIVES:
+    return _IRREGULAR_COMPARATIVES[key]
+  m = _COMPARATIVE_MORE_RE.match(key)
+  if m:
+    return (m.group(1).strip(), "high")
+  m = _COMPARATIVE_LESS_RE.match(key)
+  if m:
+    return (m.group(1).strip(), "low")
+  m = _COMPARATIVE_SUFFIX_RE.match(key)
+  if m:
+    stem = _pick_stem(m.group(1).strip())
+    if stem:
+      return (stem, "high")
+  return None
+
+
+def canonicalize_comparative_relations(tree, _top=True):
+  """(fix 7d) Rewrite ["is rel2", "<adj>er than", X, Y] to the pipeline's
+  degree form ["has degree rel2", "<adj>", X, Y, "high"|"low", "none"].
+
+  Stage 2 sometimes encodes a comparative as an opaque binary relation whose
+  name embeds the comparison ("taller than", "higher than", "faster than").
+  Nothing in the pipeline relates that constant to the measure machinery, so
+  premise and question stop unifying even when both use it (claude 551,
+  gpt 553, gemini 549).  Only morphologically recognisable comparatives are
+  rewritten; anything else is left alone.
+  """
+  if _top:
+    from globals import options as _opts
+    if _opts.get("nofix_comparative"):
+      return tree
+  if not isinstance(tree, list) or not tree:
+    return tree
+  if isinstance(tree[0], str):
+    base = tree[0].lstrip("-")
+    neg = "-" if tree[0].startswith("-") else ""
+    if base == "is rel2" and len(tree) >= 4 and isinstance(tree[1], str):
+      parts = _comparative_parts(tree[1])
+      if parts:
+        adj, direction = parts
+        return ([neg + "has degree rel2", adj, tree[2], tree[3], direction, "none"]
+                + [canonicalize_comparative_relations(x, _top=False) if isinstance(x, list) else x
+                   for x in tree[4:]])
+    # Stage 2 also writes the comparative into the ADJECTIVE slot of an
+    # otherwise correct degree relation: ["has degree rel2","taller than",X,Y,
+    # "high",C].  Normalise the slot, keeping the explicit direction when the
+    # phrase does not itself carry one.
+    if base == "has degree rel2" and len(tree) >= 5 and isinstance(tree[1], str):
+      parts = _comparative_parts(tree[1])
+      if parts:
+        adj, direction = parts
+        slot = tree[4] if isinstance(tree[4], str) and tree[4] in ("high", "low") \
+               else direction
+        if str(tree[1]).strip().lower().startswith("less "):
+          slot = "low"
+        return ([neg + "has degree rel2", adj, tree[2], tree[3], slot]
+                + [canonicalize_comparative_relations(x, _top=False) if isinstance(x, list) else x
+                   for x in tree[5:]])
+    return [tree[0]] + [canonicalize_comparative_relations(x, _top=False) if isinstance(x, list) else x
+                        for x in tree[1:]]
+  return [canonicalize_comparative_relations(x, _top=False) if isinstance(x, list) else x
+          for x in tree]

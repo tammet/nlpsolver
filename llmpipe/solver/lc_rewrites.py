@@ -1024,3 +1024,240 @@ def inject_query_specific_noun_isas(formula, asu):
   if not cat_to_id:
     return formula
   return _inject_walk(formula, cat_to_id)
+
+
+# ======== category-isa filter (plan fix 3) ========
+
+def _asu_text_words(asu):
+  """Lowercased word bag of an ASU's text, for the 'is this class actually
+  mentioned?' test."""
+  if not isinstance(asu, dict):
+    return set()
+  text = asu.get("text")
+  if not isinstance(text, str):
+    return set()
+  return set(re.findall(r"[a-z]+", text.lower()))
+
+
+def _class_mentioned(cls, words):
+  """Stem-tolerant containment: 'animals' in the text protects class 'animal'."""
+  if not isinstance(cls, str) or not cls:
+    return False
+  for part in re.findall(r"[a-z]+", cls.lower()):
+    if part in words:
+      continue
+    stemmed = {w for w in words}
+    hit = False
+    for w in stemmed:
+      if w == part or w.rstrip("s") == part or w == part + "s" \
+         or w == part + "es" or (part.endswith("y") and w == part[:-1] + "ies"):
+        hit = True
+        break
+    if not hit:
+      return False
+  return True
+
+
+def _collect_isa_by_entity(node, out):
+  """Map entity -> list of classes positively asserted for it in this tree."""
+  if not isinstance(node, list) or not node:
+    return
+  if isinstance(node[0], str):
+    if node[0] == "isa" and len(node) >= 3 and isinstance(node[2], str):
+      out.setdefault(node[2], []).append(node[1])
+    for child in node[1:]:
+      _collect_isa_by_entity(child, out)
+  else:
+    for child in node:
+      _collect_isa_by_entity(child, out)
+
+
+def _drop_isa_conjuncts(node, victims):
+  """Remove ['isa', C, E] conjuncts listed in victims from `and` blocks."""
+  if not isinstance(node, list) or not node:
+    return node
+  if not isinstance(node[0], str):
+    return [_drop_isa_conjuncts(el, victims) for el in node]
+  op = node[0]
+  if op == "and":
+    kept = []
+    for el in node[1:]:
+      if (isinstance(el, list) and len(el) >= 3 and el[0] == "isa"
+          and isinstance(el[1], str) and isinstance(el[2], str)
+          and (el[1], el[2]) in victims):
+        continue
+      kept.append(_drop_isa_conjuncts(el, victims))
+    if not kept:
+      return None
+    if len(kept) == 1:
+      return kept[0]
+    return ["and"] + kept
+  return [op] + [_drop_isa_conjuncts(el, victims) if isinstance(el, list) else el
+                 for el in node[1:]]
+
+
+def drop_category_isa_conjuncts(logic, s1_json):
+  """(fix 3) Drop an isa conjunct that merely restates a Stage-1 entity
+  `category` annotation the sentence never states.
+
+  Gemini's uncertainty cluster (1481/1483/1487/1508/1512) fails because
+  Stage 2 turns the metadata `{"id":"John 1","category":"animal"}` into an
+  asserted `isa(animal, John 1)` for the sentence "John 1 is an elephant."
+  The rule under test says elephants are NOT animals, so the injected fact
+  proves the question outright.
+
+  The pipeline already treats category isa as ITS OWN business:
+  build_entity_category_clauses() injects those facts and deliberately skips
+  entities Stage 2 typed.  This filter restores that invariant when Stage 2
+  smuggles the category into its own package.
+
+  Fires only when all hold, so no entity is ever left untyped:
+    * the class equals the entity's Stage-1 category,
+    * the class word does not occur in that ASU's text (stem-tolerant),
+    * another positive isa for the same entity survives in the package.
+  """
+  from globals import options as _opts
+  if (_opts.get("nofix_categoryisa") or not isinstance(logic, list)
+      or not isinstance(s1_json, list)):
+    return logic
+  # entity id -> (category, ASU text words), per unit
+  asu_by_uid = {}
+  for pkg in s1_json:
+    if not isinstance(pkg, dict):
+      continue
+    for u in pkg.get("units", []) or []:
+      if isinstance(u, dict) and u.get("unit_id"):
+        asu_by_uid[str(u.get("unit_id"))] = u
+
+  # Only a category the QUESTION itself asserts about the same entity may be
+  # dropped.  That is the shape this repair exists for: "John is an elephant."
+  # + "John is an animal?" — the question package contains isa(animal, John 1)
+  # as its goal, and Stage 2 smuggling the same atom into a premise settles the
+  # question by fiat.  Anything looser mis-fires: a word test on the query text
+  # dropped Harry's basic isa(animal, …) typing because the question mentioned
+  # "an animal with a backbone" (old-model control, gpt FOLIO 101), and basic
+  # types are what the problem's rules quantify over.
+  question_isa_pairs = set()
+
+  def _collect_question_isa(node):
+    if not isinstance(node, list) or not node:
+      return
+    if isinstance(node[0], str):
+      head = node[0].lstrip("-")
+      if head == "isa" and len(node) >= 3 and isinstance(node[1], str) \
+         and isinstance(node[2], str):
+        question_isa_pairs.add((node[1], node[2]))
+      for ch in node[1:]:
+        _collect_question_isa(ch)
+    else:
+      for ch in node:
+        _collect_question_isa(ch)
+
+  for item in logic:
+    if (isinstance(item, list) and len(item) >= 3 and item[0] == "@id"
+        and isinstance(item[2], list) and item[2]
+        and item[2][0] in ("question", "ask")):
+      _collect_question_isa(item[2])
+
+  changed = False
+  out = []
+  for item in logic:
+    if not (isinstance(item, list) and len(item) >= 3 and item[0] == "@id"):
+      out.append(item)
+      continue
+    sid = str(item[1])
+    asu = asu_by_uid.get(sid)
+    if asu is None:
+      out.append(item)
+      continue
+    cats = {}
+    for ent in asu.get("entities", []) or []:
+      if isinstance(ent, dict) and isinstance(ent.get("id"), str):
+        cats[ent["id"]] = ent.get("category")
+    if not cats:
+      out.append(item)
+      continue
+    words = _asu_text_words(asu)
+    isa_map = {}
+    _collect_isa_by_entity(item[2], isa_map)
+    victims = set()
+    for entity, classes in isa_map.items():
+      cat = cats.get(entity)
+      if not isinstance(cat, str) or not cat:
+        continue
+      if _class_mentioned(cat, words):
+        continue           # the sentence really says it
+      if (cat, entity) not in question_isa_pairs:
+        continue           # not the question's own goal atom — keep the typing
+      matching = [c for c in classes if c == cat]
+      others = [c for c in classes if c != cat]
+      if matching and others:
+        victims.add((cat, entity))
+    if not victims:
+      out.append(item)
+      continue
+    body = _drop_isa_conjuncts(item[2], victims)
+    if body is None or body == item[2]:
+      out.append(item)
+      continue
+    changed = True
+    out.append([item[0], item[1], body] + list(item[3:]))
+  return out if changed else logic
+
+
+# ======== class-name case folding (plan fix 7c) ========
+
+def fold_class_name_case(logic):
+  """(fix 7c) Unify class constants that differ only in capitalization.
+
+  Stage 2 sometimes writes a class one way in a rule and another in the
+  question ("Estonian city" vs "estonian city", claude 1242), which blocks
+  unification.  Folds to the first-seen spelling.
+
+  Scope is deliberately narrow: only the CLASS position of `isa` — never
+  entity ids, URL constants or predicate names, where case can be meaningful.
+  """
+  from globals import options as _opts
+  if _opts.get("nofix_casefold") or not isinstance(logic, list):
+    return logic
+  seen = {}
+  order = []
+
+  def scan(node):
+    if not isinstance(node, list) or not node:
+      return
+    if isinstance(node[0], str):
+      if node[0] == "isa" and len(node) >= 3 and isinstance(node[1], str):
+        key = node[1].lower()
+        if key not in seen:
+          seen[key] = node[1]
+          order.append(key)
+      for child in node[1:]:
+        scan(child)
+    else:
+      for child in node:
+        scan(child)
+
+  scan(logic)
+  remap = {}
+  for key, first in seen.items():
+    remap[key] = first
+
+  changed = [False]
+
+  def fold(node):
+    if not isinstance(node, list) or not node:
+      return node
+    if not isinstance(node[0], str):
+      return [fold(el) for el in node]
+    if node[0] == "isa" and len(node) >= 3 and isinstance(node[1], str):
+      canon = remap.get(node[1].lower())
+      if canon is not None and canon != node[1]:
+        changed[0] = True
+        return [node[0], canon] + [fold(el) if isinstance(el, list) else el
+                                   for el in node[2:]]
+    return [node[0]] + [fold(el) if isinstance(el, list) else el
+                        for el in node[1:]]
+
+  folded = fold(logic)
+  return folded if changed[0] else logic

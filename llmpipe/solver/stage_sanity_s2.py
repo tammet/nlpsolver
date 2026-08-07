@@ -991,12 +991,42 @@ def _check_stage2_either_or_not_xor(logic, s1_json):
 
 
 
-def _check_stage2_missing_question(logic, s1_json):
+def _check_stage2_missing_question(logic, s1_json, input_text=None):
   """Detect Stage-1 query units that have no corresponding question/ask
   package in Stage-2.  Triggered when either unit.type == "query" or the
-  parent package's raw text contains "?"."""
-  if not isinstance(logic, list) or not isinstance(s1_json, list):
+  parent package's raw text contains "?".
+
+  (plan fix N2, origin: the /opt/logictools/nl weak-model pilot) In combined
+  single-call mode there is no Stage 1 at all — llmparse passes s1_json=None —
+  so this check used to bail and a dropped question was never flagged or
+  retried; the pipeline simply reached gk's "no question given".  With no
+  Stage 1, fall back to the input text: if it asks something and the logic
+  carries no query package, that is a missing question.
+  """
+  if not isinstance(logic, list):
     return []
+  if not isinstance(s1_json, list):
+    if not isinstance(input_text, str) or "?" not in input_text:
+      return []
+    found = set()
+    try:
+      _collect_question_ids_from_logic(logic, found)
+    except Exception:
+      return []        # be conservative when the scan itself fails
+    if found:
+      return []
+    return [Issue(
+      kind="missing_question",
+      location="",
+      description=("The input contains a question (it ends with '?') but the "
+                   "logic has NO query package.  Add exactly one: a yes/no "
+                   "question becomes [\"question\", FORMULA]; a "
+                   "who/what/where/when question becomes [\"ask\", \"X\", "
+                   "FORMULA].  Encode the question sentence as its own "
+                   "[\"@id\", \"S...\", <query package>], separate from the "
+                   "facts."),
+      evidence=input_text[:120],
+    )]
   expected = []      # list of (unit_id, raw)
   for pkg in s1_json:
     if not isinstance(pkg, dict):
@@ -1816,7 +1846,7 @@ def _check_stage2_dropped_predicate_nominal(logic, s1_json):
   return issues
 
 
-def check_stage2(logic, s1_json=None):
+def check_stage2(logic, s1_json=None, input_text=None):
   """Run all registered Stage-2 sanity checks and return the combined
   issue list.  s1_json provides ASU context for checks that need it
   (currently: the dropped-specific-noun check).
@@ -1829,7 +1859,7 @@ def check_stage2(logic, s1_json=None):
   issues.extend(_check_stage2_arities(logic))
   issues.extend(_check_stage2_event_shapes(logic))
   issues.extend(_check_stage2_inner_content_event_time(logic, s1_json))
-  issues.extend(_check_stage2_missing_question(logic, s1_json))
+  issues.extend(_check_stage2_missing_question(logic, s1_json, input_text))
   issues.extend(_check_stage2_multiple_questions(logic))
   issues.extend(_check_stage2_vacuous_tautology_assertion(logic))
   issues.extend(_check_stage2_measure_vs_degree_rel2(logic))

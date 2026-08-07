@@ -61,7 +61,8 @@ import lc_encoding
 import lc_finalize
 from lc_repairs import (hoist_nested_ids, repair_misnested_normally_implies,
                         repair_self_defeating_conditional, rename_offinventory_preds,
-                        strip_definite_tags)
+                        strip_definite_tags, repair_question_packaging,
+                        canonicalize_comparative_relations)
 from lc_query_guards import (strip_phantom_query_guards, has_what_query,
                             generate_what_population)
 from lc_entity_isa import (collect_positive_isa_entities,
@@ -176,6 +177,8 @@ from lc_rewrites import (
   negate_consequent as _negate_consequent,
   inject_query_specific_noun_isas as _inject_query_specific_noun_isas,
   lower_normally_through_forall as _lower_normally_through_forall,
+  drop_category_isa_conjuncts as _drop_category_isa_conjuncts,
+  fold_class_name_case as _fold_class_name_case,
 )
 
 # Per-package processing — split into lc_packages.py.
@@ -214,6 +217,84 @@ def _build_asu_index(s1_json):
           asu["_raw"] = raw  # store parent raw text for who/what detection
           index[uid] = asu
   return index
+
+
+# (8a) Literal heads that abort gk's reader.  gk rejects the whole input file
+# on a parse error, so a clause carrying one of these must be dropped before it
+# reaches the prover.  "<=" is reported as "first element of a list must be a
+# symbol, not a number" (a misleading message: the head is the problem, not the
+# numeric argument).  "<", ">", ">=" and "!=" parse and are simply not proved.
+_GK_UNPARSEABLE_HEADS = frozenset(["<="])
+
+
+def _clause_unparseable_reason(body):
+  """Return a reason string when a clause cannot be given to gk, else None."""
+  bad = []
+
+  def walk(node, depth=0):
+    if bad or depth > 60 or not isinstance(node, list) or not node:
+      return
+    head = node[0]
+    if isinstance(head, str) and head.lstrip("-") in _GK_UNPARSEABLE_HEADS:
+      bad.append("unparseable operator '" + head.lstrip("-") + "'")
+      return
+    if isinstance(head, (int, float)) and not isinstance(head, bool):
+      bad.append("number-headed list")
+      return
+    for child in node:
+      walk(child, depth + 1)
+
+  walk(body)
+  return bad[0] if bad else None
+
+
+def _drop_unparseable_clauses(result, fixes=None):
+  """Remove clauses whose shape would make gk reject the whole input."""
+  if _g_options.get("nofix_containment") or not result:
+    return result
+  kept = []
+  dropped = []
+  for cl in result:
+    body = cl.get("@logic", cl.get("@question")) if isinstance(cl, dict) else None
+    reason = _clause_unparseable_reason(body) if body is not None else None
+    if reason is None:
+      kept.append(cl)
+    else:
+      dropped.append((str(cl.get("@name", "?")), reason))
+  if dropped and fixes is not None:
+    for name, reason in dropped[:4]:
+      fixes.append("logconvert: dropped unparseable clause " + name + " (" + reason + ")")
+  return kept
+
+
+def _malformed_package_reason(item):
+  """(8a) Return a short reason string when a Stage-2 package is structurally
+  unusable, or None when it looks convertible.
+
+  Only shapes that gk or the converter cannot represent at all are rejected:
+  a list whose head is a number or a list where a predicate/connective name
+  belongs.  gk reports the first of these as
+  "first element of a list must be a symbol, not a number"; the second raises
+  inside the converter.  Everything else is left to the normal passes, which
+  have their own repairs.
+  """
+  bad = []
+
+  def walk(node, depth=0):
+    if bad or depth > 60 or not isinstance(node, list) or not node:
+      return
+    head = node[0]
+    if isinstance(head, (int, float)) and not isinstance(head, bool):
+      bad.append("number-headed list")
+      return
+    for child in node:
+      walk(child, depth + 1)
+
+  # The package body only: ["@id", SID, BODY].  A numeric SID is fine.
+  body = item[2] if (isinstance(item, list) and len(item) >= 3
+                     and item[0] == "@id") else item
+  walk(body)
+  return bad[0] if bad else None
 
 
 def _dedup_entity_clauses(result):
@@ -376,6 +457,32 @@ def rawlogic_convert(logic, s1_json=None, fixes=None):
   # them for the main formula.
   logic = strip_definite_tags(logic)
 
+  # (fix 5) Deterministic repair of query packaging, after the Stage-2 sanity
+  # retry has had its chance: a query package on an assertion ASU, a missing
+  # query package, or an answer variable on a yes/no question.
+  _b = logic
+  logic = repair_question_packaging(logic, s1_json)
+  _note_repair(_b, logic, "repaired question packaging")
+
+  # (fix 7d) Rewrite opaque comparative relations ("taller than") into the
+  # pipeline's degree form, so premise and question share one representation.
+  _b = logic
+  logic = canonicalize_comparative_relations(logic)
+  _note_repair(_b, logic, "canonicalized comparative relation")
+
+  # (fix 3) Drop isa conjuncts that only restate a Stage-1 entity `category`
+  # the sentence never states.  Must run BEFORE collect_positive_isa_entities
+  # below, so the pipeline's own entity-category injection sees the filtered
+  # logic and applies its normal skip policy.
+  _b = logic
+  logic = _drop_category_isa_conjuncts(logic, s1_json)
+  _note_repair(_b, logic, "dropped category-only isa")
+
+  # (fix 7c) Unify class constants differing only in capitalization.
+  _b = logic
+  logic = _fold_class_name_case(logic)
+  _note_repair(_b, logic, "folded class-name case")
+
   # Drop phantom isa-guards from query bodies: a leaked definite-description
   # presupposition (isa on a Stage-1 entity that nothing asserts) makes the
   # whole conjunctive query unprovable.  Removing the dead guard is a sound
@@ -443,15 +550,39 @@ def rawlogic_convert(logic, s1_json=None, fixes=None):
   # globally unique clause names (sent_S1, sent_S1_2, sent_S1_3, ...).
   uid_count = {}
   theof_relations = set()  # collect (REL, TYPE) pairs for bridge axiom generation
+  # (fix 4) Classes some premise quantifies over generically.  Gates the
+  # bare-plural-generic question hoist, which is only sound when a generic
+  # rule exists for the queried class.
+  generic_classes = lc_questions.collect_generic_rule_classes(items)
   result = []
   for item in items:
-    if isinstance(item, list) and len(item) >= 2 and item[0] == "@id":
-      sid = str(item[1])
-      uid_count[sid] = uid_count.get(sid, 0) + 1
-      objs = convert_id_package(item, asu_index, uid_suffix=uid_count[sid],
-                                 set_el_by_sid=set_el_by_sid)
-    else:
-      objs = convert_id_package(item, asu_index, set_el_by_sid=set_el_by_sid)
+    sid = str(item[1]) if (isinstance(item, list) and len(item) >= 2
+                           and item[0] == "@id") else "?"
+    # (8a) Per-package containment.  A single malformed package must not lose
+    # the whole case: Stage 2 occasionally emits a term whose head is a number
+    # or a list where an atom is expected, which raises deep inside the
+    # conversion.  Screen for the malformed shape, and catch anything else, so
+    # only the offending package is dropped and the rest of the problem still
+    # reaches the prover.
+    bad = _malformed_package_reason(item)
+    if bad is not None:
+      if fixes is not None:
+        fixes.append("logconvert: skipped malformed package " + sid + " (" + bad + ")")
+      continue
+    try:
+      if sid != "?":
+        uid_count[sid] = uid_count.get(sid, 0) + 1
+        objs = convert_id_package(item, asu_index, uid_suffix=uid_count[sid],
+                                   set_el_by_sid=set_el_by_sid,
+                                   generic_classes=generic_classes)
+      else:
+        objs = convert_id_package(item, asu_index, set_el_by_sid=set_el_by_sid,
+                                  generic_classes=generic_classes)
+    except Exception as e:
+      if fixes is not None:
+        fixes.append("logconvert: skipped malformed package " + sid
+                     + " (" + type(e).__name__ + ")")
+      continue
     if objs:
       result.extend(objs)
 
@@ -759,6 +890,12 @@ def rawlogic_convert(logic, s1_json=None, fixes=None):
     # generically ("the gym"/"the campus" re-existentialised per sentence), so
     # the rule and the question co-refer.  Runs last, on the clean strict clauses.
     result = merge_typeonly_skolems(result)
+
+  # (8a) Final containment: drop clauses gk's reader cannot parse, so one bad
+  # literal costs its own clause instead of the whole problem.  gk aborts the
+  # entire input on a parse error, which turns a single Stage-2 slip into a
+  # total loss (gemini FOLIO 59/60, where Stage 2 wrote ["<=", COUNT, 1]).
+  result = _drop_unparseable_clauses(result, fixes)
 
   return result
 

@@ -86,6 +86,19 @@ options={
   # before they are passed to the prover.  Set to True or pass -nosemnormal
   # to disable.
   "nosemnormal_flag": False,
+  # Per-fix kill switches for the 2026-08 programmatic repairs
+  # (memos/PLAN_2026_08_04_programmatic_fixes.md).  Development/measurement
+  # aids: set one True to replay a tree with that repair disabled and attribute
+  # a recovery or a breakage to it.  All default False (every repair active).
+  "nofix_tense": False,        # fix 1  ASU tense completion
+  "nofix_entityids": False,    # fix 2a/2c entity id repairs
+  "nofix_categoryisa": False,  # fix 3  category-isa filter
+  "nofix_skqguard": False,     # fix 4  bare-plural-generic hoist guard
+  "nofix_questionpkg": False,  # fix 5  question packaging repair
+  "nofix_casefold": False,     # fix 7c class-name case folding
+  "nofix_comparative": False,  # fix 7d comparative canonicalisation
+  "nofix_containment": False,  # fix 8a unparseable-clause containment
+  "nofix_downstream": False,   # N1    downstream-error corrective retry
   # LLM reasoning/thinking mode: OFF by default.
   # When True, enables medium reasoning effort (GPT: reasoning_effort=medium;
   # Claude: extended thinking; Gemini: thinkingConfig, requires 2.5+ model).

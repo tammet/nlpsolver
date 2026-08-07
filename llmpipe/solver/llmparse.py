@@ -552,8 +552,13 @@ def _run_stage2_split(s1_json, eff_llm, eff_version, eff_tokens, eff_think, stat
 
 # ======== main entry point ========
 
-def parse_text(text, llm=None, version=None, tokens=None, think=None):
+def parse_text(text, llm=None, version=None, tokens=None, think=None,
+               stage2_corrective=""):
   """Parse English text through stage 1 (ASUs) then stage 2 (logic).
+
+  stage2_corrective -- (plan fix N1) text appended to the Stage-2 input on a
+  downstream-error retry.  Stage 1 is unchanged and therefore served from the
+  LLM cache, so only Stage 2 is actually re-called.
 
   Optional llm/version/tokens/think override the module-level defaults.
 
@@ -594,7 +599,8 @@ def parse_text(text, llm=None, version=None, tokens=None, think=None):
     load_combined_prompt()
     s2_json, s2_raw, s2_err = _run_stage(2, text, _combined_sysprompt,
                                           eff_llm, eff_version, eff_tokens, eff_think, stats,
-                                          check_fn=lambda parsed: _check_stage2(parsed, None))
+                                          check_fn=lambda parsed: _check_stage2(parsed, None,
+                                                                                input_text=text))
     _debug_write("COMBINED STAGE " + ("ERROR: " + s2_err if s2_err else "OK"))
     return (None, s2_json, stats)
 
@@ -623,7 +629,7 @@ def parse_text(text, llm=None, version=None, tokens=None, think=None):
                                   eff_think, stats)
       _debug_write("STAGE 2 (split) " + ("FAILED" if s2_json is None else "OK"))
     else:
-      s2_input = json.dumps(s1_json)
+      s2_input = json.dumps(s1_json) + stage2_corrective
       s2_json, s2_raw, s2_err = _run_stage(2, s2_input, _stage2_sysprompt,
                                             eff_llm, eff_version, eff_tokens, eff_think, stats,
                                             check_fn=lambda parsed: _check_stage2(parsed, s1_json))
@@ -635,6 +641,11 @@ def parse_text(text, llm=None, version=None, tokens=None, think=None):
       # (entity canon) Fold Stage-2 Wikipedia-URL constants into the matching
       # Stage-1 entity id so split constants reunify.
       s2_json = canonicalize_entity_urls(s1_json, s2_json, stats)
+    # Post-Stage-2 Stage-1 repairs (plan fixes 1, 2a, 2c).  They run here, not
+    # before the Stage-2 call, because the Stage-2 input is json.dumps(s1_json)
+    # — repairing earlier would change the model's prompt and its cache key.
+    _fill_missing_asu_time(s1_json, stats)
+    s2_json = _repair_entity_ids(s1_json, s2_json, stats)
     return (s1_json, s2_json)
 
   s1_json, s2_json = _stage1_then_stage2(text)
@@ -1155,6 +1166,291 @@ def _replace_ids_in_s1(obj, replacements):
         obj[i] = replacements[val]
       elif isinstance(val, (dict, list)):
         _replace_ids_in_s1(val, replacements)
+
+
+# ======== post-Stage-2 Stage-1 repairs (plan fixes 1, 2a, 2c) ========
+#
+# These run AFTER the Stage-2 call, beside canonicalize_entity_urls.  Stage 2's
+# input is json.dumps(s1_json), so repairing Stage 1 earlier would change the
+# Stage-2 prompt (and its cache key) on every affected case.  Running after
+# means the repair is invisible to the model and only shapes the conversion —
+# which is where the defects bite.  The id repairs are two-sided: an id
+# rewritten in Stage 1 must be rewritten in the Stage-2 constants too.
+
+_PAST_MARKERS = frozenset([
+  "was", "were", "had", "did", "went", "came", "saw", "said", "took", "gave",
+  "made", "found", "got", "knew", "thought", "told", "became", "left", "felt",
+  "brought", "began", "kept", "held", "wrote", "stood", "heard", "let", "meant",
+  "set", "met", "ran", "paid", "sat", "spoke", "lay", "led", "grew", "lost",
+  "fell", "sent", "built", "understood", "drew", "broke", "spent", "cut",
+  "rose", "drove", "bought", "wore", "chose", "ate", "sang", "drank", "flew",
+  "spotted",
+])
+
+_TIMED_ASU_TYPES = frozenset(["situation", "real"])
+
+# Words that turn a following -ed form into a participle rather than a finite
+# past tense: copulas and modal/perfect auxiliaries.
+_PARTICIPLE_TRIGGERS = frozenset([
+  "be", "been", "being", "is", "are", "am", "get", "gets", "getting",
+  "can", "could", "may", "might", "must", "shall", "should", "will", "would",
+])
+
+
+def _looks_past(text):
+  """True when an ASU's text shows a FINITE past-tense verb.
+
+  Deliberately narrow.  A bare "-ed" test is not enough: "can be spotted",
+  "jobs offered by the university", "students taking a class" are participles
+  in present-tense sentences, and filling `past` on those breaks FOLIO items
+  that carry no tense at all (claude 19/20/21, gpt 157).  So a regular -ed form
+  counts only when it is not preceded by a copula/auxiliary that makes it a
+  participle.
+  """
+  if not isinstance(text, str) or not text:
+    return False
+  words = _re.findall(r"[A-Za-z']+", text.lower())
+  if not words:
+    return False
+  for w in words:
+    if w in _PAST_MARKERS:
+      return True
+  for i, w in enumerate(words):
+    if len(w) > 3 and w.endswith("ed"):
+      prev = words[i - 1] if i else ""
+      if prev in _PARTICIPLE_TRIGGERS:
+        continue          # "be spotted", "is used", "been offered"
+      return True
+  return False
+
+
+def _fill_missing_asu_time(s1_json, stats=None):
+  """(fix 1) Fill an absent Stage-1 `time` field on assertion ASUs.
+
+  lc_packages.convert_id_package already overrides the $ctxt tense from this
+  field; the regressions come from Stage 1 omitting it on premises while
+  setting it on the query, so the premise silently defaults to present while
+  the question asks about the past and nothing unifies.
+
+  Only fills when the field is ABSENT (never overwrites), only on `situation`
+  / `real` units (rules are timeless), only when the ASU text shows finite
+  past morphology, and only inside a problem where some ASU explicitly
+  declares time "past" (timeless FOLIO items are excluded wholesale).
+  """
+  from globals import options as _opts
+  if _opts.get("nofix_tense") or not isinstance(s1_json, list):
+    return
+  units = []
+  declared = set()
+  for pkg in s1_json:
+    if not isinstance(pkg, dict):
+      continue
+    for u in pkg.get("units", []) or []:
+      if not isinstance(u, dict):
+        continue
+      units.append(u)
+      t = u.get("time")
+      if isinstance(t, str):
+        declared.add(t)
+  if not units:
+    return
+  # Only fill inside a problem that is demonstrably past-tense: some ASU must
+  # explicitly declare time "past".  Without this, FOLIO items — which are
+  # timeless and declare no time anywhere — get spurious past assertions.
+  # (An earlier "inherit past from the query" rule was dropped: it overwrote
+  # genuinely present ASUs, e.g. "John does not smoke" after "John stopped
+  # smoking", flipping case 1205 to the wrong answer.)
+  if "past" not in declared:
+    return
+
+  filled = []
+  for u in units:
+    if u.get("time") is not None or u.get("type") not in _TIMED_ASU_TYPES:
+      continue
+    if _looks_past(u.get("text")):
+      u["time"] = "past"
+      filled.append(str(u.get("unit_id")))
+  if filled and stats is not None:
+    stats["s1_fixes"].append("asu time filled: " + ",".join(filled))
+
+
+_DEF_REMENTION_RE = _re.compile(r"\bthe\s+([A-Za-z][A-Za-z\s'-]*?)\s*(\d+)\b",
+                                _re.IGNORECASE)
+
+
+def _entity_head(eid):
+  """Strip a trailing numeric id: 'campus 2' -> 'campus'."""
+  m = _ID_WITH_NUMBER_RE.match(eid or "")
+  return m.group(1).strip() if m else (eid or "").strip()
+
+
+def _collect_units(s1_json):
+  out = []
+  for pkg in s1_json if isinstance(s1_json, list) else []:
+    if isinstance(pkg, dict):
+      for u in pkg.get("units", []) or []:
+        if isinstance(u, dict):
+          out.append(u)
+  return out
+
+
+def _repair_entity_ids(s1_json, s2_json, stats=None):
+  """(fixes 2a, 2c) Repair Stage-1 entity ids, two-sided.
+
+  2a unify — the same entity carrying two ids.  Two disjoint, conservative
+  triggers, because a blanket "same head + same category" rule would merge
+  genuinely distinct entities ("The red square 1" vs "A blue square 3"):
+    * proper nouns: capitalized head, same head, same category  ("Vladimir
+      1"/"Vladimir 3");
+    * definite re-mention: the later mention appears in its ASU text as
+      exactly "the <head> <id>" with no intervening modifier, and exactly one
+      earlier id exists for that head+category ("the campus 1"/"the campus 2").
+
+  2c renumber — one id worn by two different heads ("Mark 2" / "house 2"):
+  give the later head a fresh id so the two entities stay distinct.
+
+  Returns the (possibly rewritten) s2_json.
+  """
+  from globals import options as _opts
+  if _opts.get("nofix_entityids") or not isinstance(s1_json, list):
+    return s2_json
+  units = _collect_units(s1_json)
+  if not units:
+    return s2_json
+
+  # first appearance order of each id, with head/category/capitalization;
+  # cooccur holds id pairs appearing in ONE unit — two ids taking part in the
+  # same predication are necessarily distinct entities and must never be
+  # unified ("Book 1 is more interesting than Book 2", old-model control
+  # deepseek core 554).
+  info = {}
+  order = []
+  cooccur = set()
+  for u in units:
+    text = u.get("text") if isinstance(u.get("text"), str) else ""
+    unit_ids = []
+    for ent in u.get("entities", []) or []:
+      if not isinstance(ent, dict):
+        continue
+      eid = ent.get("id")
+      if not isinstance(eid, str) or not eid.strip():
+        continue
+      unit_ids.append(eid)
+      if eid not in info:
+        info[eid] = {"head": _entity_head(eid), "cat": ent.get("category"),
+                     "texts": []}
+        order.append(eid)
+      info[eid]["texts"].append(text)
+    for i, a in enumerate(unit_ids):
+      for b in unit_ids[i + 1:]:
+        if a != b:
+          cooccur.add(frozenset((a, b)))
+
+  remap = {}          # old id -> canonical id (2a)
+  renumber = {}       # old id -> fresh id     (2c)
+
+  # ---- 2a: unify ----
+  by_key = {}
+  for eid in order:
+    m = _ID_WITH_NUMBER_RE.match(eid)
+    if not m:
+      continue                      # bare (generic) ids are not renumbered
+    key = (info[eid]["head"].lower(), info[eid]["cat"])
+    by_key.setdefault(key, []).append(eid)
+  for (head, _cat), ids in by_key.items():
+    if len(ids) < 2:
+      continue
+    first = ids[0]
+    # PROPER NOUNS ONLY.  A definite re-mention rule was tried and removed:
+    # Stage 1 has already assigned ids, so "The elephant 2" is a re-mention of
+    # entity 2, not evidence that entity 2 is entity 1.  Merging on it destroyed
+    # genuinely distinct entities ("A gray elephant 1" vs "A white elephant 2",
+    # core 144/146/150/503).
+    #
+    # Proper means: the head is capitalized AND its lowercase form never occurs
+    # in the mentioning texts.  A sentence-capitalized common noun ("Book 1" in
+    # "This book …") passes a naive uppercase test and merged two distinct
+    # books (old-model control, deepseek core 554).
+    head_words = info[first]["head"].split()
+    proper = any(w[:1].isupper() for w in head_words)
+    if proper:
+      alltexts = " ".join(t for eid2 in ids for t in info[eid2]["texts"] if t)
+      lower_words = set(_re.findall(r"[a-z][a-z']*", alltexts))
+      if any(w[:1].isupper() and w.lower() in lower_words for w in head_words):
+        proper = False
+    if not proper:
+      continue
+    for later in ids[1:]:
+      if frozenset((first, later)) in cooccur:
+        continue          # same-predication ids are distinct by construction
+      remap[later] = first
+
+  # ---- 2c: renumber a shared id worn by two heads ----
+  used_numbers = set()
+  by_number = {}
+  for eid in order:
+    m = _ID_WITH_NUMBER_RE.match(eid)
+    if not m:
+      continue
+    n = int(m.group(2))
+    used_numbers.add(n)
+    by_number.setdefault(n, []).append(eid)
+  nxt = (max(used_numbers) + 1) if used_numbers else 1
+  for n, ids in by_number.items():
+    heads = {}
+    for eid in ids:
+      heads.setdefault(info[eid]["head"].lower(), eid)
+    if len(heads) < 2:
+      continue
+    for later in list(heads.values())[1:]:
+      if later in remap:
+        continue
+      renumber[later] = info[later]["head"] + " " + str(nxt)
+      nxt += 1
+
+  changes = dict(remap)
+  changes.update(renumber)
+  if not changes:
+    return s2_json
+
+  _replace_ids_in_s1(s1_json, changes)
+  if s2_json is not None:
+    _replace_ids_in_s2(s2_json, changes)
+  if stats is not None:
+    marks = []
+    if remap:
+      marks.append("unified " + ",".join(sorted(remap)))
+    if renumber:
+      marks.append("renumbered " + ",".join(sorted(renumber)))
+    stats["s1_fixes"].append("entity ids repaired: " + "; ".join(marks))
+  return s2_json
+
+
+def _replace_ids_in_s2(obj, changes):
+  """Rewrite entity-id constants inside the Stage-2 logic tree, in place.
+
+  Stage 2 writes ids bare ("Vladimir 3"); the "#:" prefix is added later by
+  the converter, so both spellings are handled.
+  """
+  if isinstance(obj, list):
+    for i, val in enumerate(obj):
+      if isinstance(val, str):
+        if val in changes:
+          obj[i] = changes[val]
+        elif val.startswith("#:") and val[2:] in changes:
+          obj[i] = "#:" + changes[val[2:]]
+      elif isinstance(val, (list, dict)):
+        _replace_ids_in_s2(val, changes)
+  elif isinstance(obj, dict):
+    for key in list(obj):
+      val = obj[key]
+      if isinstance(val, str):
+        if val in changes:
+          obj[key] = changes[val]
+        elif val.startswith("#:") and val[2:] in changes:
+          obj[key] = "#:" + changes[val[2:]]
+      elif isinstance(val, (list, dict)):
+        _replace_ids_in_s2(val, changes)
 
 
 # ======== retry prompt ========

@@ -95,6 +95,8 @@ def _worker(args):
   from solve import english_to_answer
   import llmcall
   _solve_mod.llm = llm
+  # Per-case latency/token record (llmcall.record_calls switches it off).
+  llmcall.reset_call_log()
 
   # Pop the private version/max_tokens overrides (solve module globals, not option
   # keys) before they reach set_global_options.
@@ -131,6 +133,8 @@ def _worker(args):
     "deepseek": getattr(llmcall, "deepseekversion", None),
   }
   collect["_llm_version"] = version_map.get(llm)
+  if llmcall.call_log:
+    collect["_llm_calls"] = list(llmcall.call_log)
   if run_opts.get("combined_flag"):
     collect["combined"] = {
       "instr": run_opts.get("combined_instr_file"),
@@ -194,6 +198,8 @@ def build_case_json(testname, case_id, input_text, expected, llm, collect, match
     "llm_name": llm,
     "llm_version": collect.get("_llm_version"),
   }
+  if collect.get("_llm_calls"):
+    out["llm_calls"] = collect["_llm_calls"]
   if answer is not None:
     out["answer"] = answer
   if correctness is not None:
@@ -201,7 +207,8 @@ def build_case_json(testname, case_id, input_text, expected, llm, collect, match
   for k in ("combined", "directanswer",
             "stage1", "stage_1_fixes", "stage_1_retries",
             "stage2", "stage_2_fixes", "stage_2_retries",
-            "clauses", "gk_command", "proof", "nl_proof"):
+            "clauses", "gk_command", "proof", "nl_proof",
+            "downstream_retries"):
     v = collect.get(k)
     if not v:   # skip None/[]/'' — omit empty keys
       continue

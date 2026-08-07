@@ -273,9 +273,12 @@ def add_haspart_for_typed_have(result):
       continue
     # for each such ?:Y, find -isa(T, ?:Y) in the same clause
     for atom in clause:
+      # haspart_vars holds variables, which are strings; atom[2] can be a
+      # compound term (a list), which is both unhashable and never a member.
       if (isinstance(atom, list) and len(atom) >= 3
           and atom[0] == "-isa"
           and isinstance(atom[1], str)
+          and isinstance(atom[2], str)
           and atom[2] in haspart_vars):
         rule_haspart_types.add(atom[1])
 
@@ -373,9 +376,12 @@ def inject_have_to_haspart_axioms(result):
     if not haspart_vars:
       continue
     for atom in clause:
+      # haspart_vars holds variables, which are strings; atom[2] can be a
+      # compound term (a list), which is both unhashable and never a member.
       if (isinstance(atom, list) and len(atom) >= 3
           and atom[0] == "-isa"
           and isinstance(atom[1], str)
+          and isinstance(atom[2], str)
           and atom[2] in haspart_vars):
         rule_haspart_types.add(atom[1])
 

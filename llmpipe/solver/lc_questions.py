@@ -265,7 +265,94 @@ def _atom_mentions_var(atom, var):
   return False
 
 
-def hoist_generic_yn_subject(formula, name):
+def _norm_class(cls):
+  """Class key for the generic-premise test: lowercase, singular-ish."""
+  s = str(cls or "").strip().lower()
+  if len(s) > 3 and s.endswith("ies"):
+    return s[:-3] + "y"
+  if len(s) > 2 and s.endswith("es") and not s.endswith("ses"):
+    return s[:-2]
+  if len(s) > 2 and s.endswith("s"):
+    return s[:-1]
+  return s
+
+
+_EXIST_DET_RE_CACHE = {}
+
+
+def _has_existential_determiner(asu_text, isa_class):
+  """(plan fix 4) True when the question text introduces the class with an
+  explicit existential determiner — "a square", "an elephant", "some spoon".
+
+  Bare plurals ("Do animals have legs?") and definites are NOT existential in
+  this sense; only the a/an/some forms mark the question as being about SOME
+  instance, which must not be answered about a fresh generic witness.
+  """
+  if not isinstance(asu_text, str) or not asu_text:
+    return False
+  head = str(isa_class or "").strip().lower()
+  if not head:
+    return False
+  # Match the last word of the class name (compound classes: "kitchen door").
+  last = head.split()[-1]
+  rx = _EXIST_DET_RE_CACHE.get(last)
+  if rx is None:
+    rx = re.compile(r"\b(?:a|an|some)\s+(?:[a-z]+\s+){0,2}" + re.escape(last) + r"s?\b",
+                    re.IGNORECASE)
+    _EXIST_DET_RE_CACHE[last] = rx
+  return bool(rx.search(asu_text))
+
+
+def collect_generic_rule_classes(items):
+  """(plan fix 4) Classes that some premise package quantifies over generically.
+
+  A class qualifies when a package contains  forall V ( ... isa(C, V) ... → ... ),
+  i.e. a rule whose antecedent types the bound variable.  Those are the classes
+  for which a fresh generic witness has a rule to fire on.
+  """
+  out = set()
+
+  def scan(node, bound):
+    if not isinstance(node, list) or not node:
+      return
+    op = node[0] if isinstance(node[0], str) else None
+    if op == "forall" and len(node) >= 3:
+      scan(node[2], bound | {node[1]})
+      return
+    if op == "implies" and len(node) >= 3:
+      ante = node[1]
+      atoms = ante[1:] if (isinstance(ante, list) and ante and ante[0] == "and") else [ante]
+      for a in atoms:
+        if (isinstance(a, list) and len(a) >= 3 and a[0] == "isa"
+            and isinstance(a[1], str) and a[2] in bound):
+          out.add(_norm_class(a[1]))
+      for child in node[1:]:
+        scan(child, bound)
+      return
+    if op is not None:
+      for child in node[1:]:
+        scan(child, bound)
+    else:
+      for child in node:
+        scan(child, bound)
+
+  for item in (items or []):
+    if isinstance(item, list) and len(item) >= 3 and item[0] == "@id":
+      pkg = item[2]
+      # PREMISES only.  The generic yes/no question itself has the very
+      # forall/implies/isa shape this scan looks for, so including it would
+      # put its own class into the set and make the "some premise quantifies
+      # generically over C" condition always true (audit find: gemini 743).
+      if (isinstance(pkg, list) and pkg
+          and pkg[0] in ("question", "ask")):
+        continue
+      scan(pkg, frozenset())
+    else:
+      scan(item, frozenset())
+  return out
+
+
+def hoist_generic_yn_subject(formula, name, asu_text=None, generic_classes=None):
   """Detect the bare-plural-generic yes/no question pattern and rewrite.
 
   Pattern (per Stage-2 prompt §7.4(a)):
@@ -318,6 +405,34 @@ def hoist_generic_yn_subject(formula, name):
   for a in atoms:
     if not _atom_mentions_var(a, var):
       return (None, None, formula)
+
+  # (plan fix 4) The hoist is only right for a BARE-PLURAL GENERIC question
+  # ("Do birds fly?").  The newer models emit this same forall+normally shape
+  # for plain EXISTENTIAL questions ("Does a square have a nail?"), where the
+  # fresh witness is not the square the premises talk about and the question
+  # becomes unanswerable by construction.  Require both:
+  #   1. the question text does not introduce the class with an existential
+  #      determiner ("a"/"an"/"some");
+  #   2. some premise actually quantifies generically over the class, so a
+  #      generic witness has a rule to fire.
+  from globals import options as _opts
+  if _opts.get("nofix_skqguard"):
+    pass          # guard disabled: original unconditional hoist behaviour
+  # On refusal the question must become EXISTENTIAL — "is there a C such that
+  # BODY?" — not stay the universal forall+normally shape, which clausifies
+  # into a goal no premise can discharge (that is the "strict-collapse" form
+  # the hoist was invented to avoid).
+  #
+  # Sole criterion: does some PREMISE quantify generically over the class?
+  # (An earlier second condition — an existential determiner "a C" in the
+  # question text — was removed by the old-model control audit: every observed
+  # recovery is already explained by this criterion, and the determiner rule
+  # broke FOLIO's generic-"a" readings, turning gold-Unknown "A smarter person
+  # has gained knowledge?" into a proved existential.)
+  elif (generic_classes is not None
+        and _norm_class(isa_class) not in generic_classes):
+    existential = ["exists", var, ["and"] + list(atoms) + [body]]
+    return (None, None, existential)
 
   sid = name[5:] if isinstance(name, str) and name.startswith("sent_") else str(name)
   cname = str(isa_class).replace(" ", "_")

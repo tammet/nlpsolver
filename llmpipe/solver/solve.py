@@ -33,6 +33,7 @@
 #-------------------------------------------------------------------
 
 import sys
+import re
 import json
 import signal
 import threading
@@ -148,7 +149,7 @@ def _api_timeout_handler(signum, frame):
   raise _ApiTimeout()
 
 
-def english_to_answer(text, options=None, collect=None):
+def _english_to_answer_once(text, options=None, collect=None, stage2_corrective=""):
   """Full pipeline: English -> LLM parse -> logic convert -> prove -> answer.
 
   LLM calls within this pipeline are cached by default (controlled by
@@ -230,7 +231,8 @@ def english_to_answer(text, options=None, collect=None):
     signal.alarm(int(_api_to))
   try:
     s1_json, s2_json, parse_stats = llmparse.parse_text(
-      text, llm=llm, version=llm_version, tokens=max_tokens, think=think_flag
+      text, llm=llm, version=llm_version, tokens=max_tokens, think=think_flag,
+      stage2_corrective=stage2_corrective
     )
 
     # ASCII-fold the parsed logic before clausification so accented entity names
@@ -302,7 +304,12 @@ def english_to_answer(text, options=None, collect=None):
     if not globals.options.get("nosemnormal_flag"):
       logic = semnormalize.sem_normalize_clauses(logic)
   except _ApiTimeout:
-    return ("Error: LLM/parse phase exceeded the %ds api-timeout cap." % int(_api_to))
+    msg = "Error: LLM/parse phase exceeded the %ds api-timeout cap." % int(_api_to)
+    # Record it in collect too: a batch runner otherwise stores a case file with
+    # no answer and no error, which is indistinguishable from a case that ran.
+    if collect is not None:
+      collect["answer"] = msg
+    return msg
   finally:
     if _api_armed:
       signal.alarm(0)
@@ -356,6 +363,100 @@ def english_to_answer(text, options=None, collect=None):
       except Exception:
         collect["proof"] = proof_result
 
+  return answer
+
+
+# ======== N1: downstream-error corrective retry ========
+#
+# Origin: the /opt/logictools/nl weak-model pilot (Doc/NANO_PROMPT.md), adapted.
+#
+# The Stage-1/Stage-2 sanity retries only ever see the STRUCTURE of the parsed
+# JSON.  Errors that surface later — in rawlogic_convert, in clausification, in
+# gk, or at question handling — arrive after that retry window has closed and
+# were never re-prompted.  This loop matches the resulting error against a table
+# of known failure shapes and re-calls Stage 2 with the actual error plus a
+# targeted, imperative hint.
+#
+# It can only improve correctness: it fires exclusively on results that are
+# already errors.  Stage 1 is not re-run — the corrective text is appended to
+# the Stage-2 input, so the Stage-1 call is served from cache unchanged.
+
+_MAX_DOWNSTREAM_RETRIES = 2
+
+_DOWNSTREAM_HINTS = [
+  (re.compile(r"first argument of (exists|a quantifier)|connective not a variable"
+              r"|error in formula"),
+   "A connective or quantifier was FLATTENED. Each is ONE nested list passed as a "
+   "SINGLE argument: [\"question\", [\"exists\", \"X\", FORMULA]], never "
+   "[\"question\", \"exists\", \"X\", FORMULA]. Likewise [\"and\", A, B], "
+   "[\"or\", A, B], [\"not\", A] where A and B are THEMSELVES lists such as "
+   "[\"isa\", \"house\", \"X\"], never bare strings spread into the parent list. "
+   "Comparisons must use the named predicates, not operator symbols."),
+  (re.compile(r"unhashable type|abnormal var found"),
+   "Your nesting is malformed — a list appeared where a single element was expected, "
+   "usually a DOUBLE-WRAPPED body, or a variable was used outside the quantifier that "
+   "binds it. Each package is [\"@id\", \"Sx\", BODY] with BODY a SINGLE list: "
+   "[\"@id\",\"S1\",[\"holds\",\"W0\", F]], not [\"@id\",\"S1\",[[\"holds\",\"W0\", F]]]. "
+   "Every variable must appear inside the exists/forall that introduces it."),
+  (re.compile(r"several questions|multiple question"),
+   "You marked more than one package as a question. Output EXACTLY ONE query package, "
+   "for the single sentence that ends in '?': [\"question\", F] for yes/no or "
+   "[\"ask\", \"X\", F] for who/what/where/when. EVERY premise is an assertion "
+   "[\"holds\", W, F] — never a question."),
+  (re.compile(r"rawlogic_convert returned None"),
+   "Your output could not be converted. Use nested JSON ARRAYS only — never objects "
+   "with named keys. The WHOLE output is ONE list starting with \"and\": "
+   "[\"and\", [\"@id\",\"S1\", BODY], [\"@id\",\"S2\", BODY], ...]. Each BODY is a "
+   "SINGLE list and must not be wrapped in an extra pair of brackets. Output ONLY the "
+   "JSON, with no code fences."),
+  (re.compile(r"produced no output|parsing failed|prover returned empty"),
+   "You returned no usable JSON. Output ONLY the JSON list [\"and\", ...] and nothing "
+   "else — no explanation, no prose, no code fences."),
+  (re.compile(r"no question given"),
+   "You did not encode the question. Add exactly ONE query package for the sentence "
+   "that asks the question (it ends with '?'): yes/no -> [\"question\", FORMULA]; "
+   "who/what/where/when -> [\"ask\", \"X\", FORMULA]. Keep the facts as separate "
+   "packages."),
+]
+
+
+def _downstream_hint(answer):
+  """Return a corrective hint when the answer is a known downstream failure."""
+  if not isinstance(answer, str) or not answer:
+    return None
+  first = answer.split("\n", 1)[0]
+  # gk formula errors do not start with "Error"; scan the first line as well.
+  if not answer.startswith("Error") and not any(p.search(first)
+                                                for p, _ in _DOWNSTREAM_HINTS):
+    return None
+  for pat, hint in _DOWNSTREAM_HINTS:
+    if pat.search(answer) or pat.search(first):
+      return hint
+  return None
+
+
+def english_to_answer(text, options=None, collect=None):
+  """Full pipeline, with the N1 downstream-error corrective retry around it."""
+  correction = ""
+  fired = []
+  answer = None
+  for attempt in range(_MAX_DOWNSTREAM_RETRIES + 1):
+    inner = {} if collect is not None else None
+    answer = _english_to_answer_once(text, options, inner,
+                                     stage2_corrective=correction)
+    if collect is not None:
+      collect.clear()
+      collect.update(inner)
+    hint = None if globals.options.get("nofix_downstream") \
+           else _downstream_hint(answer)
+    if hint is None or attempt == _MAX_DOWNSTREAM_RETRIES:
+      break
+    fired.append(str(answer).split("\n", 1)[0][:90])
+    correction = ("\n\nYour previous answer FAILED downstream with:\n"
+                  + str(answer).split("\n", 1)[0][:200] + "\n" + hint
+                  + "\nReturn only the corrected JSON.")
+  if fired and collect is not None:
+    collect["downstream_retries"] = fired
   return answer
 
 

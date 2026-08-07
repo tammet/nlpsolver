@@ -220,8 +220,11 @@ def _detect_who_query(body, ask_var):
   return None
 
 
-def _process_question(formula, name, raw_text=None):
+def _process_question(formula, name, raw_text=None, generic_classes=None):
   """Handle question formulas (ask / yes-no) → (result_list, question_kind).
+
+  generic_classes -- (plan fix 4) classes some premise quantifies over
+  generically; gates the bare-plural-generic hoist.
 
   question_kind is None, "where", or "when".
   Returns (None, None) when the formula produces no output (caller should return []).
@@ -344,9 +347,13 @@ def _process_question(formula, name, raw_text=None):
     # on the fresh skq, avoiding the John-shortcut bug of the existential
     # form and the strict-collapse bug of the universal form.
     extra_facts = []
-    skq, hoisted, rewritten = hoist_generic_yn_subject(formula, name)
+    skq, hoisted, rewritten = hoist_generic_yn_subject(
+      formula, name, asu_text=raw_text, generic_classes=generic_classes)
+    # rewritten is always the formula to use: the skq-substituted body when the
+    # hoist fired, the existential rewrite when the guard refused it, and the
+    # untouched formula when the pattern did not match at all.
+    formula = rewritten
     if skq is not None:
-      formula = rewritten
       hoisted_conjuncts = (hoisted[1:] if (isinstance(hoisted, list)
                                            and hoisted and hoisted[0] == "and")
                            else [hoisted])
@@ -537,8 +544,13 @@ def _has_explicit_negation_at_top(formula):
   return False
 
 
-def convert_id_package(item, asu_index=None, uid_suffix=None, set_el_by_sid=None):
-  """Process ["@id", sid, PACKAGE] → list of GK clause dicts."""
+def convert_id_package(item, asu_index=None, uid_suffix=None, set_el_by_sid=None,
+                       generic_classes=None):
+  """Process ["@id", sid, PACKAGE] → list of GK clause dicts.
+
+  generic_classes -- (plan fix 4) classes some premise quantifies over
+  generically; gates the bare-plural-generic question hoist.
+  """
   if not isinstance(item, list) or len(item) < 3 or item[0] != "@id":
     return []
   sid = item[1]
@@ -629,7 +641,8 @@ def convert_id_package(item, asu_index=None, uid_suffix=None, set_el_by_sid=None
       asu_q = asu_index.get(sid)
       if asu_q:
         raw_q_text = asu_q.get("_raw", asu_q.get("text", ""))
-    result, question_kind = _process_question(formula, name, raw_text=raw_q_text)
+    result, question_kind = _process_question(formula, name, raw_text=raw_q_text,
+                                              generic_classes=generic_classes)
     if result is None:
       return []
   else:
@@ -730,20 +743,24 @@ def convert_id_package(item, asu_index=None, uid_suffix=None, set_el_by_sid=None
     if (s1_time_prep and not is_question
         and asu is not None and asu.get("actions")):
       tv_str = str(s1_time_value)
-      activity_skolems = set()
-      hastime_by_subj = {}  # subject -> list of time-value strings
+      # The event position is usually a plain Skolem constant, but Stage 2 can
+      # put a compound term there, which is a list and so unhashable: key both
+      # maps on the term's string form and keep the term itself as the value.
+      def _termkey(t):
+        return t if isinstance(t, str) else repr(t)
+      activity_skolems = {}   # term key -> event term
+      hastime_by_subj = {}    # term key -> list of time-value strings
       for cl in result:
         logic = cl.get("@logic")
         if not isinstance(logic, list) or not logic:
           continue
         op = logic[0] if isinstance(logic[0], str) else None
         if op == "isa" and len(logic) >= 3 and logic[1] == "activity":
-          activity_skolems.add(logic[2])
+          activity_skolems[_termkey(logic[2])] = logic[2]
         elif op == "has time" and len(logic) >= 3:
-          subj = logic[1]
-          hastime_by_subj.setdefault(subj, []).append(str(logic[2]))
-      for ev in activity_skolems:
-        existing = hastime_by_subj.get(ev, [])
+          hastime_by_subj.setdefault(_termkey(logic[1]), []).append(str(logic[2]))
+      for evkey, ev in activity_skolems.items():
+        existing = hastime_by_subj.get(evkey, [])
         if tv_str in existing:
           continue  # already present — nothing to do
         ht_logic = ["has time", ev, s1_time_value, s1_time_prep]

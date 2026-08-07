@@ -51,6 +51,14 @@ claudeversion = "claude-sonnet-4-6"
 geminiversion = "gemini-2.5-flash"
 deepseekversion = "deepseek-v4-flash"      # V4-flash (deepseek-chat alias was V3.2, deprecated); "deepseek-reasoner" for thinking
 
+# New-model trial set (2026-08-04): swap these in to re-run that comparison.
+# The version-gated API compatibility code below (sonnet-5 thinking-off,
+# gemini-3 thinkingLevel, deepseek -pro reasoning-off) stays active for them.
+# gptversion = "gpt-5.6-luna"
+# claudeversion = "claude-sonnet-5"
+# geminiversion = "gemini-3.6-flash"
+# deepseekversion = "deepseek-v4-pro"
+
 # API key files (absolute paths relative to llmpipe/)
 _secrets_dir = os.path.normpath(os.path.join(_root, "..", "secrets"))
 gpt_secrets_file = os.path.join(_secrets_dir, "gpt_secrets.txt")
@@ -73,6 +81,53 @@ empty_response_retries = 2
 # Debug output
 debug = False
 calldebug = False
+
+# ======== per-call latency and token recording ========
+
+# When record_calls is True, every call_llm() appends one dict to call_log:
+#   {"llm","version","seconds","source",
+#    "input","cached_input","cache_write","output","thinking"}
+# source is "api" for a real request and "cache" for a local SQLite cache hit
+# (token counts are then absent).  "input" always counts the tokens billed at
+# the full input rate: providers disagree on whether their own input count
+# includes the cache-read tokens, so each provider function subtracts as
+# needed.  Set record_calls = False to switch off.
+record_calls = True
+call_log = []
+
+_last_usage = None      # set by the provider functions, consumed by call_llm
+
+
+def reset_call_log():
+  """Clear the recorded calls (call once per test case)."""
+  del call_log[:]
+
+
+def _note_usage(input=None, cached_input=None, cache_write=None,
+                output=None, thinking=None):
+  """Record normalized token counts of the request just completed.
+  Counts add up when one call_llm() makes several requests (a provider-level
+  retry, or gemini's cache-miss and truncation retries)."""
+  global _last_usage
+  if not record_calls:
+    return
+  new = {"input": input, "cached_input": cached_input,
+         "cache_write": cache_write, "output": output, "thinking": thinking}
+  if _last_usage:
+    for k, v in new.items():
+      old = _last_usage.get(k)
+      new[k] = v if old is None else (old if v is None else old + v)
+  _last_usage = new
+
+
+def _usage_number(d, *path):
+  """Fetch a nested numeric field, or None if any step is missing."""
+  for k in path:
+    if not isinstance(d, dict) or k not in d:
+      return None
+    d = d[k]
+  return d if isinstance(d, (int, float)) else None
+
 
 # ======== main entry point ========
 
@@ -106,10 +161,14 @@ def call_llm(sysprompt, input_text, llm=None, version=None, max_tokens=None, thi
     ver = version or gptversion
 
   # --- check cache ---
+  _t0 = time.time()
   cached = _get_llm_cached(llm, ver, max_tokens, think, sysprompt, input_text)
   if cached is not None:
     if debug:
       print("cache hit (" + llm + " " + ver + ")")
+    if record_calls:
+      call_log.append({"llm": llm, "version": ver, "source": "cache",
+                       "seconds": round(time.time() - _t0, 3)})
     return cached
 
   # --- call the LLM (retry on None / empty response) ---
@@ -119,7 +178,10 @@ def call_llm(sysprompt, input_text, llm=None, version=None, max_tokens=None, thi
   if debug:
     print("calling " + llm + " " + ver + " ...")
   result = None
+  global _last_usage
   for attempt in range(1, empty_response_retries + 2):
+    _last_usage = None
+    _t0 = time.time()
     try:
       if llm == "claude":
         result = call_claude(ver, input_text, sysprompt, max_tokens, think=think)
@@ -136,6 +198,14 @@ def call_llm(sysprompt, input_text, llm=None, version=None, max_tokens=None, thi
       return llm_error(str(e))
     except Exception as e:
       return llm_error("unexpected error calling LLM: " + str(e))
+    if record_calls:
+      rec = {"llm": llm, "version": ver, "source": "api",
+             "seconds": round(time.time() - _t0, 3)}
+      if _last_usage:
+        rec.update(_last_usage)
+      if result is None or not result.strip():
+        rec["failed"] = True
+      call_log.append(rec)
     if result is not None and result.strip():
       break
     if attempt <= empty_response_retries:
@@ -369,6 +439,14 @@ def _gemini_supports_thinking(version):
     return True
   return False
 
+
+def _gemini_major(version):
+  """Major version number of a gemini model name, or 0 if not recognized."""
+  import re
+  m = re.match(r"gemini-(\d+)[\.-]", (version or "").lower())
+  return int(m.group(1)) if m else 0
+
+
 def call_gemini(version, sentences, sysprompt, max_tokens, think=False):
   key = _read_api_key(gemini_secrets_file, "Gemini")
   if key is None: return None
@@ -379,12 +457,19 @@ def call_gemini(version, sentences, sysprompt, max_tokens, think=False):
   use_cache = _gemini_should_cache(sysprompt)
   cache_name = _gemini_get_or_create_cache(version, sysprompt, key) if use_cache else None
 
+  # Gemini 3 and later: temperature is deprecated and thinking is configured
+  # by level rather than by token budget (thinkingBudget is rejected with 400).
+  # These models think by default, so the level must be set explicitly to keep
+  # them comparable with the other providers' non-thinking calls.
+  new_api = _gemini_major(version) >= 3
+
   def _attempt(budget, with_cache):
-    genconfig = {
-      "maxOutputTokens": budget,
-      "temperature": temperature
-    }
-    if think and _gemini_supports_thinking(version):
+    genconfig = {"maxOutputTokens": budget}
+    if not new_api:
+      genconfig["temperature"] = temperature
+    if new_api:
+      genconfig["thinkingConfig"] = {"thinkingLevel": "high" if think else "minimal"}
+    elif think and _gemini_supports_thinking(version):
       tbudget = think if isinstance(think, int) else 8000
       genconfig["thinkingConfig"] = {"thinkingBudget": tbudget}
     call = {
@@ -404,6 +489,14 @@ def call_gemini(version, sentences, sysprompt, max_tokens, think=False):
                             "Gemini")
     if data is None:
       return None, None
+    um = data.get("usageMetadata")
+    # promptTokenCount includes the cached part; bill the remainder in full.
+    prompt = _usage_number(um, "promptTokenCount")
+    gcached = _usage_number(um, "cachedContentTokenCount")
+    _note_usage(input=None if prompt is None else prompt - (gcached or 0),
+                cached_input=gcached,
+                output=_usage_number(um, "candidatesTokenCount"),
+                thinking=_usage_number(um, "thoughtsTokenCount"))
     if "candidates" not in data:
       return llm_error("Gemini response has no candidates: " + str(data)), None
     cand = data["candidates"][0]
@@ -443,11 +536,11 @@ def call_gemini(version, sentences, sysprompt, max_tokens, think=False):
 # ======== claude ========
 
 def _claude_uses_effort_api(version):
-  """Newer Claude models (Opus 4.8, Fable 5, Mythos 5) deprecate `temperature`
-  and replace thinking.budget_tokens with adaptive thinking + output_config.effort
-  (adaptive thinking is always on for Fable/Mythos)."""
+  """Newer Claude models (Opus 4.8, Sonnet 5, Fable 5, Mythos 5) deprecate
+  `temperature` and replace thinking.budget_tokens with adaptive thinking +
+  output_config.effort (adaptive thinking is always on for Fable/Mythos)."""
   v = (version or "").lower()
-  return "opus-4-8" in v or "fable" in v or "mythos" in v
+  return ("opus-4-8" in v or "sonnet-5" in v or "fable" in v or "mythos" in v)
 
 
 def _claude_effort(think):
@@ -481,6 +574,12 @@ def call_claude(version, sentences, sysprompt, max_tokens, think=False):
     else:
       budget = think if isinstance(think, int) else 8000
       call["thinking"] = {"type": "enabled", "budget_tokens": budget}
+  elif use_effort:
+    # Adaptive-thinking models think by default on anything non-trivial, and
+    # the thinking counts against max_tokens: an 8000-token budget is then
+    # spent entirely on thinking and the reply comes back with no text at all.
+    # The pipeline never asks for thinking, so switch it off explicitly.
+    call["thinking"] = {"type": "disabled"}
   if sysprompt:
     call["system"] = [{"type": "text", "text": sysprompt, "cache_control": {"type": "ephemeral"}}]
 
@@ -492,6 +591,14 @@ def call_claude(version, sentences, sysprompt, max_tokens, think=False):
                            "x-api-key": key},
                           "Claude")
   if data is None: return None
+
+  # Claude's input_tokens already excludes both cache-read and cache-write.
+  u = data.get("usage")
+  _note_usage(input=_usage_number(u, "input_tokens"),
+              cached_input=_usage_number(u, "cache_read_input_tokens"),
+              cache_write=_usage_number(u, "cache_creation_input_tokens"),
+              output=_usage_number(u, "output_tokens"),
+              thinking=_usage_number(u, "output_tokens_details", "thinking_tokens"))
 
   if "content" not in data:
     return llm_error("Claude response has no content: " + str(data))
@@ -550,6 +657,22 @@ def call_gpt(version, sentences, sysprompt, max_tokens, think=False):
 
   utils.debug_print("gpt response:", data, flag=debug)
 
+  # OpenAI's input/prompt count includes the cached part; bill the remainder.
+  u = data.get("usage")
+  if version.startswith("gpt-5"):
+    gin = _usage_number(u, "input_tokens")
+    gcached = _usage_number(u, "input_tokens_details", "cached_tokens")
+    _note_usage(input=None if gin is None else gin - (gcached or 0),
+                cached_input=gcached,
+                output=_usage_number(u, "output_tokens"),
+                thinking=_usage_number(u, "output_tokens_details", "reasoning_tokens"))
+  else:
+    gin = _usage_number(u, "prompt_tokens")
+    gcached = _usage_number(u, "prompt_tokens_details", "cached_tokens")
+    _note_usage(input=None if gin is None else gin - (gcached or 0),
+                cached_input=gcached,
+                output=_usage_number(u, "completion_tokens"))
+
   if version.startswith("gpt-5"):
     if "output" not in data:
       return llm_error("GPT response has no 'output'")
@@ -601,6 +724,11 @@ def call_deepseek(version, sentences, sysprompt, max_tokens, think=False):
     call["temperature"] = temperature
     if max_tokens:
       call["max_tokens"] = max_tokens
+  # The V4 models (flash and pro) reason by default, which the pipeline does not
+  # ask for and which costs ~8x the latency: switch it off unless thinking was
+  # requested, as for the other providers.
+  if "-v4-" in version and not think:
+    call["reasoning_effort"] = "none"
 
   utils.debug_print("deepseek call", call, flag=calldebug)
   data = _post_with_retry("api.deepseek.com", "/v1/chat/completions",
@@ -611,6 +739,13 @@ def call_deepseek(version, sentences, sysprompt, max_tokens, think=False):
   if data is None: return None
 
   utils.debug_print("deepseek response:", data, flag=debug)
+
+  # DeepSeek splits the prompt into cache-hit and cache-miss counts directly.
+  u = data.get("usage")
+  _note_usage(input=_usage_number(u, "prompt_cache_miss_tokens"),
+              cached_input=_usage_number(u, "prompt_cache_hit_tokens"),
+              output=_usage_number(u, "completion_tokens"),
+              thinking=_usage_number(u, "completion_tokens_details", "reasoning_tokens"))
 
   if "choices" not in data:
     return llm_error("DeepSeek response has no 'choices': " + str(data))

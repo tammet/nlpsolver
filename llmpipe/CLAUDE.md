@@ -205,7 +205,7 @@ use_llm          = "gemini"              # "gpt" | "claude" | "gemini" | "deepse
 claudeversion    = "claude-sonnet-4-6"
 gptversion       = "gpt-5.1"
 geminiversion    = "gemini-2.5-flash"
-deepseekversion  = "deepseek-chat"       # V3.2; "deepseek-reasoner" for thinking
+deepseekversion  = "deepseek-v4-flash"   # V4 models get reasoning_effort="none"; "deepseek-reasoner" for thinking
 temperature      = 0
 default_max_tokens = 8000
 ```
