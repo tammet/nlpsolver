@@ -9,6 +9,7 @@
 #-----------------------------------------------------------------
 
 from lc_questions import scan_item_formula, build_population_facts
+from globals import options as _g_options
 
 # Lazy import to avoid a circular dependency (lc_packages imports this
 # module transitively via logconvert).
@@ -42,6 +43,16 @@ def populate_clauses(items):
     if formula is not None:
       scan_item_formula(formula, name, True, classes, has_props, deg_props,
                         compound_witnesses=compound_witnesses)
+
+  # A variable used in isa's class slot (forall C. isa(C,X)) is not a named
+  # population class.  The older scan minted isa(C,$some_C), turning the binder
+  # into a constant even though clausification preserved it correctly (eb-0140).
+  if not _g_options.get("nofix_boundtypevars"):
+    from lc_clausify import looks_like_var
+    classes = {k: v for k, v in classes.items() if not looks_like_var(k)}
+    deg_props = {k: v for k, v in deg_props.items()
+                 if not (isinstance(k, tuple) and len(k) > 1
+                         and looks_like_var(k[1]))}
 
   # Track concrete intersections (entity X with both isa(TYPE,X) and adj atom)
   # so we can suppress redundant adjective-intersection witnesses.
@@ -160,4 +171,3 @@ def _walk_assertion_for_pos(frm, cls, prop, deg):
     prop.add(frm[1])                      # structured props ([$has_part,C]) skip: not population-relevant
   elif op == "has degree property" and len(frm) >= 5 and looks_like_var(frm[2]):
     deg.add((frm[1], frm[4]))
-

@@ -658,16 +658,24 @@ def inject_propclass_bridges(result, axiom_vocab=frozenset()):
   del axiom_vocab  # gated on atom presence in the clause list
   hp = set()        # words W appearing as has_property(W, ...)
   isa = set()       # words W appearing as isa(W, ...)
+  isa_sentence = set()  # isa evidence not manufactured by a generated bridge
   isa_neg = set()   # words W appearing as -isa(W, ...)  (promote demand)
 
+  current_generated = [False]
   def visit(n, base):
     if base == "has property" and len(n) >= 2 and isinstance(n[1], str):
       hp.add(n[1])
     elif base == "isa" and len(n) >= 2 and isinstance(n[1], str):
       isa.add(n[1])
+      if not current_generated[0]:
+        isa_sentence.add(n[1])
       if n[0].startswith("-"):
         isa_neg.add(n[1])
-  walk_result_atoms(result, visit)
+  for obj in result:
+    if not isinstance(obj, dict):
+      continue
+    current_generated[0] = str(obj.get("@name", "")).startswith("frm_")
+    walk_result_atoms([obj], visit)
 
   # Nominal compounds = words the compound machinery decomposed to a noun head.
   csub = set()
@@ -684,12 +692,18 @@ def inject_propclass_bridges(result, axiom_vocab=frozenset()):
                    "@logic": [["-isa", src, "?:X"],
                               ["has property", prop, "?:X", "?:C"]]})
   # SAFE same-word: isa(W) -> has_property(W)
-  for w in sorted(hp & isa):
+  # A noun-tagged synonym can manufacture isa(W) for a word used adjectivally
+  # as has_property(W).  Crossing that generated class back into a property
+  # confuses parts of speech (pw-0102: noun "young"=offspring vs adjective
+  # "young").  Require sentence-derived class evidence; the kill switch keeps
+  # the prior behavior independently replayable.
+  safe_isa = isa if _g_options.get("nofix_propclasspos") else isa_sentence
+  for w in sorted(hp & safe_isa):
     safe(w, w)
   # SAFE compound-modifier: isa("A N") -> has_property(A), A = adjectival modifier
   # (in has_property) of the compound class "A N".
   for a in sorted(hp):
-    for cc in isa:
+    for cc in safe_isa:
       if cc != a and cc.startswith(a + " "):
         safe(cc, a)
   # PROMOTE has_property(W) -> isa(W): nominal compound (compound_sub) demanded as -isa.

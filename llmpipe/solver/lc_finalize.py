@@ -18,7 +18,7 @@
 # Pure: takes the clause list, returns the transformed list; no module state.
 
 
-def finalize_strict_clauses(result):
+def finalize_strict_clauses(result, preserve_generated_blocks=False):
   # Equality elimination: Stage 2 reifies a definite description ("the winner of
   # X was Steinhauer") as a separate entity plus a ground `=(winner 1,
   # Steinhauer 3)`.  After UNA wrapping the two `#:` constants are forced UNEQUAL
@@ -68,11 +68,11 @@ def finalize_strict_clauses(result):
       return [_unwrap_normally(x) for x in node]
     return node
 
-  def _is_meta_lit(lit):
+  def _is_meta_lit(lit, strip_block=True):
     if not (isinstance(lit, list) and lit and isinstance(lit[0], str)):
       return False
     base = lit[0][1:] if lit[0].startswith("-") else lit[0]
-    return base in ("$block", "typical")
+    return base == "typical" or (base == "$block" and strip_block)
 
   def _share_ctxt(node, cuvar):
     if isinstance(node, list):
@@ -157,6 +157,8 @@ def finalize_strict_clauses(result):
     if isinstance(_c.get("@question"), list):
       _c["@question"] = _freshen_ctxt_per_atom(_c["@question"])
     body = _c.get("@logic")
+    _strip_block = not (preserve_generated_blocks
+                        and str(_c.get("@name", "")).startswith("frm_"))
     if isinstance(body, list) and body:
       body = _unwrap_normally(body)            # 0a: normally -> strict
       if not (isinstance(body, list) and body):
@@ -184,7 +186,7 @@ def finalize_strict_clauses(result):
         # whole normally(not(exists ...)) rule family (FOLIO G1).
         had_pos_typical = any(isinstance(l, list) and l and l[0] == "typical"
                               for l in lits)
-        lits = [l for l in lits if not _is_meta_lit(l)]   # 0b: drop $block/typical
+        lits = [l for l in lits if not _is_meta_lit(l, _strip_block)]
         # Reflexive equality left by substitution: =(X,X) is always true (the
         # clause is a tautology -> drop it); -=(X,X) is always false (drop the
         # literal, keep the rest of the clause).
@@ -208,7 +210,7 @@ def finalize_strict_clauses(result):
           if lit not in deduped:
             deduped.append(lit)
         body = deduped[0] if len(deduped) == 1 else deduped
-      elif _is_meta_lit(body):                  # lone $block/typical unit clause
+      elif _is_meta_lit(body, _strip_block):    # lone stripped meta unit clause
         continue
       _c["@logic"] = body
     new_result.append(_c)

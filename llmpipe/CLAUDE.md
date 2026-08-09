@@ -93,7 +93,7 @@ Other:
 -llm NAME        LLM provider: gpt, claude, gemini, or deepseek
 -version VER     Model version string, e.g. claude-sonnet-4-6
 -nollmcache      Disable LLM response caching for this run
--geminicache     Enable Gemini server-side context caching (off by default)
+-nogeminicache   Disable Gemini server-side context caching (on by default)
 -cache           Enable GK prover result caching (off by default)
 -nosolve         Parse to logic only, do not run the prover
 -seconds N       Give the prover N seconds (default 2)

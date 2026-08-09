@@ -175,7 +175,9 @@ def singularize_isa_classes_in_node(node):
   head = node[0]
   if (isinstance(head, str) and head in ("isa", "-isa")
       and len(node) >= 2 and isinstance(node[1], str)):
-    return [head, _safe_singularize_class(node[1])] + [
+    cls = node[1] if (not _g_options.get("nofix_boundtypevars")
+                      and looks_like_var(node[1])) else _safe_singularize_class(node[1])
+    return [head, cls] + [
       singularize_isa_classes_in_node(x) for x in node[2:]]
   return [singularize_isa_classes_in_node(x) if isinstance(x, list) else x
           for x in node]
@@ -193,7 +195,9 @@ def lower_isa_classes_in_node(node):
   head = node[0]
   if (isinstance(head, str) and head in ("isa", "-isa")
       and len(node) >= 2 and isinstance(node[1], str)):
-    return [head, node[1].lower()] + [
+    cls = node[1] if (not _g_options.get("nofix_boundtypevars")
+                      and looks_like_var(node[1])) else node[1].lower()
+    return [head, cls] + [
       lower_isa_classes_in_node(x) for x in node[2:]]
   return [lower_isa_classes_in_node(x) if isinstance(x, list) else x
           for x in node]
@@ -300,7 +304,7 @@ def _drop_typical_conjuncts(frm):
   return frm
 
 
-def _normalize_type_case(frm):
+def _normalize_type_case(frm, bound=None):
   """Lowercase the type-name argument in 'isa' atoms throughout a formula.
 
   The LLM sometimes capitalises type names in certain sentences (e.g. "Baby bird"
@@ -310,13 +314,22 @@ def _normalize_type_case(frm):
   Only the CLASS argument (frm[1]) of an 'isa' or '-isa' atom is lowercased;
   entity constants (frm[2]) keep their original casing.
   """
+  if bound is None:
+    bound = set()
   if not isinstance(frm, list) or not frm:
     return frm
   op = frm[0]
+  if op in ("forall", "exists", "ask") and len(frm) >= 3 \
+     and isinstance(frm[1], str):
+    return [op, frm[1], _normalize_type_case(frm[2], bound | {frm[1]})] + [
+      _normalize_type_case(a, bound) if isinstance(a, list) else a
+      for a in frm[3:]]
   if op in ("isa", "-isa") and len(frm) >= 2 and isinstance(frm[1], str):
-    return [op, frm[1].lower()] + [_normalize_type_case(a) for a in frm[2:]]
+    protect = (not _g_options.get("nofix_boundtypevars") and frm[1] in bound)
+    return [op, frm[1] if protect else frm[1].lower()] + [
+      _normalize_type_case(a, bound) for a in frm[2:]]
   if isinstance(op, str):
-    return [op] + [_normalize_type_case(el) for el in frm[1:]]
+    return [op] + [_normalize_type_case(el, bound) for el in frm[1:]]
   return frm
 
 

@@ -301,6 +301,13 @@ def _english_to_answer_once(text, options=None, collect=None, stage2_corrective=
       print("\n" + format_sentences_to_clauses(logic, s1_json, json_mode=json_mode) + "\n")
 
     # --- semantic normalisation: antonym folding + canonical substitution ---
+    # Snapshot first when collecting: sem_normalize_clauses rewrites in place,
+    # so the clause list gk receives can differ from collect["clauses"] above.
+    # clause_trace uses the snapshot to mark and keep the pre-rewrite form.
+    _pre_norm_logic = None
+    if collect is not None and not globals.options.get("nofinaltrace"):
+      import copy as _copy
+      _pre_norm_logic = _copy.deepcopy(logic)
     if not globals.options.get("nosemnormal_flag"):
       logic = semnormalize.sem_normalize_clauses(logic)
   except _ApiTimeout:
@@ -315,6 +322,18 @@ def _english_to_answer_once(text, options=None, collect=None, stage2_corrective=
       signal.alarm(0)
       if _api_prev is not None:
         signal.signal(signal.SIGALRM, _api_prev)
+
+  # --- record the clause list actually handed to the prover, plus provenance ---
+  # collect["clauses"] above is the pre-semnormalize list and stays as it is;
+  # these two fields are what the proof audit and the break-point locator read.
+  if collect is not None and not globals.options.get("nofinaltrace"):
+    try:
+      import clause_trace
+      collect["final_clauses"] = logic
+      collect["final_clause_trace"] = clause_trace.build_final_clause_trace(
+          logic, s1_json, pre_clauses=_pre_norm_logic)
+    except Exception as e:
+      collect["final_clause_trace_error"] = str(e)
 
   # --- call the theorem prover (uncapped: gk has its own -seconds limit) ---
   try:
@@ -600,11 +619,13 @@ def _parse_cmd_line():
     elif el in ["-nollmcache", "--nollmcache"]:
       # LLM response caching is ON by default; this disables it for this run
       opts["use_llm_cache_flag"] = False
+    elif el in ["-nogeminicache", "--nogeminicache"]:
+      # Gemini context caching (cachedContents API) is ON by default; this
+      # disables it, so the sysprompt is sent inline on every call.
+      opts["use_gemini_cache_flag"] = False
     elif el in ["-geminicache", "--geminicache"]:
-      # Gemini context caching (cachedContents API) is OFF by default;
-      # this enables uploading the sysprompt once and referencing it on
-      # each call, which dodges the per-request input-token cap on large
-      # prompts that triggers instant 429s.
+      # Accepted and ignored: caching is now the default.  Kept so older
+      # command lines and scripts keep working.
       opts["use_gemini_cache_flag"] = True
     elif el in ["-nosemnormal", "--nosemnormal"]:
       opts["nosemnormal_flag"] = True
@@ -835,7 +856,7 @@ other:
 LLM caching (ON by default — cached per provider, version, all parameters and input):
  -nollmcache  : disable LLM response caching for this run
  -clearcache  : clear all caches (LLM, proof, parse) and exit
- -geminicache : enable Gemini context caching (cachedContents) for large sysprompts
+ -nogeminicache : disable Gemini context caching (on by default for large sysprompts)
 
 semantic normalisation (ON by default):
  -nosemnormal : disable antonym folding and canonical word substitution

@@ -1,0 +1,447 @@
+[
+ {
+  "id": "e01_neodavidson_has_type_plus_roles",
+  "purpose": "default encoding: an event is a group of literals sharing one event term",
+  "final_clauses": [
+   {
+    "@name": "sent_S1",
+    "@logic": [
+     "isa",
+     "activity",
+     "sk0_activity"
+    ]
+   },
+   {
+    "@name": "sent_S1",
+    "@logic": [
+     "has type",
+     "sk0_activity",
+     "write",
+     [
+      "$ctxt",
+      "past",
+      "W0",
+      "?:Fv1",
+      "?:Fv2"
+     ]
+    ]
+   },
+   {
+    "@name": "sent_S1",
+    "@logic": [
+     "has actor",
+     "sk0_activity",
+     "#:Dani 1",
+     [
+      "$ctxt",
+      "past",
+      "W0",
+      "?:Fv1",
+      "?:Fv2"
+     ]
+    ]
+   },
+   {
+    "@name": "sent_S1",
+    "@logic": [
+     "has target",
+     "sk0_activity",
+     "#:Family History 1",
+     [
+      "$ctxt",
+      "past",
+      "W0",
+      "?:Fv1",
+      "?:Fv2"
+     ]
+    ]
+   }
+  ],
+  "expect": {
+   "events": [
+    {
+     "encoding": "neodavidson",
+     "event_term": "sk0_activity",
+     "verb": "write",
+     "roles": {
+      "actor": "#:Dani 1",
+      "target": "#:Family History 1"
+     }
+    }
+   ]
+  },
+  "notes": "grouping key is the shared event term; the verb sits in argument 2 of has type, not argument 1. Measured caveat (see memos/MEMO_2026_08_07_event_shape_inventory.md): a whole group inside one clause like this is the minority case; see e07 for the dominant split-across-clauses shape"
+ },
+ {
+  "id": "e02_neodavidson_inside_one_rule_clause",
+  "purpose": "an event group can live inside a single rule clause, sharing a variable event term",
+  "final_clauses": [
+   {
+    "@name": "sent_S1",
+    "@logic": [
+     [
+      "-isa",
+      "person",
+      "?:X"
+     ],
+     [
+      "-isa",
+      "activity",
+      "?:E1"
+     ],
+     [
+      "-has type",
+      "?:E1",
+      "perform",
+      [
+       "$ctxt",
+       "?:Fv4",
+       "?:Fv3",
+       "?:Fv1",
+       "?:Fv2"
+      ]
+     ],
+     [
+      "-has actor",
+      "?:E1",
+      "?:X",
+      [
+       "$ctxt",
+       "?:Fv4",
+       "?:Fv3",
+       "?:Fv1",
+       "?:Fv2"
+      ]
+     ],
+     [
+      "has property",
+      "talented",
+      "?:X",
+      [
+       "$ctxt",
+       "?:Fv4",
+       "?:Fv3",
+       "?:Fv1",
+       "?:Fv2"
+      ]
+     ]
+    ]
+   }
+  ],
+  "expect": {
+   "events": [
+    {
+     "encoding": "neodavidson",
+     "event_term": "?:E1",
+     "verb": "perform",
+     "roles": {
+      "actor": "?:X"
+     }
+    }
+   ]
+  },
+  "notes": "shape copied from a stored FOLIO clause; the event variable is shared across negative literals of one clause"
+ },
+ {
+  "id": "e03_flat_is_rel2_with_eventprop_object",
+  "purpose": "flatroles encoding: the event is folded into is rel2 with an eventprop-tagged object",
+  "final_clauses": [
+   {
+    "@name": "sent_S1",
+    "@logic": [
+     [
+      "-is rel2",
+      "in",
+      "?:X",
+      "this club",
+      "?:Cu2"
+     ],
+     [
+      "-is rel2",
+      "perform",
+      "?:X",
+      [
+       "eventprop",
+       "$target",
+       "school talent show"
+      ],
+      "?:Cu2"
+     ],
+     [
+      "is rel2",
+      "attend",
+      "?:X",
+      [
+       "eventprop",
+       "$target",
+       "school event"
+      ],
+      "?:Cu2"
+     ]
+    ]
+   }
+  ],
+  "expect": {
+   "events": [
+    {
+     "encoding": "flatroles",
+     "verb": "perform",
+     "subject": "?:X",
+     "object": [
+      "eventprop",
+      "$target",
+      "school talent show"
+     ],
+     "role_tag": "$target"
+    },
+    {
+     "encoding": "flatroles",
+     "verb": "attend",
+     "subject": "?:X",
+     "object": [
+      "eventprop",
+      "$target",
+      "school event"
+     ],
+     "role_tag": "$target"
+    }
+   ]
+  },
+  "notes": "shape copied from a stored ultracoarse2 clause; an extractor that only understands has type + roles would see no event here at all"
+ },
+ {
+  "id": "e04_flat_is_rel2_plain_object",
+  "purpose": "flat encoding without role tagging: plain binary relation",
+  "final_clauses": [
+   {
+    "@name": "sent_S1",
+    "@logic": [
+     "is rel2",
+     "fly",
+     "#:Susan 1",
+     "#:LaGuardia 1",
+     "?:Cu2"
+    ]
+   }
+  ],
+  "expect": {
+   "events": [
+    {
+     "encoding": "flat",
+     "verb": "fly",
+     "subject": "#:Susan 1",
+     "object": "#:LaGuardia 1",
+     "role_tag": null
+    }
+   ]
+  },
+  "notes": "case-180 shape: indistinguishable from a non-event relation at the literal level, which is exactly why the event/relation split blocks proofs"
+ },
+ {
+  "id": "e05_compact_davidson_event_term",
+  "purpose": "davidson encoding: one event(...) literal carrying verb, actor, object and handle",
+  "final_clauses": [
+   {
+    "@name": "sent_S1",
+    "@logic": [
+     "event",
+     "write",
+     "#:Dani 1",
+     "#:Family History 1",
+     "sk0_activity"
+    ]
+   }
+  ],
+  "expect": {
+   "events": [
+    {
+     "encoding": "davidson",
+     "verb": "write",
+     "actor": "#:Dani 1",
+     "object": "#:Family History 1",
+     "event_term": "sk0_activity"
+    }
+   ]
+  },
+  "notes": "the structure-preserving fold; needs its own named handler, since neither the has type grouping nor the is rel2 reader recognises it"
+ },
+ {
+  "id": "e06_no_event_present",
+  "purpose": "a clause list with no event at all yields no event records",
+  "final_clauses": [
+   {
+    "@name": "sent_S1",
+    "@logic": [
+     [
+      "-isa",
+      "elephant",
+      "?:X"
+     ],
+     [
+      "isa",
+      "animal",
+      "?:X"
+     ]
+    ]
+   }
+  ],
+  "expect": {
+   "events": []
+  },
+  "notes": "guards against an extractor that manufactures events from ordinary isa rules"
+ },
+ {
+  "id": "e07_event_split_across_clauses",
+  "purpose": "the dominant real shape: CNF splits one event over several clauses",
+  "final_clauses": [
+   {
+    "@name": "sent_S1",
+    "@logic": [
+     [
+      "-isa",
+      "refraction",
+      "?:X"
+     ],
+     [
+      "has type",
+      [
+       "sk0",
+       "?:X"
+      ],
+      "split",
+      [
+       "$ctxt",
+       "?:Fv4",
+       "?:Fv3",
+       "?:Fv1",
+       "?:Fv2"
+      ]
+     ]
+    ]
+   },
+   {
+    "@name": "sent_S1",
+    "@logic": [
+     [
+      "-isa",
+      "refraction",
+      "?:X"
+     ],
+     [
+      "has actor",
+      [
+       "sk0",
+       "?:X"
+      ],
+      "?:X",
+      [
+       "$ctxt",
+       "?:Fv4",
+       "?:Fv3",
+       "?:Fv1",
+       "?:Fv2"
+      ]
+     ]
+    ]
+   },
+   {
+    "@name": "sent_S1",
+    "@logic": [
+     [
+      "-isa",
+      "refraction",
+      "?:X"
+     ],
+     [
+      "has target",
+      [
+       "sk0",
+       "?:X"
+      ],
+      "#:light 1",
+      [
+       "$ctxt",
+       "?:Fv4",
+       "?:Fv3",
+       "?:Fv1",
+       "?:Fv2"
+      ]
+     ]
+    ]
+   }
+  ],
+  "expect": {
+   "events": [
+    {
+     "encoding": "neodavidson",
+     "event_term": [
+      "sk0",
+      "?:X"
+     ],
+     "verb": "split",
+     "roles": {
+      "actor": "?:X",
+      "target": "#:light 1"
+     },
+     "spans_clauses": [
+      0,
+      1,
+      2
+     ]
+    }
+   ]
+  },
+  "notes": "measured in tools/event_shape_inventory.py: role-only and has-type-only clauses outnumber whole-group clauses roughly 2:1 in the pinned standard trees, so grouping must key on the event term across the clause set, not within one clause"
+ },
+ {
+  "id": "e08_compound_event_term",
+  "purpose": "the event handle can be a compound term, not an atom",
+  "final_clauses": [
+   {
+    "@name": "sent_S2",
+    "@logic": [
+     "has type",
+     [
+      "sk3",
+      "?:Y",
+      "?:Z"
+     ],
+     "buy"
+    ]
+   },
+   {
+    "@name": "sent_S2",
+    "@logic": [
+     "has actor",
+     [
+      "sk3",
+      "?:Y",
+      "?:Z"
+     ],
+     "#:Mary 4"
+    ]
+   }
+  ],
+  "expect": {
+   "events": [
+    {
+     "encoding": "neodavidson",
+     "event_term": [
+      "sk3",
+      "?:Y",
+      "?:Z"
+     ],
+     "verb": "buy",
+     "roles": {
+      "actor": "#:Mary 4"
+     },
+     "spans_clauses": [
+      0,
+      1
+     ]
+    }
+   ]
+  },
+  "notes": "grouping key must be the canonical form of a term; a string key would treat ['sk3','?:Y','?:Z'] as unhashable or unequal across clauses"
+ }
+]

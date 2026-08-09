@@ -469,8 +469,21 @@ def call_gemini(version, sentences, sysprompt, max_tokens, think=False):
       genconfig["temperature"] = temperature
     if new_api:
       genconfig["thinkingConfig"] = {"thinkingLevel": "high" if think else "minimal"}
-    elif think and _gemini_supports_thinking(version):
-      tbudget = think if isinstance(think, int) else 8000
+    elif _gemini_supports_thinking(version):
+      # 2.5 thinks by default and its thinking counts against maxOutputTokens,
+      # so a non-thinking call must say so explicitly, as the other providers
+      # do.  Measured 2026-08-07: without this, hard cases spent 7676-7679 of
+      # the 8000-token budget on thinking (up to 23034 elsewhere), leaving a
+      # truncated stage-2 JSON, and ordinary calls ran ~32% slower
+      # (19.9s vs 13.6s) with no change in output length.
+      # bool is a subclass of int, so test it first: think=True must mean the
+      # default budget, not a literal True in the request body.
+      if not think:
+        tbudget = 0
+      elif isinstance(think, bool):
+        tbudget = 8000
+      else:
+        tbudget = int(think)
       genconfig["thinkingConfig"] = {"thinkingBudget": tbudget}
     call = {
       "contents": [{"parts": [{"text": sentences}]}],

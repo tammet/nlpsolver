@@ -549,7 +549,7 @@ Output format and other flags:
 -nosolve           Parse only; do not call the prover
 -nollmcache        Disable LLM response caching for this run
 -clearcache        Clear all caches and exit
--geminicache       Enable Gemini server-side context caching (off by default; see §5.3)
+-nogeminicache     Disable Gemini server-side context caching (on by default; see §5.3)
 -seconds N         Prover time limit (default 2)
 -simple            No context, no exceptions, simple properties
 -think [N]         Enable reasoning/thinking mode (optional token budget)
@@ -661,7 +661,7 @@ per-minute request and token caps.
 
 **Gemini context caching (opt-in):** Gemini's lower tiers also impose a per-request
 input-token cap that the ~25–30K-token Stage-1/Stage-2 sysprompts can exceed, triggering an
-instant 429.  When `globals.options["use_gemini_cache_flag"]` is `True` (set via `-geminicache`;
+instant 429.  When `globals.options["use_gemini_cache_flag"]` is `True` (the default; disable with `-nogeminicache`;
 **default `False`**) and the sysprompt is at least `_GEMINI_CACHE_MIN_CHARS` (16K chars, ~4K
 tokens), `call_gemini` uploads the sysprompt once to Google's `cachedContents` service and
 references it by handle on each subsequent call, dodging the per-request cap.  Handles are kept
@@ -2297,7 +2297,7 @@ english_to_answer(text, {"use_llm_cache_flag": False})
 **To enable Gemini server-side context caching** (off by default — only needed on Gemini
 tiers with a tight per-request input-token cap; see §5.3):
 ```python
-english_to_answer(text, {"use_gemini_cache_flag": True})   # or pass -geminicache on the CLI
+english_to_answer(text, {"use_gemini_cache_flag": False})  # or pass -nogeminicache on the CLI
 ```
 
 **Mode option keys** (defaults as noted; see §11 and §12 for what they do):
@@ -2787,7 +2787,7 @@ python3 runtests.py
 
 # pick LLMs and a test file
 python3 runtests.py -llms claude,gpt tests/tests_core.py
-python3 runtests.py -llms gemini tests/tests_core_100.py -geminicache
+python3 runtests.py -llms gemini tests/tests_core_100.py
 
 # selection
 python3 runtests.py -ids 11,15,18          # only these case ids
@@ -2824,7 +2824,7 @@ continues where a quota-exhausted or interrupted run stopped.  Pass `-redo-error
 re-run cases whose JSON contains an `"error"` key, or `-redo` to overwrite everything.  A
 solo-Gemini run (`-llms gemini`) inserts a small per-case throttle, since without other LLMs
 sharing the loop its back-to-back Stage-1/Stage-2 calls hit per-minute rate limits easily;
-pair it with `-geminicache` (and see §5.3) on tiers with a tight per-request input cap.
+context caching is on by default (see §5.3), which matters most on tiers with a tight per-request input cap.
 
 The per-case JSON holds the full collected artifact set — `stage1`, `stage2`, `clauses`,
 `gk_command`, `proof`, `nl_proof`, `answer`, `correctness` — so failures can be triaged

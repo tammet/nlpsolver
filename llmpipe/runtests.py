@@ -207,12 +207,14 @@ def build_case_json(testname, case_id, input_text, expected, llm, collect, match
   for k in ("combined", "directanswer",
             "stage1", "stage_1_fixes", "stage_1_retries",
             "stage2", "stage_2_fixes", "stage_2_retries",
-            "clauses", "gk_command", "proof", "nl_proof",
+            "clauses", "final_clauses", "final_clause_trace",
+            "final_clause_trace_error",
+            "gk_command", "proof", "nl_proof",
             "downstream_retries"):
     v = collect.get(k)
     if not v:   # skip None/[]/'' — omit empty keys
       continue
-    if k in ("stage1", "stage2", "clauses"):
+    if k in ("stage1", "stage2", "clauses", "final_clauses"):
       v = _strip_internal_keys(v)
     elif k == "nl_proof" and isinstance(v, str):
       v = v.split("\n")
@@ -242,7 +244,15 @@ def should_skip(outpath, redo_errors):
     return True
   try:
     data = _load_case_file(outpath)
-    return "error" not in data
+    if "error" in data:
+      return False
+    # Some failures never set an "error" key: the api-timeout cap and the
+    # early returns in english_to_answer put their message in "answer"
+    # instead, so matching only on the key silently skips them.
+    answer = data.get("answer")
+    if isinstance(answer, str) and answer.startswith("Error"):
+      return False
+    return True
   except Exception:
     return False   # malformed → re-run
 
@@ -449,7 +459,7 @@ def smart_json(obj):
     val_col = 2 + len(key_str) + 2
     if val_col + len(val_compact) <= _COMPACT_WIDTH:
       val_str = val_compact
-    elif k == "clauses":
+    elif k in ("clauses", "final_clauses"):
       val_str = _fmt_clauses_field(v)
     elif k == "nl_proof":
       val_str = _fmt_nl_proof_field(v)
@@ -564,7 +574,10 @@ def main():
   ap.add_argument("-redo", action="store_true",
                   help="Re-run all cases (overwrite existing JSON files)")
   ap.add_argument("-geminicache", action="store_true",
-                  help="Enable Gemini context caching (off by default)")
+                  help="Accepted and ignored: Gemini context caching is on by "
+                       "default. Kept so older command lines keep working.")
+  ap.add_argument("-nogeminicache", action="store_true",
+                  help="Disable Gemini context caching (on by default)")
   ap.add_argument("-sequential", action="store_true",
                   help="Run the requested LLMs SEQUENTIALLY in-process (no "
                        "parallel Pool). Best for cache-served reruns where the "
@@ -686,8 +699,8 @@ def main():
 
   # Solver options — keep cache on per project rules.
   run_opts = {}
-  if args.geminicache:
-    run_opts["use_gemini_cache_flag"] = True
+  if args.nogeminicache:
+    run_opts["use_gemini_cache_flag"] = False
   if combined_on:
     # Only solver-known keys go into run_opts (set_global_options rejects unknowns).
     run_opts["combined_flag"] = True

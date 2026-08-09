@@ -1,0 +1,160 @@
+[
+{
+  "id": "t01_isa_label_implication",
+  "template": "T1",
+  "purpose": "class label implication: isa(A,X) -> isa(B,X)",
+  "final_clauses": [
+    {"@name": "sent_S1", "@logic": ["isa", "professional basketball player", "#:Yuri 1"]}
+  ],
+  "gap": {"sign": "+", "atom": ["isa", "american professional basketball player", "#:Yuri 1"]},
+  "expect": {"templates": [
+    {"template": "T1", "producer": ["isa", "professional basketball player", "#:Yuri 1"],
+     "direction": "isa(professional basketball player,X) -> isa(american professional basketball player,X)",
+     "argument_map": {"X": "X"}}]},
+  "notes": "cases 191/192; note the enumerated direction here is the WRONG one semantically (a PBP need not be American) - enumeration is structural, rejection is the later judge's job"
+},
+{
+  "id": "t02_property_label_implication",
+  "template": "T2",
+  "purpose": "property label implication: prop(A,X) -> prop(B,X)",
+  "final_clauses": [
+    {"@name": "sent_S1", "@logic": ["has property", "unmarried", "#:Ingrid 1"]}
+  ],
+  "gap": {"sign": "+", "atom": ["has property", "single", "#:Ingrid 1"]},
+  "expect": {"templates": [
+    {"template": "T2", "producer": ["has property", "unmarried", "#:Ingrid 1"],
+     "direction": "has property(unmarried,X) -> has property(single,X)",
+     "argument_map": {"X": "X"}}]},
+  "notes": "case-115 family (tall/short mutex lives on has property while the derived atom may be is rel2)"
+},
+{
+  "id": "t03_rel2_rename_and_inverse",
+  "template": "T3",
+  "purpose": "relation rename, and the argument-swapped variant, as SEPARATE candidates",
+  "final_clauses": [
+    {"@name": "sent_S1", "@logic": ["is rel2", "wrote", "#:Dani 1", "#:Family History 1"]}
+  ],
+  "gap": {"sign": "+", "atom": ["is rel2", "written by", "#:Family History 1", "#:Dani 1"]},
+  "expect": {"templates": [
+    {"template": "T3", "producer": ["is rel2", "wrote", "#:Dani 1", "#:Family History 1"],
+     "direction": "is rel2(wrote,X,Y) -> is rel2(written by,Y,X)",
+     "argument_map": {"arg1": "arg2", "arg2": "arg1"}}]},
+  "notes": "only the swapped layout aligns the grounded entities here; the same-order layout must not be emitted because its arguments clash"
+},
+{
+  "id": "t04_event_role_projection_to_rel2",
+  "template": "T4",
+  "purpose": "event roles supply the two arguments of a binary relation; BOTH orderings enumerated",
+  "final_clauses": [
+    {"@name": "sent_S1", "@logic": ["isa", "activity", "sk0_activity"]},
+    {"@name": "sent_S1", "@logic": ["has type", "sk0_activity", "write"]},
+    {"@name": "sent_S1", "@logic": ["has actor", "sk0_activity", "#:Dani 1"]},
+    {"@name": "sent_S1", "@logic": ["has target", "sk0_activity", "#:Family History 1"]}
+  ],
+  "gap": {"sign": "+", "atom": ["is rel2", "written by", "#:Family History 1", "#:Dani 1"]},
+  "expect": {"templates": [
+    {"template": "T4", "producer_event": {"verb": "write", "roles": {"actor": "#:Dani 1", "target": "#:Family History 1"}},
+     "direction": "write(actor=A,target=B) -> is rel2(written by,B,A)",
+     "argument_map": {"arg1": "target", "arg2": "actor"}}]},
+  "notes": "the Davidsonian-vs-flat split (case 180); only the target/actor ordering aligns the grounded entities"
+},
+{
+  "id": "t05_class_property_conversion",
+  "template": "T5",
+  "purpose": "same word emitted once as a class and once as a property",
+  "final_clauses": [
+    {"@name": "sent_S1", "@logic": ["isa", "analog", "#:medium 1"]}
+  ],
+  "gap": {"sign": "+", "atom": ["has property", "analog", "#:medium 1"]},
+  "expect": {"templates": [
+    {"template": "T5", "producer": ["isa", "analog", "#:medium 1"],
+     "direction": "isa(analog,X) -> has property(analog,X)",
+     "argument_map": {"X": "X"}}]},
+  "notes": "the propclass family (FOLIO 50/51/100/101/184); each direction is judged separately"
+},
+{
+  "id": "t06_property_reflexive_rel2_conversion",
+  "template": "T6",
+  "purpose": "unary property vs reflexive binary relation for one word (case 89)",
+  "final_clauses": [
+    {"@name": "sent_S1", "@logic": ["has property", "smart", "#:Harry 1"]}
+  ],
+  "gap": {"sign": "+", "atom": ["is rel2", "smart", "#:Harry 1", "#:Harry 1"]},
+  "expect": {"templates": [
+    {"template": "T6", "producer": ["has property", "smart", "#:Harry 1"],
+     "direction": "has property(smart,X) -> is rel2(smart,X,X)",
+     "argument_map": {"arg1": "X", "arg2": "X"}}]},
+  "notes": "case 89 verbatim; the F3 study confirmed this rewrite flips the case"
+},
+{
+  "id": "t07_rel2_to_fixed_binary",
+  "template": "T7",
+  "purpose": "relation family AND argument order both change (case 112: in -> has part)",
+  "final_clauses": [
+    {"@name": "sent_S1", "@logic": ["is rel2", "in", "#:Harding Mine 5", "#:Picuris Mountains 1"]}
+  ],
+  "gap": {"sign": "+", "atom": ["has part", "#:Picuris Mountains 1", "#:Harding Mine 5"]},
+  "expect": {"templates": [
+    {"template": "T7", "producer": ["is rel2", "in", "#:Harding Mine 5", "#:Picuris Mountains 1"],
+     "direction": "is rel2(in,X,Y) -> has part(Y,X)",
+     "argument_map": {"whole": "arg2", "part": "arg1"}}]},
+  "notes": "cases 112/114; the existing hand-built injector only lifted have -> has part, which never fired for this shape"
+},
+{
+  "id": "t08_event_role_to_participant_class",
+  "template": "T8",
+  "purpose": "deverbal / agent-noun class derived from an event participant",
+  "final_clauses": [
+    {"@name": "sent_S1", "@logic": ["isa", "activity", "sk0_activity"]},
+    {"@name": "sent_S1", "@logic": ["has type", "sk0_activity", "apply"]},
+    {"@name": "sent_S1", "@logic": ["has actor", "sk0_activity", "#:Tom 1"]},
+    {"@name": "sent_S1", "@logic": ["has target", "sk0_activity", "#:GRE 1"]}
+  ],
+  "gap": {"sign": "+", "atom": ["isa", "gre applicant", "#:Tom 1"]},
+  "expect": {"templates": [
+    {"template": "T8", "producer_event": {"verb": "apply", "roles": {"actor": "#:Tom 1", "target": "#:GRE 1"}},
+     "direction": "apply(actor=A,target=GRE) -> isa(gre applicant,A)",
+     "argument_map": {"X": "actor"}}]},
+  "notes": "case 107; morphological relatedness (apply/applicant) is a ranking feature only - drive/driver and cook/cooker entail differently, so this is usually a DEFAULT, not a strict bridge"
+},
+{
+  "id": "t09_fixed_binary_to_participant_class",
+  "template": "T9",
+  "purpose": "class membership implied by a possession relation",
+  "final_clauses": [
+    {"@name": "sent_S1", "@logic": ["have", "#:Peter 1", "#:Rock 1"]},
+    {"@name": "sent_S2", "@logic": ["isa", "animal", "#:Rock 1"]}
+  ],
+  "gap": {"sign": "+", "atom": ["isa", "pet", "#:Rock 1"]},
+  "expect": {"templates": [
+    {"template": "T9", "producer": ["have", "#:Peter 1", "#:Rock 1"],
+     "direction": "have(X,Y) & isa(animal,Y) -> isa(pet,Y)",
+     "argument_map": {"X": "arg2"}}]},
+  "notes": "case 126; 'pet' is a relational status implied by owning an animal - a default, never a lexical equivalence"
+},
+{
+  "id": "t10_no_structural_candidate",
+  "template": "NONE_STRUCTURAL",
+  "purpose": "nothing in the clause set can be aligned to the gap by any template",
+  "final_clauses": [
+    {"@name": "sent_S1", "@logic": ["isa", "elephant", "#:John 1"]}
+  ],
+  "gap": {"sign": "+", "atom": ["is rel2", "borders", "#:France 1", "#:Spain 1"]},
+  "expect": {"templates": []},
+  "notes": "the locator must emit nothing here; this is the NONE_STRUCTURAL class that B0 is gated on"
+},
+{
+  "id": "t11_structural_but_semantically_invalid",
+  "template": "NONE_SEMANTIC",
+  "purpose": "a template aligns structurally but the implication is false",
+  "final_clauses": [
+    {"@name": "sent_S1", "@logic": ["has property", "big", "#:John 1"]}
+  ],
+  "gap": {"sign": "+", "atom": ["has property", "nice", "#:John 1"]},
+  "expect": {"templates": [
+    {"template": "T2", "producer": ["has property", "big", "#:John 1"],
+     "direction": "has property(big,X) -> has property(nice,X)",
+     "argument_map": {"X": "X"}}]},
+  "notes": "enumeration here is CORRECT behaviour and must not be counted as a B0 error; rejecting big->nice is the LLM judge's job, which is out of scope in these phases"
+}
+]

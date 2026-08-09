@@ -73,14 +73,18 @@ options={
   # sysprompt and input text, so a cached result is only reused when every
   # call parameter is identical.  Set to False or pass -nollmcache to disable.
   "use_llm_cache_flag": True,
-  # Gemini context caching: OFF by default.
-  # When enabled, sysprompts >= 16K chars are uploaded once to Google's
-  # cachedContents service and referenced by handle on each call, which
-  # dodges the per-request input-token cap that triggers instant 429s.
-  # Note: cached tokens still count against per-minute TPM, so caching
-  # helps with large-prompt bursts but doesn't unblock sustained throughput.
-  # Set to True or pass -geminicache to enable.
-  "use_gemini_cache_flag": False,
+  # Gemini context caching: ON by default.
+  # Sysprompts >= 16K chars are uploaded once to Google's cachedContents
+  # service and referenced by handle on each call, which dodges the
+  # per-request input-token cap that triggers instant 429s.  Our stage
+  # prompts are ~103K chars = ~30.8K tokens, resent on every call without
+  # this; measured 2026-08-07, a cached call reports 30709 of 30831 prompt
+  # tokens as cached.
+  # It is a billing lever, not a latency one: measured median 12.2s cached
+  # vs 11.2s uncached on the same prompt, and cached tokens still count
+  # against per-minute TPM, so it does not unblock sustained throughput.
+  # Set to False or pass -nogeminicache to disable.
+  "use_gemini_cache_flag": True,
   # Semantic normalisation: ON by default.
   # Applies antonym folding and canonical word substitution to GK clauses
   # before they are passed to the prover.  Set to True or pass -nosemnormal
@@ -99,6 +103,19 @@ options={
   "nofix_comparative": False,  # fix 7d comparative canonicalisation
   "nofix_containment": False,  # fix 8a unparseable-clause containment
   "nofix_downstream": False,   # N1    downstream-error corrective retry
+  # Reference/scope repairs (2026-08-09 parse-repair campaign).  Each switch
+  # disables one independently measurable mechanism.
+  "nofix_kindnumber": False,          # generic kind constants: minerals -> mineral
+  "nofix_genericparticipants": False, # bind a modified generic event participant
+  "nofix_rulecoref": False,           # Stage-1-backed dependent participant coindexing
+  "nofix_rulescope": False,           # lift misplaced antecedent binders over rules
+  "nofix_freeconclusion": False,      # reject unrepaired free conclusion variables
+  "nofix_boundtypevars": False,       # never lowercase/singularize bound isa class vars
+  "nofix_blockorigin": False,         # keep $block on pipeline-generated clauses
+  "nofix_propclasspos": False,        # do not cross noun-syn isa into adjective property
+  # Kill switch for the final-clause provenance sidecar (M1.1): when True,
+  # collect["final_clauses"]/["final_clause_trace"] are not built.
+  "nofinaltrace": False,
   # LLM reasoning/thinking mode: OFF by default.
   # When True, enables medium reasoning effort (GPT: reasoning_effort=medium;
   # Claude: extended thinking; Gemini: thinkingConfig, requires 2.5+ model).

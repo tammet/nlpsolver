@@ -537,12 +537,17 @@ def _drop_redundant_guards(node):
      and node[1] and node[1][0] == "and":
     ant = node[1]
     bound = _vars_in_relational(ant[1:])
+    # A typed participant that is referenced again in the conclusion is a
+    # semantic interface, not a redundant local event guard.  Keeping its type
+    # is what lets a subtype/classification bridge connect to the rule
+    # (mle2-0049: sunflower seed -> seed).
+    carried = {v for v in bound if _var_appears(node[2:], v)}
     kept = [ant[0]]
     for c in ant[1:]:
       if isinstance(c, list) and len(c) == 3 and c[0] == "isa" and isinstance(c[2], str):
         if c[1] in _UNIVERSAL_TYPES:
           continue                        # vacuous universal-type guard -> drop
-        if c[2] in bound:
+        if c[2] in bound and c[2] not in carried:
           continue                        # redundant relational type guard -> drop
       kept.append(c)
     ant = kept if len(kept) > 1 else node[1]

@@ -59,6 +59,7 @@ import lc_clausify
 import lc_questions
 import lc_encoding
 import lc_finalize
+import lc_reference
 from lc_repairs import (hoist_nested_ids, repair_misnested_normally_implies,
                         repair_self_defeating_conditional, rename_offinventory_preds,
                         strip_definite_tags, repair_question_packaging,
@@ -419,6 +420,23 @@ def rawlogic_convert(logic, s1_json=None, fixes=None):
   # LLMs sometimes put tense in has_time instead of leaving it to $ctxt.
   logic = _strip_tense_has_time(logic)
 
+  # Preserve Stage-1 participant identity and generic-kind information before
+  # the event fold can erase it.  These are construction-level repairs: they
+  # consume explicit Stage-1 scope/role/modifier/coreference annotations, not
+  # a list of favored words.
+  _b = logic
+  logic = lc_reference.normalize_stage1_kind_constants(logic, s1_json)
+  _note_repair(_b, logic, "normalized Stage-1 kind number")
+  _b = logic
+  logic = lc_reference.introduce_modified_generic_participants(logic, s1_json)
+  _note_repair(_b, logic, "bound modified generic participant")
+  _b = logic
+  logic = lc_reference.coindex_dependent_rule_participants(logic, s1_json)
+  _note_repair(_b, logic, "coindexed dependent rule participant")
+  _b = logic
+  logic = lc_reference.repair_rule_variable_scope(logic)
+  _note_repair(_b, logic, "repaired rule variable scope")
+
   # Attach ["actuality", E] to every Davidsonian event without a modal
   # classifier.  Pipeline-only marker; Stage 2 doesn't emit it.  Skips
   # inner content events of two-event reifications (has_content second arg).
@@ -569,6 +587,18 @@ def rawlogic_convert(logic, s1_json=None, fixes=None):
       if fixes is not None:
         fixes.append("logconvert: skipped malformed package " + sid + " (" + bad + ")")
       continue
+    # A rule that still concludes about an unbound Stage-2 variable is not a
+    # weaker approximation: it states the conclusion about every object.  Do
+    # not send that unsound clause to GK.  The warning is surfaced through the
+    # normal stage_2_fixes channel rather than silently losing the package.
+    if not _g_options.get("nofix_freeconclusion"):
+      free_cons = lc_reference.free_rule_conclusion_vars(item)
+      if free_cons:
+        if fixes is not None:
+          fixes.append("logconvert: rejected package " + sid
+                       + " (free rule conclusion variable(s): "
+                       + ", ".join(sorted(free_cons)) + ")")
+        continue
     try:
       if sid != "?":
         uid_count[sid] = uid_count.get(sid, 0) + 1
@@ -884,7 +914,8 @@ def rawlogic_convert(logic, s1_json=None, fixes=None):
   # each clause's $ctxt to one var lets steps 3-4 recognise the hidden redundancy.
   # @question goals keep per-atom freshening (they are not CNF clauses).
   if _ultra:
-    result = lc_finalize.finalize_strict_clauses(result)
+    result = lc_finalize.finalize_strict_clauses(
+        result, preserve_generated_blocks=not _g_options.get("nofix_blockorigin"))
 
     # Merge per-sentence Skolem constants of the same type that are used only
     # generically ("the gym"/"the campus" re-existentialised per sentence), so

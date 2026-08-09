@@ -82,3 +82,9 @@ ctxt_stage2_instructions.txt
 new_stage2_examples.txt
 
 
+
+# abstraction work (PLAN_2026_08_07): raw external corpora and converted
+# external cases; converted text stays local pending the license decision
+/llmpipe/external_data/
+/llmpipe/tests/external/
+/llmpipe/tests/tests_external_*.py
