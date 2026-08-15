@@ -88,3 +88,9 @@ new_stage2_examples.txt
 /llmpipe/external_data/
 /llmpipe/tests/external/
 /llmpipe/tests/tests_external_*.py
+
+# local scratch and one local test set
+/llmpipe/codexsession.txt
+/llmpipe/new_model_ideas.txt
+/llmpipe/notes.md
+/llmpipe/tests/tests_folio_v2_agreed.py
