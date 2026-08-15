@@ -1,3 +1,4 @@
+import litbridge_atoms as atoms
 """Is this compiled rule already a clause the theory has? (WP4.3)
 
 `eb2-0039` refused `recessive trait(X) -> trait(X)` with a message about a
@@ -15,7 +16,6 @@ theory does not contain, and letting it through costs one clause.
 import itertools
 import json
 
-import unifier_abstraction as UA
 
 VERSION = "rule_redundancy_v3/1.0"
 
@@ -36,10 +36,10 @@ def strip_block(clause):
     that is not.
     """
     out = []
-    for lit in UA.literals_of(clause.get("@logic")):
+    for lit in atoms.literals_of(clause.get("@logic")):
         if not (isinstance(lit, list) and lit and isinstance(lit[0], str)):
             continue
-        if UA.bare_predicate(lit[0]) == BLOCK:
+        if atoms.bare_predicate(lit[0]) == BLOCK:
             continue
         out.append(lit)
     return out
@@ -47,15 +47,15 @@ def strip_block(clause):
 
 def _same_literal(a, b, mapping, back):
     """Equal up to a consistent, bijective renaming of clause variables."""
-    if UA.sign_of(a) != UA.sign_of(b):
+    if atoms.sign_of(a) != atoms.sign_of(b):
         return False
-    x, y = UA.unsigned_atom(a), UA.unsigned_atom(b)
+    x, y = atoms.unsigned_atom(a), atoms.unsigned_atom(b)
     if x[0] != y[0] or len(x) != len(y):
         return False
 
     def go(p, q):
-        vp = isinstance(p, str) and UA.is_variable_term(p)
-        vq = isinstance(q, str) and UA.is_variable_term(q)
+        vp = isinstance(p, str) and atoms.is_variable_term(p)
+        vq = isinstance(q, str) and atoms.is_variable_term(q)
         if vp or vq:
             if not (vp and vq):
                 return False
