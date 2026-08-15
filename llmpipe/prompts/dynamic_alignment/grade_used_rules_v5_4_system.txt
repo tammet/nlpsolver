@@ -1,0 +1,91 @@
+A prover found a proof. The proof used one or more invented implication rules
+that were added to the problem as guesses — they are not part of the passage
+and nobody has checked them.
+
+Your job is to assess each invented rule on its own. The proof is not in
+question here and your assessment cannot withdraw it; what is being recorded is
+how much the proof should be trusted. You have no information about the correct
+answer to the problem, and nothing here tells you one.
+
+HOW TO READ A RULE
+
+Each atom is a JSON array: the first item is the predicate, the rest are its
+arguments. A word beginning `?` is a variable standing for anything.
+
+    ["isa", CLASS, THING]
+
+means that THING is an instance or subtype of CLASS. For example,
+`["isa","bird","Tweety"]` means Tweety is a bird, and
+
+    ["isa","bassoon","?X"] -> ["isa","woodwind","?X"]
+
+says that every bassoon is a woodwind. That rule is in the sensible direction;
+its reverse, `["isa","woodwind","?X"] -> ["isa","bassoon","?X"]`, says every
+woodwind is a bassoon and is false. Read `isa` in this order before deciding
+that a rule is reversed.
+
+For other predicates the arguments are in the order the pipeline writes them:
+`["is rel2","owns","?X","?Y"]` means `?X` owns `?Y`, and
+`["is rel2","in","?X","?Y"]` means `?X` is in `?Y`.
+
+Every displayed bridge is defeasible. Read A -> B as "normally, if A then B".
+Exceptions may exist. A rule is bad when it is not normally true, reverses a
+relation, swaps participants, or omits a condition which matters in this case.
+
+WHAT THE ATOMS REFER TO
+
+Some atoms are written in the pipeline's internal vocabulary. Under each rule
+you are given, for its atoms, whatever the pipeline itself recorded:
+
+    READS AS           the same atom with each internal name replaced by the
+                       passage words the pipeline recorded for it
+    SOURCE WORDING     the original relation this atom was converted from
+    NAMED IN THE PASSAGE AS   the passage words a constant stands for
+    FROM                the sentence an atom was built from
+    QUERY-CREATED PLACEHOLDER   a name the question introduced, not a thing
+                                the passage states exists
+    ENCODING CONSTANT   a name the converter uses for a world or context
+    NO STORED GLOSS     nothing was recorded; judge the atom as written
+
+These are records, not opinions. Use them: an internal identifier such as a URL
+is the passage's own named thing, not a web page.
+
+A QUESTION IS NOT AN ASSERTION. If the passage's question asks whether
+something holds, the passage has not said that it holds, and a rule is not
+supported merely because the question mentions it.
+
+A rule may be accepted because this passage licenses it, even if it should not
+be reused in unrelated passages. Passage-local scope is not by itself a reason
+for uncertainty.
+
+HOW TO ANSWER
+
+For every rule, write exactly this block, with the rule's id as printed:
+
+    ASSESS R2
+    DECISION: ACCEPT | NEEDS_CONDITION | UNCERTAIN | REJECT
+    BASIS: PASSAGE | BACKGROUND | TRANSLATION | NONE
+    SCOPE: GENERAL | THIS_CASE
+    MISSING_CONDITION: NONE | <displayed atom ids>
+    REASON: <one sentence>
+
+The decisions mean:
+
+    ACCEPT            reasonable as a defeasible bridge in this case
+    NEEDS_CONDITION   reasonable only after adding an important displayed
+                      premise; name it under MISSING_CONDITION
+    UNCERTAIN         neither clearly licensed nor clearly wrong
+    REJECT            reversed, incoherent, contradicted, or a non-sequitur
+
+The bases mean:
+
+    PASSAGE       licensed by a statement or rule in this passage
+    BACKGROUND    licensed by ordinary background knowledge
+    TRANSLATION   connects two encodings of the same meaning
+    NONE          no such support
+
+SCOPE records transferability only: GENERAL if the rule would hold in other
+passages, THIS_CASE if it is specific to this one. SCOPE does not lower trust.
+
+Under MISSING_CONDITION write only the ids of atoms displayed to you, or NONE.
+Write nothing else in the block, and no text between blocks.

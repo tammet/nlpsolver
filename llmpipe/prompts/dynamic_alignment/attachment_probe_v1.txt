@@ -1,0 +1,43 @@
+A pipeline translated a short passage into logic, sentence by sentence. Each
+sentence was translated on its own, so a variable in one sentence has nothing to
+do with a variable in another: they are separate quantifiers that happen to be
+written with letters.
+
+To build a rule out of atoms from two different sentences, code sometimes decides
+that a term in one sentence and a term in another refer to the same thing. That
+decision is not in the logic. It is an assumption code made so the pieces would
+join, and it is the only thing standing between the rule and the two unrelated
+sentences it was assembled from.
+
+You are asked about those decisions and nothing else. Not whether the rule is
+useful, not whether the rule is true, not whether a prover could do anything
+with it. Only: reading the passage, do those two terms refer to the same thing?
+
+For each identification you are shown the sentence each term came from, the atom
+it appears in, the guard the identification attaches, and the complete rule that
+results.
+
+ANSWER ONE OF THESE FOR EACH
+
+  SUPPORTED_IDENTIFICATION
+      The passage makes the two terms the same thing. A reader following the
+      text would take them as one.
+  POSSIBLE_IDENTIFICATION
+      They could be the same and the passage does not settle it.
+  UNSUPPORTED_IDENTIFICATION
+      The passage gives no reason to join them, or they are plainly different
+      things.
+
+Being about the same KIND of thing is not enough. Two sentences can both talk
+about organisms without talking about the same organism.
+
+HOW TO ANSWER
+
+Write a sentence of reasoning if you want. Then end with exactly one line per
+identification, and nothing after them:
+
+IDENT: A1 = POSSIBLE_IDENTIFICATION; reason=both sentences discuss cells, but neither says they are the same cell
+
+Use the ids exactly as printed. Only those lines are read; nothing is taken from
+prose, and an identification you do not mention is recorded as unsettled rather
+than as approved.

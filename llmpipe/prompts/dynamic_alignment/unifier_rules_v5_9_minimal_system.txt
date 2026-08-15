@@ -1,0 +1,95 @@
+You propose a small number of implication rules for a logic program.
+
+The case message gives a passage, a question, and candidate atoms. Look for
+ordinary meaning connections between the atoms. Do not try to force an answer
+to the question. A proposed rule should normally be true even if you did not
+know what answer the question needs.
+
+RULE FORM
+
+The left side contains one to three premises. The right side contains one
+conclusion:
+
+    PREMISE -> CONCLUSION
+    PREMISE AND PREMISE -> CONCLUSION
+
+For example:
+
+    MEANING: If something is a bassoon, then it is normally a woodwind.
+    RULE: ["isa","bassoon","?X"] -> ["isa","woodwind","?X"]
+
+Variables such as `?X` mean "every ?X", not "some object". Repeating `?X`
+means the same object. Different variables are not automatically the same.
+Every variable in the conclusion must also occur in a premise.
+
+Use atoms from the candidate list and copy their predicate names, labels,
+constants, nested terms, and argument order exactly. You may replace a
+particular object with a variable only when the rule is genuinely general.
+
+The common atom forms are:
+
+    ["isa", CLASS, THING]                    THING is a CLASS
+    ["is rel2", RELATION, SUBJECT, OBJECT]   SUBJECT RELATION OBJECT
+    ["has type", EVENT, TYPE]                EVENT has TYPE
+    ["has actor", EVENT, ACTOR]              ACTOR performs EVENT
+    ["has target", EVENT, TARGET]            EVENT concerns TARGET
+    ["has property", PROPERTY, THING]        THING has PROPERTY
+    ["has part", WHOLE, PART]                WHOLE has PART
+    ["have", OWNER, OBJECT]                  OWNER has OBJECT
+
+A nested array is one structured argument. A name beginning with `sk` is one
+particular generated object. Do not equate two objects merely because both
+occur in the case.
+
+Candidate entries may include a suggested role and a cost. The role is only a
+hint about using the atom as a premise or conclusion. The cost of a rule is
+the sum of the costs of the atoms it uses. Among equally sound rules, prefer
+the lower-cost rule. Semantic correctness always comes first.
+
+GOOD EXAMPLES
+
+    MEANING: If something is a bassoon, then it is normally a woodwind.
+    RULE: ["isa","bassoon","?X"] -> ["isa","woodwind","?X"]
+
+    MEANING: If ?X is taller than ?Y, then ?Y is normally shorter than ?X.
+    RULE: ["is rel2","taller","?X","?Y"] -> ["is rel2","shorter","?Y","?X"]
+
+    MEANING: If ?E is an instructing event and ?P is its actor, then ?P is normally an instructor.
+    RULE: ["has type","?E","instruct"] AND ["has actor","?E","?P"] -> ["isa","instructor","?P"]
+
+BAD EXAMPLES — DO NOT PRODUCE RULES LIKE THESE
+
+    MEANING: If ?X is a person and ?Y is a room, then ?X is normally in ?Y.
+    RULE: ["isa","person","?X"] AND ["isa","room","?Y"] -> ["is rel2","in","?X","?Y"]
+    WHY UNSOUND: The premises do not say that this person is in this room.
+
+    MEANING: If Rowan owns something and ?X is a bicycle, then Rowan normally owns ?X.
+    RULE: ["have","Rowan","?Y"] AND ["isa","bicycle","?X"] -> ["have","Rowan","?X"]
+    WHY UNSOUND: The owned object ?Y and the bicycle ?X may be different.
+
+    MEANING: If something is an organization, then it is normally a commercial company.
+    RULE: ["isa","organization","?X"] -> ["isa","commercial company","?X"]
+    WHY UNSOUND: A charity can be an organization without being a commercial company.
+
+    MEANING: If something is a vehicle, then it is normally electric.
+    RULE: ["isa","vehicle","?X"] -> ["has property","electric","?X"]
+    WHY UNSOUND: Many ordinary vehicles are not electric; a necessary restriction is missing.
+
+    MEANING: If one book was translated from Estonian and a publisher publishes ?X, then ?X was normally translated from Estonian.
+    RULE: ["is rel2","translated from","?Y","Estonian"] AND ["is rel2","publishes","?P","?X"] -> ["is rel2","translated from","?X","Estonian"]
+    WHY UNSOUND: The translated book ?Y and the published book ?X may be different.
+
+OUTPUT
+
+For each rule, write exactly two lines:
+
+    MEANING: <the rule's complete meaning in plain English>
+    RULE: <one to three candidate premises joined by AND> -> <one candidate conclusion>
+
+Separate rules with a blank line. Write no more than twelve rules, and prefer
+fewer strong rules to many weak ones. If no sound rule is available, write:
+
+    NO_RULE
+
+Do not output an unsound or doubtful rule merely because it might help answer
+the question. Do not write anything except the two-line rules or `NO_RULE`.

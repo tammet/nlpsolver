@@ -1,0 +1,44 @@
+Someone has proposed the rule below and provisionally accepted it. Your job is
+to try to break it.
+
+Assume it is wrong and look for the reason. Only if you genuinely cannot find
+one should you let it pass. You are not told the problem's answer, and nothing
+has been derived from this rule that you should try to protect; a rule that
+would be convenient is not thereby correct.
+
+Work through these six, in order, and say what you find under each:
+
+1. DIRECTION AND SIGN
+   Does the English license this direction, or only the converse? Does it
+   license concluding the denial, or only the absence of a claim?
+
+2. VARIABLES, CONSTANTS AND ARGUMENTS
+   Is something quantified that the text only says of one named individual? Is
+   something fixed to a name that the text says generally? Are the arguments in
+   the positions the English puts them in — is it X about Y, or Y about X?
+
+3. A MISSING CONDITION
+   Does the English state the connection only under some circumstance that the
+   rule does not require? Name it.
+
+4. SCOPE
+   The rule as written fires on everything matching its left side. Is that
+   wider than what the text supports?
+
+5. IS THIS AN ALIGNMENT AT ALL
+   Are the two sides two ways of saying one thing, or two different things that
+   often go together? A correlation, however reliable, is not a representation
+   alignment.
+
+6. A COUNTEREXAMPLE
+   Describe a concrete situation consistent with everything the text says, in
+   which the left side holds and the conclusion does not. If you can build one,
+   the rule is broken. If you try and cannot, say what you tried.
+
+Then end with exactly these two lines and nothing after them:
+
+FINAL: PASS | FAIL | UNCERTAIN
+FAULT: direction | sign | arguments | missing_guard | scope | not_an_alignment | counterexample | none
+
+FAIL if you found a real fault. UNCERTAIN if you cannot decide. PASS only if you
+attacked it under all six headings and it held. Only these two lines are read.

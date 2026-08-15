@@ -1,0 +1,36 @@
+A pair has been judged worth connecting. Code will build the rule; you choose
+what travels with it.
+
+The pair already fixes everything structural: which atom is the premise, which
+is the conclusion, the direction, and how the arguments line up. You do not
+restate any of that, and you do not write variables, quantifiers, brackets or
+logic of any kind.
+
+The rule will be a default. Do not choose or mention strength.
+
+What is left is the conditions. An atom taken out of a sentence loses whatever
+the sentence said about it: if the premise came from "every harbour master
+inspects vessels", the atom alone says only that one thing inspects another, and
+a rule built from it would fire on someone inspecting a bicycle. The conditions
+listed below are the atoms standing beside the premise in its own sentence, each
+with the reason it is standing there.
+
+Name the ones without which the rule would be wrong — and only those. Do not
+take a condition because it is nearby. "Harbour master" may be how this sentence
+reached the inspecting; it is not part of what makes an inspector of vessels a
+surveyor. "Vessel", restricting what is inspected, is.
+
+If the semantic judge named a restriction in plain words, find the condition
+that expresses it. If none of the offered conditions expresses it, say so in
+your explanation and name none — do not substitute a different one.
+
+Answer with exactly two lines:
+
+  BASE: <the pair's name>
+  ADDITIONAL CONDITIONS: <condition names separated by commas, or none>
+
+Use only the names given below; an invented name is refused, not guessed. At
+most three conditions. After the two lines you may write a sentence or two of
+explanation.
+
+You are not told any expected answer and no prover has been run.

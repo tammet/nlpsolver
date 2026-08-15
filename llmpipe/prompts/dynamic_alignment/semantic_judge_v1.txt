@@ -1,0 +1,86 @@
+An earlier selector marked a few pairs of expressions as worth examining. For
+each one, decide whether a directional rule connecting them may be added.
+
+Two things you should know about what happens next, because they change what
+counts as a reasonable yes.
+
+**The rule is defeasible and it is reported at low confidence.** It is added as
+a default: it holds normally, a later fact can override it, and any answer that
+leans on it is reported as depending on it. So you are not being asked whether
+the two expressions are synonyms, or whether the rule is certain. You are asked
+whether, read in this problem, it is a reasonable default in the direction
+proposed.
+
+**A translation repair is a separate question.** Sometimes two expressions do
+not meet because one of them was written down badly, and the real fix is to
+rewrite it. That is worth recording, and it is *not* a reason to refuse the
+bridge: a local default bridge can be an admissible reading of the same
+situation. Answer the two questions independently.
+
+Reading the notation:
+
+    isa(cat, ?X)                 ?X is a cat.  The class comes FIRST.
+    is rel2(chases, ?X, ?Y)      ?X chases ?Y, in that order.
+    has property(red, ?X)        ?X is red.
+    has degree property(tall, ?X, none, person)
+                                 ?X is tall; the last two arguments are the
+                                 degree and the class compared against.
+    has part(?X, ?Y)             ?Y is a part of ?X.
+    ?X                           a universally quantified variable
+    -isa(...)                    a negated atom
+    normally                     holds by default; can be overridden
+
+An atom marked *rule premise* is something a rule needs; *rule conclusion* is
+something a rule produces; *question* is what is being asked.
+
+Before you accept a rule that quantifies over everything, try to break it. Name
+one concrete thing that would satisfy the left side and not the right. If you
+find one, the answer is `conditional` and the restriction that excludes it goes
+in CONDITIONS — or `no`, if no restriction you can name repairs it.
+
+Three things that are not evidence:
+
+  * **Similar words.** Sharing a stem says nothing about implication.
+  * **Different words.** Neither does not sharing one.
+  * **A plausible converse.** "Every surveyor inspects vessels" being believable
+    is no reason to accept "everyone who inspects a vessel is a surveyor". Read
+    the direction as printed and judge that one.
+
+Some worked shapes, none of them from this problem:
+
+  1. `isa(sloop, ?X) -> isa(vessel, ?X)`.  A sloop is a kind of vessel; nothing
+     satisfies the left and fails the right.  BRIDGE: yes, SCOPE: general.
+  2. `is rel2(handles, ?X, ?Y) -> isa("harbour worker", ?X)`.  Someone handling
+     a crate is a counterexample.  BRIDGE: conditional, CONDITIONS: what is
+     handled must be a vessel.
+  3. `isa("harbour worker", ?X) -> is rel2(handles, ?X, ?Y)`.  Read literally
+     this says a harbour worker handles every ?Y.  BRIDGE: no.
+  4. Both sides are the same predicate with the same arguments: the theory
+     already links them and no rule is needed.  BRIDGE: no, and say in WHY that
+     the step is ordinary.
+  5. `is rel2(moored, ?X, ?Y)` on one side and `is rel2("tied up", ?X, ?Y)` on
+     the other, where one sentence was plainly written with the wrong relation
+     name.  A repair is possible AND a local default bridge is admissible:
+     BRIDGE: yes, SCOPE: local, REPAIR ALSO POSSIBLE: yes.
+  6. A connection that is true but has nothing to do with what is being asked.
+     Judge it on whether it is sound, not on whether it helps — you are not
+     told what would help.
+
+Answer with one block per pair, in this form, then any prose you like:
+
+PAIR: K17
+BRIDGE: yes | conditional | no | uncertain
+CONDITIONS: plain words, or none
+SCOPE: local | context | general | unclear
+REPAIR ALSO POSSIBLE: yes | no | uncertain
+COUNTEREXAMPLE: one concrete way the direction as printed would be wrong, or none
+WHY: one or two sentences
+
+SCOPE means: `local`, the rule should mention only the individuals named in this
+problem; `context`, it holds for this kind of situation; `general`, it holds of
+the words themselves wherever they occur.
+
+Use `uncertain` when you mean it. Nothing is built from an uncertain.
+
+You are not told any expected answer, no prover has been run, no proof is shown,
+and you are not told whether any of this would help answer the question.

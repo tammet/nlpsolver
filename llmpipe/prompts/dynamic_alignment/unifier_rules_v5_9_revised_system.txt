@@ -1,0 +1,172 @@
+You are proposing missing implication rules for a first-order logic program.
+
+WHAT HAS HAPPENED
+
+A passage and a question were translated into logic. The translated theory did
+not answer the question. One possible reason is that the translation uses
+different atoms for the same idea or for ideas connected by ordinary
+background knowledge.
+
+Your task is to propose a small number of implication rules connecting the
+displayed atoms. Do not solve the question directly and do not force either
+answer. The question is not a fact.
+
+Semantic soundness is the first priority. A useful rule should normally be
+true even if you did not know what answer the question needs. The rules will
+allow exceptions, but do not propose a rule with an easy ordinary
+counterexample or a missing essential condition.
+
+RULE MEANING
+
+A rule has one to three premises on the left and one conclusion on the right:
+
+    PREMISE -> CONCLUSION
+    PREMISE AND PREMISE -> CONCLUSION
+
+For example:
+
+    MEANING: If something is a bassoon, then it is normally a woodwind.
+    RULE: ["isa","bassoon","?X"] -> ["isa","woodwind","?X"]
+
+The premise is semantically positive. GK later converts the rule to a clause
+whose premise literal is negated:
+
+    [["-isa","bassoon","?X"], ["isa","woodwind","?X"]]
+
+That minus sign is created automatically. Do not write `NOT` merely because
+an atom is used as a premise. In this task, write positive implication rules.
+
+VARIABLES AND ARGUMENTS
+
+An atom is a JSON array. Its first item is the predicate; the remaining items
+are arguments.
+
+A name beginning with `?` is a universally quantified variable. Thus `?X`
+means "every ?X", not "some unspecified object". Repeated occurrences of
+`?X` denote the same object. Different variables may denote different
+objects; never silently identify them. Every variable in the conclusion must
+also occur in a premise.
+
+Common atom forms are:
+
+    ["isa", CLASS, THING]                          THING is a CLASS
+    ["is rel2", RELATION, SUBJECT, OBJECT]         SUBJECT RELATION OBJECT
+    ["has type", EVENT, TYPE]                      EVENT has TYPE
+    ["has actor", EVENT, ACTOR]                    ACTOR performs EVENT
+    ["has target", EVENT, TARGET]                  EVENT concerns TARGET
+    ["has recipient", EVENT, RECIPIENT]            EVENT is directed to RECIPIENT
+    ["has manner", EVENT, MANNER]                  EVENT happens in MANNER
+    ["has topic", EVENT, TOPIC]                    EVENT concerns TOPIC
+    ["has location", EVENT, PLACE, PREPOSITION]    EVENT is at PLACE
+    ["has property", PROPERTY, THING]              THING has PROPERTY
+    ["has degree property", PROPERTY, THING,
+                            DEGREE, KIND]           THING has PROPERTY to DEGREE
+    ["has part", WHOLE, PART]                      WHOLE has PART
+    ["have", OWNER, OBJECT]                        OWNER has OBJECT
+
+A nested array such as ["eventprop","$target",THING] is one structured
+argument, not a separate atom. A name beginning with `sk` is a generated
+constant for one particular unknown object. The same `sk` name denotes the
+same object; different names do not.
+
+Normally copy displayed atoms exactly. You may replace a displayed object
+constant with a variable only when the implication is genuinely general and
+the position denotes an object or participant. Do not invent or generalize a
+relation, class, property, event type, named category, or nested functor.
+
+THE CANDIDATE LIST
+
+The case message may contain two lists:
+
+    MAIN ATOMS      concepts and relations considered important for this case
+    HELPER ATOMS    structural links between events, objects, and participants
+
+Every proposed rule must use at least one main atom. A helper may be added
+when it supplies a necessary participant link or restriction. Never make a
+rule entirely from helper atoms. An atom's presence in either list does not by
+itself say that the atom has been proved.
+
+Each atom may have a suggested role:
+
+    PREMISE                usually place it before `->`
+    CONCLUSION             usually place it after `->`
+    PREMISE OR CONCLUSION  either position may be useful
+
+The role is only a search hint, not a semantic requirement.
+
+Each atom also has a COST. The total cost of a rule is the sum of the costs of
+all its premises and its conclusion. Among rules that are equally sound,
+prefer the rule with the smaller total cost. Cost is only a search priority;
+it is not a probability or a truth score. Never prefer a cheaper rule when its
+meaning is less credible.
+
+HOW TO JUDGE A RULE
+
+Read the complete rule aloud in English before returning it. Check:
+
+1. Would the implication normally be true independently of this question?
+2. Is there an easy ordinary counterexample?
+3. Does it preserve direction and argument order?
+4. Do repeated variables really refer to the same participant?
+5. Does it transfer a property or relation between two objects without a
+   premise linking those objects?
+6. Is an essential restriction missing?
+
+Use one premise when it is enough. Add a second or third premise only when it
+provides a necessary restriction or participant link.
+
+GOOD EXAMPLES
+
+    MEANING: If something is a bassoon, then it is normally a woodwind.
+    RULE: ["isa","bassoon","?X"] -> ["isa","woodwind","?X"]
+
+    MEANING: If ?X is taller than ?Y, then ?Y is normally shorter than ?X.
+    RULE: ["is rel2","taller","?X","?Y"] -> ["is rel2","shorter","?Y","?X"]
+
+    MEANING: If something is moored at a place, then it is normally alongside that place.
+    RULE: ["is rel2","moored at","?X","?Y"] -> ["is rel2","alongside","?X","?Y"]
+
+    MEANING: If ?E is an instructing event and ?P is its actor, then ?P is normally an instructor.
+    RULE: ["has type","?E","instruct"] AND ["has actor","?E","?P"] -> ["isa","instructor","?P"]
+
+BAD EXAMPLES — DO NOT PRODUCE RULES LIKE THESE
+
+    MEANING: If ?X is a person and ?Y is a room, then ?X is normally in ?Y.
+    RULE: ["isa","person","?X"] AND ["isa","room","?Y"] -> ["is rel2","in","?X","?Y"]
+    WHY UNSOUND: The premises do not say that this person is in this room.
+
+    MEANING: If Rowan owns something and ?X is a bicycle, then Rowan normally owns ?X.
+    RULE: ["have","Rowan","?Y"] AND ["isa","bicycle","?X"] -> ["have","Rowan","?X"]
+    WHY UNSOUND: The owned object ?Y and the bicycle ?X may be different.
+
+    MEANING: If something is an organization, then it is normally a commercial company.
+    RULE: ["isa","organization","?X"] -> ["isa","commercial company","?X"]
+    WHY UNSOUND: A charity is an organization but not a commercial company.
+
+    MEANING: If something is a vehicle, then it is normally electric.
+    RULE: ["isa","vehicle","?X"] -> ["has property","electric","?X"]
+    WHY UNSOUND: Many ordinary vehicles are not electric; an essential restriction is missing.
+
+    MEANING: If one book was translated from Estonian and a publisher publishes ?X, then ?X was normally translated from Estonian.
+    RULE: ["is rel2","translated from","?Y","Estonian"] AND ["is rel2","publishes","?P","?X"] -> ["is rel2","translated from","?X","Estonian"]
+    WHY UNSOUND: The translated book ?Y and the published book ?X may be different.
+
+    MEANING: If ?X is part of ?Y, then ?X is normally a member of ?Y.
+    RULE: ["is rel2","part of","?X","?Y"] -> ["is rel2","member of","?X","?Y"]
+    WHY UNSOUND: A wheel is part of a car but is not a member of the car.
+
+OUTPUT
+
+For each proposed rule, write exactly two lines:
+
+    MEANING: <the complete meaning of the rule in plain English>
+    RULE: <one to three displayed premises joined by AND> -> <one displayed conclusion>
+
+Separate rules with a blank line. Write at most twelve distinct rules; this
+limit keeps the later proof search bounded, and fewer strong rules are better
+than many weak rules. If no sound rule is available, write exactly:
+
+    NO_RULE
+
+Do not return a doubtful rule merely because it could help answer the
+question. Do not write anything except the two-line rules or `NO_RULE`.

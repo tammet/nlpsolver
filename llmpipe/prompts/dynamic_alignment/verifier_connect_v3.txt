@@ -1,0 +1,86 @@
+A rule has been added to the logic of the problem below. It was added to
+connect two expressions the English relates but the logic wrote as unrelated.
+
+You are shown the English, the sentences involved, the rule printed with
+explicit quantifiers and explicit parentheses, and the conditions that were
+available when the rule was built but were not used.
+
+Read the printed formula literally. `forall ?X .` binds ?X over everything that
+follows it; `normally` marks a rule that holds by default and can be overridden;
+`->` is implication from left to right; `&` is conjunction.
+
+READING THE NOTATION. This is the notation the system already uses; it is not
+something the rule chose, and it is never a reason to fault a rule.
+
+  isa(cat, ?X)                    ?X is a cat.  The class comes FIRST and the
+                                  individual second.
+  is rel2(chases, ?X, ?Y)         ?X chases ?Y.  The relation name comes first,
+                                  then the participants in subject-object order.
+  has property(red, ?X)           ?X is red.
+  has degree property(tall, ?X, none, person)
+                                  ?X is tall; the last two arguments are the
+                                  degree and the class the comparison is against.
+  has degree rel2(fond, ?X, ?Y, none, person)
+                                  ?X is fond of ?Y; same two trailing arguments.
+  has part(?X, ?Y)                ?Y is a part of ?X.
+  has actor(?E, ?X) / has target(?E, ?X)
+                                  ?X fills that role in the event ?E.
+
+Judge the rule, not the notation. If your only objection is the order of the
+arguments as printed above, there is no objection.
+
+Judge five things separately, then give one verdict.
+
+1. CONNECTION — do the two concepts plausibly connect at all in this context,
+   in the way the rule claims?
+
+2. DIRECTION — the rule concludes the right one of the two. If it would be
+   right the other way round and is wrong as written, say no.
+
+3. ARGUMENTS — the participants are in the right places. If the rule says
+   `r(?A, ?B) -> s(?B)` where the English supports `s(?A)`, say no. Also say no
+   if a rule that ought to be about anything has been tied to one named
+   individual, or the other way round.
+
+4. CONDITIONS — is anything missing or anything superfluous? This is the one
+   that is easy to get wrong. An atom taken out of a sentence keeps none of
+   that sentence's restrictions. Read the formula as it stands and ask what it
+   would fire on: if `forall ?X . forall ?Y . ( r(?X, ?Y) -> c(?X) )` would make
+   the conclusion follow from a ?Y the English never had in mind, a restriction
+   on ?Y is missing. Look at the unused conditions listed below and say if one
+   of them is the missing restriction. Say `extra` if the rule carries a
+   condition that is not part of the connection, which narrows it to the one
+   sentence it came from.
+
+5. STRENGTH — a rule invented to bridge a gap should be `default` (`normally`).
+   `strict` needs an explicit reason: a definitional subtype, or a meaning that
+   admits no exception. If a rule is printed strict and no such reason is
+   visible in the English, say it should be default. Do not fault a rule for
+   being default.
+
+The verdict:
+
+  ACCEPT     all five are right as printed
+  REJECT     something is wrong in a way that adding or removing a named
+             condition, flipping the strength, or fixing the direction would
+             not repair — or the connection itself is not supported
+  UNCERTAIN  the rule is nearly right and you can say what would fix it, or the
+             English genuinely does not settle the question
+
+If you answer REJECT or UNCERTAIN, the CORRECTION line must say concretely what
+would make it right — which condition to add by name, or which strength to use.
+
+You are not told any expected answer, no prover has been run, no proof is
+shown, and it is not your job to say whether the rule helps answer the
+question.
+
+Answer in exactly this form and nothing else:
+
+CONNECTION: yes | no | unclear
+DIRECTION: yes | no | unclear
+ARGUMENTS: yes | no | unclear
+CONDITIONS: ok | missing | extra | unclear
+STRENGTH: ok | should be default | should be strict | unclear
+VERDICT: ACCEPT | REJECT | UNCERTAIN
+WHY: one or two sentences, quoting the part of the formula you are judging
+CORRECTION: what would fix it, or none

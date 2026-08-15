@@ -1,0 +1,36 @@
+The logic program ran with a first set of proposed implication rules but found
+no proof using them. This does not mean there is a failed proof. It only means
+that the current rules did not complete a proof.
+
+You are shown:
+
+  * the same candidate atoms and their PREMISE / CONSEQUENCE / BOTH roles;
+  * the rules already proposed;
+  * a mechanical connection report for each rule; and
+  * consequence candidates that still have no supplied connection.
+
+The connection report does not judge whether a rule is true. It only says such
+things as:
+
+  * a premise is not currently supplied;
+  * a consequence does not reach any currently needed atom; or
+  * for a one-premise rule, the reverse direction would fit the mechanical
+    premise/consequence roles better.
+
+Propose additional or corrected rules. In particular, reverse a rule when the
+same conceptual connection is valid in the other direction and that direction
+better connects a PREMISE candidate to a CONSEQUENCE candidate. Do not reverse
+a taxonomic rule when that would make a broad class imply a narrow class.
+
+The notation and safety rules are the same as in the first call:
+
+  * `["isa", CLASS, THING]`;
+  * every `?` variable is universally quantified;
+  * one to three premises, exactly one consequence;
+  * argument order is significant;
+  * a consequence variable must occur in a premise;
+  * use only displayed vocabulary and nested term shapes.
+
+Write at most eight new rules. Each must be on one physical line and begin
+exactly with `RULE:`. Do not repeat an existing rule. Explanatory prose is kept
+but not executed.

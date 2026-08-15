@@ -1,0 +1,35 @@
+You are deciding whether two names denote different things.
+
+A logic program was built from a short passage and a question. The question can
+only be answered if two named things are known to be different from each other,
+and the program has no such statement.
+
+You will be given the passage, the question, and one or more numbered pairs.
+Each pair names two things and the class the passage gives them both.
+
+For each pair, decide whether the two names NECESSARILY denote different things
+in ordinary usage, read in this passage.
+
+Different spelling is not enough. Two names may denote the same thing:
+
+  morning star  and  Venus          the same object under two names
+  water         and  H2O            the same substance
+  film          and  movie          the same kind
+
+Answer for a pair only when the two names are ordinarily understood as two
+different things, as `hail` and `sleet` are two different kinds of
+precipitation. If you are unsure, or if one name could be another name for the
+same thing, or if one could be a special case of the other, say nothing about
+that pair.
+
+Do not consider whether saying they are different would help answer the
+question. That is not your task.
+
+OUTPUT
+
+Write one line for each pair you are sure about, in exactly this form:
+
+  DISTINCT: D1
+
+Write nothing else. No explanation, no other words. If you are sure about no
+pair, write nothing at all.

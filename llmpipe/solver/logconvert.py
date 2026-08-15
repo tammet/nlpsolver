@@ -428,6 +428,9 @@ def rawlogic_convert(logic, s1_json=None, fixes=None):
   logic = lc_reference.normalize_stage1_kind_constants(logic, s1_json)
   _note_repair(_b, logic, "normalized Stage-1 kind number")
   _b = logic
+  logic = lc_reference.resolve_unique_definite_rule_entities(logic, s1_json)
+  _note_repair(_b, logic, "resolved unique definite rule entity")
+  _b = logic
   logic = lc_reference.introduce_modified_generic_participants(logic, s1_json)
   _note_repair(_b, logic, "bound modified generic participant")
   _b = logic

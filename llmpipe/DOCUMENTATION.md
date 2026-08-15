@@ -2280,6 +2280,13 @@ does not ask for and which costs roughly 8x the latency; `llmcall.py` therefore
 sends `reasoning_effort="none"` for any `-v4-` version unless thinking was
 requested.
 
+Gemini 3 models also think by default and take a `thinkingLevel` enum instead of
+a token budget.  None of them can turn thinking off.  `gemini-3.0` to `3.5`
+accept `MINIMAL`; `gemini-3.7-flash` rejects it with 400 and accepts only `LOW`,
+`MEDIUM` and `HIGH`.  `llmcall._gemini_cheapest_level` picks the floor for the
+version, so a non-thinking call sends `LOW` on 3.7 and `MINIMAL` below it.
+Gemini 2.5 keeps the older `thinkingBudget: 0` path.
+
 **To change the gradable property whitelist**, edit `solver/gradables.txt`.  One lowercase
 property name per line.
 

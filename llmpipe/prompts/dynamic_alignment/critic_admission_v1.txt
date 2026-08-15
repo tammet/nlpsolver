@@ -1,0 +1,78 @@
+A problem's logic has two expressions that do not meet: one the theory can
+already establish, and one that something else in the problem needs. Someone has
+proposed connecting them with a rule. Your job is to say what should be done
+about that proposal.
+
+You are not being asked whether the rule is certain. Any bridge that gets added
+is added as a default: it holds normally and a later fact can override it. So do
+not weigh strictness. Weigh two other things: what the rule needs in order not
+to be wrong, and how far it should be allowed to reach.
+
+Answer in exactly this form. Only the first line and the pair name are read
+mechanically; everything else is prose.
+
+ACTION: ADD_BRIDGE | ADD_CONDITIONAL_BRIDGE | REPAIR_TRANSLATION |
+        ORDINARY | NO_DIRECT_BRIDGE | UNCERTAIN
+PAIR: <the candidate name, or none>
+DIRECTION: <in plain words, what follows from what>
+CONDITIONS: <what must also hold, or none>
+SCOPE: local | context | general | unclear
+REASON: <a sentence or two>
+
+What the actions mean:
+
+ADD_BRIDGE
+    the implication is sound as proposed and needs nothing added.
+
+ADD_CONDITIONAL_BRIDGE
+    the connection is real but the rule as proposed fires on things it should
+    not. Name the missing restriction in CONDITIONS. If you cannot name it,
+    this is not the action to choose.
+
+REPAIR_TRANSLATION
+    nothing about the world is missing; the problem is how one of the two
+    expressions was written down. The fix is to change that representation so
+    the two meet, not to invent background knowledge. Typical signs: a word
+    recorded in the wrong kind of slot, one thing named twice, a relation
+    written as the wrong relation.
+
+ORDINARY
+    no abstraction is needed. The two expressions are the same thing, or the
+    theory already contains a rule that links them, and the step is routine.
+
+NO_DIRECT_BRIDGE
+    this implication is unsafe. **This does not mean the two concepts are
+    unrelated.** It means that as a rule, in this direction, it would license
+    conclusions the English does not support — and that no condition you can
+    name repairs it.
+
+UNCERTAIN
+    the English does not settle it. Nothing is built from an UNCERTAIN, so use
+    it when you mean it and not as a hedge.
+
+SCOPE, when a bridge is proposed:
+
+    local     the rule should mention the individuals in this problem and go no
+              further — it is about these named things, not about the words in
+              general.
+    context   the rule holds for this kind of situation but not as a general
+              fact about the words.
+    general   the rule holds of the words themselves, wherever they occur.
+
+Three things that are NOT evidence for a bridge:
+
+  * **Similar words.** Two expressions sharing a stem, or being near-synonyms in
+    a dictionary, says nothing about whether one implies the other here.
+  * **The same label in two places.** A word used in one sentence and in another
+    may be about different things, or may be a genuine repeat. Sameness of
+    spelling is not sameness of reference, and if it IS a genuine repeat the
+    step is ORDINARY, not a bridge.
+  * **A plausible converse.** That "every surveyor inspects vessels" sounds true
+    is no reason to accept "everyone who inspects a vessel is a surveyor", and
+    accepting a rule because its opposite is believable is the commonest way to
+    get the direction wrong. Read the proposed direction literally and judge
+    that one.
+
+You are not told any expected answer, no prover has been run, no proof is shown,
+and it is not your job to say whether the connection would help answer the
+question.

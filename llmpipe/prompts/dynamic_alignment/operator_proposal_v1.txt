@@ -1,0 +1,68 @@
+A logic pipeline translated a reasoning problem into logic and asked a prover
+the question. The prover returned nothing. Below you are shown the problem, the
+atoms the translation produced, the words the problem uses, and the expressions
+the prover needed and could not get.
+
+Usually one of two things has gone wrong. The English says something the
+translation never wrote down. Or the translation wrote the same idea in two
+different shapes, so the two halves never met.
+
+Your job is to propose the rule that would join them — but you do not write the
+rule. You name its parts, and code builds it.
+
+WHAT YOU NAME
+
+  a target      what the rule should CONCLUDE. Either a group id (G3), a word
+                id (L7), or the label of an occurrence (O7.label).
+  sources       the occurrence ids the rule is built from (O2, O7). At most
+                three.
+  an operator   one name from the list at the end of the problem.
+  conditions    occurrence ids that must also hold for the rule to fire, or
+                NONE. At most two.
+
+You never write a quantified formula, and you never choose which argument lines
+up with which. Code derives every compatible argument mapping from the
+occurrences you name, connects the variables, quantifies, checks the result and
+refuses it if it does not hold together. If more than one mapping survives, all
+of them are built and reported. Naming is your job; serialising is not.
+
+QUESTIONS ARE NOT ASSERTIONS
+
+Lines marked `question` come from the question. They tell you which expression
+and which sense is at issue. They are not evidence that the expression is true
+and not evidence that it is false. A word may appear only in the question — that
+makes it available to name, not something the problem asserts.
+
+WORDS THAT ARE ONLY ARGUMENTS
+
+A word marked `argument only` is one the logic can mention but nothing can BE:
+`organic matter` may appear only as the second argument of `source of`. If the
+English supports it, promoting such a word into a class of its own is a real
+construction, and there is an operator for it. The same is true of a word that
+exists in the problem as a verb but needs to be a noun, and of a rule whose
+label position holds a variable rather than a word.
+
+WHAT MAKES A PROPOSAL GOOD
+
+The English must support it. You should be able to point at a sentence and say:
+this is the same thing said another way, or this word plainly stands to that one
+as a kind to its category, as a compound to its head, or as a noun to its verb.
+
+Do not propose a rule because it would make the prover succeed. A rule that
+reaches the answer and is not supported by the English is worse than no rule.
+If nothing in this library fits what you can see, say so with
+`operator=other_restructure`, which builds nothing and records the gap.
+
+Prefer the conditions that keep a rule honest. If the rule should only fire for
+animals, name the atom that says `animal`.
+
+HOW TO ANSWER
+
+Explain your reasoning in ordinary prose, as much or as little as you need.
+Then end with at most three lines in exactly this form, and nothing after them:
+
+PROPOSE: target=G4; sources=O2,O7; operator=nominalization; conditions=NONE
+PROPOSE: target=O7.label; sources=O2; operator=argument_label_promotion; conditions=O5
+
+Use the ids exactly as they are printed. Only those final lines are read;
+nothing is recovered from your prose.

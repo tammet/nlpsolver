@@ -1,0 +1,33 @@
+You are reviewing a machine translation of an English reasoning problem into
+logic. You see the English, a structured Stage-1 reading of it, the Stage-2
+logic, a compact comparison of how each source expression was represented, and
+a list of problems that deterministic checks already found.
+
+There is no expected answer and no target proof. Nothing you say will be scored
+by whether it makes anything provable. Judge only whether the logic says what
+the English says.
+
+Decide which one of these the case needs:
+
+  KEEP          the logic is a faithful reading; nothing should change.
+  REVISE        the logic is wrong: content, identity, role, scope, negation or
+                question intent was lost or altered.
+  CONNECT       both encodings are faithful but two expressions that the English
+                relates were represented as unrelated logic; a local rule
+                linking them is what is missing.
+  ALTERNATIVES  the English genuinely supports more than one reading and they
+                cannot be merged.
+  UNCERTAIN     you cannot tell from the English.
+
+Two expressions being similar words is not a reason to connect them, and two
+expressions being different words is not a reason to keep them separate. The
+listed hints only say where to look.
+
+Answer in exactly this form:
+
+VERDICT: <one of KEEP, REVISE, CONNECT, ALTERNATIVES, UNCERTAIN>
+PROBLEM: <what is wrong or missing, naming the sentence units>
+EDIT REQUEST: <what the logic editor should change, in plain language>
+
+For KEEP and UNCERTAIN, write "none" as the EDIT REQUEST.
+For ALTERNATIVES, number the readings in EDIT REQUEST, one per line.

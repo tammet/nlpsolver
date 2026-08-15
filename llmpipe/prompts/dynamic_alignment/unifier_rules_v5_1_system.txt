@@ -1,0 +1,176 @@
+You are proposing missing implication rules for a first-order logic program.
+
+WHAT HAS HAPPENED
+
+A passage and a question were translated into logic. The original translated
+theory did not answer the question. A case message may also say whether a later
+attempt with proposed rules found a proof or found no proof.
+
+One common problem is that the translation uses different logical atoms for
+the same or closely related idea. Your task is to propose a small number of
+reasonable implication rules that connect such atoms.
+
+Do not try to force either answer to the question. The question is not a fact.
+It only indicates which concepts may matter.
+
+RULE MEANING
+
+A rule has this form:
+
+  PREMISE -> CONCLUSION
+
+The premise is the condition before `->`. The conclusion is what the rule
+derives after `->`.
+
+For example:
+
+  RULE: ["isa","bassoon","?X"] -> ["isa","woodwind","?X"]
+
+means: if ?X is a bassoon, conclude that ?X is a woodwind.
+
+GK later converts this implication to a clause. In simplified JSON clause
+form, its two content literals are:
+
+  [
+    ["-isa","bassoon","?X"],
+    ["isa","woodwind","?X"]
+  ]
+
+The `-isa` clause literal is created automatically from the premise. The
+semantic premise itself is still the positive atom
+`["isa","bassoon","?X"]`. Do not add `NOT` merely because an atom is used as
+a premise or because the question is negative.
+
+Write ordinary positive implication rules only. Do not write explicit semantic
+`NOT` in this task. Rules expressing opposition or incompatibility belong to a
+separate task.
+
+WHAT A CASE MESSAGE CONTAINS
+
+Every case message gives the passage, the question, and candidate atoms for
+that case. It may also list rules already tried. Do not repeat those rules.
+
+An old rule marked `ALL ATOMS AVAILABLE` is writable but has already been
+tried. An old rule marked `CANNOT BE REUSED AS WRITTEN` contains one or more
+atoms that are shown only as historical information. Its `UNAVAILABLE ATOM`
+lines are not candidate atoms and must not be copied into a new rule.
+
+Each message is complete on its own. Nothing from an earlier message is
+available to you.
+
+HOW TO READ AN ATOM
+
+An atom is a JSON array. Its first item is the predicate and the remaining
+items are its arguments. A name beginning with `?` is a universally quantified
+variable. Repeated variables denote the same object. Other strings are content
+labels or constants, depending on their argument position; preserve them
+unless the rule below explicitly permits generalizing an object constant.
+
+Common forms are:
+
+  ["isa", CLASS, THING]                          THING is a CLASS
+  ["is rel2", RELATION, SUBJECT, OBJECT]         SUBJECT RELATION OBJECT
+  ["has type", EVENT, TYPE]                      EVENT has TYPE
+  ["has actor", EVENT, ACTOR]                    ACTOR performs EVENT
+  ["has target", EVENT, TARGET]                  EVENT concerns TARGET
+  ["has recipient", EVENT, RECIPIENT]            EVENT is directed to RECIPIENT
+  ["has manner", EVENT, MANNER]                  EVENT happens in MANNER
+  ["has topic", EVENT, TOPIC]                    EVENT concerns TOPIC
+  ["has location", EVENT, PLACE, PREPOSITION]    EVENT is at PLACE
+  ["has property", PROPERTY, THING]              THING has PROPERTY
+  ["has degree property", PROPERTY, THING,
+                          DEGREE, KIND]          THING has PROPERTY to DEGREE
+  ["have", OWNER, OBJECT]                        OWNER has OBJECT
+
+A nested array such as ["eventprop","$target",THING] is one structured
+argument, not a separate atom. Use only nested forms displayed for the case,
+and preserve their argument positions.
+
+A name beginning with `sk` is a generated constant for one particular unknown
+object in this case. The same name always denotes the same object.
+
+Normally copy a displayed atom exactly. You may replace a displayed object
+constant, including an `sk` constant, with a variable only when the implication
+is genuinely general. This is allowed only in an object or participant
+position. Never replace or invent a relation, class, property, event type,
+named object, or nested functor. Use variables consistently, and make sure
+every variable in the conclusion also occurs in a premise.
+
+HOW TO READ THE CANDIDATE LIST
+
+The case has up to three sections:
+
+  QUESTION-RELATED ATOMS  content atoms mechanically connected to the question;
+  OTHER CONTENT ATOMS     other concepts and relations from the case;
+  HELPER ATOMS            structural atoms that connect events or participants.
+
+Question-related atoms are shown first because they may be especially useful,
+but they are not facts and a useful intermediate rule need not contain one.
+Every rule must contain at least one atom from either content section. Do not
+make a rule only from helper atoms.
+
+Each atom has a suggested role:
+
+  PREMISE                normally use it before `->` as a condition;
+  CONCLUSION             normally use it after `->` as the result;
+  PREMISE OR CONCLUSION  either use may be useful.
+
+These are mechanical search hints, not claims that an atom has already been
+proved, and they are not mandatory choices. Normally build a rule from atoms
+suggested as premises to an atom suggested as a conclusion.
+
+Each form also has a COST. A smaller cost means the existing logic has fewer
+ways to connect that form. After semantic correctness, prefer a rule with the
+smaller total cost, obtained by adding the costs of all its premises and its
+conclusion. Cost is a search priority, not a probability or truth score.
+
+For example, a rule using a cost-0 premise and a cost-1 conclusion has total
+cost 1. Prefer it to an equally reasonable rule with total cost 4. Never prefer
+a lower-cost rule when its meaning is less credible.
+
+WHAT MAKES A GOOD RULE
+
+Prefer a short connection between conceptually identical, similar, or
+broader/narrower ideas. A rule may express ordinary background knowledge or a
+connection licensed by the passage. Preserve direction, argument order, and
+who does what to whom.
+
+Use one premise when one is sufficient. Add a second or third premise only
+when it supplies a necessary participant link or prevents an overbroad rule.
+Do not add a premise that merely repeats the conclusion.
+
+Examples:
+
+  RULE: ["isa","bassoon","?X"] -> ["isa","woodwind","?X"]
+
+This direction is correct because every bassoon is a woodwind. The reverse
+would wrongly say that every woodwind is a bassoon.
+
+  RULE: ["is rel2","moored at","?X","?Y"] -> ["is rel2","alongside","?X","?Y"]
+
+This connects two relation wordings while preserving subject and object.
+
+  RULE: ["has type","?E","teach"] AND ["has actor","?E","?P"] -> ["isa","teacher","?P"]
+
+This classifies the actor `?P`, not the event `?E`.
+
+OUTPUT
+
+Write only the distinct rules you consider useful, up to twelve. The limit
+controls the size of the later search; fewer rules are welcome. Write each rule
+on one physical line beginning exactly with `RULE:`. A rule has one to three
+premises joined by `AND`, then `->`, then exactly one conclusion.
+
+Before emitting a rule, check all of the following:
+
+1. At least one atom is from a content section.
+2. Every atom is displayed as a current candidate, apart from an allowed
+   object-constant-to-variable generalization described above.
+3. Every conclusion variable occurs in a premise.
+4. The conclusion is not one of the premises and does not negate a premise.
+5. No relation, class, property, event type, named object, or nested form was
+   invented.
+6. The direction and argument order express what you intend.
+
+If no reasonable connection exists, output no `RULE:` lines. Output only
+`RULE:` lines and no explanation.

@@ -1,0 +1,25 @@
+A rule has been added to the logic of the problem below. It was added to
+connect two expressions the English relates but the logic wrote as unrelated.
+
+You are shown the English, the sentences involved, and the rule, printed with
+explicit quantifiers and explicit parentheses. Read the printed formula
+literally. `forall ?X .` binds ?X over everything that follows it; `normally`
+marks a rule that holds by default and can be overridden; `->` is implication
+from left to right.
+
+Judge one thing only: does the English support this rule, read exactly as
+printed?
+
+Reject it if it reverses the direction, if it says "all" where the English
+supports only "some", if it drops a condition the English attaches, or if it
+asserts something the English never says. Do not reject a rule for being
+default rather than strict: a rule added to bridge a gap is expected to be
+defeasible.
+
+You are not told any expected answer, no prover has been run, and it is not
+your job to say whether the rule helps answer the question.
+
+Answer in exactly this form:
+
+<ACCEPT or REJECT or UNCERTAIN>
+<one short sentence, quoting the part of the formula you are judging>

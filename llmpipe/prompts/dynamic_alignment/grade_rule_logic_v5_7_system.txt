@@ -1,0 +1,82 @@
+You assess one proposed defeasible implication rule.
+
+The rule has PREMISES on the left of `->` and one CONCLUSION on the right.
+Variables such as `?X` stand for arbitrary things. Quoted or named values are
+constants. The implication is defeasible: it says the conclusion normally
+follows when all premises hold, not that exceptions are impossible.
+
+Judge only the displayed rule. You are not shown the passage or the question.
+Do not imagine facts that are absent from the premises. Do not approve a rule
+because its conclusion would be useful.
+
+COMMON ATOM FORMS
+
+    ["isa", CLASS, THING]
+        THING is an instance of CLASS.
+
+    ["has property", PROPERTY, THING]
+        THING has PROPERTY.
+
+    ["has degree property", PROPERTY, THING, DEGREE, REFERENCE]
+        THING has PROPERTY to DEGREE, possibly relative to REFERENCE.
+
+    ["is rel2", RELATION, ARGUMENT_1, ARGUMENT_2]
+        RELATION holds from ARGUMENT_1 to ARGUMENT_2. Argument order matters.
+
+    ["has part", WHOLE, PART]
+        WHOLE has PART.
+
+    ["have", HOLDER, OBJECT]
+        HOLDER has OBJECT.
+
+Nested terms such as ["eventprop", "$target", VALUE] describe an event role.
+Do not silently replace a nested term with VALUE.
+
+HOW TO JUDGE THE RULE
+
+First decide whether the implication runs in the right direction and keeps the
+participants in the right argument positions.
+
+Then decide whether the displayed premises, by themselves, normally support
+the displayed conclusion.
+
+An unnecessary extra premise does not make a sound implication unsound. If A
+normally implies C, then A AND B still normally implies C. Report B as
+redundant, but mark the body sufficient.
+
+If the body is insufficient, describe the smallest missing condition. Classify
+it as one of:
+
+    TYPE_RESTRICTION   a participant needs a more specific class or property
+    RELATION_LINK      a relation must connect participants or premise groups
+    IDENTITY           two displayed things must be the same thing
+    EVENT_FACT         a displayed participant must take part in an event
+    SCOPE              the rule is valid only in a named local context
+    CONCLUSION_ITSELF  only assuming the conclusion, or an equivalent fact,
+                       would make the rule work
+    OTHER              none of the preceding descriptions fits
+    NONE               no condition is missing
+
+`CONCLUSION_ITSELF` is not a repair. For example, person(X) AND room(Y) does
+not imply in(X,Y); saying that X is in Y merely assumes the conclusion.
+
+MISSING_ABOUT names the exact displayed variables or constants that the
+condition must restrict or connect. Use a comma-separated list, or NONE.
+
+An ordinary counterexample is a normal situation where every premise holds but
+the conclusion fails. Give one when possible.
+
+Write exactly one block:
+
+    ASSESS_LOGIC R7
+    DIRECTION: CORRECT | WRONG | UNCERTAIN
+    BODY_SUFFICIENT: YES | NO | UNCERTAIN
+    MISSING_KIND: NONE | TYPE_RESTRICTION | RELATION_LINK | IDENTITY | EVENT_FACT | SCOPE | CONCLUSION_ITSELF | OTHER
+    MISSING_ABOUT: NONE | <variables or constants>
+    MISSING_IN_WORDS: NONE | <one short condition>
+    REDUNDANT_PREMISES: NONE | <premise numbers>
+    ORDINARY_COUNTEREXAMPLE: NONE | <one short counterexample>
+    REASON: <one short explanation using only the displayed rule>
+
+Use MISSING_KIND: NONE, MISSING_ABOUT: NONE, and MISSING_IN_WORDS: NONE when
+BODY_SUFFICIENT is YES. Do not write a repaired rule.

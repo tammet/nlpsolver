@@ -1,0 +1,91 @@
+A translation pipeline turned a short passage into logic, could not answer the
+question, and generated candidate rules to bridge the gap. Some were built from
+parts a reader chose; others were assembled by code that filled in what the
+reader left out. You are shown several candidates for the SAME connection and
+asked to assess each of them.
+
+YOU ARE NOT PICKING A WINNER
+
+This is the important thing. Two candidates can both be worth keeping for
+different reasons, and your job is to say what each one is, not which one to
+use. In particular:
+
+  * a BROAD rule can be reliable background knowledge even when the passage
+    only supports a narrower, guarded version of it;
+  * the NARROW rule can be the one the passage actually licenses, even when the
+    broad one is perfectly true;
+  * both can be kept, at different confidence levels, and something downstream
+    decides what to do with them.
+
+So do not reject a broad rule for being broader than the passage, and do not
+doubt a guarded rule merely because the guard is not needed for the claim to be
+true. Say separately whether it could be true and whether this passage says it.
+
+TWO SEPARATE JUDGMENTS
+
+**Could it be true?** `semantic` is one of:
+
+  SUPPORTED     ordinary meaning or the passage clearly licenses it
+  PLAUSIBLE     reliable background knowledge, not established by the passage
+  SPECULATIVE   possibly useful over-abstraction, not reliably true
+  UNSUPPORTED   nothing meaningful supports it
+  INVALID       reversed arguments, incompatible direction, a contradiction,
+                a broken scope, or another definite semantic error
+
+**Does this passage say it?** `passage` is one of:
+
+  PASSAGE_GENERAL     the passage licenses it in general
+  PASSAGE_RESTRICTED  the passage licenses it only in the restricted case
+  BACKGROUND_ONLY     true or reliable, but the passage does not establish it
+  NOT_SUPPORTED       the passage gives no support
+  UNCLEAR             you cannot tell
+
+WHERE THE CONNECTION COMES FROM
+
+`evidence` is exactly one of: TEXTUAL_REPRESENTATION (the passage states or
+defines it), LEXICAL_TAXONOMY (the words carry it — a kind-of, a compound and
+its head, a synonym), CONVENTIONAL_NOMINALIZATION_OR_ROLE (one happening written
+two conventional ways), STABLE_BACKGROUND_RELATION (reliable knowledge about the
+world, not about the words), SPECULATIVE_CORRELATION (often true, not reliable),
+OPEN_WORLD_NEGATIVE (it rests on something not being mentioned), NONE.
+
+WHAT THE GUARD DOES
+
+`restriction` is one of:
+
+  NO_RESTRICTION_NEEDED           the rule is fine as it stands
+  RELEVANT_RESTRICTION_PRESENT    a guard is there and it is the right one
+  RELEVANT_RESTRICTION_MISSING    the passage's own restriction is absent
+  IRRELEVANT_RESTRICTION          a guard is there and it restricts the wrong
+                                  thing, or nothing that matters
+  UNCLEAR
+
+A relevant guard makes a rule more faithful to the passage. It does not make the
+unguarded rule false, and an unguarded rule is not invalid for lacking one.
+
+WHAT AN INVENTED ATTACHMENT DOES
+
+Where code decided that a variable in one sentence refers to the same thing as a
+participant in another, the candidate says so. Nothing in the logic established
+it. `attachment` is one of:
+
+  NO_INVENTED_ATTACHMENT   none was made
+  ATTACHMENT_SUPPORTED     one was made and the passage backs it
+  ATTACHMENT_UNCERTAIN     one was made and you cannot tell
+  ATTACHMENT_UNSUPPORTED   one was made and it looks wrong
+
+WHAT YOU MUST NOT DO
+
+Do not ask whether a rule would let the prover reach an answer. You are not told
+the answer and must not guess it. A rule that reaches the answer while saying
+something false is the worst outcome here, not the best.
+
+HOW TO ANSWER
+
+Reason in prose if you want. Then end with exactly one line per candidate, and
+nothing after them:
+
+ASSESS: A; semantic=PLAUSIBLE; evidence=STABLE_BACKGROUND_RELATION; passage=BACKGROUND_ONLY; restriction=RELEVANT_RESTRICTION_MISSING; attachment=NO_INVENTED_ATTACHMENT; reason=organisms generally consist of organic matter, but the passage only connects the dead-organism context
+
+Use the candidate letters and the value words exactly as printed. Every
+candidate needs a line. Only those lines are read; nothing is taken from prose.

@@ -1,0 +1,14 @@
+GK found no proof using the rules below. This is not a failed proof and does
+not show that any one rule is false.
+
+Review the rules already tried. Propose additional rules or corrected versions.
+In particular:
+- check argument correspondence and implication direction;
+- remove a premise if it merely repeats the information the rule should create;
+- look for a short chain of two or three representation connections.
+
+The notation and the limits are the same as before: ["isa", CLASS, THING],
+every ? variable is universally quantified, one to three premises and exactly
+one consequence, only displayed atoms and displayed nested shapes, and no
+invented facts or entities. Write at most eight RULE: lines, each on one
+physical line. Do not repeat a rule that was already tried.

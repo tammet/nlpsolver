@@ -447,6 +447,66 @@ def _gemini_major(version):
   return int(m.group(1)) if m else 0
 
 
+def _gemini_version_pair(version):
+  """(major, minor) of a gemini model name, or (0, 0) if not recognized."""
+  import re
+  m = re.match(r"gemini-(\d+)\.(\d+)", (version or "").lower())
+  if m:
+    return (int(m.group(1)), int(m.group(2)))
+  return (_gemini_major(version), 0)
+
+
+class ThinkingLevelError(Exception):
+  """An explicit thinking level the provider or model does not accept."""
+
+
+def thinking_level(think):
+  """-> the level name a caller asked for, or None for the old True/False.
+
+  `think` has always been False (off), True (the provider's default thinking)
+  or an int budget.  It may now also be a level name, so an experiment can ask
+  for a level between those two without changing what True and False mean.
+  """
+  return think if isinstance(think, str) else None
+
+
+def _gpt_effort(think):
+  """-> the reasoning effort to send.  gpt-5.x takes none/low/medium/high."""
+  level = thinking_level(think)
+  if level is None:
+    return "medium" if think else "none"
+  if level not in ("none", "low", "medium", "high"):
+    raise ThinkingLevelError("GPT takes none, low, medium or high, not %r"
+                             % level)
+  return level
+
+
+def _gemini_level(think, version):
+  """-> the thinkingLevel to send to a gemini-3 model."""
+  level = thinking_level(think)
+  if level is None:
+    return "high" if think else _gemini_cheapest_level(version)
+  if level not in ("minimal", "low", "medium", "high"):
+    raise ThinkingLevelError("gemini 3 takes minimal, low, medium or high, "
+                             "not %r" % level)
+  floor = _gemini_cheapest_level(version)
+  if level == "minimal" and floor != "minimal":
+    raise ThinkingLevelError("%s does not accept MINIMAL; its floor is %s"
+                             % (version, floor))
+  return level
+
+
+def _gemini_cheapest_level(version):
+  """The cheapest thinkingLevel this Gemini model accepts.
+
+  None of the gemini-3 models can turn thinking off: thinkingLevel takes an
+  enum and neither OFF nor NONE is a member.  gemini-3.0 to 3.5 accept MINIMAL.
+  gemini-3.7-flash rejects it with 400 "Thinking level MINIMAL is not supported
+  for this model", and accepts only LOW, MEDIUM and HIGH (measured 2026-08-14),
+  so LOW is the floor there."""
+  return "low" if _gemini_version_pair(version) >= (3, 7) else "minimal"
+
+
 def call_gemini(version, sentences, sysprompt, max_tokens, think=False):
   key = _read_api_key(gemini_secrets_file, "Gemini")
   if key is None: return None
@@ -468,7 +528,8 @@ def call_gemini(version, sentences, sysprompt, max_tokens, think=False):
     if not new_api:
       genconfig["temperature"] = temperature
     if new_api:
-      genconfig["thinkingConfig"] = {"thinkingLevel": "high" if think else "minimal"}
+      genconfig["thinkingConfig"] = {
+        "thinkingLevel": _gemini_level(think, version)}
     elif _gemini_supports_thinking(version):
       # 2.5 thinks by default and its thinking counts against maxOutputTokens,
       # so a non-thinking call must say so explicitly, as the other providers
@@ -478,6 +539,9 @@ def call_gemini(version, sentences, sysprompt, max_tokens, think=False):
       # (19.9s vs 13.6s) with no change in output length.
       # bool is a subclass of int, so test it first: think=True must mean the
       # default budget, not a literal True in the request body.
+      if thinking_level(think) is not None:
+        raise ThinkingLevelError("%s takes a thinking BUDGET, not the level "
+                                 "%r" % (version, think))
       if not think:
         tbudget = 0
       elif isinstance(think, bool):
@@ -636,7 +700,7 @@ def call_gpt(version, sentences, sysprompt, max_tokens, think=False):
     if sysprompt:
       messages.append({"role": "system", "content": [{"type": "input_text", "text": sysprompt}]})
     messages.append({"role": "user", "content": [{"type": "input_text", "text": sentences}]})
-    effort = "medium" if think else "none"
+    effort = _gpt_effort(think)
     call = {
       "model": version,
       "input": messages,

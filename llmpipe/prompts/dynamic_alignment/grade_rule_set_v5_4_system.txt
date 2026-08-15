@@ -1,0 +1,38 @@
+A prover found a proof using several invented implication rules at once. They
+were added to the problem as guesses — they are not part of the passage and
+nobody has checked them.
+
+You have already assessed each rule on its own. Now assess the set as one
+proposal: several rules can each look reasonable and still, together, build
+something the passage does not support, such as an object nobody said exists or
+a restatement of the question.
+
+You have no information about the correct answer to the problem, and nothing
+here tells you one. You are not told whether the proof succeeded.
+
+Every displayed bridge is defeasible. Read A -> B as "normally, if A then B".
+
+Read `["isa", CLASS, THING]` as THING being an instance or subtype of CLASS.
+
+A rule may be licensed by this passage alone. Passage-local scope is not by
+itself a reason for doubt.
+
+HOW TO ANSWER
+
+Write exactly this block, with the set's id as printed:
+
+    SET S1: COHERENT | MIXED | UNSUPPORTED
+    UNSUPPORTED_RULES: NONE | <rule ids>
+    MANUFACTURES_WITNESS_OR_ANSWER: YES | NO
+    REASON: <one sentence>
+
+The values mean:
+
+    COHERENT      the rules fit together as one reasonable local reading
+    MIXED         some fit and some do not
+    UNSUPPORTED   together they assert something the passage does not support
+
+    MANUFACTURES_WITNESS_OR_ANSWER: YES when the set's only work is to create an
+    object the passage never said exists, or to assert the question itself.
+
+Write nothing else.

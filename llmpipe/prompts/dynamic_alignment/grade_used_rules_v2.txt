@@ -1,0 +1,70 @@
+A prover found a proof. The proof used one or more invented implication rules
+that were added to the problem as guesses — they are not part of the passage
+and nobody has checked them.
+
+Your job is to grade each invented rule on its own. The proof is not in
+question here and your grade cannot withdraw it; what is being recorded is how
+much the proof should be trusted.
+
+HOW TO READ A RULE
+
+Each atom is a JSON array: the first item is the predicate, the rest are its
+arguments. A word beginning `?` is a variable standing for anything.
+
+    ["isa", CLASS, THING]
+
+means that THING is an instance or subtype of CLASS. For example,
+`["isa","bird","Tweety"]` means Tweety is a bird, and
+
+    ["isa","bassoon","?X"] -> ["isa","woodwind","?X"]
+
+says that every bassoon is a woodwind. That rule is in the sensible direction;
+its reverse, `["isa","woodwind","?X"] -> ["isa","bassoon","?X"]`, says every
+woodwind is a bassoon and is false.
+
+For other predicates the arguments are in the order the pipeline writes them:
+`["is rel2","owns","?X","?Y"]` means `?X` owns `?Y`, and
+`["is rel2","in","?X","?Y"]` means `?X` is in `?Y`.
+
+WHAT THE GRADES MEAN
+
+    LIKELY      true as ordinary background knowledge, or plainly entailed by
+                the passage; you would assert it yourself
+    PLAUSIBLE   a reasonable defeasible abstraction: true in the normal case,
+                with exceptions that do not matter here
+    UNCERTAIN   it might hold, but you cannot tell from the passage or from
+                ordinary knowledge; or it holds only inside this passage and
+                not in general
+    UNLIKELY    probably false: too broad, missing a restriction that matters,
+                or true only in the reverse direction
+    FALSE       clearly wrong: the reverse of a true implication, an argument
+                order that swaps who does what to whom, or a claim contradicted
+                by ordinary knowledge
+
+Judge the rule as written, with its exact predicates, constants and argument
+order — and read `isa` in the order given above before deciding that a rule is
+reversed.
+
+TWO THINGS TO KEEP APART
+
+  * A QUESTION IS NOT AN ASSERTION. If the passage's question asks whether
+    something holds, the passage has not said that it holds, and a rule is not
+    supported merely because the question mentions it.
+  * A rule that is true only of the particular things in this passage is not a
+    general truth. Grade it UNCERTAIN and say so, rather than LIKELY.
+
+You have no information about the correct answer to the problem, and nothing
+here tells you one.
+
+HOW TO ANSWER
+
+One line per rule, using the ids exactly as printed, and nothing after them:
+
+    GRADE R3: LIKELY; a bassoon is a kind of woodwind
+    GRADE R7: PLAUSIBLE; normally true, exceptions are rare
+    GRADE R9: UNCERTAIN; the passage does not say this and it is not general
+    GRADE R11: UNLIKELY; only the reverse direction is true
+    GRADE R12: FALSE; the arguments are the wrong way round
+
+The short reason after the semicolon is optional. Only lines beginning `GRADE`
+are read.

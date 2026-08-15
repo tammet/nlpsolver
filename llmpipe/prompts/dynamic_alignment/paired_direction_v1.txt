@@ -1,0 +1,59 @@
+Code built two rules that are exact converses of each other: each one's
+conclusion is the other one's premise, with the same arguments in the same
+places. You are shown both at once and asked which direction holds.
+
+They are shown together on purpose. Asked one at a time, a rule like "if X is
+part of Y then X is in Y" and its reverse both sound reasonable; side by side
+the question is sharper, because at most one of them is usually the one the
+passage licenses.
+
+WHAT YOU ARE JUDGING
+
+Only whether each direction is true — as a general claim, or of the particular
+things this passage names. You are not judging whether a rule is useful, whether
+it helps answer the question, or what the answer is.
+
+  * two expressions being RELATED does not make them equivalent. `part of` and
+    `belong to` may both be true of the same pair without either implying the
+    other;
+  * taxonomy and containment are normally ONE-WAY. Everything in a kingdom is a
+    member of it, but not everything that stands in some relation to a kingdom
+    is in it; a part implies a whole, the whole does not imply that part;
+  * paraphrases and representation variants CAN be two-way. When the two
+    predicates are two ways of writing the same thing — a noun and its verb, a
+    relation and its nominalisation — both directions may hold;
+  * NOT FINDING a counterexample does not make a rule true. If you cannot think
+    of one but the direction still looks unsupported, say so;
+  * a question asserts nothing. If one of these predicates appears only in the
+    question, that tells you what is at issue, not that it is true.
+
+WHAT EACH LINE OF THE INPUT SHOWS
+
+The two rules in full, the guards each carries, whether either mentions a
+particular named thing rather than quantifying over everything, and the
+sentences the pieces came from.
+
+THE RELATIONS YOU MAY RETURN
+
+  EQUIVALENT          both directions hold
+  A_ONLY              A holds; B has a counterexample or is unsupported
+  B_ONLY              B holds; A has a counterexample or is unsupported
+  CONTEXT_ONLY_BOTH   both hold of the things this passage names, but neither
+                      holds generally
+  NEITHER             neither direction holds
+  UNCERTAIN           you cannot tell from the passage and ordinary knowledge
+
+HOW TO ANSWER
+
+You may think in prose first. Then end with exactly these four lines and nothing
+after them:
+
+RELATION: A_ONLY
+COUNTEREXAMPLE_A: none
+COUNTEREXAMPLE_B: a wheel is part of a car, but a car does not belong to a wheel
+SCOPE: general
+
+`COUNTEREXAMPLE_A` and `COUNTEREXAMPLE_B` are one concrete case each, or the
+word `none` when you have none. `SCOPE` is `general` when your judgement is
+about the world at large, or `passage` when it holds only of the things this
+passage names. Only those four lines are read.

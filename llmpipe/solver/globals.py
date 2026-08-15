@@ -108,6 +108,7 @@ options={
   "nofix_kindnumber": False,          # generic kind constants: minerals -> mineral
   "nofix_genericparticipants": False, # bind a modified generic event participant
   "nofix_rulecoref": False,           # Stage-1-backed dependent participant coindexing
+  "nofix_definiterefs": False,        # unique discourse entity for definite rule NP
   "nofix_rulescope": False,           # lift misplaced antecedent binders over rules
   "nofix_freeconclusion": False,      # reject unrepaired free conclusion variables
   "nofix_boundtypevars": False,       # never lowercase/singularize bound isa class vars

@@ -1,0 +1,17 @@
+You are checking a short list of possible negative implication rules for a
+first-order logic program.
+
+Each candidate means: if the atom before the arrow holds, then the atom after
+`NOT` normally does not hold. Select a candidate only when that implication is
+normally sound and has no easy ordinary counterexample. Do not select a rule
+merely because it would help answer the question.
+
+For every candidate you accept, write exactly:
+
+    NEGATIVE: <candidate id>
+
+If none is sound, write exactly:
+
+    NONE
+
+Write nothing else.

@@ -1,0 +1,51 @@
+A prover found a proof using several invented implication rules at once. They
+were added to the problem as guesses — they are not part of the passage and
+nobody has checked them.
+
+Each rule has already been assessed on its own, and you are shown those
+assessments. Do not repeat them. Your only job is to look for a problem created
+by the rules ACTING TOGETHER which is invisible when each rule is read alone,
+for example:
+
+  * two rules jointly introduce and then populate the same object that nobody
+    said exists;
+  * the rules form a circle which creates an object of the question with no
+    anchor in the passage;
+  * two locally plausible rules are chained through participants which cannot
+    be the same thing.
+
+Deriving the answer is what a proof is for. That the rules together entail the
+answer, or entail it in few steps, is NOT a defect and is not something to
+report. Neither is a weakness of one rule on its own.
+
+You have no information about the correct answer to the problem, and nothing
+here tells you one. You are not told whether the proof succeeded.
+
+Every displayed bridge is defeasible: read A -> B as "normally, if A then B".
+Read `["isa", CLASS, THING]` as THING being an instance or subtype of CLASS. A
+rule may be licensed by this passage alone; passage-local scope is not by itself
+a reason for doubt. Variable names are local to each rule: the `?X` of one rule
+and the `?X` of another are unrelated.
+
+HOW TO ANSWER
+
+Write exactly this block, with the set's id as printed:
+
+    SET S1: COHERENT | INTERACTION_PROBLEM | UNCERTAIN
+    PROBLEM_RULES: NONE | <rule ids>
+    INTRODUCED_CONSTANTS: NONE | <exact constants>
+    INTRODUCED_BY: NONE | <rule ids>
+    REASON: <one interaction-specific reason>
+
+The values mean:
+
+    COHERENT             the rules work together without creating a new problem
+    INTERACTION_PROBLEM  their combination creates a problem no single rule has
+    UNCERTAIN            you cannot tell
+
+If you report that the set builds an object nobody said exists, you must name
+that object exactly as it is spelled in the rule that introduces it, under
+INTRODUCED_CONSTANTS, and name that rule under INTRODUCED_BY. A program checks
+both. A claim it cannot confirm is discarded and counts against nothing.
+
+Write the block and nothing else.

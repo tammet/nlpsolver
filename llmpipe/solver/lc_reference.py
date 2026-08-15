@@ -205,6 +205,78 @@ def introduce_modified_generic_participants(logic, s1_json):
   return out if changed else logic
 
 
+def _ground_typed_exists(node, typ, constant):
+  """Replace every existential of exactly ``typ`` by a known constant."""
+  if not isinstance(node, list) or not node:
+    return node, False
+  if node[0] == "exists" and len(node) >= 3 and isinstance(node[1], str) \
+     and _safe_singularize_class(_find_isa_type(node[2], node[1])) == typ:
+    return _substitute_var(node[2], node[1], constant), True
+  out = [node[0]]
+  changed = False
+  for child in node[1:]:
+    if isinstance(child, list):
+      child, did = _ground_typed_exists(child, typ, constant)
+      changed = changed or did
+    out.append(child)
+  return out, changed
+
+
+def resolve_unique_definite_rule_entities(logic, s1_json):
+  """Ground a rule's definite noun phrase to its unique discourse entity.
+
+  Stage 1 sometimes calls ``the tiger`` inside a rule generic even though the
+  document has exactly one concrete ``tiger N``.  Stage 2 then invents a fresh
+  tiger for each occurrence.  If (and only if) the document has one concrete
+  entity with that surface class, the rule uses the definite form, and the
+  rule has no indefinite occurrence of the same class, replace its typed
+  existentials by that concrete Stage-1 id.  This is document-level reference
+  resolution, not a predicate- or word-specific bridge.
+  """
+  if _g_options.get("nofix_definiterefs") or not isinstance(logic, list):
+    return logic
+  by_sid = _units(s1_json)
+  concrete = {}
+  for unit in by_sid.values():
+    for ent in unit.get("entities", []) or []:
+      if isinstance(ent, dict) and ent.get("type") == "concrete" \
+         and isinstance(ent.get("id"), str):
+        concrete.setdefault(_entity_class(ent["id"]), set()).add(ent["id"])
+  unique = {typ: next(iter(ids)) for typ, ids in concrete.items()
+            if len(ids) == 1}
+  changed = False
+  out = []
+  for item in logic:
+    if not (isinstance(item, list) and len(item) >= 3 and item[0] == "@id"):
+      out.append(item)
+      continue
+    unit = by_sid.get(str(item[1]), {})
+    if "rule" not in str(unit.get("type", "")):
+      out.append(item)
+      continue
+    text = unit.get("text", "")
+    body = item[2]
+    for ent in unit.get("entities", []) or []:
+      if not isinstance(ent, dict) or ent.get("type") != "generic" \
+         or not isinstance(ent.get("id"), str):
+        continue
+      eid = ent["id"]
+      typ = _entity_class(eid)
+      if typ not in unique:
+        continue
+      definite = re.search(r"\bthe\s+" + re.escape(eid) + r"\b", text,
+                           flags=re.IGNORECASE)
+      indefinite = re.search(r"\b(?:a|an)\s+" + re.escape(eid) + r"\b", text,
+                             flags=re.IGNORECASE)
+      if definite and not indefinite:
+        body2, did = _ground_typed_exists(body, typ, unique[typ])
+        if did:
+          body = body2
+          changed = True
+    out.append([item[0], item[1], body] + list(item[3:]))
+  return out if changed else logic
+
+
 def _find_isa_type(body, var):
   found = []
   def walk(node):
@@ -336,10 +408,12 @@ def _coindex_rule(node, allowed_classes):
 def coindex_dependent_rule_participants(logic, s1_json):
   """Join two Stage-2 existentials only when Stage 1 says they are one object.
 
-  A dependent generic entity must have one Stage-1 id repeated in the rule text
-  and occur in an action role.  This repairs mle2-0049 while refusing rules such
-  as "owns a dog -> buys a dog", where repeated type alone is no evidence that
-  the two dogs are identical.
+  The evidence may be either a Stage-1 ``scope: dependent`` annotation or the
+  same definite noun phrase (``the <entity>``) occurring twice.  The entity
+  must also occur in an action role.  This repairs the general constructions
+  illustrated by mle2-0049 ("a seed ... the seed") and PW case 83 ("the tiger
+  ... the tiger"), while refusing "owns a dog -> buys a dog", where repeated
+  type alone is no evidence that the two dogs are identical.
   """
   if _g_options.get("nofix_rulecoref") or not isinstance(logic, list):
     return logic
@@ -359,11 +433,16 @@ def coindex_dependent_rule_participants(logic, s1_json):
                              if isinstance(v, str))
     allowed = set()
     for ent in unit.get("entities", []) or []:
-      if not isinstance(ent, dict) or ent.get("type") != "generic" \
-         or ent.get("scope") != "dependent":
+      if not isinstance(ent, dict) or ent.get("type") != "generic":
         continue
       eid = ent.get("id")
-      if eid in role_entities and isinstance(eid, str) and text.count(eid) >= 2:
+      if not (eid in role_entities and isinstance(eid, str)):
+        continue
+      dependent = ent.get("scope") == "dependent" and text.count(eid) >= 2
+      definite_pattern = r"\bthe\s+" + re.escape(eid) + r"\b"
+      repeated_definite = len(re.findall(definite_pattern, text,
+                                         flags=re.IGNORECASE)) >= 2
+      if dependent or repeated_definite:
         allowed.add(_entity_class(eid))
     body, did = _coindex_rule(item[2], allowed) if allowed else (item[2], False)
     changed = changed or did
