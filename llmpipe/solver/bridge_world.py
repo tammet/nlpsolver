@@ -35,7 +35,6 @@ says weight of evidence, not probability of truth.
 import copy
 import json
 
-import alignment_rule as AR
 import option_scope
 
 # `bridge_evidence` is a DIAGNOSTIC compiler option, not the runtime mechanism
@@ -122,33 +121,6 @@ def to_strict_shape(pkg):
     return _rebuild(world, bound, ["implies", f[1], head])
 
 
-def bridge_package(producer_id, consumer_id, condition_ids, table,
-                   defeasible=True, world="W0", target_mode=None, scope=None,
-                   require_range_restriction=False):
-    """The Stage-2 bridge, in the shape that survives conversion.
-
-    The argument mapping, the mechanical validity of the pair, the target mode
-    and the requirement that every condition share a variable or entity with the
-    rule all come from `alignment_rule.compile_from_base`; only the placement of
-    `normally` differs.
-
-    `target_mode` must be passed through, not re-derived: a question goal
-    compiles to two different rules, and inferring the mode here instead of
-    replaying the schema's own witness is how the runtime came to send gk the
-    complement of the rule it displayed.
-    """
-    kw = {"world": world, "target_mode": target_mode,
-          "require_range_restriction": require_range_restriction}
-    if scope is not None:
-        kw["scope"] = scope
-    pkg, rec = AR.compile_from_base(producer_id, consumer_id, condition_ids,
-                                    table, **kw)
-    out = to_defeasible_shape(pkg) if defeasible else to_strict_shape(pkg)
-    rec = dict(rec, defeasible=defeasible,
-               shape="forall vars . BODY -> normally(HEAD)" if defeasible
-               else "forall vars . BODY -> HEAD",
-               conditions_kept=[c["occurrence_id"] for c in rec["conditions"]])
-    return out, rec
 
 
 # ---------------------------------------------------------------- conversion
@@ -331,23 +303,6 @@ def _literals(clauses):
                 yield lit
 
 
-def guards_present(clauses, labels):
-    """Which of `labels` still occur as a literal in these clauses.
-
-    Compared as (predicate, content label), not as a substring: a negated
-    antecedent literal is written `-has part`, and a substring test for
-    `"has part"` misses it and reports a surviving condition as dropped.
-    """
-    import alignment_compare as CMP
-    seen = set()
-    for lit in _literals(clauses):
-        pred = lit[0].lstrip("-")
-        if pred == "$block":
-            continue
-        lbl, _ = CMP.label_and_participants(("+", pred, list(lit[1:])))
-        seen.add(str(lbl))
-        seen.add(pred)
-    return {l: (l in seen) for l in labels}
 
 
 def cited_clause(raw_text, names):

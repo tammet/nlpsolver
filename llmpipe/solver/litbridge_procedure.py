@@ -29,7 +29,6 @@ import os
 import re
 
 import bridge_world as BW
-import dynamic_runtime as RT
 import dynamic_score as DS
 import rule_redundancy_v3 as RR
 
@@ -248,11 +247,33 @@ def stage2_correction(question, units, error, failed_reply):
 
 # ---------------------------------------------------------- the front door
 
+UNRESOLVED_ANSWERS = ("Unknown.", None, "")
+
+
+def view_hash(view):
+    """The case as gk sees it: its id, its Stage-2 parse and its clauses."""
+    h = hashlib.sha256()
+    for part in (view["case_id"], json.dumps(view["stage2"], sort_keys=True),
+                 json.dumps(view["final_clauses"], sort_keys=True)):
+        h.update(part.encode())
+        h.update(b"\x00")
+    return h.hexdigest()
+
+
 def front_door(view, gk):
-    """The frozen front door, with an error string read as no answer."""
-    import dynamic_runtime as RT
-    got = RT.front_door(view, gk)
+    """gk on the case's own clauses, with an error string read as no answer.
+
+    A definite answer here ends the case: no bridge is built, no model is
+    called and no dynamic gk call is made.
+    """
+    got = gk(view["final_clauses"], view, "front_door:%s" % view["case_id"],
+             dynamic=False)
     answer = got.get("answer")
+    got = {"answer": answer,
+           "resolved": answer not in UNRESOLVED_ANSWERS,
+           "seconds": got.get("seconds"),
+           "gk_thresholds": got.get("thresholds"),
+           "error": got.get("error")}
     got["front_door_policy"] = FRONT_DOOR_POLICY
     if got.get("resolved") and isinstance(answer, str) \
             and ERROR_ANSWER_LINE.match(answer):
@@ -321,7 +342,7 @@ def _run_case(view, respond, gk, bounds, configuration, sidecar,
         view = got["view"]
         result["translation_repaired"] = True
 
-    result["view_sha256"] = __import__("dynamic_runtime").view_hash(view)
+    result["view_sha256"] = view_hash(view)
     result["stage1_sha256"] = sha_of(view["stage1"])
     result["stage2_sha256"] = sha_of(view["stage2"])
     result["base_theory_sha256"] = sha_of(view["final_clauses"])
@@ -942,7 +963,7 @@ def component_hashes():
     got = {}
     for name in ("litbridge_atoms", "litbridge_rules", "litbridge_compile",
                  "litbridge_chain", "litbridge_prompts", "litbridge_procedure",
-                 "bridge_world", "dynamic_runtime", "dynamic_score",
+                 "bridge_world", "dynamic_score",
                  "rule_redundancy_v3"):
         path = os.path.join(here, "%s.py" % name)
         got[name] = hashlib.sha256(open(path, "rb").read()).hexdigest()

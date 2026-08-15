@@ -899,11 +899,33 @@ def _omission(entry, reason, extra=None):
     out.update(extra or {})
     return out
 
+# a prompt that carries any of these would be showing the model the answer,
+# the label or the result it is supposed to produce
+LEAK_TOKENS = ("expected_answer", "accepted_llmpipe_answers", "$ans",
+               "gold_replacement_packages", "critic_verdict", "label_id",
+               "benchmark", "proof found", "answer found",
+               "reviewed", "accepted answer", "expected answer", "gold")
+LEAK_ANSWER_WORDS = ("true.", "false.", "unknown.", "probably true.",
+                     "probably false.", "possibly true.", "possibly false.")
+
+
+def assert_no_leak(text):
+    """Raise if a built prompt carries an answer, a label or a proof result."""
+    low = (text or "").lower()
+    bad = [t for t in LEAK_TOKENS if t.lower() in low]
+    for w in LEAK_ANSWER_WORDS:
+        # an answer word only leaks when it stands alone as a value, which is
+        # how the stored records write it
+        if ('"%s"' % w) in low or ("answer: %s" % w) in low:
+            bad.append(w)
+    if bad:
+        raise PromptError("prompt would leak: %s" % sorted(set(bad)))
+    return True
+
+
 def _forbidden(text):
     """Nothing from the scored side of the experiment may reach a prompt."""
-    import alignment_protocol as P
-    P.assert_no_leak(text, extra_forbidden=("reviewed", "accepted answer",
-                                            "expected answer", "gold"))
+    assert_no_leak(text)
     banned = ("MAIN CANDIDATES", "SECONDARY CANDIDATES", "USE: PREMISE",
               "USE: CONSEQUENCE", "PRIORITY COST", "GK FORM", "same as before",
               "FOCUS", "POSITIVE:", "NEGATED:", "LEFT", "RIGHT", "EITHER",
