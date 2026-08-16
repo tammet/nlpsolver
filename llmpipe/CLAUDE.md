@@ -76,9 +76,19 @@ Abstraction presets (pure CLI expansions into the primitives above):
 -abstract        -event flat + entitymerge + guarddrop + bridges + dropdefinites
                  + typeenrich + localantonyms + simpleprops
 -abstract-roles  As -abstract but -event flatroles (eventprop-tagged objects)
--abstract-max    As -abstract-roles + -prenorm (strongest; FOLIO ladder base)
+-abstract-max    As -abstract-roles + -prenorm + propclass + numtype + compasym
+                 + nominalretry + negretry + litbridge (strongest; FOLIO ladder
+                 base; the last three can make live LLM calls)
 -prenorm         Pre-Stage-1 LLM wording normalisation (composable)
 -nocrossstage    Disable the cross-stage guard retry
+Literal-bridge abstraction (DOCUMENTATION.md §13; off by default):
+-litbridge       When the ordinary run leaves the question unresolved, ask the LLM
+                 for implication rules over the case's own displayed atoms, compile
+                 them to clauses, append them and call gk again (two rounds). On
+                 under -abstract-max.
+-nolitbridge     Force it off from any position, cancelling -abstract-max's default
+-litbridge_extras  Also run the distinctness and negative-relation channels in
+                 round 1 (one LLM call each). No preset turns this on.
 
 Alternative parsing shapes (replace the default two-stage parse):
 -s2split         One Stage-2 LLM call per Stage-1 sentence; outputs joined

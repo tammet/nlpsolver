@@ -114,9 +114,32 @@ def _sent_name_sort_key(name):
   return (primary, suffix)
 
 
+_LITBRIDGE_ROUND = re.compile(r"_r(\d+)::")
+
+
+def _litbridge_label(source):
+  """`added rule`, naming the round when the clause name carries one."""
+  m = _LITBRIDGE_ROUND.search(source or "")
+  return "added rule (round %s)" % m.group(1) if m else "added rule"
+
+
+def _is_litbridge_source(source):
+  """Return True if source is a clause a literal-bridge rule added.
+
+  The prefix is written by litbridge_converter and shared through
+  utils.LITBRIDGE_CLAUSE_PREFIX.  Such a clause is neither the passage nor a
+  standing axiom: it is an invented, defeasible rule this run added, and the
+  reader has to be told which one a step leans on.
+  """
+  from utils import is_litbridge_clause_name
+  return is_litbridge_clause_name(source)
+
+
 def _is_background_source(source):
   """Return True if source is a background-knowledge axiom (not a sentence)."""
   if not isinstance(source, str):
+    return False
+  if _is_litbridge_source(source):
     return False
   # frm_N comes from axioms_std.js; other non-sent_ sources are also background
   return bool(re.match(r'^frm_\d+', source)) or (
@@ -139,6 +162,8 @@ def _format_why(reason, sent_nr, clause=None):
       return "from question"
     if source in sent_nr:
       return "sentence " + str(sent_nr[source])
+    if _is_litbridge_source(source):
+      return _litbridge_label(source)
     if _is_background_source(source):
       return "background knowledge"
     return source
@@ -273,25 +298,34 @@ def format_explanation(answers, sentence_map, show_logic=False, logic=None):
     compute_skolem_types(proof, logic=logic)
     bk_seen  = {}   # clause_str -> already listed flag
     bk_lines = []
+    lb_seen  = {}   # the same, for the rules this run added
+    lb_lines = []
     for step in proof:
       reason = step[1] if len(step) > 1 else []
       if not (isinstance(reason, list) and len(reason) > 1 and reason[0] == "in"):
         continue
       source = reason[1]
-      if not (isinstance(source, str) and _is_background_source(source)):
+      added = isinstance(source, str) and _is_litbridge_source(source)
+      if not (added or (isinstance(source, str)
+                        and _is_background_source(source))):
         continue
       clause = step[2] if len(step) > 2 else []
       cstr = clause_to_str(clause)
-      if cstr not in bk_seen:
-        bk_seen[cstr] = True
-        bk_lines.append("  " + cstr + ". Why: assumed basic knowledge.")
+      seen, lines = (lb_seen, lb_lines) if added else (bk_seen, bk_lines)
+      if cstr not in seen:
+        seen[cstr] = True
+        why = ("Why: %s, held unless something contradicts it."
+               % _litbridge_label(source).replace("added rule",
+                                                  "a rule this run added")
+               if added else "Why: assumed basic knowledge.")
+        lines.append("  " + cstr + ". " + why)
         if show_logic:
           if g.options.get("json_flag"):
-            bk_lines.append("    " + format_clause_logic(clause))
+            lines.append("    " + format_clause_logic(clause))
           else:
             logic_str = format_clause_traditional(clause)
             logic_str = logic_str.replace("\n", "\n    ")
-            bk_lines.append("    " + logic_str)
+            lines.append("    " + logic_str)
 
     # Proof step list — use "by contradiction" header when proof ends in Contradiction.
     is_contradiction = any(len(s) > 2 and s[2] is False for s in proof)
@@ -311,6 +345,9 @@ def format_explanation(answers, sentence_map, show_logic=False, logic=None):
           step_lines.append("  " + bs)
 
     parts_block = ["\n".join(sent_lines)]
+    if lb_lines:
+      parts_block.append("Added rules (invented for this question, "
+                         "defeasible):\n" + "\n".join(lb_lines))
     if bk_lines:
       parts_block.append("Knowledge used:\n" + "\n".join(bk_lines))
     parts_block.append("\n".join(step_lines))

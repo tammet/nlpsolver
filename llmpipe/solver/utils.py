@@ -19,6 +19,17 @@
 import json
 import globals
 
+# Every clause a literal-bridge rule compiles to carries this name prefix
+# (litbridge_converter writes it, proof_explain reads it back), so a proof step
+# citing an invented rule can be told apart from the passage and from the
+# standing axioms.
+LITBRIDGE_CLAUSE_PREFIX = "dynamic_bridge_"
+
+
+def is_litbridge_clause_name(name):
+  """Was this clause added by the literal-bridge machinery?"""
+  return isinstance(name, str) and name.startswith(LITBRIDGE_CLAUSE_PREFIX)
+
 
 def debug_print(label, data=None, flag=None):
   """Print a labelled debug message when the relevant flag is set.

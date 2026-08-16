@@ -363,6 +363,73 @@ def _english_to_answer_once(text, options=None, collect=None, stage2_corrective=
   # --- process_proof: post-process prover output into final answer (procproofs.py) ---
   answer = process_proof(proof_result, text=text, s1_json=s1_json, s2_json=s2_json, logic=logic, options=options)
 
+  # --- literal-bridge abstraction (-litbridge, on under -abstract-max) ---
+  # Invented rules become extra clauses appended to the same theory, then gk is
+  # run again.  A proof found now is an ordinary gk proof: the same
+  # process_proof, the same explanation, the same recorded fields.
+  if globals.options.get("litbridge_flag") and _litbridge_unresolved(answer):
+    import litbridge_procedure
+    base_answer, base_logic = answer, logic
+    loud = debug or show_details or show_logic
+    view = _litbridge_view(text, s1_json, s2_json, logic)
+    respond = _litbridge_responder(llm, llm_version, max_tokens)
+    extras = bool(globals.options.get("litbridge_extras_flag"))
+    records = []
+    try:
+      ctx, refused = litbridge_procedure.bridge_context(view)
+    except Exception as e:                                      # noqa: BLE001
+      ctx, refused = None, "%s: %s" % (type(e).__name__, str(e)[:160])
+    if ctx is None:
+      records.append({"round": 0, "stopped_at": refused, "asked": False,
+                      "rules": 0, "clauses": 0, "printed_rules": []})
+    for number in (1, 2):
+      if ctx is None:
+        break
+      try:
+        extra, rec = litbridge_procedure.bridge_round(
+            ctx, view, respond, number, extras=extras)
+      except Exception as e:                                    # noqa: BLE001
+        rec = {"round": number, "asked": False, "rules": 0, "clauses": 0,
+               "printed_rules": [],
+               "stopped_at": "%s: %s" % (type(e).__name__, str(e)[:160])}
+        extra = []
+      records.append(rec)
+      # no new rule: nothing is added and gk is not called again
+      if not extra:
+        break
+      logic = list(logic) + extra
+      try:
+        proof_result = prover.call_prover(logic, s1_json=s1_json)
+      except KeyboardInterrupt:
+        raise
+      except Exception as e:
+        return "Error: prover raised an exception: " + str(e)
+      if proof_result is None:
+        return "Error: prover returned None."
+      if show_details or show_prover:
+        print("\n=== prover result with the round-%d bridge clauses (JSON) "
+              "===\n" % number)
+        print(proof_result)
+      answer = process_proof(proof_result, text=text, s1_json=s1_json,
+                             s2_json=s2_json, logic=logic, options=options)
+      rec["gk_called"] = True
+      rec["resolved"] = not _litbridge_unresolved(answer)
+      if rec["resolved"]:
+        break
+    # nothing was proved: the run ends exactly where it would have without
+    # litbridge, with the answer and the theory the ordinary pipeline produced
+    if _litbridge_unresolved(answer):
+      answer, logic = base_answer, base_logic
+    if collect is not None:
+      collect["litbridge"] = {"extras": extras, "rounds": records,
+                              "proved": not _litbridge_unresolved(answer),
+                              "options": view["configuration"]}
+      if not globals.options.get("nofinaltrace"):
+        collect["final_clauses"] = logic
+    if loud:
+      _print_litbridge(records, verbose=debug or show_details,
+                       options=view["configuration"])
+
   if collect is not None:
     # process_proof appends "\n\n<explanation>" when prover_explain_flag is on.
     # Split so the JSON output has separate `answer` and `nl_proof` fields.
@@ -452,6 +519,118 @@ def _downstream_hint(answer):
     if pat.search(answer) or pat.search(first):
       return hint
   return None
+
+
+def _litbridge_unresolved(answer):
+  """The question is still open, so invented rules are worth a second gk run.
+
+  `Unknown.`, nothing at all, or an `Error:` string.  The error case follows
+  litbridge_procedure.FRONT_DOOR_POLICY: an error is not a definite answer.
+  """
+  if answer is None:
+    return True
+  head = str(answer).split("\n", 1)[0].strip()
+  return (not head) or head == "Unknown." or head.lower().startswith("error")
+
+
+def _print_litbridge(records, verbose=False, options=None):
+  """Show what each bridge round did, for -logic and above."""
+  print("\n=== litbridge (the ordinary run left the question unresolved) ===\n")
+  if options is not None:
+    print("  converted as the theory was: %s" % _litbridge_encoding(options))
+  for rec in records:
+    number = rec.get("round", 0)
+    if not number:
+      print("  not started: %s" % rec.get("stopped_at"))
+      continue
+    print("  round %d:" % number)
+    if rec.get("stopped_at"):
+      print("    stopped at: %s" % rec["stopped_at"])
+    if not rec.get("asked"):
+      print("    no LLM call")
+    print("    candidate atoms shown to the model: %s"
+          % rec.get("candidate_atoms", 0))
+    print("    rules written: %d, clauses added: %d"
+          % (rec.get("rules", 0), rec.get("clauses", 0)))
+    for label, key in (("distinctness", "distinctness"),
+                       ("negative relation", "negative_relation")):
+      got = rec.get(key)
+      if got is None:
+        continue
+      if got.get("asked"):
+        print("      %s channel: asked, %d eligible pair(s), %d rule(s)"
+              % (label, got.get("eligible_pairs", 0), got.get("rules", 0)))
+      else:
+        print("      %s channel: no call (%s)"
+              % (label, got.get("why_not_asked") or "no eligible pair"))
+    for printed in rec.get("printed_rules") or []:
+      print("      " + printed)
+    if rec.get("gk_called"):
+      print("    gk called again: %s"
+            % ("a proof was found" if rec.get("resolved")
+               else "still no proof"))
+    else:
+      print("    gk not called again (no clause to add)")
+    if not verbose:
+      continue
+    counts = rec.get("signed_counts") or {}
+    if counts:
+      print("      conclusions: %d positive, %d negative"
+            % (counts.get("positive_conclusion", 0),
+               counts.get("negative_conclusion", 0)))
+    for row in rec.get("refused_by_the_compiler") or []:
+      print("      refused: %s  (%s)" % (row.get("printed"), row.get("why")))
+    rejected = rec.get("rejections_by_category") or {}
+    if rejected:
+      print("      rules the parser rejected: %s"
+            % ", ".join("%s %s" % (k, v) for k, v in sorted(rejected.items())))
+    for row in rec.get("omitted_by_the_hypothesis_limit") or []:
+      print("      over the hypothesis limit: %s" % row)
+
+
+def _litbridge_view(text, s1_json, s2_json, logic):
+  """The case as the bridge machinery reads it.
+
+  `configuration` is the run's own option dict, not a label: the theory was
+  converted in this process under `globals.options`, so the bridge is
+  converted the same way, minus the passes that would strip its `$block`.
+  It is captured here, before the first bridge conversion, because a
+  conversion scopes `globals.options` while it runs.
+  """
+  import litbridge_converter
+  return {"case_id": "solve", "input_text": text, "stage1": s1_json,
+          "stage2": s2_json, "final_clauses": logic,
+          "configuration": litbridge_converter.live_options()}
+
+
+def _litbridge_encoding(options):
+  """The part of the bridge's option set worth showing: what it encodes to.
+
+  Only the axes `lc_encoding.EncodingConfig` reads, so the line says what the
+  clauses look like and not which flags the run happened to carry.
+  """
+  if not isinstance(options, dict):
+    return str(options)
+  axes = [name for name in lc_encoding.EncodingConfig.__slots__
+          if options.get(name + "_flag") is True]
+  return "event %s; %s" % (options.get("event_base"),
+                           ", ".join(axes) if axes
+                           else "no abstraction primitive")
+
+
+def _litbridge_responder(llm, llm_version, max_tokens):
+  """-> respond(role, key, message) -> (text, note), one LLM call per call."""
+  import litbridge_procedure
+
+  def respond(role, key, prompt, retry=False):
+    sysprompt = litbridge_procedure.prompts.system_prompt()
+    if role == "distinct":
+      sysprompt = litbridge_procedure.rules.distinct_system_prompt()
+    elif role == "negative":
+      sysprompt = litbridge_procedure.rules.negative_system_prompt()
+    return llmcall.call_llm(sysprompt, prompt, llm=llm, version=llm_version,
+                            max_tokens=max_tokens), None
+  return respond
 
 
 def english_to_answer(text, options=None, collect=None):
@@ -678,6 +857,12 @@ def _parse_cmd_line():
       opts["typeenrich_gates"] = _parse_te_gates(el.split("=", 1)[1])
     # --- Abstraction presets: pure expansions into primitives (read nowhere
     #     else in the pipeline). -abstract / -abstract-roles / -abstract-max. ---
+    elif el in ["-litbridge", "--litbridge"]:
+      opts["litbridge_flag"] = True
+    elif el in ["-litbridge_extras", "--litbridge_extras"]:
+      opts["litbridge_extras_flag"] = True
+    elif el in ["-nolitbridge", "--nolitbridge"]:
+      opts["nolitbridge_flag"] = True
     elif el in ["-abstract", "--abstract", "-abstract-roles", "--abstract-roles",
                 "-abstract-max", "--abstract-max"]:
       opts["event_base"] = "flatroles" if ("roles" in el or "max" in el) else "flat"
@@ -695,6 +880,7 @@ def _parse_cmd_line():
         opts["compasym_flag"] = True
         opts["nominalretry_flag"] = True
         opts["negretry_flag"] = True
+        opts["litbridge_flag"] = True
     elif el in ["-propclass", "--propclass"]:
       opts["propclass_flag"] = True
     elif el in ["-numtype", "--numtype"]:
@@ -830,6 +1016,11 @@ def _parse_cmd_line():
     elif textpart:
       text = textpart
 
+  # -nolitbridge wins wherever it stands on the line, so it also cancels the
+  # -litbridge that -abstract-max turns on.
+  if opts.get("nolitbridge_flag"):
+    opts["litbridge_flag"] = False
+
   return (text, opts)
 
 helptext = """call solve.py with a natural language text like
@@ -915,8 +1106,23 @@ logic conversion / representation (transform the Stage-2 logic before the prover
                     + typeenrich + localantonyms + simpleprops
   -abstract-roles : as -abstract but -event flatroles (eventprop-tagged objects)
   -abstract-max   : as -abstract-roles + -prenorm + propclass + numtype + compasym
-                    + nominalretry + negretry (strongest; nominalretry/negretry can
-                    make live LLM retries)
+                    + nominalretry + negretry + litbridge (strongest; nominalretry/
+                    negretry/litbridge can make live LLM retries)
+ literal-bridge abstraction (off by default; costs extra LLM calls per case):
+  -litbridge     : when the ordinary pipeline leaves the question unresolved, propose
+                   implication rules over the case's own displayed atoms, compile them
+                   beside the stored theory and resubmit to gk. On automatically with
+                   -abstract-max.
+  -nolitbridge   : force it off, wherever it stands on the command line. It cancels
+                   both -litbridge and the -litbridge that -abstract-max turns on.
+  -litbridge_extras : also run the two code-built channels in round 1, each one more
+                   LLM call in which the model only picks among enumerated pairs:
+                   distinctness (isa(C,A) & isa(C,B) -> NOT A=B, when the question
+                   needs an inequality and its English says "different"/"distinct"/
+                   ...) and negative relation (A -> NOT B, when a question clause
+                   asks B positively and the passage states A about the same
+                   participants). Off by default; NO preset turns it on, not even
+                   -abstract-max. Without -litbridge it does nothing.
  -prenorm       : pre-Stage-1 LLM wording normalisation (composable; FOLIO base)
  -nocrossstage  : disable the cross-stage guard-retry
  -nominalretry  : (experimental) Stage-2 retry when a Stage-1 "ENT is a NOUN"
