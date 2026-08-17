@@ -89,6 +89,35 @@ Literal-bridge abstraction (DOCUMENTATION.md §13; off by default):
 -nolitbridge     Force it off from any position, cancelling -abstract-max's default
 -litbridge_extras  Also run the distinctness and negative-relation channels in
                  round 1 (one LLM call each). No preset turns this on.
+Critique pass (DOCUMENTATION.md §15; off by default, no preset):
+-critic          When the front door ends Unknown, one LLM call audits the
+                 translation it produced — the English, the compacted Stage 1
+                 and the Stage-2 logic — and reports findings.  On a blocking
+                 finding that lies on its own chain, Stage 2 (or Stage 1 and 2)
+                 runs once more with the findings appended.  One critique, one
+                 rerun, then stop.  The translator never sees the critic's
+                 reading of the answer.
+-nocritic        Force it off from any position
+
+Graph abstraction, two layers (DOCUMENTATION.md §14; both off by default, no preset):
+-graphtrans      Layer 1: translate the case a second time into open triples,
+                 compile it and call gk once.  No judge, no bridge, no extra
+                 model role.  About 1.2 LLM calls per case.  This is the whole
+                 mechanism on closed-world material.
+-nographtrans    Force layers 1 and 2 off from any position
+-graphbridge     Layer 2: invent implications between the open names and
+                 search layer 1's theory with them.  Implies -graphtrans and
+                 never translates twice.  For open-world (EntailmentBank-like)
+                 material; about 2.7 LLM calls per case.
+-nographbridge   Force layer 2 off; layer 1 unaffected
+-graphbridge_lift  Lift a graph proof into the ordinary theory (experimental;
+                 measured at 0 net for 56 calls, so off)
+-graphbridge_sources LIST  Layer 2's candidate sources: a comma list of
+                 frontier (default), exhaustive, composition
+-graphbridge_evidence any|stated  Layer 2's acceptance evidence mode
+-abstraction_order LIST  The order the abstraction routes run in after the
+                 front door; default graphtrans,litbridge,graphbridge.  A
+                 route this list omits never runs, whatever its flag says.
 
 Alternative parsing shapes (replace the default two-stage parse):
 -s2split         One Stage-2 LLM call per Stage-1 sentence; outputs joined
@@ -133,6 +162,9 @@ rather than guessing from a name.
 - **Logic conversion** (`logconvert.rawlogic_convert` orchestrates) — `lc_encoding.py` (the `EncodingConfig` gate resolver — single source of truth), `lc_packages.py` (per-`@id`), `lc_rewrites.py` (pre-clausification rewrites), `lc_repairs.py` (structural repairs), `lc_clausify.py` (FOL→CNF), `lc_ctxt.py` (`$ctxt`/time), `lc_questions.py` + `lc_query_guards.py` (questions, guard/what-population), `lc_sets.py` (sets/counting), `lc_coarse.py` + `lc_existfold.py` (event folds), `lc_entity_isa.py` (taxonomy `isa`), `lc_finalize.py` (strict/abstract finaliser).
 - **Post-clausification passes** — `lc_post_normalize.py`, `lc_post_have.py`, `lc_post_reify.py`, `lc_post_inject.py` (+ `lc_inject_synonyms.py`, `lc_inject_scan.py`), `lc_post_population.py`, `lc_post_una.py`, `semnormalize.py`, `axiom_vocab.py`; shared traversal in `treewalk.py`. See "Semantic Normalization" below and DOCUMENTATION.md §7.7.
 - **Proving + proofs** — `prover.py` (gk subprocess), `procproofs.py` → `proof_answer_select.py` / `proof_answer_format.py` / `proof_explain.py`; rendering via `proof_render.py` façade over `proof_utils.py` / `proof_english.py` / `proof_terms.py` / `proof_logic.py`, plus `entity_map.py` and `linguistics.py`. See DOCUMENTATION.md §5.9 and PROOF_RENDERING.md.
+- **Literal-bridge abstraction** (`-litbridge`, DOCUMENTATION.md §13) — seven `litbridge_*` modules used as one stack: `litbridge_atoms/rules/compile/chain/prompts/procedure/converter.py`.
+- **Critique pass** (`-critic`, DOCUMENTATION.md §15) — `critic_pass.py` (the call, the parser, the decision, the corrective) and `critic_render.py` (what the critic reads); prompt `prompts/critic/critic_system.txt`.
+- **Graph abstraction** (`-graphtrans` / `-graphbridge`, DOCUMENTATION.md §14) — `graph_p0.py` is layer 1 (retranslate, compile, one gk call) and the eight `graph_*` modules are layer 2: `graph_stage2.py` (the second, open-triple Stage 2), `graph_compile.py` (its frozen converter configuration), `graph_inventory.py`, `graph_pairs.py`, `graph_judge.py`, `graph_search.py`, `graph_lift.py`, `graph_procedure.py`. Prompts in `prompts/graph/`; harness `tools/run_graph_bridge.py` + `score_graph_bridge.py` + `report_graph_bridge.py`; fixtures `tools/test_graph_*.py`.
 - **Infra / data** — `globals.py` (options dict), `cache.py` (SQLite), `pretty.py`, `utils.py`; generated `data_{canonicals,antonyms,synonyms,exclusions,names}.py` from `mkdata/*.txt`.
 
 ### Semantic Normalization Pipeline

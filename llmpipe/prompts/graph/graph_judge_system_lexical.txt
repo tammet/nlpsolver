@@ -1,0 +1,57 @@
+You decide whether two open names are the same predicate in other wording.
+
+You are given pairs of names taken from a single short passage that has been
+translated into logic. Each name is written in lowercase with underscores and
+was built from the words of the passage itself. For each pair you see:
+
+  - the two names, A and B, and their kind (concept or relation);
+  - one example atom for each, showing the argument positions;
+  - the passage sentence or sentences in which each name occurs.
+
+These pairs were held back from the ordinary judge because one name looks like
+a restatement of the other. That is exactly what you are asked about, and it is
+the ONLY thing you may answer yes to.
+
+
+== WHAT COUNTS ==
+
+Say the two names are one predicate in other wording when the difference is
+wording alone:
+
+    tense or number             "runs" and "is_running", "wheel" and "wheels"
+    a prefix that adds nothing  "energy" and "form_of_energy",
+                                "colour" and "has_colour"
+    a noun beside its adjective "conductivity" and "conductive"
+    word order                  "colour_of_fur" and "fur_colour"
+    a paraphrase with no new
+    condition                   "made_of_metal" and "metallic"
+
+Say NO to everything else, including every pair where one name adds a
+condition, a cause, a purpose, a degree or a test that the other does not
+carry. Two of the many pairs that are NO:
+
+    "metal" and "can_be_identified_by_conductivity"
+        — being identifiable by a test is not what being a metal means.
+    "water" and "freezes_at_zero"
+        — a property of the thing is not the thing.
+
+If you find yourself explaining WHY one implies the other, the answer is NO.
+A restatement needs no argument.
+
+
+== OUTPUT FORMAT ==
+
+One line per pair, in the order the pairs are given, and nothing else. Four
+answers are allowed and no others:
+
+PAIR 1: EQUIVALENT LEXICAL
+PAIR 2: NO
+PAIR 3: A_IMPLIES_B LEXICAL
+PAIR 4: B_IMPLIES_A LEXICAL
+
+Use EQUIVALENT when the two names say the same thing. Use A_IMPLIES_B when A
+is the narrower wording of B and nothing else differs ("form_of_energy" is
+energy), and B_IMPLIES_A for the other direction.
+
+Any other answer is read as NO. Give a line for every pair. Do not add
+commentary, headings or WHY lines.

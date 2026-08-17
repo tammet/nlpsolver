@@ -169,8 +169,15 @@ def singularize_isa_classes_in_node(node):
   atom to its singular form, so a bare-plural generic (`isa("animals", X)`)
   unifies with the singular form used elsewhere and with the injected
   population witness `isa("animal", $some_animal)`.  Leaves all other
-  predicates and arguments untouched."""
+  predicates and arguments untouched.
+
+  `noclassnumbernorm_flag` turns the whole pass off.  The open-relation graph
+  theory (`solver/graph_compile.py`) needs it off: there two class names that
+  differ by a trailing `s` are two names, and a rule that connects them has to
+  be a named clause the proof can show."""
   if not isinstance(node, list) or not node:
+    return node
+  if _g_options.get("noclassnumbernorm_flag", False):
     return node
   head = node[0]
   if (isinstance(head, str) and head in ("isa", "-isa")

@@ -1,0 +1,130 @@
+You decide whether one open name implies another.
+
+You are given pairs of names taken from a single short passage that has been
+translated into logic. Each name is written in lowercase with underscores and
+was built from the words of the passage itself. For each pair you see:
+
+  - the two names, A and B, and their kind (concept or relation);
+  - one example atom for each, showing the argument positions and whether that
+    occurrence was negated;
+  - the passage sentence or sentences in which each name occurs.
+
+A name may come from anywhere in the case. You are NOT told what the question
+of the case is, and you must not try to guess it. Judge the pair on its own
+meaning and on the sentences you are shown.
+
+
+== WHAT THE LABELS MEAN ==
+
+For a concept pair, "A implies B" means: for every thing X, if X is an A then
+X is a B.
+
+    A_IMPLIES_B                 isa(A,X)  ->  isa(B,X)
+    B_IMPLIES_A                 isa(B,X)  ->  isa(A,X)
+    EQUIVALENT                  both directions hold
+    A_IMPLIES_NOT_B             isa(A,X)  ->  NOT isa(B,X)
+    B_IMPLIES_NOT_A             isa(B,X)  ->  NOT isa(A,X)
+    EXCLUSIVE                   nothing can be both an A and a B
+    RELATED_BUT_NO_IMPLICATION  the two are about the same subject matter but
+                                neither direction holds in general
+    UNRELATED                   the two have nothing to do with each other
+    UNCERTAIN                   you cannot decide, or it depends on a reading
+                                the sentences do not fix
+
+For a relation pair, "A implies B" means: for all X and Y, if A holds between
+X and Y then B holds between X and Y, IN THE ARGUMENT ORDER SHOWN.
+
+    A_IMPLIES_B                 A(X,Y)  ->  B(X,Y)
+    INVERSE                     A(X,Y)  ->  B(Y,X), and B(X,Y) -> A(Y,X)
+
+INVERSE is for relation pairs only. Use it when the two names describe the same
+situation from the two ends ("parent_of" and "child_of", "contains" and
+"inside_of"). If A and B hold in the same argument order, that is A_IMPLIES_B
+or EQUIVALENT, not INVERSE.
+
+Some pairs show two atoms with a constant in one argument
+("study(X, art_history)" and "gain(X, inspiration)"). There, "A implies B"
+means: for every X, if the first atom holds of X then the second holds of X.
+Judge exactly the two atoms as printed, constants included.
+
+Some pairs ask about a constant pair with the two atoms that use them
+("requires(X, labeled_data)" and "requires(X, data)"). There you are deciding
+whether every thing of the first kind is also a thing of the second kind, in
+the sense the two atoms use them. Note the direction carefully: a requirement
+is not monotone in the same direction as a possession.
+
+
+== HOW TO DECIDE ==
+
+1. Read the sentences. A passage often defines a name where it introduces it
+   ("Reflection is when a wave bounces off a surface"); a definition licenses
+   an implication, an example does not.
+2. Prefer the weaker label. If A implies B only usually or only in this
+   passage's setting, that is still A_IMPLIES_B — the rules built from your
+   labels are defeasible. But if A implies B only under a further condition
+   that neither name carries, answer RELATED_BUT_NO_IMPLICATION.
+3. Do not upgrade a "some" to an "every". If the sentences say that some A are
+   B, that is not A_IMPLIES_B.
+4. Do not reverse a direction the sentences state. If a sentence says every B
+   is an A, the pair is B_IMPLIES_A even when the reverse sounds plausible.
+5. Quantifier words inside a name are part of it: "loves_some_animal" and
+   "loves_every_animal" are different names and neither implies the other in
+   the loose direction.
+6. Answer UNCERTAIN rather than guessing. An UNCERTAIN pair is used more
+   carefully than a wrong confident one.
+7. Names with modality inside them ("can_swim", "must_pay") are about the
+   modality, not the act: "swims" implies "can_swim", not the other way.
+
+
+== WHERE YOUR ANSWER COMES FROM ==
+
+Every label except UNRELATED carries one tag saying where you got it:
+
+    LEXICAL     the two names are one predicate in other wording. Tense,
+                number, a "has_" prefix, "form_of_", a different word order,
+                a noun beside its adjective: "runs" and "is_running",
+                "energy" and "form_of_energy", "colour_of" and "has_colour".
+    STATED      a SINGLE passage sentence you were shown says it directly.
+                One sentence defines one name in terms of the other, or
+                asserts the implication outright. If you have to combine two
+                sentences, or read a "some" as an "all", or take one step
+                through something you know yourself, it is NOT STATED.
+    BACKGROUND  you know it from outside the passage. Nothing you were shown
+                says it; it is true of the world.
+
+Tag the source of the implication, not your certainty about it. A well-known
+fact the passage never mentions is BACKGROUND even when you are sure of it.
+A sentence that gives one example is not STATED — see rule 3 above.
+
+Then give your confidence in the label itself:
+
+    HIGH        you would be surprised to be wrong
+    MEDIUM      the label is right on the reading you took
+    LOW         you leaned one way but the case is thin
+
+UNCERTAIN carries a confidence too: it says how sure you are that the pair
+cannot be decided, not how sure you are of a direction.
+
+
+== OUTPUT FORMAT ==
+
+One line per pair, in the order the pairs are given, and nothing else except
+optional WHY lines. The label comes first, then the tag, then the confidence,
+each in square brackets:
+
+PAIR 1: A_IMPLIES_B [LEXICAL] [HIGH]
+PAIR 2: UNRELATED
+PAIR 3: EXCLUSIVE [BACKGROUND] [HIGH]
+WHY: nothing is both a city and a state.
+PAIR 4: UNCERTAIN [BACKGROUND] [MEDIUM]
+WHY: "conductive" may mean thermal or electrical here.
+PAIR 5: B_IMPLIES_A [STATED] [HIGH]
+
+UNRELATED takes no tag and no confidence. Every other label takes both.
+
+A WHY line is optional, at most one line, and only after a negative label
+(A_IMPLIES_NOT_B, B_IMPLIES_NOT_A, EXCLUSIVE) or UNCERTAIN. For a negative
+label the WHY line should say why nothing can be both.
+
+Give a line for every pair. Do not add commentary, headings or blank
+explanations. Do not restate the pair.

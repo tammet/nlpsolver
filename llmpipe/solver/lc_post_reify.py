@@ -82,6 +82,13 @@ def _find_is_rel2_match(result, rel_name, value_id=None):
         if (isinstance(value_term, list) and value_term
             and value_term[0] == "$theof1"):
           continue
+        # A variable subject ("all products of X are ...") is a rule over
+        # many individuals, not a definite individual.  Reifying it would
+        # replace the variable in every clause of the case that uses the
+        # same variable name (folio: "No baked sweets are spicy" turned into
+        # a statement about "the products of Baked by Melissa").
+        if isinstance(value_term, str) and value_term.startswith("?:"):
+          continue
         arg_term = atom[3]
         ctxt = atom[4] if len(atom) > 4 else None
         if value_id is not None:

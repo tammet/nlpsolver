@@ -65,6 +65,16 @@ options={
   "negretry_flag":False,      # (experimental) prenorm-negation-fallback: if True and prenorm dropped a sentential negation from the conclusion question ("X is not a Y?" rewritten to the positive "Is X a Y?"), re-parse from the original (pre-prenorm) text so the negation survives. General correctness fix (not encoding-specific); currently gated so it can later be promoted to default. See analysis/FOLIO_GPT_FAILURES.md G2 (cases 80/127/189/200)
   "litbridge_flag":False,     # literal-bridge abstraction: when the ordinary pipeline leaves the question unresolved, propose implication rules over the case's own displayed atoms, compile them beside the stored theory and resubmit to gk. Off by default because it costs extra LLM calls per unresolved case; -abstract-max turns it on, -nolitbridge forces it off. See solver/litbridge_procedure.py and memos/MEMO_2026_08_15_litbridge_merge.md
   "litbridge_extras_flag":False,  # if True, litbridge round 1 also runs the two code-built channels: distinctness (isa(C,A) & isa(C,B) -> NOT A=B, when the question needs an inequality and its English carries a difference cue) and negative relation (A -> NOT B, when B is asked positively by a question clause and A is stated by the passage about the same participants). Each costs one more LLM call, in which the model only selects among enumerated pairs. Set by -litbridge_extras alone; no preset turns it on
+  "graphbridge_flag":False,    # open-relation graph abstraction: when the ordinary pipeline (and the literal bridge, if on) leaves the question unresolved, translate the case a second time into three-item open triples, invent implications between the open names, and search that theory separately. Off by default and set by no preset; -graphbridge turns it on, -nographbridge forces it off. See solver/graph_procedure.py and DOCUMENTATION.md §14
+  "nographbridge_flag":False,  # if True, graphbridge_flag is forced False after the whole command line is read, so -nographbridge beats -graphbridge whatever their order
+  "graphbridge_lift_flag":False,  # if True, a graph proof is lifted back into the ordinary representation through the litbridge grammar and compiler, and a lifted proof becomes the run's answer. -graphbridge_nolift turns it off, leaving the graph proof a labelled experimental result
+  "critic_flag":False,     # -critic: one LLM call audits the front door's translation when it ends Unknown, and may ask for one retranslation
+  "nocritic_flag":False,   # -nocritic: forces critic_flag False after the whole command line is read
+  "graphtrans_flag":False,   # -graphtrans: layer 1, the graph retranslation and one gk call; no judge, no bridge
+  "nographtrans_flag":False, # -nographtrans: forces graphtrans_flag AND graphbridge_flag False after the whole command line is read
+  "graphbridge_sources":"frontier",  # which candidate sources layer 2 enumerates: a comma list of frontier, exhaustive, composition (holistic is refused)
+  "graphbridge_evidence":"any",  # layer 2's acceptance evidence mode: any (the measured default) or stated
+  "abstraction_order":"graphtrans,litbridge,graphbridge",  # the order the abstraction routes run in after the front door; a route not named here never runs, whatever its own flag says
   "nolitbridge_flag":False,   # if True, litbridge_flag is forced False after the whole command line is read, so -nolitbridge beats both -litbridge and the -abstract-max default whatever their order
   "prover_axiomfiles":False,  # if not False, use these as axioms instead of the default prover_axiomfile below
   "prover_print":False,  # if not False, use the argument integer for gk printout level, instead of the default
@@ -93,6 +103,10 @@ options={
   # before they are passed to the prover.  Set to True or pass -nosemnormal
   # to disable.
   "nosemnormal_flag": False,
+  "noclassnumbernorm_flag": False,  # if True, do not singularize the class argument of isa atoms in the final clause list. Off everywhere except the open-relation graph theory (solver/graph_compile.py), where two names differing by a trailing "s" must stay two names
+  "noopennamerewrite_flag": False,  # if True, do not rewrite or canonicalize the relation name of an is-rel2 atom (ownership -> have, located-in -> in, preposition canonicalisation, perspective verbs -> Davidsonian events). Off everywhere except the open-relation graph theory, where each relation name is the translator's own and only a named clause may connect two of them
+  "nopopulate_flag": False,     # if True, emit no population witnesses ($some_C / $some_not_C) at all. Off everywhere except the open-relation graph theory, where a witness the theory minted for a quantified class can ground an invented bridge's own body and prove a question the passage never settles (MEMO_2026_08_17 C1)
+  "noentitycat_flag": False,    # if True, emit no Stage-1 entity-category isa clauses (entity_S*) and no base-word entity isa. Off everywhere except the open-relation graph theory, where a name the translator never wrote must not enter supply (MEMO_2026_08_17 C2)
   # Per-fix kill switches for the 2026-08 programmatic repairs
   # (memos/PLAN_2026_08_04_programmatic_fixes.md).  Development/measurement
   # aids: set one True to replay a tree with that repair disabled and attribute
@@ -171,3 +185,7 @@ def set_global_options(newoptions):
 
 
 # =========== the end ==========
+
+# the abstraction routes the pipeline knows, in their default order.  `solve.py`
+# reads `options["abstraction_order"]` and dispatches by these names.
+ABSTRACTION_ROUTES = ("graphtrans", "litbridge", "graphbridge")

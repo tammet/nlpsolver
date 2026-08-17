@@ -1,0 +1,15 @@
+
+=== ONE UNIT ONLY ===
+
+Translate ONLY the unit given above, and output only its package:
+
+["and", ["@id", "<the unit id>", PACKAGE]]
+
+A second, coarser translation of this same sentence produced the atoms listed
+below. They are shown because the earlier translation of this unit may have
+lost a relation, a modifier, a negation, or an entity that the sentence states.
+
+Do NOT copy the coarse atoms and do not adopt their names. They are a coarse
+paraphrase and they may be wrong. Translate the ENGLISH SENTENCE faithfully,
+using this system's own predicate inventory, and keep every relation,
+modifier, negation and participant the sentence states.

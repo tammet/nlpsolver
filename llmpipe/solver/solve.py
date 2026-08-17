@@ -363,72 +363,57 @@ def _english_to_answer_once(text, options=None, collect=None, stage2_corrective=
   # --- process_proof: post-process prover output into final answer (procproofs.py) ---
   answer = process_proof(proof_result, text=text, s1_json=s1_json, s2_json=s2_json, logic=logic, options=options)
 
-  # --- literal-bridge abstraction (-litbridge, on under -abstract-max) ---
-  # Invented rules become extra clauses appended to the same theory, then gk is
-  # run again.  A proof found now is an ordinary gk proof: the same
-  # process_proof, the same explanation, the same recorded fields.
-  if globals.options.get("litbridge_flag") and _litbridge_unresolved(answer):
-    import litbridge_procedure
-    base_answer, base_logic = answer, logic
-    loud = debug or show_details or show_logic
-    view = _litbridge_view(text, s1_json, s2_json, logic)
-    respond = _litbridge_responder(llm, llm_version, max_tokens)
-    extras = bool(globals.options.get("litbridge_extras_flag"))
-    records = []
-    try:
-      ctx, refused = litbridge_procedure.bridge_context(view)
-    except Exception as e:                                      # noqa: BLE001
-      ctx, refused = None, "%s: %s" % (type(e).__name__, str(e)[:160])
-    if ctx is None:
-      records.append({"round": 0, "stopped_at": refused, "asked": False,
-                      "rules": 0, "clauses": 0, "printed_rules": []})
-    for number in (1, 2):
-      if ctx is None:
-        break
-      try:
-        extra, rec = litbridge_procedure.bridge_round(
-            ctx, view, respond, number, extras=extras)
-      except Exception as e:                                    # noqa: BLE001
-        rec = {"round": number, "asked": False, "rules": 0, "clauses": 0,
-               "printed_rules": [],
-               "stopped_at": "%s: %s" % (type(e).__name__, str(e)[:160])}
-        extra = []
-      records.append(rec)
-      # no new rule: nothing is added and gk is not called again
-      if not extra:
-        break
-      logic = list(logic) + extra
-      try:
-        proof_result = prover.call_prover(logic, s1_json=s1_json)
-      except KeyboardInterrupt:
-        raise
-      except Exception as e:
-        return "Error: prover raised an exception: " + str(e)
-      if proof_result is None:
-        return "Error: prover returned None."
-      if show_details or show_prover:
-        print("\n=== prover result with the round-%d bridge clauses (JSON) "
-              "===\n" % number)
-        print(proof_result)
-      answer = process_proof(proof_result, text=text, s1_json=s1_json,
-                             s2_json=s2_json, logic=logic, options=options)
-      rec["gk_called"] = True
-      rec["resolved"] = not _litbridge_unresolved(answer)
-      if rec["resolved"]:
-        break
-    # nothing was proved: the run ends exactly where it would have without
-    # litbridge, with the answer and the theory the ordinary pipeline produced
-    if _litbridge_unresolved(answer):
-      answer, logic = base_answer, base_logic
-    if collect is not None:
-      collect["litbridge"] = {"extras": extras, "rounds": records,
-                              "proved": not _litbridge_unresolved(answer),
-                              "options": view["configuration"]}
-      if not globals.options.get("nofinaltrace"):
+  # --- the critique pass (-critic), before any abstraction route ---
+  # One call audits the translation the front door produced.  On RETRANSLATE
+  # Stage 2 (or Stage 1 and 2) runs once more with the findings appended, and
+  # the ordinary converter and gk follow.  One critique, one rerun, then stop.
+  if globals.options.get("critic_flag") and _unresolved(answer) \
+     and not globals.options.get("_critic_ran"):
+    got = _run_critic(text, s1_json, s2_json, logic, answer, llm, llm_version,
+                      max_tokens, options, collect=collect,
+                      loud=debug or show_details or show_logic
+                      or globals.options.get("prover_explain_flag"))
+    if got and got.get("answer") is not None:
+      answer = got["answer"]
+      if got.get("logic") is not None:
+        logic = got["logic"]
+      if collect is not None and not globals.options.get("nofinaltrace"):
         collect["final_clauses"] = logic
-    if loud:
-      _print_litbridge(records, verbose=debug or show_details,
-                       options=view["configuration"])
+
+  # --- the abstraction routes, in the order `abstraction_order` gives ---
+  # Each route runs only when the question is still unresolved, and only when
+  # its own flag is on.  A route not named in the order never runs, whatever
+  # its flag says: the order is the list of routes this run may use.
+  # the graph blocks appear from `-explain` up, the literal bridge's from
+  # `-logic` up, as before
+  loud = (debug or show_details or show_logic
+          or globals.options.get("prover_explain_flag"))
+  routes = {"graphtrans": _run_graphtrans,
+            "litbridge": _run_litbridge,
+            "graphbridge": _run_graphbridge}
+  state = {"graphtrans": None}          # layer 1's record, reused by layer 2
+  answered_by = "front_door" if not _unresolved(answer) else "none"
+  for name in _abstraction_order():
+    if not _route_enabled(name):
+      continue
+    if not _unresolved(answer):
+      break
+    got = routes[name](text, s1_json, s2_json, logic, answer, llm,
+                       llm_version, max_tokens, options, loud=loud,
+                       verbose=debug or show_details, collect=collect,
+                       state=state)
+    if got is None:
+      continue
+    if got.get("answer") is not None:
+      answer = got["answer"]
+      if got.get("logic") is not None:
+        logic = got["logic"]
+      answered_by = name
+      if collect is not None and not globals.options.get("nofinaltrace"):
+        collect["final_clauses"] = logic
+  if collect is not None:
+    collect["abstraction_order"] = _abstraction_order()
+    collect["answered_by"] = answered_by
 
   if collect is not None:
     # process_proof appends "\n\n<explanation>" when prover_explain_flag is on.
@@ -521,7 +506,327 @@ def _downstream_hint(answer):
   return None
 
 
-def _litbridge_unresolved(answer):
+def _run_critic(text, s1_json, s2_json, logic, answer, llm, llm_version,
+                max_tokens, options, collect=None, loud=False):
+  """The critique pass and, when it is earned, one retranslation."""
+  import critic_pass
+  record = {"ran": True, "answer_before": answer}
+  got = critic_pass.critique(text, s1_json, s2_json, llm=llm,
+                             version=llm_version)
+  report = got.get("report")
+  if report is not None:
+    # the quoted-fix rule needs the units' own text, so the report is read
+    # again with it in hand
+    report = critic_pass.parse_reply(got.get("raw"),
+                                     critic_pass.unit_texts(s1_json))
+    got["report"] = report
+  record.update({"report": report, "parse_failure": got.get("parse_failure"),
+                 "tokens_estimate": got.get("tokens_estimate"),
+                 "system_prompt_sha256": got.get("system_prompt_sha256")})
+  verdict, units, stage = critic_pass.decide(report)
+  record["verdict"] = verdict
+  record["units_to_redo"] = units
+  record["stage"] = stage
+  out = {"answer": None, "logic": None}
+  if verdict != "RETRANSLATE":
+    record["why"] = (got.get("parse_failure") or (report or {}).get("reason")
+                     or "the critic kept the translation")
+    if collect is not None:
+      collect["critic"] = record
+    if loud:
+      _print_critic(record)
+    return out
+  blocking = [f for f in report["findings"] if f["severity"] == "blocking"]
+  suffix = critic_pass.corrective_suffix(blocking or report["findings"])
+  record["corrective"] = suffix
+  globals.options["_critic_ran"] = True
+  try:
+    inner = {} if collect is not None else None
+    again = _english_to_answer_once(text, options, inner,
+                                    stage2_corrective="\n\n" + suffix)
+    record["answer_after"] = again
+    record["rerun_changed_units"] = _changed_units(
+        s2_json, (inner or {}).get("stage2"))
+    if inner is not None:
+      record["rerun"] = {k: v for k, v in inner.items()
+                         if k in ("stage1", "stage2", "answer")}
+    if not _unresolved(again):
+      out["answer"] = again
+      out["logic"] = (inner or {}).get("final_clauses") or logic
+  except Exception as e:                                        # noqa: BLE001
+    record["rerun_error"] = "%s: %s" % (type(e).__name__, e)
+  finally:
+    globals.options.pop("_critic_ran", None)
+  if collect is not None:
+    collect["critic"] = record
+  if loud:
+    _print_critic(record)
+  return out
+
+
+def _changed_units(before, after):
+  """Which `@id` packages the rerun rewrote, and which it touched unasked."""
+  import json as _json
+
+  def packages(s2):
+    out = {}
+    if isinstance(s2, list) and s2 and s2[0] == "and":
+      for item in s2[1:]:
+        if isinstance(item, list) and len(item) >= 3 and item[0] == "@id":
+          out[str(item[1])] = _json.dumps(item[2], sort_keys=True,
+                                          default=str)
+    return out
+
+  a, b = packages(before), packages(after)
+  changed = sorted(k for k in set(a) & set(b) if a[k] != b[k])
+  return {"changed": changed,
+          "added": sorted(set(b) - set(a)),
+          "removed": sorted(set(a) - set(b))}
+
+
+def _print_critic(record):
+  """The `-explain` block of the critique pass."""
+  print("\n=== critic (one reading of the front door's translation) ===")
+  report = record.get("report")
+  if not report:
+    print("  no usable reply: %s" % (record.get("parse_failure") or "?"))
+    return
+  print("  reading: %s   chain: %s"
+        % (report["answer_by_reading"], ", ".join(report["chain"]) or "-"))
+  for f in report["findings"]:
+    print("  [%s, %s] %s: %s"
+          % (f["kind"], f["severity"], ", ".join(f["units"]),
+             f["problem"][:110]))
+  if report.get("dropped_findings"):
+    print("  dropped %d finding(s) (unquoted or malformed)"
+          % len(report["dropped_findings"]))
+  print("  verdict: %s%s" % (record["verdict"],
+                             ("" if record["verdict"] == "KEEP"
+                              else " (stage %s, units %s)"
+                              % (record["stage"],
+                                 ", ".join(record["units_to_redo"])))))
+  if record.get("rerun_changed_units"):
+    got = record["rerun_changed_units"]
+    print("  rerun changed units %s; answer after rerun: %s"
+          % (", ".join(got["changed"]) or "none",
+             str(record.get("answer_after") or "").split("\n")[0]))
+
+
+def _abstraction_order():
+  """The routes this run may use, in order.  Unknown names are an error.
+
+  A route the list omits never runs, whatever its own flag says: the list is
+  what this run is allowed to try, and the flags say which of those are on.
+  """
+  import globals
+  got = globals.options.get("abstraction_order") or ""
+  names = [x.strip() for x in str(got).split(",") if x.strip()]
+  if not names:
+    return list(globals.ABSTRACTION_ROUTES)
+  return names
+
+
+def _route_enabled(name):
+  import globals
+  if name == "graphtrans":
+    return bool(globals.options.get("graphtrans_flag")
+                or globals.options.get("graphbridge_flag"))
+  if name == "litbridge":
+    return bool(globals.options.get("litbridge_flag"))
+  if name == "graphbridge":
+    return bool(globals.options.get("graphbridge_flag"))
+  return False
+
+
+def _run_graphtrans(text, s1_json, s2_json, logic, answer, llm, llm_version,
+                    max_tokens, options, loud=False, verbose=False,
+                    collect=None, state=None):
+  """Layer 1: the graph retranslation and one gk call (`-graphtrans`)."""
+  import graph_p0
+  got = graph_p0.run_graph_p0(text, s1_json, llm=llm, version=llm_version,
+                              max_tokens=max_tokens, options=None)
+  if state is not None:
+    state["graphtrans"] = got
+  if collect is not None:
+    collect["graphtrans"] = _graphtrans_record(got)
+  if loud:
+    _print_graphtrans(got, verbose=verbose)
+  if got.get("answer") is None:
+    return {"answer": None, "logic": None}
+  return {"answer": got["answer_string"], "logic": got["clauses"]}
+
+
+def _graphtrans_record(got):
+  """What a runtests JSON keeps: everything but the clause list itself."""
+  return {k: v for k, v in got.items()
+          if k not in ("clauses", "sidecar", "stage2_graph")}
+
+
+def _print_graphtrans(got, verbose=False):
+  """The layer-1 block of `-explain` and above."""
+  print("\n=== graphtrans (a second translation of the case into open "
+        "triples) ===")
+  tr = got.get("translation") or {}
+  m = (tr.get("measurements") or {})
+  before = got.get("issues_before") or {}
+  after = got.get("issues_after") or {}
+  line = "  translation: %s units, %s atoms" % (m.get("units", "?"),
+                                                m.get("atoms", "?"))
+  if before:
+    line += "; checks fired: %s" % ", ".join(
+        "%s x%d" % (k, v) for k, v in sorted(before.items()))
+    line += " -> retried once" if got.get("retries") else " -> not retried"
+    line += "; after retry: %s" % ("clean" if not after else ", ".join(
+        "%s x%d" % (k, v) for k, v in sorted(after.items())))
+  else:
+    line += "; checks: clean"
+  print(line)
+  for rule in got.get("variant_rules") or []:
+    print("  variant rule %s: %s -> normally %s @%s"
+          % (rule["name"], rule["marked"], rule["base"], rule["confidence"]))
+  if got.get("dropped_invented_clauses"):
+    print("  dropped %d clause(s) using a name the converter invented"
+          % len(got["dropped_invented_clauses"]))
+  if got.get("stopped_at"):
+    print("  stopped: %s" % got["stopped_at"])
+    return
+  if got.get("answer") is None:
+    print("  gk: no answer")
+    return
+  print("  gk: answer found, confidence %s -> %s"
+        % (got.get("confidence"), got.get("answer_string")))
+  if verbose and got.get("proof"):
+    for line in _graph_proof_lines(got["proof"]):
+      print("    %s" % line)
+
+
+def _graph_proof_lines(proof):
+  """A graph proof as plain atoms: `pred(arg, …)  [name]`, negation spelled.
+
+  The open names are the case's own words, not the ordinary vocabulary, so
+  they are never routed through the English renderer.
+  """
+  out = []
+  for block in (proof or []):
+    for step in (block or []):
+      text = _graph_step_line(step)
+      if text:
+        out.append(text)
+  return out[:40]
+
+
+def _graph_step_line(step):
+  import json as _json
+  blob = step if isinstance(step, (list, dict)) else None
+  if blob is None:
+    return str(step)[:120]
+  name = ""
+  if isinstance(blob, list) and blob and isinstance(blob[0], str):
+    name = blob[0]
+  literals = []
+  for atom in _graph_atoms(blob):
+    pred = str(atom[0])
+    sign = "not " if pred.startswith("-") else ""
+    pred = pred[1:] if pred.startswith("-") else pred
+    literals.append("%s%s(%s)" % (sign, pred,
+                                  ", ".join(str(x) for x in atom[1:])))
+  if not literals:
+    return _json.dumps(blob, default=str)[:120]
+  return "%s%s" % (" or ".join(literals), ("  [%s]" % name) if name else "")
+
+
+def _graph_atoms(node, out=None):
+  out = [] if out is None else out
+  if not isinstance(node, list) or not node:
+    return out
+  if all(not isinstance(x, list) for x in node) and isinstance(node[0], str):
+    if node[0] not in ("or", "and", "$block", "$"):
+      out.append(node)
+    return out
+  for sub in node:
+    if isinstance(sub, list):
+      _graph_atoms(sub, out)
+  return out
+
+
+def _run_litbridge(text, s1_json, s2_json, logic, answer, llm, llm_version,
+                   max_tokens, options, loud=False, verbose=False,
+                   collect=None, state=None):
+  """The literal bridge, exactly as it ran before the route loop existed.
+
+  The body is the block that used to sit inline in `_english_to_answer_once`;
+  only its wrapper changed.  It returns the answer it reached, or None when it
+  reached none, and the theory that answer rests on.
+  """
+  debug = globals.options.get("debug_print_flag")
+  show_details = globals.options.get("show_details_flag")
+  show_logic = globals.options.get("show_logic_flag")
+  show_prover = globals.options.get("show_prover_flag")
+  import litbridge_procedure
+  base_answer, base_logic = answer, logic
+  loud = debug or show_details or show_logic
+  view = _litbridge_view(text, s1_json, s2_json, logic)
+  respond = _litbridge_responder(llm, llm_version, max_tokens)
+  extras = bool(globals.options.get("litbridge_extras_flag"))
+  records = []
+  try:
+    ctx, refused = litbridge_procedure.bridge_context(view)
+  except Exception as e:                                      # noqa: BLE001
+    ctx, refused = None, "%s: %s" % (type(e).__name__, str(e)[:160])
+  if ctx is None:
+    records.append({"round": 0, "stopped_at": refused, "asked": False,
+                    "rules": 0, "clauses": 0, "printed_rules": []})
+  for number in (1, 2):
+    if ctx is None:
+      break
+    try:
+      extra, rec = litbridge_procedure.bridge_round(
+          ctx, view, respond, number, extras=extras)
+    except Exception as e:                                    # noqa: BLE001
+      rec = {"round": number, "asked": False, "rules": 0, "clauses": 0,
+             "printed_rules": [],
+             "stopped_at": "%s: %s" % (type(e).__name__, str(e)[:160])}
+      extra = []
+    records.append(rec)
+    # no new rule: nothing is added and gk is not called again
+    if not extra:
+      break
+    logic = list(logic) + extra
+    try:
+      proof_result = prover.call_prover(logic, s1_json=s1_json)
+    except KeyboardInterrupt:
+      raise
+    except Exception as e:
+      return "Error: prover raised an exception: " + str(e)
+    if proof_result is None:
+      return "Error: prover returned None."
+    if show_details or show_prover:
+      print("\n=== prover result with the round-%d bridge clauses (JSON) "
+            "===\n" % number)
+      print(proof_result)
+    answer = process_proof(proof_result, text=text, s1_json=s1_json,
+                           s2_json=s2_json, logic=logic, options=options)
+    rec["gk_called"] = True
+    rec["resolved"] = not _unresolved(answer)
+    if rec["resolved"]:
+      break
+  # nothing was proved: the run ends exactly where it would have without
+  # litbridge, with the answer and the theory the ordinary pipeline produced
+  if _unresolved(answer):
+    answer, logic = base_answer, base_logic
+  if collect is not None:
+    collect["litbridge"] = {"extras": extras, "rounds": records,
+                            "proved": not _unresolved(answer),
+                            "options": view["configuration"]}
+    if not globals.options.get("nofinaltrace"):
+      collect["final_clauses"] = logic
+  if loud:
+    _print_litbridge(records, verbose=debug or show_details,
+                     options=view["configuration"])
+  return {"answer": None if _unresolved(answer) else answer, "logic": logic}
+
+
+def _unresolved(answer):
   """The question is still open, so invented rules are worth a second gk run.
 
   `Unknown.`, nothing at all, or an `Error:` string.  The error case follows
@@ -616,6 +921,218 @@ def _litbridge_encoding(options):
   return "event %s; %s" % (options.get("event_base"),
                            ", ".join(axes) if axes
                            else "no abstraction primitive")
+
+
+def _run_graphbridge(text, s1_json, s2_json, logic, answer, llm, llm_version,
+                     max_tokens, options, loud=False, verbose=False,
+                     collect=None, state=None):
+  """Layer 2: bridges over layer 1's translation (`-graphbridge`).
+
+  Layer 1 must have run: layer 2 searches its theory and never translates the
+  case a second time.  When the route order puts `graphbridge` first, layer 1
+  is run here, once, and its record is kept for the loop.
+  """
+  import graph_compile
+  import graph_procedure
+  import litbridge_converter
+  state = state if state is not None else {}
+  p0 = state.get("graphtrans")
+  if p0 is None:
+    got = _run_graphtrans(text, s1_json, s2_json, logic, answer, llm,
+                          llm_version, max_tokens, options, loud=loud,
+                          verbose=verbose, collect=collect, state=state)
+    p0 = state.get("graphtrans")
+    if got and got.get("answer") is not None:
+      return got
+  if not p0 or p0.get("stage2_graph") is None:
+    return {"answer": None, "logic": None}
+  base_options = graph_compile.graph_options(litbridge_converter.live_options())
+  respond = _graphbridge_responder(llm, llm_version, max_tokens)
+  gk_log = []
+  gk = graph_compile.gk_runner(s1_json, seconds=5, options=base_options,
+                               log=gk_log)
+  ordinary = None
+  if globals.options.get("graphbridge_lift_flag"):
+    ordinary = {"view": _litbridge_view(text, s1_json, s2_json, logic),
+                "options": litbridge_converter.live_options(),
+                "gk": _graphbridge_ordinary_gk(s1_json, s2_json, text)}
+  evidence = str(globals.options.get("graphbridge_evidence") or "any")
+  try:
+    record = graph_procedure.run_bridges(
+        p0["stage2_graph"], s1_json, respond, gk, case_id="solve",
+        options=base_options, input_text=text, sources=_graphbridge_sources(),
+        evidence=evidence, lift=bool(ordinary), ordinary=ordinary)
+  except Exception as e:                                        # noqa: BLE001
+    record = {"stopped_at": "%s: %s" % (type(e).__name__, str(e)[:200])}
+  record["gk_calls"] = gk_log
+  record["evidence_mode"] = evidence
+  if collect is not None:
+    collect["graph"] = record
+  out = {"answer": None, "logic": None}
+  value, verdict = graph_procedure.credible_answer(record, evidence)
+  if value is not None:
+    out["answer"] = _graph_answer_string(value, verdict)
+    out["logic"] = p0.get("clauses")
+    record["answer_label"] = "bridged"
+  if loud:
+    _print_graphbridge(record, verbose=verbose)
+  return out
+
+
+def _graph_answer_string(value, verdict):
+  """The pipeline's answer string for a bridged answer."""
+  return "True." if value else "False."
+
+
+def _graphbridge_sources():
+  """The candidate sources this run enumerates."""
+  import graph_procedure
+  want = str(globals.options.get("graphbridge_sources") or "frontier")
+  rows = tuple(x.strip() for x in want.split(",") if x.strip())
+  return rows or graph_procedure.DEFAULT_SOURCES
+
+
+def _graphbridge_holistic():
+  return "holistic" in str(globals.options.get("graphbridge_sources") or "")
+
+
+def _graphbridge_ordinary_gk(s1_json, s2_json, text):
+  """-> a gk callable over the ORDINARY theory, for a lifted world."""
+  def call(clauses, stored, tag, seconds=None, dynamic=False):
+    import hashlib
+    import utils
+    try:
+      raw = prover.call_prover(clauses, s1_json=s1_json)
+    except Exception as e:                                      # noqa: BLE001
+      return {"answer": None, "raw": "{}", "gk_input": None,
+              "error": "%s: %s" % (type(e).__name__, e),
+              "gk_input_sha256": "", "seconds": 0}
+    got = process_proof(raw, text=text, s1_json=s1_json, s2_json=s2_json,
+                        logic=clauses)
+    if isinstance(got, tuple):
+      got = got[0]
+    try:
+      shown = utils.clause_list_to_json_commented(clauses, s1_json=s1_json)
+    except Exception:                                           # noqa: BLE001
+      shown = None
+    return {"answer": got, "raw": raw if isinstance(raw, str)
+            else json.dumps(raw), "gk_input": shown,
+            "gk_input_sha256": hashlib.sha256(
+                (shown or "").encode()).hexdigest(), "seconds": 0}
+  return call
+
+
+def _graphbridge_lifted_answer(record, text, s1_json, s2_json, logic, options):
+  """The answer a lifted world reached, read back through process_proof."""
+  for row in (record.get("lifting") or {}).get("rows") or []:
+    for world in row.get("worlds") or []:
+      if world.get("answers"):
+        return world.get("conservative_formatter_answer")
+  for row in (record.get("retranslation") or {}).get("rows") or []:
+    got = row.get("gk") or {}
+    if got.get("outcome") == "proof":
+      return got.get("answer")
+  return None
+
+
+def _print_graphbridge(record, verbose=False):
+  """Show what the graph route did, for -logic and above."""
+  print("\n=== graphbridge (a second, open-name translation of the case) "
+        "===\n")
+  if record.get("stopped_at"):
+    print("  stopped at: %s" % record["stopped_at"])
+  translation = record.get("translation") or {}
+  if translation:
+    m = translation.get("measurements") or {}
+    print("  translation: %d package(s), %d atom(s), %d name(s); %s"
+          % (m.get("packages", 0), m.get("atoms", 0),
+             m.get("distinct_names", 0),
+             "no structural issue" if translation.get("valid")
+             else "issues: %s" % ", ".join(translation.get("issue_kinds")
+                                           or [])))
+  theory = record.get("graph_theory") or {}
+  if theory:
+    print("  graph theory: %d clauses" % theory.get("clauses", 0))
+  inv = record.get("inventory") or {}
+  if inv:
+    print("  names: %d concept, %d relation, %d kind constant; "
+          "%d supplied, %d demanded"
+          % (inv.get("concept_names", 0), inv.get("relation_names", 0),
+             inv.get("kind_constants", 0), inv.get("supply_names", 0),
+             inv.get("demand_names", 0)))
+  print("  pairs: %d enumerated, %d refused"
+        % (record.get("pairs_enumerated", 0),
+           len(record.get("pairs_refused") or [])))
+  labels = record.get("labels") or {}
+  if labels:
+    print("  labels: %s" % ", ".join("%s %d" % (k, v)
+                                     for k, v in sorted(labels.items())))
+  per_pool = record.get("bridges_per_pool") or {}
+  if per_pool:
+    print("  bridges: %s" % ", ".join("%s %d" % (k, v)
+                                      for k, v in sorted(per_pool.items())))
+  for row in record.get("pools") or []:
+    if row.get("skipped"):
+      print("    %s: %s" % (row["pool"], row["skipped"]))
+      continue
+    print("    %s: %d bridge(s), %s, %s"
+          % (row["pool"], row.get("bridges_offered", 0), row.get("outcome"),
+             ", ".join(row.get("answers") or []) or "no answer"))
+  for row in record.get("minimal_sets") or []:
+    print("    minimal set (%s): %s -> %s"
+          % (row.get("pool"), ", ".join(row.get("minimal_rules") or [])
+             or "no bridge", row.get("answer")))
+  grades = (record.get("grades") or {}).get("distribution")
+  if grades:
+    print("  grades of the cited bridges: %s"
+          % ", ".join("%s %d" % (k, v) for k, v in sorted(grades.items())))
+  lifting = record.get("lifting") or {}
+  if lifting.get("attempted"):
+    print("  lifting: %s" % (lifting.get("outcome") or "nothing to lift"))
+  elif lifting:
+    print("  lifting: not attempted (%s)" % lifting.get("why"))
+  if record.get("tier"):
+    print("  tier %s: %s" % (record["tier"], record.get("tier_reason")))
+  if not verbose:
+    return
+  for row in record.get("judged") or []:
+    print("      %-24s %-24s %s" % (row["a"], row["b"], row["judge_label"]))
+  for row in record.get("pairs_refused") or []:
+    print("      refused %-20s %-20s %s" % (row["a"], row["b"], row["why"]))
+  for row in record.get("bridges") or []:
+    print("      %s  %s" % (row["rule_id"], row["printed"]))
+  for row in record.get("bridge_omissions") or []:
+    print("      omitted: %s" % row.get("why"))
+
+
+def _graphbridge_responder(llm, llm_version, max_tokens):
+  """-> respond(role, key, message) -> (text, note), one LLM call per call."""
+  import graph_judge
+  import graph_lift
+  import graph_search
+  import litbridge_prompts
+
+  def respond(role, key, prompt, retry=False):
+    if role == "graph_judge":
+      sysprompt = graph_judge.judge_system_prompt(True)
+    elif role == "graph_judge_lexical":
+      sysprompt = graph_judge.lexical_system_prompt()
+    elif role == "graph_holistic":
+      sysprompt = graph_judge.holistic_system_prompt()
+    elif role == "graph_grader":
+      sysprompt = graph_search.grader_system_prompt()
+    elif role == "graph_lift":
+      sysprompt = litbridge_prompts.system_prompt()
+    elif role == "graph_retranslate":
+      import llmparse
+      if not llmparse._stage2_sysprompt:
+        llmparse.load_prompts()
+      sysprompt = llmparse._stage2_sysprompt
+    else:
+      return None, "unknown graph role %r" % role
+    return llmcall.call_llm(sysprompt, prompt, llm=llm, version=llm_version,
+                            max_tokens=max_tokens), None
+  return respond
 
 
 def _litbridge_responder(llm, llm_version, max_tokens):
@@ -863,6 +1380,55 @@ def _parse_cmd_line():
       opts["litbridge_extras_flag"] = True
     elif el in ["-nolitbridge", "--nolitbridge"]:
       opts["nolitbridge_flag"] = True
+    elif el in ["-critic", "--critic"]:
+      opts["critic_flag"] = True
+    elif el in ["-nocritic", "--nocritic"]:
+      opts["nocritic_flag"] = True
+    elif el in ["-graphtrans", "--graphtrans"]:
+      opts["graphtrans_flag"] = True
+    elif el in ["-nographtrans", "--nographtrans"]:
+      opts["nographtrans_flag"] = True
+    elif el in ["-graphbridge", "--graphbridge"]:
+      # layer 2 searches layer 1's theory, so it turns layer 1 on as well
+      opts["graphbridge_flag"] = True
+      opts["graphtrans_flag"] = True
+    elif el in ["-nographbridge", "--nographbridge"]:
+      opts["nographbridge_flag"] = True
+    elif el in ["-graphbridge_lift", "--graphbridge_lift"]:
+      opts["graphbridge_lift_flag"] = True
+    elif el in ["-graphbridge_evidence", "--graphbridge_evidence"]:
+      if elpos + 1 >= len(params) or params[elpos + 1] not in ("any",
+                                                               "stated"):
+        print("-graphbridge_evidence requires any or stated")
+        sys.exit(0)
+      opts["graphbridge_evidence"] = params[elpos + 1]
+      skippos = 1
+    elif el in ["-abstraction_order", "--abstraction_order"]:
+      if elpos + 1 >= len(params):
+        print("-abstraction_order requires a comma list of "
+              "graphtrans, litbridge, graphbridge")
+        sys.exit(0)
+      import globals as _g
+      want = [x.strip() for x in params[elpos + 1].split(",") if x.strip()]
+      unknown = [x for x in want if x not in _g.ABSTRACTION_ROUTES]
+      if unknown:
+        print("-abstraction_order: unknown route %s; the routes are %s"
+              % (", ".join(unknown), ", ".join(_g.ABSTRACTION_ROUTES)))
+        sys.exit(0)
+      opts["abstraction_order"] = ",".join(want)
+      skippos = 1
+    elif el in ["-graphbridge_sources", "--graphbridge_sources"]:
+      if elpos + 1 >= len(params):
+        print("-graphbridge_sources requires a comma list of "
+              "frontier, exhaustive, composition")
+        sys.exit(0)
+      if "holistic" in params[elpos + 1]:
+        print("-graphbridge_sources: holistic was measured and dropped "
+              "(net negative); the sources are frontier, exhaustive, "
+              "composition")
+        sys.exit(0)
+      opts["graphbridge_sources"] = params[elpos + 1]
+      skippos = 1
     elif el in ["-abstract", "--abstract", "-abstract-roles", "--abstract-roles",
                 "-abstract-max", "--abstract-max"]:
       opts["event_base"] = "flatroles" if ("roles" in el or "max" in el) else "flat"
@@ -1020,6 +1586,15 @@ def _parse_cmd_line():
   # -litbridge that -abstract-max turns on.
   if opts.get("nolitbridge_flag"):
     opts["litbridge_flag"] = False
+  # -nographbridge wins wherever it stands on the line, exactly as -nolitbridge
+  # does for the literal bridge.
+  if opts.get("nographbridge_flag"):
+    opts["graphbridge_flag"] = False
+  if opts.get("nocritic_flag"):
+    opts["critic_flag"] = False
+  if opts.get("nographtrans_flag"):
+    opts["graphtrans_flag"] = False
+    opts["graphbridge_flag"] = False
 
   return (text, opts)
 
@@ -1123,6 +1698,18 @@ logic conversion / representation (transform the Stage-2 logic before the prover
                    asks B positively and the passage states A about the same
                    participants). Off by default; NO preset turns it on, not even
                    -abstract-max. Without -litbridge it does nothing.
+ open-relation graph abstraction (off by default; NO preset turns it on):
+  -graphbridge   : when the ordinary pipeline (and the literal bridge, if on) leaves
+                   the question unresolved, translate the case a second time into
+                   three-item open triples, invent implications between the open
+                   names and search that theory separately. A proof is lifted back
+                   into the ordinary representation; a graph-only proof is printed
+                   as a labelled experimental result and never becomes the answer.
+  -nographbridge : force it off, wherever it stands on the command line.
+  -graphbridge_nolift : do not lift a graph proof back into the ordinary theory.
+                   Every graph proof then stays a labelled experimental result.
+  -graphbridge_sources LIST : which candidate sources to enumerate, a comma list of
+                   frontier (default), exhaustive, composition, holistic.
  -prenorm       : pre-Stage-1 LLM wording normalisation (composable; FOLIO base)
  -nocrossstage  : disable the cross-stage guard-retry
  -nominalretry  : (experimental) Stage-2 retry when a Stage-1 "ENT is a NOUN"

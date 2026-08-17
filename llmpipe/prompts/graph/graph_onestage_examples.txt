@@ -1,0 +1,308 @@
+
+------------
+
+INPUT:
+
+John is a person.
+
+OUTPUT:
+
+["and",["@id","S1",["holds","W0",["isa","person","John 1"]]]]
+
+--------
+
+INPUT:
+
+Tallinn is a city.
+
+OUTPUT:
+
+["and",["@id","S1",["holds","W0",["isa","city","Tallinn 1"]]]]
+
+(A proper name is a concrete entity: the head name plus a number.)
+
+--------
+
+INPUT:
+
+Elephants are animals. John is an elephant. Is John an animal?
+
+OUTPUT:
+
+["and",
+ ["@id","S1",["holds","W0",["forall","X",["implies",["isa","elephant","X"],["isa","animal","X"]]]]],
+ ["@id","S2",["holds","W0",["isa","elephant","John 1"]]],
+ ["@id","S3",["question",["isa","animal","John 1"]]]]
+
+--------
+
+INPUT:
+
+Birds can fly. Penguins are birds that cannot fly. Tweety is a penguin. Can Tweety fly?
+
+OUTPUT:
+
+["and",
+ ["@id","S1",["and",
+   ["holds","W0",["forall","X",["implies",["isa","bird","X"],["normally",["isa","can_fly","X"]]]]],
+   ["@p","S1",0.95]]],
+ ["@id","S2",["holds","W0",["forall","X",["implies",["isa","penguin","X"],["isa","bird","X"]]]]],
+ ["@id","S3",["holds","W0",["forall","X",["implies",["isa","penguin","X"],["not",["isa","can_fly","X"]]]]]],
+ ["@id","S4",["holds","W0",["isa","penguin","Tweety 1"]]],
+ ["@id","S5",["question",["isa","can_fly","Tweety 1"]]]]
+
+(Capability mode gives the "can_" prefix; the negation stays outside the name;
+the same concept name "can_fly" is used in the rule, the exception and the
+question.)
+
+--------
+
+INPUT:
+
+John is a big mouse. Mice are animals. Is John a big animal?
+
+OUTPUT:
+
+["and",
+ ["@id","S1",["holds","W0",["and",["isa","mouse","John 1"],["isa","big_for_a_mouse","John 1"]]]],
+ ["@id","S2",["holds","W0",["forall","X",["implies",["isa","mouse","X"],["isa","animal","X"]]]]],
+ ["@id","S3",["question",["and",["isa","animal","John 1"],["isa","big_for_an_animal","John 1"]]]]]
+
+(The gradable adjective carries the class of the noun it modifies, so
+"big for a mouse" and "big for an animal" are different concepts.)
+
+--------
+
+INPUT:
+
+Mary loves Fido. Anyone who loves a dog is a dog lover. Fido is a dog. Is Mary a dog lover?
+
+OUTPUT:
+
+["and",
+ ["@id","S1",["holds","W0",["and",["isa","person","Mary 1"],["isa","animal","Fido 2"],["loves","Mary 1","Fido 2"]]]],
+ ["@id","S2",["holds","W0",["forall","X",["implies",
+     ["and",["isa","person","X"],["exists","Y",["and",["isa","dog","Y"],["loves","X","Y"]]]],
+     ["isa","dog_lover","X"]]]]],
+ ["@id","S3",["holds","W0",["isa","dog","Fido 2"]]],
+ ["@id","S4",["question",["isa","dog_lover","Mary 1"]]]]
+
+(The object of "loves" is a concrete entity in S1 and a bound variable in S2,
+so "loves" is a binary relation everywhere in the case. The dependent generic
+"a dog" is a variable in the antecedent because it takes part in the logic.)
+
+--------
+
+INPUT:
+
+Metals usually have higher conductivity than nonmetals. Metal is an electrical conductor. Is it true that conductivity can be used to identify metals?
+
+OUTPUT:
+
+["and",
+ ["@id","S1",["and",
+   ["holds","W0",["forall","X",["implies",["isa","metal","X"],["normally",["isa","has_higher_conductivity_than_nonmetals","X"]]]]],
+   ["@p","S1",0.98]]],
+ ["@id","S2",["holds","W0",["forall","X",["implies",["isa","metal","X"],["isa","electrical_conductor","X"]]]]],
+ ["@id","S3",["question",["forall","X",["implies",["isa","metal","X"],["normally",["isa","can_be_identified_by_conductivity","X"]]]]]]]
+
+(The generic complements "nonmetals" and "conductivity" are folded into the
+names; "conductivity" is not made an entity of its own. The bare-plural
+question about metals uses forall + normally, section 7.2(a).)
+
+--------
+
+INPUT:
+
+Butte is in Montana. St Pierre is not in Montana. A city can only be in one state. Butte and St Pierre are in the same state?
+
+OUTPUT:
+
+["and",
+ ["@id","S1",["holds","W0",["and",["isa","city","Butte 1"],["isa","state","Montana 2"],["in","Butte 1","Montana 2"]]]],
+ ["@id","S2",["holds","W0",["and",["isa","city","St Pierre 3"],["not",["in","St Pierre 3","Montana 2"]]]]],
+ ["@id","S3",["holds","W0",["forall","X",["forall","Y",["forall","Z",["implies",
+     ["and",["isa","city","X"],["isa","state","Y"],["isa","state","Z"],["in","X","Y"],["in","X","Z"]],
+     ["=","Y","Z"]]]]]]],
+ ["@id","S4",["question",["exists","Y",["and",["isa","state","Y"],["in","Butte 1","Y"],["in","St Pierre 3","Y"]]]]]]
+
+(The relation "in" keeps subject-first order in every unit; "only one" is a
+uniqueness rule with an identity conclusion; the negative fact uses ["not",...].)
+
+--------
+
+INPUT:
+
+Alice gave the book to Bob. Who received the book?
+
+OUTPUT:
+
+["and",
+ ["@id","S1",["holds","W0",["and",
+   ["isa","person","Alice 1"],["isa","book","book 2"],["isa","person","Bob 3"],
+   ["exists","E",["and",
+     ["isa","give_event","E"],
+     ["agent","E","Alice 1"],
+     ["theme","E","book 2"],
+     ["recipient","E","Bob 3"]]]]]],
+ ["@id","S2",["ask","X",["received","X","book 2"]]]]
+
+(Three concrete participants: the event is reified with the fixed roles. The
+question has two participants and is a plain relation; the later step may
+connect "received" with the give event's recipient.)
+
+--------
+
+INPUT:
+
+Someone wanted to improve their health. If they exercise regularly, they will increase their fitness level. If they improve their diet, they will lose weight. They either start exercising or improve their diet. Morgan did not increase their fitness level. Did Morgan lose weight?
+
+OUTPUT:
+
+["and",
+ ["@id","S1",["holds","W0",["and",["isa","person","Someone 1"],["isa","wants_to_improve_health","Someone 1"]]]],
+ ["@id","S2",["holds","W0",["forall","X",["implies",["and",["isa","person","X"],["isa","exercises_regularly","X"]],["isa","increases_fitness_level","X"]]]]],
+ ["@id","S3",["holds","W0",["forall","X",["implies",["and",["isa","person","X"],["isa","improves_diet","X"]],["isa","loses_weight","X"]]]]],
+ ["@id","S4",["holds","W0",["forall","X",["implies",["isa","person","X"],["or",["isa","exercises_regularly","X"],["isa","improves_diet","X"]]]]]],
+ ["@id","S5",["holds","W0",["and",["isa","person","Morgan 2"],["not",["isa","increases_fitness_level","Morgan 2"]]]]],
+ ["@id","S6",["question",["isa","loses_weight","Morgan 2"]]]]
+
+(The conditionals about the discourse subject are rules over persons, so
+Morgan 2 falls under them. "start exercising" and "exercise regularly" are the
+same construction in this case and take the same name; the "either ... or" is
+plain "or"; every generic object is folded.)
+
+--------
+
+INPUT:
+
+Height is an inherited characteristic. An inherited characteristic is passed from parent to offspring by genetics. Is it true that offspring can inherit height from their parents?
+
+OUTPUT:
+
+["and",
+ ["@id","S1",["holds","W0",["isa","inherited_characteristic","height"]]],
+ ["@id","S2",["holds","W0",["forall","X",["implies",["isa","inherited_characteristic","X"],
+     ["isa","passed_from_parent_to_offspring_by_genetics","X"]]]]],
+ ["@id","S3",["question",["forall","X",["implies",["isa","offspring","X"],["normally",["can_inherit_from_parents","X","height"]]]]]]]
+
+("height" is an abstract kind the text talks about as a thing, so it is a kind constant. In S2 the parent, offspring and
+genetics are generic participants that no unit treats as things in their own
+right, so they fold into one concept on the characteristic. In S3 the
+subject is the offspring and "height" is a kind constant the case talks
+about, so it stays an argument of a relation with the modality in the name.)
+
+--------
+
+INPUT:
+
+The Nile is 6650 km long. The Amazon is 6400 km long. Is the Nile longer than the Amazon?
+
+OUTPUT:
+
+["and",
+ ["@id","S1",["holds","W0",["and",["isa","river","Nile 1"],["has_length_km","Nile 1","6650"]]]],
+ ["@id","S2",["holds","W0",["and",["isa","river","Amazon 2"],["has_length_km","Amazon 2","6400"]]]],
+ ["@id","S3",["question",["longer_than","Nile 1","Amazon 2"]]]]
+
+(Measures are value strings in an open relation; the comparison is an open
+relation between the two entities. No arithmetic is encoded here.)
+
+--------
+
+INPUT:
+
+Only John bought a car. Did Mary buy a car?
+
+OUTPUT:
+
+["and",
+ ["@id","S1",["holds","W0",["and",["isa","person","John 1"],["isa","bought_a_car","John 1"]]]],
+ ["@id","S1",["holds","W0",["forall","X",["implies",["isa","bought_a_car","X"],["=","X","John 1"]]]]],
+ ["@id","S2",["question",["isa","bought_a_car","Mary 2"]]]]
+
+(Two packages with the same sid: the positive fact and the exclusivity rule
+whose conclusion is an identity.)
+
+--------
+
+INPUT:
+
+Some affection is love. Some love is positive. Some affection is positive?
+
+OUTPUT:
+
+["and",
+ ["@id","S1",["holds","W0",["exists","X",["and",["isa","affection","X"],["isa","love","X"]]]]],
+ ["@id","S2",["holds","W0",["exists","X",["and",["isa","love","X"],["isa","positive","X"]]]]],
+ ["@id","S3",["question",["exists","X",["and",["isa","affection","X"],["isa","positive","X"]]]]]]
+
+("Some" is an existential, never a universal; the quantifier strength of the
+text is preserved exactly.)
+
+--------
+
+INPUT:
+
+Rocks interacting with moving water over long periods of time cause weathering. Sometimes weathering smooths rocks. A pebble is a kind of small rock. Waves are made of moving water. Is it true that waves interacting with pebbles can smooth pebbles?
+
+OUTPUT:
+
+["and",
+ ["@id","S1",["holds","W0",["forall","X",["implies",
+     ["and",["isa","rock","X"],["interacts_with","X","moving_water"]],
+     ["causes","X","weathering"]]]]],
+ ["@id","S2",["and",
+   ["holds","W0",["forall","X",["implies",["isa","rock","X"],["normally",["smooths","weathering","X"]]]]],
+   ["@p","S2",0.5]]],
+ ["@id","S3",["holds","W0",["forall","X",["implies",["isa","pebble","X"],["and",["isa","rock","X"],["isa","small_for_a_rock","X"]]]]]],
+ ["@id","S4",["holds","W0",["forall","X",["implies",["isa","wave","X"],["made_of","X","moving_water"]]]]],
+ ["@id","S5",["question",["forall","X",["implies",["and",["isa","wave","X"],["isa","interacts_with_pebbles","X"]],
+     ["normally",["isa","can_smooth_pebbles","X"]]]]]]]
+
+("moving water" and "weathering" are kinds shared
+by several units, so they stay arguments. The pebbles of the question are a
+generic object that no other unit treats as a thing in its own right, so they
+fold into the names "interacts_with_pebbles" and "can_smooth_pebbles". The
+same verb "interact" is a relation in S1 because its object there is a shared
+kind constant; when both objects are shared kind constants, keep the relation
+in both places.)
+
+--------
+
+INPUT:
+
+John bought a car. He painted it red. Is the car red?
+
+OUTPUT:
+
+["and",
+ ["@id","S1",["holds","W0",["and",["isa","person","John 1"],["isa","car","car 2"],["bought","John 1","car 2"]]]],
+ ["@id","S2",["holds","W0",["painted_red","John 1","car 2"]]],
+ ["@id","S3",["question",["isa","red","car 2"]]]]
+
+("He" is John 1 and "it" / "the car" is car 2: one id per referent, numbered
+in order of first mention. "painted red" keeps the result in the name because
+"red" is a value, not an entity; the question about the car's colour is a
+concept atom. Whether painting red makes the car red is left to a later step.)
+
+--------
+
+INPUT:
+
+Reflection is a kind of property. Reflection is when a wave bounces off a surface. Reflection is a property of light. Is it true that light can be seen as a wave?
+
+OUTPUT:
+
+["and",
+ ["@id","S1",["holds","W0",["isa","property","reflection"]]],
+ ["@id","S2",["holds","W0",["is_when","reflection","wave_bounces_off_surface"]]],
+ ["@id","S3",["holds","W0",["property_of","reflection","light"]]],
+ ["@id","S4",["question",["isa","can_be_seen_as_a_wave","light"]]]]
+
+("reflection" and "light" are kinds the text talks about as things, so they
+are kind constants. A definition "X is when ..." is one unit: a relation
+between the kind and the folded event description. The question keeps its
+whole content in one concept name on the kind constant.)
+
+--------

@@ -1,0 +1,682 @@
+
+------------
+
+INPUT:
+
+[
+  {
+    "raw": "John is a person.",
+    "units": [
+      {
+        "unit_id": "S1",
+        "text": "John 1 is a person.",
+        "type": "situation",
+        "entities": [
+          {"id": "John 1", "type": "concrete", "category": "person"}
+        ]
+      }
+    ]
+  }
+]
+
+OUTPUT:
+
+["and",["@id","S1",["holds","W0",["isa","person","John 1"]]]]
+
+--------
+
+INPUT:
+
+[
+  {
+    "raw": "Tallinn is a city.",
+    "units": [
+      {
+        "unit_id": "S1",
+        "text": "Tallinn 1 is a city.",
+        "type": "real",
+        "entities": [
+          {"id":"Tallinn 1","type":"concrete","category":"place","url":"https://en.wikipedia.org/wiki/Tallinn"},
+          {"id":"city","type":"generic"}
+        ]
+      }
+    ]
+  }
+]
+
+OUTPUT:
+
+["and",["@id","S1",["holds","W0",["isa","city","Tallinn 1"]]]]
+
+(The url is ignored; the constant is the Stage-1 id.)
+
+--------
+
+INPUT:
+
+[
+  {
+    "raw": "Elephants are animals. John is an elephant. Is John an animal?",
+    "units": [
+      {
+        "unit_id": "S1",
+        "text": "Elephants are animals.",
+        "type": "strict_rule",
+        "entities": [
+          {"id":"elephants","type":"generic","category":"animal"},
+          {"id":"animals","type":"generic","category":"animal"}
+        ]
+      },
+      {
+        "unit_id": "S2",
+        "text": "John 1 is an elephant.",
+        "type": "situation",
+        "entities": [{"id":"John 1","type":"concrete","category":"animal"}]
+      },
+      {
+        "unit_id": "S3",
+        "text": "Is John 1 an animal?",
+        "type": "query",
+        "entities": [{"id":"John 1","type":"concrete","category":"animal"}]
+      }
+    ]
+  }
+]
+
+OUTPUT:
+
+["and",
+ ["@id","S1",["holds","W0",["forall","X",["implies",["isa","elephant","X"],["isa","animal","X"]]]]],
+ ["@id","S2",["holds","W0",["isa","elephant","John 1"]]],
+ ["@id","S3",["question",["isa","animal","John 1"]]]]
+
+--------
+
+INPUT:
+
+[
+  {
+    "raw": "Birds can fly. Penguins are birds that cannot fly. Tweety is a penguin. Can Tweety fly?",
+    "units": [
+      {
+        "unit_id": "S1",
+        "text": "Birds can fly.",
+        "type": "normal_rule",
+        "entities": [{"id":"birds","type":"generic","category":"animal"}],
+        "actions": [{"root":"fly","mode":"capability"}],
+        "confidence": 0.95
+      },
+      {
+        "unit_id": "S2",
+        "text": "Penguins are birds.",
+        "type": "strict_rule",
+        "entities": [{"id":"penguins","type":"generic","category":"animal"},{"id":"birds","type":"generic","category":"animal"}]
+      },
+      {
+        "unit_id": "S3",
+        "text": "Penguins cannot fly.",
+        "type": "strict_rule",
+        "entities": [{"id":"penguins","type":"generic","category":"animal"}],
+        "actions": [{"root":"fly","mode":"capability"}]
+      },
+      {
+        "unit_id": "S4",
+        "text": "Tweety 1 is a penguin.",
+        "type": "situation",
+        "entities": [{"id":"Tweety 1","type":"concrete","category":"animal"}]
+      },
+      {
+        "unit_id": "S5",
+        "text": "Can Tweety 1 fly?",
+        "type": "query",
+        "entities": [{"id":"Tweety 1","type":"concrete","category":"animal"}],
+        "actions": [{"root":"fly","mode":"capability"}]
+      }
+    ]
+  }
+]
+
+OUTPUT:
+
+["and",
+ ["@id","S1",["and",
+   ["holds","W0",["forall","X",["implies",["isa","bird","X"],["normally",["isa","can_fly","X"]]]]],
+   ["@p","S1",0.95]]],
+ ["@id","S2",["holds","W0",["forall","X",["implies",["isa","penguin","X"],["isa","bird","X"]]]]],
+ ["@id","S3",["holds","W0",["forall","X",["implies",["isa","penguin","X"],["not",["isa","can_fly","X"]]]]]],
+ ["@id","S4",["holds","W0",["isa","penguin","Tweety 1"]]],
+ ["@id","S5",["question",["isa","can_fly","Tweety 1"]]]]
+
+(Capability mode gives the "can_" prefix; the negation stays outside the name;
+the same concept name "can_fly" is used in the rule, the exception and the
+question.)
+
+--------
+
+INPUT:
+
+[
+  {
+    "raw": "John is a big mouse. Mice are animals. Is John a big animal?",
+    "units": [
+      {
+        "unit_id": "S1",
+        "text": "John 1 is a big mouse.",
+        "type": "situation",
+        "entities": [{"id":"John 1","type":"concrete","category":"animal"}],
+        "adjectives": [["big","none","mouse"]]
+      },
+      {
+        "unit_id": "S2",
+        "text": "Mice are animals.",
+        "type": "strict_rule",
+        "entities": [{"id":"mice","type":"generic","category":"animal"},{"id":"animals","type":"generic","category":"animal"}]
+      },
+      {
+        "unit_id": "S3",
+        "text": "Is John 1 a big animal?",
+        "type": "query",
+        "entities": [{"id":"John 1","type":"concrete","category":"animal"}],
+        "adjectives": [["big","none","animal"]]
+      }
+    ]
+  }
+]
+
+OUTPUT:
+
+["and",
+ ["@id","S1",["holds","W0",["and",["isa","mouse","John 1"],["isa","big_for_a_mouse","John 1"]]]],
+ ["@id","S2",["holds","W0",["forall","X",["implies",["isa","mouse","X"],["isa","animal","X"]]]]],
+ ["@id","S3",["question",["and",["isa","animal","John 1"],["isa","big_for_an_animal","John 1"]]]]]
+
+(The gradable adjective carries its comparison class from ASU.adjectives, so
+"big for a mouse" and "big for an animal" are different concepts.)
+
+--------
+
+INPUT:
+
+[
+  {
+    "raw": "Mary loves Fido. Anyone who loves a dog is a dog lover. Fido is a dog. Is Mary a dog lover?",
+    "units": [
+      {
+        "unit_id": "S1",
+        "text": "Mary 1 loves Fido 2.",
+        "type": "real",
+        "entities": [{"id":"Mary 1","type":"concrete","category":"person"},{"id":"Fido 2","type":"concrete","category":"animal"}]
+      },
+      {
+        "unit_id": "S2",
+        "text": "Anyone who loves a dog is a dog lover.",
+        "type": "strict_rule",
+        "entities": [{"id":"anyone","type":"generic","category":"person"},{"id":"dog","type":"generic","scope":"dependent","category":"animal"}]
+      },
+      {
+        "unit_id": "S3",
+        "text": "Fido 2 is a dog.",
+        "type": "real",
+        "entities": [{"id":"Fido 2","type":"concrete","category":"animal"}]
+      },
+      {
+        "unit_id": "S4",
+        "text": "Is Mary 1 a dog lover?",
+        "type": "query",
+        "entities": [{"id":"Mary 1","type":"concrete","category":"person"}]
+      }
+    ]
+  }
+]
+
+OUTPUT:
+
+["and",
+ ["@id","S1",["holds","W0",["and",["isa","person","Mary 1"],["isa","animal","Fido 2"],["loves","Mary 1","Fido 2"]]]],
+ ["@id","S2",["holds","W0",["forall","X",["implies",
+     ["and",["isa","person","X"],["exists","Y",["and",["isa","dog","Y"],["loves","X","Y"]]]],
+     ["isa","dog_lover","X"]]]]],
+ ["@id","S3",["holds","W0",["isa","dog","Fido 2"]]],
+ ["@id","S4",["question",["isa","dog_lover","Mary 1"]]]]
+
+(The object of "loves" is a concrete entity in S1 and a bound variable in S2,
+so "loves" is a binary relation everywhere in the case. The dependent generic
+"a dog" is a variable in the antecedent because it takes part in the logic.)
+
+--------
+
+INPUT:
+
+[
+  {
+    "raw": "Metals usually have higher conductivity than nonmetals. Metal is an electrical conductor. Is it true that conductivity can be used to identify metals?",
+    "units": [
+      {
+        "unit_id": "S1",
+        "text": "Metals usually have higher conductivity than nonmetals.",
+        "type": "normal_rule",
+        "entities": [{"id":"metals","type":"generic","category":"substance"},{"id":"conductivity","type":"generic","scope":"dependent","category":"abstract"},{"id":"nonmetals","type":"generic","category":"substance"}],
+        "adjectives": [["conductive","high","substance"]],
+        "confidence": 0.98
+      },
+      {
+        "unit_id": "S2",
+        "text": "Metal is an electrical conductor.",
+        "type": "strict_rule",
+        "entities": [{"id":"metal","type":"generic","category":"substance"}]
+      },
+      {
+        "unit_id": "S3",
+        "text": "Is it true that conductivity can be used to identify metals?",
+        "type": "query",
+        "entities": [{"id":"conductivity","type":"generic","category":"abstract"},{"id":"metals","type":"generic","category":"substance"}],
+        "actions": [{"root":"use","mode":"capability","roles":{"instrument":"conductivity","target":"metals"}}]
+      }
+    ]
+  }
+]
+
+OUTPUT:
+
+["and",
+ ["@id","S1",["and",
+   ["holds","W0",["forall","X",["implies",["isa","metal","X"],["normally",["isa","has_higher_conductivity_than_nonmetals","X"]]]]],
+   ["@p","S1",0.98]]],
+ ["@id","S2",["holds","W0",["forall","X",["implies",["isa","metal","X"],["isa","electrical_conductor","X"]]]]],
+ ["@id","S3",["question",["forall","X",["implies",["isa","metal","X"],["normally",["isa","can_be_identified_by_conductivity","X"]]]]]]]
+
+(The generic complements "nonmetals" and "conductivity" are folded into the
+names; "conductivity" is not made an entity of its own. The bare-plural
+question about metals uses forall + normally, section 7.2(a).)
+
+--------
+
+INPUT:
+
+[
+  {
+    "raw": "Butte is in Montana. St Pierre is not in Montana. A city can only be in one state. Butte and St Pierre are in the same state?",
+    "units": [
+      {
+        "unit_id": "S1",
+        "text": "Butte 1 is in Montana 2.",
+        "type": "real",
+        "entities": [{"id":"Butte 1","type":"concrete","category":"place"},{"id":"Montana 2","type":"concrete","category":"place"}]
+      },
+      {
+        "unit_id": "S2",
+        "text": "St Pierre 3 is not in Montana 2.",
+        "type": "real",
+        "entities": [{"id":"St Pierre 3","type":"concrete","category":"place"},{"id":"Montana 2","type":"concrete","category":"place"}]
+      },
+      {
+        "unit_id": "S3",
+        "text": "A city can only be in one state.",
+        "type": "strict_rule",
+        "entities": [{"id":"city","type":"generic","category":"place"},{"id":"state","type":"generic","category":"place"}]
+      },
+      {
+        "unit_id": "S4",
+        "text": "Butte 1 and St Pierre 3 are in the same state?",
+        "type": "query",
+        "entities": [{"id":"Butte 1","type":"concrete","category":"place"},{"id":"St Pierre 3","type":"concrete","category":"place"},{"id":"state","type":"generic","category":"place"}]
+      }
+    ]
+  }
+]
+
+OUTPUT:
+
+["and",
+ ["@id","S1",["holds","W0",["and",["isa","city","Butte 1"],["isa","state","Montana 2"],["in","Butte 1","Montana 2"]]]],
+ ["@id","S2",["holds","W0",["and",["isa","city","St Pierre 3"],["not",["in","St Pierre 3","Montana 2"]]]]],
+ ["@id","S3",["holds","W0",["forall","X",["forall","Y",["forall","Z",["implies",
+     ["and",["isa","city","X"],["isa","state","Y"],["isa","state","Z"],["in","X","Y"],["in","X","Z"]],
+     ["=","Y","Z"]]]]]]],
+ ["@id","S4",["question",["exists","Y",["and",["isa","state","Y"],["in","Butte 1","Y"],["in","St Pierre 3","Y"]]]]]]
+
+(The relation "in" keeps subject-first order in every unit; "only one" is a
+uniqueness rule with an identity conclusion; the negative fact uses ["not",...].)
+
+--------
+
+INPUT:
+
+[
+  {
+    "raw": "Alice gave the book to Bob. Who received the book?",
+    "units": [
+      {
+        "unit_id": "S1",
+        "text": "Alice 1 gave the book 2 to Bob 3.",
+        "type": "situation",
+        "entities": [{"id":"Alice 1","type":"concrete","category":"person"},{"id":"book 2","type":"concrete","category":"artifact"},{"id":"Bob 3","type":"concrete","category":"person"}],
+        "actions": [{"root":"give","mode":"event","roles":{"target":"book 2","recipient":"Bob 3"}}]
+      },
+      {
+        "unit_id": "S2",
+        "text": "Which entity received the book 2?",
+        "type": "query",
+        "entities": [{"id":"entity","type":"generic","wh_placeholder":true},{"id":"book 2","type":"concrete","category":"artifact"}],
+        "actions": [{"root":"receive","mode":"event","roles":{"target":"book 2"}}]
+      }
+    ]
+  }
+]
+
+OUTPUT:
+
+["and",
+ ["@id","S1",["holds","W0",["and",
+   ["isa","person","Alice 1"],["isa","book","book 2"],["isa","person","Bob 3"],
+   ["exists","E",["and",
+     ["isa","give_event","E"],
+     ["agent","E","Alice 1"],
+     ["theme","E","book 2"],
+     ["recipient","E","Bob 3"]]]]]],
+ ["@id","S2",["ask","X",["received","X","book 2"]]]]
+
+(Three concrete participants: the event is reified with the fixed roles. The
+question has two participants and is a plain relation; the later step may
+connect "received" with the give event's recipient.)
+
+--------
+
+INPUT:
+
+[
+  {
+    "raw": "Someone wanted to improve their health. If they exercise regularly, they will increase their fitness level. If they improve their diet, they will lose weight. They either start exercising or improve their diet. Morgan did not increase their fitness level. Did Morgan lose weight?",
+    "units": [
+      {
+        "unit_id": "S1",
+        "text": "Someone 1 wanted to improve their health.",
+        "type": "real",
+        "entities": [{"id":"Someone 1","type":"concrete","category":"person"}],
+        "actions": [{"root":"want","mode":"volition","roles":{"content":{"root":"improve","mode":"event","roles":{"target":"health"}}}}]
+      },
+      {
+        "unit_id": "S2",
+        "text": "If a person exercises regularly, the person will increase their fitness level.",
+        "type": "strict_rule",
+        "entities": [{"id":"person","type":"generic","category":"person"}],
+        "actions": [{"root":"exercise","mode":"habitual"},{"root":"increase","mode":"event","roles":{"target":"fitness level"}}]
+      },
+      {
+        "unit_id": "S3",
+        "text": "If a person improves their diet, the person will lose weight.",
+        "type": "strict_rule",
+        "entities": [{"id":"person","type":"generic","category":"person"}],
+        "actions": [{"root":"improve","mode":"event","roles":{"target":"diet"}},{"root":"lose","mode":"event","roles":{"target":"weight"}}]
+      },
+      {
+        "unit_id": "S4",
+        "text": "A person either starts exercising or improves their diet.",
+        "type": "strict_rule",
+        "entities": [{"id":"person","type":"generic","category":"person"}]
+      },
+      {
+        "unit_id": "S5",
+        "text": "Morgan 2 did not increase their fitness level.",
+        "type": "situation",
+        "entities": [{"id":"Morgan 2","type":"concrete","category":"person"}],
+        "actions": [{"root":"increase","mode":"event","roles":{"target":"fitness level"}}]
+      },
+      {
+        "unit_id": "S6",
+        "text": "Did Morgan 2 lose weight?",
+        "type": "query",
+        "entities": [{"id":"Morgan 2","type":"concrete","category":"person"}],
+        "actions": [{"root":"lose","mode":"event","roles":{"target":"weight"}}]
+      }
+    ]
+  }
+]
+
+OUTPUT:
+
+["and",
+ ["@id","S1",["holds","W0",["and",["isa","person","Someone 1"],["isa","wants_to_improve_health","Someone 1"]]]],
+ ["@id","S2",["holds","W0",["forall","X",["implies",["and",["isa","person","X"],["isa","exercises_regularly","X"]],["isa","increases_fitness_level","X"]]]]],
+ ["@id","S3",["holds","W0",["forall","X",["implies",["and",["isa","person","X"],["isa","improves_diet","X"]],["isa","loses_weight","X"]]]]],
+ ["@id","S4",["holds","W0",["forall","X",["implies",["isa","person","X"],["or",["isa","exercises_regularly","X"],["isa","improves_diet","X"]]]]]],
+ ["@id","S5",["holds","W0",["and",["isa","person","Morgan 2"],["not",["isa","increases_fitness_level","Morgan 2"]]]]],
+ ["@id","S6",["question",["isa","loses_weight","Morgan 2"]]]]
+
+(The conditionals about the discourse subject are rules over persons, so
+Morgan 2 falls under them. "start exercising" and "exercise regularly" are the
+same construction in this case and take the same name; the "either ... or" is
+plain "or"; every generic object is folded.)
+
+--------
+
+INPUT:
+
+[
+  {
+    "raw": "Height is an inherited characteristic. An inherited characteristic is passed from parent to offspring by genetics. Is it true that offspring can inherit height from their parents?",
+    "units": [
+      {
+        "unit_id": "S1",
+        "text": "Height is an inherited characteristic.",
+        "type": "real",
+        "entities": [{"id":"height","type":"generic","scope":"kind","category":"abstract"}]
+      },
+      {
+        "unit_id": "S2",
+        "text": "An inherited characteristic is passed from a parent to an offspring by genetics.",
+        "type": "strict_rule",
+        "entities": [{"id":"inherited characteristic","type":"generic","category":"abstract"},{"id":"parent","type":"generic","scope":"dependent"},{"id":"offspring","type":"generic","scope":"dependent"}],
+        "actions": [{"root":"pass","mode":"habitual","roles":{"source":"parent","destination":"offspring","instrument":"genetics"}}]
+      },
+      {
+        "unit_id": "S3",
+        "text": "Is it true that offspring can inherit height from their parents?",
+        "type": "query",
+        "entities": [{"id":"offspring","type":"generic"},{"id":"height","type":"generic","scope":"kind","category":"abstract"},{"id":"parents","type":"generic","scope":"dependent"}],
+        "actions": [{"root":"inherit","mode":"capability","roles":{"target":"height","source":"parents"}}]
+      }
+    ]
+  }
+]
+
+OUTPUT:
+
+["and",
+ ["@id","S1",["holds","W0",["isa","inherited_characteristic","height"]]],
+ ["@id","S2",["holds","W0",["forall","X",["implies",["isa","inherited_characteristic","X"],
+     ["isa","passed_from_parent_to_offspring_by_genetics","X"]]]]],
+ ["@id","S3",["question",["forall","X",["implies",["isa","offspring","X"],["normally",["can_inherit_from_parents","X","height"]]]]]]]
+
+("height" has scope kind and is a constant. In S2 the parent, offspring and
+genetics are generic participants that no unit treats as things in their own
+right, so they fold into one concept on the characteristic. In S3 the
+subject is the offspring and "height" is a kind constant the case talks
+about, so it stays an argument of a relation with the modality in the name.)
+
+--------
+
+INPUT:
+
+[
+  {
+    "raw": "The Nile is 6650 km long. The Amazon is 6400 km long. Is the Nile longer than the Amazon?",
+    "units": [
+      {
+        "unit_id": "S1",
+        "text": "The Nile 1 is 6650 km long.",
+        "type": "real",
+        "entities": [{"id":"Nile 1","type":"concrete","category":"place"}]
+      },
+      {
+        "unit_id": "S2",
+        "text": "The Amazon 2 is 6400 km long.",
+        "type": "real",
+        "entities": [{"id":"Amazon 2","type":"concrete","category":"place"}]
+      },
+      {
+        "unit_id": "S3",
+        "text": "Is the Nile 1 longer than the Amazon 2?",
+        "type": "query",
+        "entities": [{"id":"Nile 1","type":"concrete","category":"place"},{"id":"Amazon 2","type":"concrete","category":"place"}]
+      }
+    ]
+  }
+]
+
+OUTPUT:
+
+["and",
+ ["@id","S1",["holds","W0",["and",["isa","river","Nile 1"],["has_length_km","Nile 1","6650"]]]],
+ ["@id","S2",["holds","W0",["and",["isa","river","Amazon 2"],["has_length_km","Amazon 2","6400"]]]],
+ ["@id","S3",["question",["longer_than","Nile 1","Amazon 2"]]]]
+
+(Measures are value strings in an open relation; the comparison is an open
+relation between the two entities. No arithmetic is encoded here.)
+
+--------
+
+INPUT:
+
+[
+  {
+    "raw": "Only John bought a car. Did Mary buy a car?",
+    "units": [
+      {
+        "unit_id": "S1",
+        "text": "Only John 1 bought a car.",
+        "type": "situation",
+        "entities": [{"id":"John 1","type":"concrete","category":"person"},{"id":"car","type":"generic","category":"artifact"}],
+        "actions": [{"root":"buy","mode":"event","roles":{"target":"car"}}]
+      },
+      {
+        "unit_id": "S2",
+        "text": "Did Mary 2 buy a car?",
+        "type": "query",
+        "entities": [{"id":"Mary 2","type":"concrete","category":"person"},{"id":"car","type":"generic","category":"artifact"}],
+        "actions": [{"root":"buy","mode":"event","roles":{"target":"car"}}]
+      }
+    ]
+  }
+]
+
+OUTPUT:
+
+["and",
+ ["@id","S1",["holds","W0",["and",["isa","person","John 1"],["isa","bought_a_car","John 1"]]]],
+ ["@id","S1",["holds","W0",["forall","X",["implies",["isa","bought_a_car","X"],["=","X","John 1"]]]]],
+ ["@id","S2",["question",["isa","bought_a_car","Mary 2"]]]]
+
+(Two packages with the same sid: the positive fact and the exclusivity rule
+whose conclusion is an identity.)
+
+--------
+
+INPUT:
+
+[
+  {
+    "raw": "Some affection is love. Some love is positive. Some affection is positive?",
+    "units": [
+      {
+        "unit_id": "S1",
+        "text": "Some affection is love.",
+        "type": "real",
+        "entities": [{"id":"affection","type":"generic","category":"abstract"},{"id":"love","type":"generic","category":"abstract"}]
+      },
+      {
+        "unit_id": "S2",
+        "text": "Some love is positive.",
+        "type": "real",
+        "entities": [{"id":"love","type":"generic","category":"abstract"}]
+      },
+      {
+        "unit_id": "S3",
+        "text": "Some affection is positive?",
+        "type": "query",
+        "entities": [{"id":"affection","type":"generic","category":"abstract"}]
+      }
+    ]
+  }
+]
+
+OUTPUT:
+
+["and",
+ ["@id","S1",["holds","W0",["exists","X",["and",["isa","affection","X"],["isa","love","X"]]]]],
+ ["@id","S2",["holds","W0",["exists","X",["and",["isa","love","X"],["isa","positive","X"]]]]],
+ ["@id","S3",["question",["exists","X",["and",["isa","affection","X"],["isa","positive","X"]]]]]]
+
+("Some" is an existential, never a universal; the quantifier strength of the
+text is preserved exactly.)
+
+--------
+
+INPUT:
+
+[
+  {
+    "raw": "Rocks interacting with moving water over long periods of time cause weathering. Sometimes weathering smooths rocks. A pebble is a kind of small rock. Waves are made of moving water. Is it true that waves interacting with pebbles can smooth pebbles?",
+    "units": [
+      {
+        "unit_id": "S1",
+        "text": "Rocks interacting with moving water over long periods of time cause weathering.",
+        "type": "strict_rule",
+        "entities": [{"id":"rocks","type":"generic","category":"substance"},{"id":"moving water","type":"generic","scope":"kind","category":"substance"},{"id":"weathering","type":"generic","scope":"kind","category":"event"}],
+        "actions": [{"root":"cause","mode":"habitual","roles":{"target":"weathering"}}]
+      },
+      {
+        "unit_id": "S2",
+        "text": "Sometimes weathering smooths rocks.",
+        "type": "normal_rule",
+        "entities": [{"id":"weathering","type":"generic","scope":"kind","category":"event"},{"id":"rocks","type":"generic","category":"substance"}],
+        "actions": [{"root":"smooth","mode":"habitual","roles":{"target":"rocks"}}],
+        "confidence": 0.5
+      },
+      {
+        "unit_id": "S3",
+        "text": "A pebble is a kind of small rock.",
+        "type": "strict_rule",
+        "entities": [{"id":"pebble","type":"generic","category":"substance"},{"id":"rock","type":"generic","category":"substance"}],
+        "adjectives": [["small","none","rock"]]
+      },
+      {
+        "unit_id": "S4",
+        "text": "Waves are made of moving water.",
+        "type": "strict_rule",
+        "entities": [{"id":"waves","type":"generic","category":"substance"},{"id":"moving water","type":"generic","scope":"kind","category":"substance"}]
+      },
+      {
+        "unit_id": "S5",
+        "text": "Is it true that waves interacting with pebbles can smooth pebbles?",
+        "type": "query",
+        "entities": [{"id":"waves","type":"generic","category":"substance"},{"id":"pebbles","type":"generic","category":"substance"}],
+        "actions": [{"root":"smooth","mode":"capability","roles":{"target":"pebbles"}}]
+      }
+    ]
+  }
+]
+
+OUTPUT:
+
+["and",
+ ["@id","S1",["holds","W0",["forall","X",["implies",
+     ["and",["isa","rock","X"],["interacts_with","X","moving_water"]],
+     ["causes","X","weathering"]]]]],
+ ["@id","S2",["and",
+   ["holds","W0",["forall","X",["implies",["isa","rock","X"],["normally",["smooths","weathering","X"]]]]],
+   ["@p","S2",0.5]]],
+ ["@id","S3",["holds","W0",["forall","X",["implies",["isa","pebble","X"],["and",["isa","rock","X"],["isa","small_for_a_rock","X"]]]]]],
+ ["@id","S4",["holds","W0",["forall","X",["implies",["isa","wave","X"],["made_of","X","moving_water"]]]]],
+ ["@id","S5",["question",["forall","X",["implies",["and",["isa","wave","X"],["isa","interacts_with_pebbles","X"]],
+     ["normally",["isa","can_smooth_pebbles","X"]]]]]]]
+
+("moving water" and "weathering" have scope kind and are constants shared
+by several units, so they stay arguments. The pebbles of the question are a
+generic object that no other unit treats as a thing in its own right, so they
+fold into the names "interacts_with_pebbles" and "can_smooth_pebbles". The
+same verb "interact" is a relation in S1 because its object there is a shared
+kind constant; when both objects are shared kind constants, keep the relation
+in both places.)
+
+--------

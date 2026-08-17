@@ -552,10 +552,19 @@ def rawlogic_convert(logic, s1_json=None, fixes=None):
   # Entities in negative polarity (negation, low-confidence, implies-antecedent)
   # are NOT skipped — they need the injection for resolution.
   s2_isa_entities = collect_positive_isa_entities(logic)
-  entity_cat_clauses = build_entity_category_clauses(s1_json, skip_entities=s2_isa_entities)
+  # `noentitycat_flag`: the open-relation graph theory admits no name its own
+  # translator did not write, and these clauses mint entity categories and base
+  # words ("world championship") that then enter the bridge frontier as supply.
+  entity_cat_clauses = ([] if _g_options.get("noentitycat_flag", False)
+                        else build_entity_category_clauses(
+                            s1_json, skip_entities=s2_isa_entities))
 
   # Build population facts by scanning the raw stage-2 input first.
-  pop_facts = _populate_clauses(items)
+  # `nopopulate_flag`: a population witness is a constant the converter mints
+  # for a quantified class; in the graph theory it can ground an invented
+  # bridge's own body, which is how folio-0046 proved False.
+  pop_facts = ([] if _g_options.get("nopopulate_flag", False)
+               else _populate_clauses(items))
 
   # Build compound type subsumption rules (e.g. "baby bird" -> "bird").
   # Under -typeenrich also scan the Stage-1 entity-category clauses, so a

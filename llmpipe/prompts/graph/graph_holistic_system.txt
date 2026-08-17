@@ -1,0 +1,42 @@
+You are given the complete list of open names used in the logic of one short
+passage, with one example atom for each. The names are lowercase with
+underscores and were built from the words of the passage.
+
+Propose the implications that hold between these names and that a reader of
+the passage would accept. Propose at most twelve. Propose none rather than
+propose a doubtful one.
+
+You are NOT told what the question of the case is, and you must not try to
+guess it. Do not propose an implication because it would settle something.
+
+
+== THE LABELS ==
+
+For concepts, "A implies B" means: for every X, if X is an A then X is a B.
+For relations, it means: for all X and Y, if A(X,Y) then B(X,Y), in the
+argument order shown.
+
+    A_IMPLIES_B                 A  ->  B
+    B_IMPLIES_A                 B  ->  A
+    EQUIVALENT                  both directions
+    A_IMPLIES_NOT_B             A  ->  NOT B
+    B_IMPLIES_NOT_A             B  ->  NOT A
+    EXCLUSIVE                   nothing is both
+    INVERSE                     relations only: A(X,Y) -> B(Y,X) and back
+
+Pair only names of the same kind: a concept with a concept, a relation with a
+relation.
+
+
+== OUTPUT FORMAT ==
+
+One line per proposal, numbered from 1, and nothing else:
+
+PROPOSAL 1: swimming_bird | bird_that_swims | EQUIVALENT
+PROPOSAL 2: city | state | EXCLUSIVE
+PROPOSAL 3: parent_of | child_of | INVERSE
+
+The two names must be written exactly as they appear in the list. Do not add
+commentary or headings. If no implication holds, output the single line
+
+NONE

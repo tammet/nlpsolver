@@ -38,6 +38,7 @@ representation so that maintainers and contributors can extend or modify the sys
    - 5.16 [linguistics.py](#516-linguisticspy)
    - 5.17 [stage_sanity.py](#517-stage_sanitypy)
    - 5.18 [The litbridge_* modules](#518-the-litbridge_-modules)
+   - 5.19 [The graph_* modules](#519-the-graph_-modules)
 6. [Prompt files](#6-prompt-files)
 7. [Key algorithms in logconvert.py and lc_clausify.py](#7-key-algorithms-in-logconvertpy-and-lc_clausifypy)
    - 7.1 [Package extraction](#71-package-extraction)
@@ -72,6 +73,16 @@ representation so that maintainers and contributors can extend or modify the sys
     - 13.5 [The encoding the bridge is converted under](#135-the-encoding-the-bridge-is-converted-under)
     - 13.6 [What the output shows](#136-what-the-output-shows)
     - 13.7 [Origin and further reading](#137-origin-and-further-reading)
+14. [Open-relation graph abstraction (`-graphbridge`)](#14-open-relation-graph-abstraction--graphbridge)
+    - 14.1 [What it is and where it sits](#141-what-it-is-and-where-it-sits)
+    - 14.2 [The open-triple atom contract](#142-the-open-triple-atom-contract)
+    - 14.3 [The graph converter configuration](#143-the-graph-converter-configuration)
+    - 14.4 [Names, frontier, candidate pairs](#144-names-frontier-candidate-pairs)
+    - 14.5 [The direction judge and bridge serialization](#145-the-direction-judge-and-bridge-serialization)
+    - 14.6 [Proof search, grading and tiers](#146-proof-search-grading-and-tiers)
+    - 14.7 [Lifting into the ordinary representation](#147-lifting-into-the-ordinary-representation)
+    - 14.8 [Flags, record and output](#148-flags-record-and-output)
+    - 14.9 [The study harness](#149-the-study-harness)
 
 ---
 
@@ -144,6 +155,16 @@ an ordinary gk proof and goes through the same `process_proof`; only the renderi
 the invented rules, as `[added rule (round N)]`.  If nothing is proved the run ends with
 the answer and the clause list the ordinary pipeline produced.  Chapter 13.
 
+**A second optional detour** (`-graphbridge`, off by default, turned on by no preset).
+When the question is still unresolved after that, `graph_procedure` translates the case
+a **second time** — the same cached Stage 1, a different Stage 2 whose content atoms are
+three-item open triples — converts that translation into its own clause theory under a
+frozen option set, invents implications between the open names, and searches that theory
+separately.  The two theories are never pooled.  A graph proof is lifted back into the
+ordinary representation through the literal bridge's own grammar and compiler, and only
+a lifted proof becomes the run's answer; a graph-only proof is a labelled experimental
+result.  Chapter 14.
+
 The top-level entry point for library use is `english_to_answer(text, options)` in `solve.py`.
 The command-line entry point is `main()` in the same file.
 
@@ -208,6 +229,14 @@ llmpipe/
 │   ├── litbridge_prompts.py    Literal-bridge: system prompt, case message, candidate lists
 │   ├── litbridge_procedure.py  Literal-bridge: bridge_context + bridge_round, the per-case orchestration
 │   ├── litbridge_converter.py  Literal-bridge: the one call into logconvert, under a scoped option state
+│   ├── graph_stage2.py        Open-relation graph: the graph Stage-2 call, its structural checks, its measurements (ch. 14)
+│   ├── graph_compile.py       Open-relation graph: open triples → clauses under the frozen graph option set; the name-drift check
+│   ├── graph_inventory.py     Open-relation graph: concept/relation inventories, the comparison view, supply and demand
+│   ├── graph_pairs.py         Open-relation graph: candidate pair enumeration (nine shapes) and the mechanical filters
+│   ├── graph_judge.py         Open-relation graph: the direction judge, its parser, and label → bridge serialization
+│   ├── graph_search.py        Open-relation graph: pooled gk search P0–P3, minimal sets, the exclusion pass, grading, tiers
+│   ├── graph_lift.py          Open-relation graph: lifting a graph proof into the ordinary theory; unit retranslation
+│   ├── graph_procedure.py     Open-relation graph: graph_context + graph_run, the per-case orchestration and the record
 │   ├── globals.py       Options dict and file paths
 │   ├── utils.py         debug_print, clause_list_to_json, LITBRIDGE_CLAUSE_PREFIX
 │   └── gradables.txt    Whitelist of gradable adjectives (~400 entries)
@@ -1403,6 +1432,29 @@ The stack is acyclic; `litbridge_atoms` imports only `litbridge_converter`.  Not
 the ordinary pipeline imports any of them — `solve.py` reaches the stack only inside the
 `litbridge_flag` branch.
 
+### 5.19 The graph_* modules
+
+**Role:** Open-relation graph abstraction — translating a case a second time into
+three-item open triples, inventing implications between the open names, searching that
+theory, and lifting a proof back.  Eight modules, described together in §14:
+
+| module | owns |
+|---|---|
+| `graph_stage2.py` | the graph Stage-2 call, the structural checks of the atom contract, the corrective retry, the per-case measurements |
+| `graph_compile.py` | open triples → clauses under the frozen graph option set; the sidecar and the name-drift check |
+| `graph_inventory.py` | the concept and relation inventories, the comparison view, and supply/demand read from the clauses |
+| `graph_pairs.py` | the nine candidate shapes and the seven mechanical filters |
+| `graph_judge.py` | the judge prompts and parser, and the serialization of a label into bridge rules |
+| `graph_search.py` | pooled gk search P0–P3, minimal sets, the exclusion pass, grading, tiers |
+| `graph_lift.py` | the backbone, the alignment, the lifting call, the lifted worlds, unit retranslation |
+| `graph_procedure.py` | `graph_context` and `graph_run`: one case, and the record |
+
+The stack imports the `litbridge_*` modules and never the other way round: the literal
+bridge's compiler is the graph route's lifting boundary, and its `scoped` is the option
+state every graph conversion runs inside.  Nothing in the ordinary pipeline imports a
+`graph_*` module — `solve.py` reaches the stack only inside the `graphbridge_flag`
+branch.
+
 ### 5.17 stage_sanity.py
 
 **Role:** Structural sanity checks for Stage-1 ASU JSON and Stage-2 logic JSON, used by
@@ -2374,6 +2426,21 @@ and by `-abstract-max`), `litbridge_extras_flag` (default `False`; set by
 `-litbridge_extras` alone — no preset turns it on), and `nolitbridge_flag`, which is
 not read by the pipeline: `solve.py` resolves it after the whole command line is read,
 forcing `litbridge_flag` to `False` so `-nolitbridge` wins from any position.
+
+**Open-relation graph keys** (§14): `graphbridge_flag` (default `False`; set by
+`-graphbridge`, and by no preset), `graphbridge_lift_flag` (default `True`; cleared by
+`-graphbridge_nolift`), `graphbridge_sources` (default `"frontier,exhaustive,composition"`; a comma list set by
+`-graphbridge_sources`), and `nographbridge_flag`, which `_parse_cmd_line` resolves
+after the whole line by forcing `graphbridge_flag` to `False`, so `-nographbridge` wins
+from any position.
+
+**Two converter keys the graph theory needs** (§14.3), both default `False` and
+therefore inert everywhere else: `noclassnumbernorm_flag` stops the final clause list
+from singularizing the class argument of every `isa` atom, and `noopennamerewrite_flag`
+stops `lc_rewrites` from canonicalizing the relation name of an `is rel2` atom
+(ownership → `have`, located-in → `in`, preposition canonicalisation) and from turning a
+perspective verb into a Davidsonian event.  Each of those would connect two open names
+without a clause a proof can show.
 
 ---
 
@@ -3371,3 +3438,441 @@ hashes the outcome, and `tools/test_litbridge_converter.py` covers the option sc
 the citation reading.  `tools/run_unifier_v6_1.py` is the experiment harness, which runs
 the same rounds plus the parts a pipeline does not need: separate submissions per round,
 minimisation of the proving set, and a bounded search for a different proof.
+
+---
+
+## 14. Graph abstraction: `-graphtrans` and `-graphbridge`
+
+Two layers, both off by default and turned on by no preset.  Where the literal bridge
+of §13 keeps the ordinary translation and invents rules over the atoms that translation
+produced, the graph mechanism **translates the passage again** into a much simpler
+representation.
+
+**Layer 1, `-graphtrans`**, stops there: it compiles the second translation and calls
+gk once.  No judge, no grader, no invented rule — whatever it answers, it answers from
+the case's own words read a second way.  On closed-world material this is the whole
+product, and it costs about 1.2 LLM calls a case.
+
+**Layer 2, `-graphbridge`**, invents implications between the open names and searches
+layer 1's theory with them.  It implies `-graphtrans` and never translates the case
+twice.  It earns its keep on open-world, EntailmentBank-like material, and costs about
+2.7 calls a case.
+
+Layer 1 runs before the literal bridge: it is cheaper and, on the EB negative controls,
+more exact — 0 definite answers on the Unknown controls where the literal bridge
+answered 21% of them.
+
+### 14.1 What it is and where it sits
+
+`solve._english_to_answer_once` runs the abstraction routes in the order
+`abstraction_order` names — by default `graphtrans,litbridge,graphbridge`.  Each route
+runs only when the question is still unresolved and only when its own flag is on; a
+route the order omits never runs, whatever its flag says.  `collect["answered_by"]`
+records which route produced the run's answer.
+
+Layer 1 (`solver/graph_p0.py`, `run_graph_p0`):
+
+```
+ordinary Stage 1  (cached, reused)
+  -> graph Stage 2          open triples, one LLM call        graph_stage2.py
+  -> the checks             one corrective retry, no second   graph_stage2.py
+  -> graph theory           logconvert under GRAPH_OPTIONS    graph_compile.py
+  -> variant rules          norm_<n>, only when both forms occur   graph_p0.py
+  -> confidence cap         every defeasible rule <= 0.95     graph_p0.py
+  -> one gk call            "Probably ..." when confidence < 1
+```
+
+Layer 2 adds, over the same theory:
+
+```
+ordinary Stage 1  (cached, reused)
+  -> graph Stage 2          open triples, one LLM call        graph_stage2.py
+  -> graph theory           logconvert under GRAPH_OPTIONS    graph_compile.py
+  -> name inventory         concepts, relations, kinds        graph_inventory.py
+  -> supply and demand      read from the clauses             graph_inventory.py
+  -> candidate pairs        enumerated by code, filtered      graph_pairs.py
+  -> direction labels       one LLM call per batch of 40      graph_judge.py
+  -> bridges                serialized by code                graph_judge.py
+  -> P0, P1, P2, P3         gk, minimal sets, exclusion       graph_search.py
+  -> grades                 one LLM call, labels only         graph_search.py
+  -> lifting                back into the ordinary theory     graph_lift.py
+```
+
+`graph_procedure.py` is the one door: `graph_context` does everything that costs no gk
+call, `graph_run` adds the calls and returns one record.
+
+The graph theory and the ordinary theory are **never pooled**.  The only place a graph
+result reaches the ordinary theory is §14.7, where a lifted rule is appended to the
+ordinary clauses and gk is asked again.  A graph-only proof is printed as a labelled
+experimental line and stored in `collect["graph"]`; it never becomes the run's answer.
+
+### 14.2 The open-triple atom contract
+
+Every content atom is a JSON list of exactly three items.  There are two kinds:
+
+```json
+["isa", CONCEPT_NAME, ENTITY]        a unary description
+[RELATION_NAME, LEFT, RIGHT]         a binary relation, subject first
+```
+
+Class nouns, adjectives, capabilities, habits, states and verb phrases with a generic
+or absent object all take the `isa` form.  Names are lowercase, joined by underscores,
+and built from the words of the unit: `bird_that_swims`, `can_cross_water`,
+`has_higher_conductivity_than_nonmetals`.  Two phrases with related meanings may get
+different names — a later step connects them, and that connection is a named clause a
+proof can show.
+
+The rules the prompt fixes (`prompts/graph/graph_stage2_instructions.txt`):
+
+- a **concrete** participant or a variable bound elsewhere stays an argument; a
+  **generic** complement folds into the name (`isa(loves_animals, X)`);
+- quantifier words that matter stay in the name (`loves_some_animal` and
+  `loves_every_animal` are two names and neither implies the other);
+- one verb or construction takes one shape per case, checked mechanically;
+- a **gradable adjective carries its comparison class** (`big_for_a_mouse`), because a
+  bare `isa(big, X)` lets a sound taxonomy bridge prove a wrong answer;
+- plain negation stays outside the name (`["not", ["isa", "paid", "invoice 1"]]`);
+  modality and aspect stay inside it (`can_swim`, `must_pay`);
+- an event with three or more participants is reified with an event variable and the
+  fixed roles `agent theme recipient source destination location instrument time
+  manner`; the event type is the open part;
+- the world is always `W0`; sets, counts and measures are open relations with a value
+  string.
+
+The top level is the **ordinary Stage-2 shape**, `["and", ["@id","S1",PACKAGE], …]`, so
+`llmparse._run_stage`, `fix_json`, `logconvert.rawlogic_convert`, the question
+machinery and `procproofs` consume the output unchanged.  The user message is
+`json.dumps(s1_json)`, byte for byte what the ordinary Stage 2 sees, so the cache key
+differs only by the system prompt.
+
+`graph_stage2.check_graph` runs the structural checks and returns `stage_sanity_core`
+`Issue` records, so the ordinary corrective-retry loop applies: atom arity, a reserved
+name, a fixed role off an event variable, a free variable, an entity id Stage 1 never
+introduced, swapped `isa` arguments, a missing or doubled package, zero or more than
+one question package, a lexical negative beside `not`, one lemma used as both a concept
+and a relation where the two can meet, and a passage package that restates the
+question.  A name with a space or a capital is normalized in place, not refused.  A
+name that is merely odd is never refused.
+
+### 14.3 The graph converter configuration
+
+The graph Stage 2 is rewritten to the ordinary controlled atoms — `["isa", C, X]` stays,
+`[R, X, Y]` becomes `["is rel2", R, X, Y]` — and run through
+`logconvert.rawlogic_convert` inside `litbridge_converter.scoped`, under one frozen
+option set (`graph_compile.GRAPH_OPTION_TABLE`):
+
+| option | value | why |
+|---|---|---|
+| `nocontext_flag` | True | one constant context; no tense or world term can block unification |
+| `nosemnormal_flag` | True | no antonym fold, no canonical substitution, no injector |
+| `noclassnumbernorm_flag` | True | `swims` and `swim` stay two open names |
+| `noopennamerewrite_flag` | True | `owns` does not become `have`; a perspective verb does not become a Davidsonian event |
+| `prover_axiomfiles` | `[]` | no `axioms_std.js` |
+| every abstraction primitive | False | nothing rewrites the graph theory |
+| `noexceptions_flag`, `noproptypes_flag` | False | `$block` on a `normally` rule survives |
+| every `nofix_*` | False | the structural repairs stay on |
+| `prenorm_flag` | False | a pre-Stage-1 phase; the graph starts at Stage 2 |
+
+The last two rows of the first block are options this work added, both default False
+and therefore inert everywhere else.  They exist because the ordinary pipeline
+singularizes every `isa` class name and canonicalizes ownership, location and
+preposition relation names — each of which would connect two open names without a
+clause the proof can show.
+
+What stays active by design, each emitting a named clause with provenance: entity UNA
+wrapping, population witnesses, the Stage-1 entity-category `isa` clauses, the `$defq`
+question encoding, the bare-plural generic question hoist, and Skolemization.
+
+`graph_compile.name_drift` checks the invariant after every conversion: a name the
+translator never wrote, or a written name the clause list lost, is recorded per case.
+The **invisibility fixture** in `tools/test_graph_compile.py` pins it — a two-name
+theory compiles to exactly its three clauses plus the population witnesses, with no
+`compound_*`, `frm_*`, synonym or axiom clause and no `$ctxt` term, and gk answers
+Unknown on it.
+
+The option dict is captured **once per case, before the first conversion**, because
+`scoped` replaces `globals.options` while a conversion runs.
+
+### 14.4 Names, frontier, candidate pairs
+
+`graph_inventory.build` records every concept and relation occurrence with its
+participants, sign, package and position (fact, rule body, rule head, question).  A
+constant argument that names a kind rather than an entity or a value — `food`,
+`labeled_data` — enters the concept inventory as a name, so `requires(X, labeled_data)`
+can meet `isa(supervised, X)`.  Role names are recorded and never paired.
+
+`graph_inventory.supply_demand` reads the **proof frontier** from the compiled clauses:
+a question clause's content literals are demand; a rule clause's negative literals are
+demand unless the same literal occurs positively somewhere; facts and rule conclusions
+are supply.  A population witness is neither — counting it would make every rule
+premise look satisfied and leave the frontier empty.
+
+`graph_pairs.py` enumerates nine shapes, in three sources:
+
+1. **frontier** (every pair judged): concept↔concept; relation↔relation straight and
+   inverse; relation-with-constant to relation-with-constant on the same subject;
+   argument-constant subsumption `R(X,k1) → R(X,k2)`, judged as the concept pair
+   `(k1,k2)`; and the grounded cross-kind shape both ways, `R(X,k) ↔ isa(C,X)`, keyed
+   first on a shared lexical root, plus the variant with the concept on the constant;
+2. **exhaustive** same-kind pairs, up to `EXHAUSTIVE_LIMIT` (120), above which the
+   budget is filled by token overlap and every unjudged pair is recorded;
+3. **composition** for P2, `R1(X,Y) ∧ R2(Y,Z) → R3(X,Z)`, enumerated only where the
+   theory holds the actual chain.
+
+Seven filters refuse a pair before any judge call and again on the judge's output, each
+refusal recorded with its reason: a **passage-related pair** (only the passage's own
+direction and sign is admissible; the converse and any universal strengthening of a
+particular are refused), a **question-only body name**, a **question restatement**,
+**polarity against the passage**, a **gradable adjective across two comparison
+classes**, a **class bridged to an adjective relative to it**, and an **entity-name
+pseudo-class**.
+
+Two of those need care about what exactly they refuse.  The question-only rule refuses
+a **direction**, not a pair: a frontier pair's demand side is normally a name only the
+question states, and concluding it is the whole point, so only the direction that would
+put that name in the rule *body* is dropped, and the pair is refused outright only when
+both its names are question-only.  The question-restatement rule fires only when the
+body is the **sole** known class of a question subject that is a constant; reading a
+bound variable as a subject would refuse the entire frontier of a generic question.
+The entity-name rule applies only to a **concrete** entity whose name reads as a proper
+name, so ordinary common-noun classes stay bridgeable.
+
+`POLICY_STRICT` is the switch: when False only the sign and direction contradictions
+are refused.  Batches hold at most 40 pairs in a frozen salted order.
+
+### 14.5 The direction judge and bridge serialization
+
+The judge sees, per pair, the two names, their kind, one readable example atom each
+with its sign, and the passage sentences each name occurs in.  It **never sees the
+question sentence**: a name may occur in the question as well as the passage, and the
+question's own units are excluded when the sentences are collected, for the grader as
+well as the judge.  It returns one label per pair:
+
+```
+A_IMPLIES_B  B_IMPLIES_A  EQUIVALENT  A_IMPLIES_NOT_B  B_IMPLIES_NOT_A
+EXCLUSIVE    INVERSE (relations only)  RELATED_BUT_NO_IMPLICATION
+UNRELATED    UNCERTAIN
+```
+
+A missing line is `UNCERTAIN`; an unknown label is `UNCERTAIN` with the raw text
+recorded.  The model writes no formula: `graph_judge.serialize` builds every clause
+from the label and the exact atoms the pair was enumerated with, including the
+contrapositive when a displayed occurrence was negated.  A holistic call over the whole
+inventory is the recall backstop and takes the same parser and the same filters.
+
+Pools are cumulative: P1 is the frontier pairs with a decided label; P2 adds the
+exhaustive and composition sources and the frontier's `UNCERTAIN` pairs, offered as
+both directions.  A `RELATED_BUT_NO_IMPLICATION` pair never becomes a bridge, and
+neither does an `UNCERTAIN` pair from a source other than the frontier.  There is no
+P3.  At most 60 distinct bridge formulas per case; every omission is recorded.
+
+Every bridge carries the pair it came from: `pair_id`, and `pair_label`, the judge's
+own label before `both_directions` rewrote an undecided pair into two directed rules.
+A proof can therefore say how many of its bridges rest on a pair the judge did not
+decide, which is what selects the bridges the grader sees.
+
+Every bridge is compiled by `litbridge_compile.build_world` under the graph option set,
+named `dynamic_bridge_<case>_graph::<id>_<n>`, defeasible with `$block`, at **full
+confidence**.  A low `@confidence` is never written: it prunes the search and compounds
+on repeated application.
+
+### 14.6 Proof search, grading and tiers
+
+`graph_search.search` runs P0 (the graph theory alone) and then the cumulative pools,
+each with its own gk seconds (5/5/8/12).  gk searches both polarities in one call.  A
+timeout is recorded as a timeout, never as Unknown.
+
+For every proof: the cited bridges are collected, the cited set is replayed, and each
+bridge is deleted in turn while the answer survives, giving a deletion-minimal set.
+Then, **unconditionally**, each member of the first minimal set is excluded and gk is
+asked again, at most four times, to see whether a second route exists.  Only after that
+pass does the search stop.  A bridge's own population witnesses are dropped before
+submission: a witness a bridge introduced must never ground that bridge's body.
+
+Grading runs after the search, for every bridge a minimal set cites and for no other.
+Each graded bridge gets **its own message** — the rule, the program's English reading
+of it, and the two names' sentences — so a bridge's grade is one cached call that does
+not move when the rest of the cited set changes.  The message never carries the rule
+id, which is minted per run.  A set cites at most two bridges, so a case that found a
+proof costs at most two grader calls and a case that found none costs zero.
+
+The grader returns `LIKELY / PLAUSIBLE / UNCERTAIN / UNLIKELY / FALSE`, whether the
+formal polarity and argument order match the English reading code wrote, and for a
+negative bridge an answer to "name one thing that is both".  **A grade never deletes a
+proof and never turns an answer into Unknown.**
+
+Restricting the grader to bridges from pairs the judge did not decide was measured and
+rejected: it let through 8 wrong FOLIO proofs whose bridges came from decided pairs,
+and saved one EB proof.  The judge's confidence (`HIGH`/`MEDIUM`/`LOW`) is recorded
+beside every grade as a calibration feature, and reads as `LIKELY`/`PLAUSIBLE`/
+`UNCERTAIN` when no grade was taken; on a pair the judge did **not** decide it is
+confidence in saying "I do not know" and never stands in for a grade.
+
+**Evidence.**  A bridge born from an undecided pair is `BACKGROUND` whatever tag the
+judge's reply gave it: the judge read the same sentences and could not say which way
+the implication runs, so the passage did not state it.  Under `--evidence stated` those
+bridges are refused — which keeps them for the open-world family and drops them for the
+closed-world ones, with no extra call.
+
+**The witness policy.**  The graph converter emits no population witnesses of its own,
+but a proof can still cite one when the ordinary theory supplies it.  A witness is a
+`$some_C` constant asserting that at least one `C` exists, which nothing in the English
+said.  A proof that cites one is credible only when the question is a hoisted
+bare-plural generic question and the answer is the positive one.  A witness used to
+refute a universal question is an invented counterexample; every proof records
+`cites_witness`, `witness_ok` and `witness_counterexample`, and the scored row counts
+them separately.
+
+Tiers, worst to best: `T0` an unassessed, unlikely or false bridge, or proofs of both
+polarities; `T1` a graph proof from at most two bridges, each `LIKELY` or `PLAUSIBLE`;
+`T1a` a graph proof that uses **no** generated bridge, so the two translations disagree
+on provability; `T2` a detailed proof after unit retranslation; `T3` a lifted detailed
+bridge proof.  Only T3 and T2 may become the run's answer.
+
+### 14.7 Lifting into the ordinary representation
+
+A minimal graph proof is a backbone: the units it used, the atoms, the bridges, the
+question literal.  `graph_lift.py` asks whether the same step holds over the case's own
+detailed atoms.
+
+The boundary is the literal bridge's own machinery.  Candidate atoms are the ones
+`litbridge_atoms.build` displays, so each carries its exact compiled template; the
+alignment is unit-local first, then by shared entity ids and rule variables, then by
+token overlap.  The reply is parsed by `litbridge_rules.parse_response` against that
+vocabulary and compiled by `litbridge_compile.compile_one`, whose exact-template route
+governs a model-written rule — so a rule made only of displayed atoms compiles to those
+atoms or is refused structurally.  Each coherent set is appended to the **ordinary**
+clauses in its own gk world, at most six per case.
+
+Outcomes: **lifted proof**, **source translation gap** (the model wrote nothing over
+the ordinary atoms), **graph over-abstraction** (the lifted rules prove a different
+answer), **incomplete lifting**, **ordinary proof still blocked**.
+
+When a proof-used unit has no ordinary counterpart, that unit alone is retranslated
+with the ordinary Stage-2 prompt plus its English, its Stage-1 unit and the graph atoms
+the proof used, and the regenerated package is spliced into a **copy** of the ordinary
+Stage 2.  The question package is protected; at most two units per case.
+
+### 14.8 Flags, record and output
+
+```
+-graphtrans           layer 1: the retranslation and one gk call
+-nographtrans         force layers 1 and 2 off, wherever it stands
+-graphbridge          layer 2; implies -graphtrans
+-nographbridge        force layer 2 off; layer 1 unaffected
+-graphbridge_lift     lift a graph proof into the ordinary theory (experimental)
+-graphbridge_sources LIST   frontier (default), exhaustive, composition;
+                      holistic is refused with a message
+-graphbridge_evidence any|stated   layer 2's acceptance evidence mode
+-abstraction_order LIST     the order the routes run in after the front door
+```
+
+Option keys: `graphtrans_flag`, `nographtrans_flag`, `graphbridge_flag`,
+`nographbridge_flag`, `graphbridge_lift_flag` (default False),
+`graphbridge_sources` (default `"frontier"`), `graphbridge_evidence` (default
+`"any"`), `abstraction_order` (default `"graphtrans,litbridge,graphbridge"`).
+`globals.ABSTRACTION_ROUTES` names the routes `solve.py` can dispatch.
+
+**What layer 1 does that nothing else does.**  Every defeasible rule of the graph
+theory carries at most confidence 0.95, so a proof that used one comes back as
+"Probably True." / "Probably false." and is scored in its own column.  Variant rules
+bridge a marked form to its base form — plural to singular, past to present — but only
+when BOTH forms occur in the case, one direction only, at confidence 0.9, named
+`norm_<n>` so the proof shows them; nothing is written for `will_`, `would_`,
+`gets_to_` or another auxiliary, where the tense is the meaning.  Names are never
+rewritten or collapsed: hyphen to underscore is the only rewrite, and lemmatization
+only finds the pairs.
+
+`collect["graph"]` holds the translation and its issues, the option dict and its hash,
+the inventory sizes, the pairs enumerated and refused with reasons, the labels, the
+bridges per pool, the per-pool gk outcome, the minimal sets, the grades, the lifting
+record, the tier and the stopping reason.
+
+`record["acceptance"]` holds one verdict per minimal set: whether the set is credible,
+why not when it is not, `graded_by` per bridge (`grader`, `judge confidence` or `judge
+label`), how many of its bridges came from an undecided pair, and the three witness
+fields.  `tools/graph_grade_drift.py` reads two runs and prints the agreement matrix
+for the bridges graded in both, keyed on the printed formula rather than the rule id.
+
+`-logic` prints a per-step trace, `-details` adds the pairs and labels, `-debug` the
+raw replies.  In a rendered proof a graph bridge is **"added open-name rule (graph)"**
+and a lifted one **"added rule (lifted from the graph proof)"** — never "background
+knowledge", which is reserved for the axiom file.
+
+### 14.9 The study harness
+
+`tools/run_graph_bridge.py` freezes, translates, runs and closes a phase;
+`tools/graph_cases.py` derives the case sets from the stored four-model literal-bridge
+artifact; `tools/score_graph_bridge.py` opens the sealed key only after a record is
+closed and hashed, and puts the graph route beside the stored literal-bridge outcome;
+`tools/report_graph_bridge.py` writes per-case side-by-side reports.  Each solver
+module has a focused fixture file, `tools/test_graph_*.py`, and
+`tools/graph_fixtures.py` holds the synthetic material they run on.
+
+The design is `memos/PLAN_2026_08_16_open_relation_graph_abstraction_v2.md`; the
+implementation plan is `memos/PLAN_2026_08_16_open_relation_graph_pilot_opus5_v2.md`;
+the results are in `memos/MEMO_2026_08_16_graph_pilot_*.md`.
+
+## 15. The critique pass (`-critic`)
+
+Off by default, turned on by no preset.  When the front door ends Unknown
+after its own checks and retries, one LLM call reads the case and says what is
+wrong with the translation the pipeline just made.
+
+### 15.1 What the critic reads
+
+`critic_render.critic_user_message` builds four sections — TEXT, STAGE 1,
+STAGE 2, RESULT.  Stage 1 is compacted to one block per unit (id, type, text,
+entities as `id [c|g,category]`, actions, definites, adjectives, confidence).
+Stage 2 is, per `@id` package, one compact logic line and one **program-made**
+English paraphrase of that same line.  The raw JSON never appears, and the
+paraphrase is built by template rather than by a model: the critic has to be
+reading our logic, not a second model's summary of it.
+
+The critic is never shown an accepted answer.
+
+### 15.2 What it returns
+
+JSON: `answer_by_reading` (true / false / unknown), `chain` (the units its
+reading rests on), `derivation`, up to six `findings`, and a `verdict`.  A
+finding carries the units, a `kind` from a fixed vocabulary (quantifier,
+direction, negation_scope, guard_unproducible, shape_mismatch, name_mismatch,
+entity_split, missing_participant, dropped_condition, modality, definite,
+question_form, stage1_unit, other), a severity (blocking or note), the English
+and the logic it quotes, the problem, and a fix.
+
+`critic_pass.parse_reply` validates all of it: a reply whose reading or
+verdict is not in the vocabulary is a parse failure and counts as KEEP; a
+finding whose fix quotes no word of its own unit's text is dropped and counted
+as `unquoted_fix`.
+
+### 15.3 What the pipeline does with it
+
+`critic_pass.decide` returns RETRANSLATE only when the reading is definite AND
+a blocking finding lies on the chain (a `question_form` finding counts as on
+the chain).  Everything else is KEEP.  The stage is 1 only when a retained
+finding has kind `stage1_unit`.
+
+On RETRANSLATE the findings — and only the findings, never the reading, the
+chain or the derivation — are appended to the Stage-2 input as a corrective,
+and the ordinary converter and gk follow.  Whatever the outcome, there is no
+second critique.  A rerun that changes a unit nobody asked about is recorded.
+
+### 15.4 Flags, record and output
+
+```
+-critic     one critique of the front door's translation, and at most one rerun
+-nocritic   force it off, wherever it stands on the command line
+```
+
+Option keys: `critic_flag`, `nocritic_flag`.  Position: after the front door's
+Unknown and **before** every abstraction route, so a repaired translation is
+what the graph and literal bridges see.
+
+`collect["critic"]` holds the report, the retained and dropped findings, the
+verdict, the units asked for, the corrective, the answer before and after, and
+which units the rerun changed.  `-explain` prints the reading, the chain, the
+findings, the verdict and what the rerun changed.
+
+The harness is `tools/run_critic_pass.py` and `tools/score_critic_pass.py`;
+fixtures are `tools/test_critic_pass.py`.

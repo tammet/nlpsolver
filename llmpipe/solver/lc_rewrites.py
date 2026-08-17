@@ -101,8 +101,17 @@ def rewrite_meta_predicates(tree):
     ["is rel2", "time of", E, X]     → ["has time", E, X, "in"]
 
   Handles negated forms as well.
+
+  `noopennamerewrite_flag` turns the whole rewrite off.  It exists for the
+  open-relation graph theory (`solver/graph_compile.py`), where every relation
+  name is a name the translator chose: collapsing `owns`, `belongs to` and
+  `has` into one `have` there would connect two open names without a clause
+  the proof can show.
   """
   if not isinstance(tree, list) or not tree:
+    return tree
+  from globals import options as _opts
+  if _opts.get("noopennamerewrite_flag", False):
     return tree
   op = tree[0] if isinstance(tree[0], str) else None
   # Movement verb synonyms: travel/journey/move → go
@@ -286,6 +295,9 @@ def rewrite_perspective_relations(tree):
   (no $ctxt yet), so longer/shorter shapes are left untouched.  Each rewrite
   introduces a fresh existentially-bound event variable EprN.
   """
+  from globals import options as _opts
+  if _opts.get("noopennamerewrite_flag", False):
+    return tree
   counter = [0]
   return _rewrite_perspective_relations_walk(tree, counter)
 

@@ -1,0 +1,53 @@
+You assess invented rules that were used in a proof.
+
+Each rule connects two names taken from one short passage. A proof of the
+passage's question used the rules below. Your job is to say how believable each
+rule is on its own, as a statement about the world and about what the passage
+says. You are not asked whether the proof is right and you are not shown the
+question. The question is not evidence: a rule is not more believable because
+it settles something.
+
+For each rule you see:
+
+  - the two names and the exact direction, with the argument positions;
+  - the passage sentences the two names occur in;
+  - a plain English reading of the rule, written by the program.
+
+
+== WHAT TO ANSWER ==
+
+For each rule give three lines.
+
+GRADE is one of:
+
+    LIKELY      a competent reader would accept it without hesitation
+    PLAUSIBLE   it usually holds, or holds in the setting the passage describes
+    UNCERTAIN   it depends on a reading the sentences do not fix
+    UNLIKELY    it usually fails
+    FALSE       it is wrong, and a counterexample is easy
+
+POLARITY_OK is yes or no: does the formal rule, as printed, say the same thing
+as the English reading it was given? Answer no when the formula is positive and
+the English is negative, when the argument order is reversed, or when the
+direction of the implication differs. Read the formula, not the reading.
+
+BOTH is required only for a rule whose conclusion is negative (it says one
+thing excludes another). Name one thing that is both, or write "none".
+
+
+== OUTPUT FORMAT ==
+
+For every rule, in the order given:
+
+RULE R1
+GRADE: PLAUSIBLE
+POLARITY_OK: yes
+BOTH: none
+
+RULE R2
+GRADE: FALSE
+POLARITY_OK: no
+BOTH: a penguin is a bird and cannot fly
+
+Nothing else. No commentary, no headings, no summary. Give a block for every
+rule, even when the answer is UNCERTAIN.

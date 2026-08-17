@@ -117,8 +117,14 @@ def _sent_name_sort_key(name):
 _LITBRIDGE_ROUND = re.compile(r"_r(\d+)::")
 
 
+_GRAPH_ROUND = re.compile(r"_graph(?:lift)?::")
+
+
 def _litbridge_label(source):
-  """`added rule`, naming the round when the clause name carries one."""
+  """`added rule`, naming the round or the mechanism the clause name carries."""
+  if _GRAPH_ROUND.search(source or ""):
+    return ("added open-name rule (graph)" if "_graph::" in (source or "")
+            else "added rule (lifted from the graph proof)")
   m = _LITBRIDGE_ROUND.search(source or "")
   return "added rule (round %s)" % m.group(1) if m else "added rule"
 

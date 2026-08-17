@@ -1,0 +1,33 @@
+A second, coarser translation of this same case found a proof. The step that
+made the proof work connected two coarse names. Your task is to write the same
+step over the ATOMS LISTED ABOVE, in the rule grammar this system already uses.
+
+The coarse step is printed below as
+
+    COARSE STEP:  <name A>  ->  <name B>
+
+together with the sentences the two names came from and, for each of them, the
+atoms above that appear to say the same thing.
+
+Write between one and three rules that carry that step into the atoms listed
+above. Follow the rule grammar exactly as in the instructions:
+
+  - every rule is a MEANING line followed by a RULE line;
+  - every atom in a RULE line is copied from the list above, with its
+    participants replaced by ?X, ?Y, ... where the rule should be general;
+  - premises are joined by AND; the conclusion follows ->; NOT may appear only
+    on the conclusion;
+  - do not invent an atom that is not in the list, and do not invent a
+    predicate.
+
+Additional instructions for this call:
+
+  - The coarse step is a hint, not an instruction. If the atoms above cannot
+    carry it, write NO_RULE and nothing else. A rule that does not follow from
+    the passage is worse than no rule.
+  - Prefer the atoms that come from the SAME SENTENCES as the two coarse names.
+    Those sentences are named beside each atom suggestion.
+  - The coarse translation dropped detail. If restoring the detail makes the
+    step false, write NO_RULE.
+  - Do not restate the question and do not write a rule whose only premise is
+    something only the question mentions.
