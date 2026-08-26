@@ -152,7 +152,34 @@ def _is_background_source(source):
     source and not source.startswith("sent_") and not source.startswith("$"))
 
 
-def _format_why(reason, sent_nr, clause=None):
+def clause_labels(logic):
+  """`@name` -> what the proof should say about that clause.
+
+  Two kinds of clause say more about themselves than their name does:
+
+    * a wording-variant rule of the graph translation (`norm_<n>`), whose
+      `@variant` records which marked form it bridges to which base form;
+    * an invented rule carrying `@nl`, the program's own English reading of
+      it, which the "Added rules" section prints instead of nothing.
+  """
+  out = {}
+  for c in (logic or []):
+    if not isinstance(c, dict):
+      continue
+    name = c.get("@name")
+    if not isinstance(name, str) or not name:
+      continue
+    var = c.get("@variant")
+    if isinstance(var, dict) and var.get("marked") and var.get("base"):
+      out.setdefault(name, {})["why"] = ("wording variant: %s -> %s"
+                                         % (var["marked"], var["base"]))
+    nl = c.get("@nl")
+    if isinstance(nl, str) and nl.strip():
+      out.setdefault(name, {})["english"] = nl.strip()
+  return out
+
+
+def _format_why(reason, sent_nr, clause=None, labels=None):
   """Format the 'why' part of a proof step reason."""
   if not isinstance(reason, list) or not reason:
     return "unknown"
@@ -160,6 +187,9 @@ def _format_why(reason, sent_nr, clause=None):
   if kind == "in":
     source   = reason[1] if len(reason) > 1 else ""
     polarity = reason[2] if len(reason) > 2 else ""
+    named = (labels or {}).get(source) or {}
+    if named.get("why") and polarity != "goal":
+      return named["why"]
     if polarity == "goal":
       # $auto_negated_question is the refutation assumption (assumed for contradiction)
       if source == "$auto_negated_question":
@@ -189,14 +219,14 @@ def _format_why(reason, sent_nr, clause=None):
     return kind
 
 
-def _format_step(step, sent_nr, show_logic=False):
+def _format_step(step, sent_nr, show_logic=False, labels=None):
   """Render one proof step as a readable line."""
   nr     = step[0] if len(step) > 0 else "?"
   reason = step[1] if len(step) > 1 else []
   clause = step[2] if len(step) > 2 else []
 
   clause_str = clause_to_str(clause)
-  why_str    = _format_why(reason, sent_nr, clause)
+  why_str    = _format_why(reason, sent_nr, clause, labels)
   conf       = _extract_step_conf(reason)
   if conf < 0.9999:
     why_str = why_str + ", confidence " + _fmt_pct(conf)
@@ -302,6 +332,7 @@ def format_explanation(answers, sentence_map, show_logic=False, logic=None):
     # Collect background-knowledge steps (sourced from frm_* axioms) for a
     # separate "Knowledge used:" section, mirroring the old UDP-pipeline style.
     compute_skolem_types(proof, logic=logic)
+    labels = clause_labels(logic)
     bk_seen  = {}   # clause_str -> already listed flag
     bk_lines = []
     lb_seen  = {}   # the same, for the rules this run added
@@ -320,10 +351,15 @@ def format_explanation(answers, sentence_map, show_logic=False, logic=None):
       seen, lines = (lb_seen, lb_lines) if added else (bk_seen, bk_lines)
       if cstr not in seen:
         seen[cstr] = True
-        why = ("Why: %s, held unless something contradicts it."
-               % _litbridge_label(source).replace("added rule",
-                                                  "a rule this run added")
-               if added else "Why: assumed basic knowledge.")
+        if added:
+          why = ("Why: %s, held unless something contradicts it."
+                 % _litbridge_label(source).replace("added rule",
+                                                    "a rule this run added"))
+          english = (labels.get(source) or {}).get("english")
+          if english:
+            why = "Reads: %s.  %s" % (english.rstrip("."), why)
+        else:
+          why = "Why: assumed basic knowledge."
         lines.append("  " + cstr + ". " + why)
         if show_logic:
           if g.options.get("json_flag"):
@@ -338,7 +374,8 @@ def format_explanation(answers, sentence_map, show_logic=False, logic=None):
     proof_header = "Proof steps (by contradiction):" if is_contradiction else "Proof steps:"
     step_lines = [proof_header]
     for step in proof:
-      step_lines.append(_format_step(step, sent_nr, show_logic=show_logic))
+      step_lines.append(_format_step(step, sent_nr, show_logic=show_logic,
+                                     labels=labels))
 
     # Append exceptions section from answer-level blockers (grounded constants).
     blockers = ans.get("blockers", [])

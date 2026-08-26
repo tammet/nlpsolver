@@ -29,8 +29,12 @@ from lc_rewrites import (
   _collect_content_inner_vars,
   _MODAL_CLASSIFIERS,
 )
+from lc_encoding import experiment as _experiment
 
 _TEMPLATE_ROLES = ("has type", "has actor", "has target", "has recipient")
+# (strictfold experiment) the only roles the flat fold may put in the object slot
+_STRICT_CORE_ROLES = ("has target", "has recipient", "has beneficiary",
+                      "has goal", "has topic")
 _OBJECT_ROLES = ("has target", "has beneficiary", "has source", "has recipient")
 _TENSES = ("past", "present", "future")
 
@@ -137,6 +141,7 @@ _OBJ_ROLE_PRIORITY = ["has recipient", "has beneficiary", "has target",
                       "has accompaniment", "has instrument"]
 
 _verb_index = {}    # event var -> its has-type verb, built per coarsen_events run
+_in_antecedent = False   # (laxrules experiment) folding a rule antecedent right now
 _eventprop_mode = False  # (flatroles) tag folded object roles as ["eventprop", role, value]
 _davidson_mode = False   # (-event davidson) structure-preserving fold: spine -> event(V,A,O,E), keep the rest
 _dav_nr = 0              # counter for fresh existential agent/patient vars (reset per coarsen_events run)
@@ -232,6 +237,9 @@ def _fold_event_flat(and_block, E, content_inner):
   vtype, actor, objs, content = _collect_event_roles(and_block, E)
   if vtype is None:
     return None
+  if (_experiment("strictfold") and not (_experiment("laxrules") and _in_antecedent)
+      and not _strict_foldable(and_block, E, actor, objs)):
+    return None                              # keep the event reified
   # two-event reification: inner content event -> its verb as the object
   if content is not None and "has target" not in objs:
     inner_verb = _verb_index.get(content)
@@ -442,8 +450,18 @@ def _fold_event(and_block, E, content_inner, ultra):
 
 
 def _coarsen_node(node, content_inner, ultra):
+  global _in_antecedent
   if not isinstance(node, list) or not node:
     return node
+  if node[0] == "implies" and len(node) >= 3 and _experiment("laxrules"):
+    # (laxrules) the antecedent keeps the lossy fold; strictfold applies to the rest
+    saved = _in_antecedent
+    _in_antecedent = True
+    try:
+      ant = _coarsen_node(node[1], content_inner, ultra)
+    finally:
+      _in_antecedent = saved
+    return [node[0], ant] + [_coarsen_node(x, content_inner, ultra) for x in node[2:]]
   if node[0] == "exists" and len(node) >= 3 and isinstance(node[1], str):
     E = node[1]
     inner = node[2]
@@ -671,6 +689,15 @@ def _flatten_nested_implies(node):
 
 
 def _fold_antecedent_events(node, content_inner, ultra):
+  global _in_antecedent
+  _in_antecedent = True
+  try:
+    return _fold_antecedent_events_inner(node, content_inner, ultra)
+  finally:
+    _in_antecedent = False
+
+
+def _fold_antecedent_events_inner(node, content_inner, ultra):
   if not isinstance(node, list) or not node:
     return node
   if (node[0] == "implies" and len(node) >= 3 and isinstance(node[1], list)
@@ -698,6 +725,110 @@ def _atoms_of(clause):
     for a in clause:
       if isinstance(a, list):
         yield a
+
+
+def _role_heads_on(block, E):
+  """Every `has X` head attributed to event E in the block, except a tense-valued
+  has_time (which the fold drops to $ctxt anyway)."""
+  heads = set()
+  def walk(n):
+    if isinstance(n, list) and n and isinstance(n[0], str):
+      if len(n) >= 3 and n[1] == E and n[0].startswith("has "):
+        if not (n[0] == "has time" and n[2] in _TENSES):
+          heads.add(n[0])
+      for x in n[1:]:
+        walk(x)
+    elif isinstance(n, list):
+      for x in n:
+        walk(x)
+  walk(block)
+  return heads
+
+
+def _var_has_modifiers(block, var, E):
+  """True iff `var` occurs in some atom other than its own isa typing and a
+  role atom of event E (so a typed existential carries a modifier)."""
+  found = [False]
+  def walk(n):
+    if isinstance(n, list) and n and isinstance(n[0], str):
+      if n[0] in ("exists", "forall"):       # a binder names the var, it is no modifier
+        for x in n[2:]:
+          walk(x)
+        return
+      if var in n[1:]:
+        own_isa = n[0] == "isa" and len(n) >= 3 and n[2] == var
+        own_role = n[0].startswith("has ") and len(n) >= 3 and n[1] == E and n[2] == var
+        if not (own_isa or own_role):
+          found[0] = True
+      for x in n[1:]:
+        walk(x)
+    elif isinstance(n, list):
+      for x in n:
+        walk(x)
+  walk(block)
+  return found[0]
+
+
+def _strict_foldable(block, E, actor, objs):
+  """(strictfold experiment) The flat fold may collapse E only when it has an
+  actor, exactly one core object role, no other role or adjunct, and a
+  typed-existential filler without modifiers."""
+  if actor is None:
+    return False
+  core = [r for r in _STRICT_CORE_ROLES if r in objs]
+  if len(core) != 1:
+    return False
+  heads = _role_heads_on(block, E)
+  if heads - ({"has type", "has actor"} | set(core)):
+    return False
+  if not _experiment("strictmod"):        # the modifier rule is its own switch
+    return True
+  filler = objs[core[0]]
+  typed = _typed_existential_vars(block, E)
+  if isinstance(filler, str) and filler in typed and _var_has_modifiers(block, filler, E):
+    return False
+  return True
+
+
+def _bare_class_token(k):
+  """A class name used as a folded object ("berry"), not an entity, variable,
+  Skolem or witness constant."""
+  if not (isinstance(k, str) and k):
+    return False
+  if k.startswith(("?:", "#:", "$", "sk")) or re.search(r"\s\d+$", k):
+    return False
+  return k[0].islower()
+
+
+def inject_object_class_bridges(result):
+  """(objbridge experiment) For every folded atom whose object is a bare class
+  token K in role R of verb V, emit
+
+      is_rel2(V, A, [R, X]) & isa(K, X)  ->  is_rel2(V, A, [R, K])
+
+  so an event on an instance of K also satisfies the generic K-object reading
+  ("John saw the head" -> "John saw a head").  One clause per (V, R, K)."""
+  seen = set()
+  for obj in result:
+    if not isinstance(obj, dict):
+      continue
+    body = obj.get("@logic") if "@logic" in obj else obj.get("@question")
+    if body is None:
+      continue
+    for atom in _atoms_of(body):
+      h = atom[0] if atom and isinstance(atom[0], str) else None
+      if h in ("is rel2", "-is rel2") and len(atom) >= 4 and isinstance(atom[1], str):
+        o = atom[3]
+        if (isinstance(o, list) and len(o) == 3 and o[0] == "eventprop"
+            and isinstance(o[1], str) and _bare_class_token(o[2])):
+          seen.add((atom[1], o[1], o[2]))
+  out = []
+  for v, r, k in sorted(seen):
+    out.append({"@name": "frm_objclass", "@logic": [
+      ["-is rel2", v, "?:Aoc", ["eventprop", r, "?:Xoc"], "?:Coc"],
+      ["-isa", k, "?:Xoc"],
+      ["is rel2", v, "?:Aoc", ["eventprop", r, k], "?:Coc"]]})
+  return out
 
 
 def inject_verb_bridges(result):
@@ -831,6 +962,8 @@ def rel2_event_axiom_clauses():
   so a relation and a reified event of the same verb/actor/object interderive
   regardless of which shape each clause used (case 12 fight)."""
   V, A, O, Ctx = "?:Vre", "?:Are", "?:Ore", "?:Cre"
+  if _experiment("rolebridge") and _eventprop_mode:
+    return _rolebridge_axiom_clauses(V, A, O, Ctx)
   ev = ["$ev_of", V, A, O]
   neg = ["-is rel2", V, A, O, Ctx]
   fwd = [                                            # is_rel2 -> event
@@ -849,6 +982,44 @@ def rel2_event_axiom_clauses():
       ["is rel2", V, A, O, Ctx]]},
   ]
   return fwd + rev
+
+
+# (rolebridge experiment) the roles a folded eventprop object may carry back
+# into a reified event.  Preposition-bearing roles (location, destination,
+# source) are left out: the fold dropped their preposition, and asserting one
+# with a free variable would over-derive against the on/under style mutexes.
+_ROLEBRIDGE_ROLES = ("target", "recipient", "beneficiary", "topic", "goal",
+                     "instrument")
+
+
+def _rolebridge_axiom_clauses(V, A, O, Ctx):
+  """(rolebridge experiment) The relation<->event bridge for -event flatroles,
+  where a folded object is ["eventprop", $role, O]:
+
+      is_rel2(V, A, [eventprop, $r, O])  ->  exists E. isa(activity,E) & has_type(E,V)
+                                             & has_actor(E,A) & has_r(E,O)
+      isa(activity,E) & has_type(E,V) & has_actor(E,A) & has_target(E,O)
+                                         ->  is_rel2(V, A, [eventprop, $target, O])
+
+  The plain-object bridge never fires under flatroles (no folded atom carries a
+  bare object), so this replaces it there."""
+  out = []
+  for role in _ROLEBRIDGE_ROLES:
+    obj = ["eventprop", "$" + role, O]
+    ev = ["$ev_of", V, A, obj]
+    neg = ["-is rel2", V, A, obj, Ctx]
+    out.append({"@name": "frm_rel2_event", "@logic": [neg, ["isa", "activity", ev]]})
+    out.append({"@name": "frm_rel2_event", "@logic": [neg, ["has type", ev, V, Ctx]]})
+    out.append({"@name": "frm_rel2_event", "@logic": [neg, ["has actor", ev, A, Ctx]]})
+    out.append({"@name": "frm_rel2_event", "@logic": [neg, ["has " + role, ev, O, Ctx]]})
+  E = "?:Ere"
+  out.append({"@name": "frm_event_rel2", "@logic": [
+    ["-isa", "activity", E],
+    ["-has type", E, V, Ctx],
+    ["-has actor", E, A, Ctx],
+    ["-has target", E, O, Ctx],
+    ["is rel2", V, A, ["eventprop", "$target", O], Ctx]]})
+  return out
 
 
 def event_axiom_clauses():

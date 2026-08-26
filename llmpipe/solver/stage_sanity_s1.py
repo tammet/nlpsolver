@@ -562,7 +562,7 @@ def _question_clause_negated(orig_q, unit_text):
 def _check_stage1_dropped_question_negation(s1_json, orig_text=None):
   """Flag a query unit that dropped a sentential negation present in the
   original question (prenorm-negation-fallback detector).  Gated on the
-  -negretry flag.  No-op when orig_text is unavailable.  See cases
+  `negretry_flag`.  No-op when orig_text is unavailable.  See cases
   80/127/189/200 (gpt)."""
   import globals as _g
   if not _g.options.get("negretry_flag"):
@@ -611,7 +611,46 @@ def _check_stage1_dropped_question_negation(s1_json, orig_text=None):
 
 # ======== public API ========
 
-def check_stage1(s1_json):
+def _check_stage1_dropped_question(s1_json, orig_text=None):
+  """The input asks a question and Stage 1 kept no trace of it.
+
+  FOLIO states its conclusion as a declarative that ends in "?"
+  ("Djokovic lives in a tax haven?").  A model can read that as one more
+  assertion and never emit it, and then no block's raw text carries the "?"
+  and no unit is typed `query`.  Both Stage-2 defences key on exactly that
+  evidence, so with the sentence gone neither can fire and the run ends at
+  gk's `no question given` (19 of 203 deepseek FOLIO cases, 2026-08-19).
+
+  Fires only when the question left NO trace at all.  A question Stage 1
+  merely mistyped still shows up in a raw text, and
+  `stage_sanity_s2._check_stage2_missing_question` handles that one.
+  """
+  if not isinstance(s1_json, list) or not orig_text:
+    return []
+  questions = _question_sentences(orig_text)
+  if not questions:
+    return []
+  for pkg in s1_json:
+    if not isinstance(pkg, dict):
+      continue
+    if "?" in (pkg.get("raw") if isinstance(pkg.get("raw"), str) else ""):
+      return []
+    for unit in pkg.get("units", []) or []:
+      if isinstance(unit, dict) and unit.get("type") == "query":
+        return []
+  return [Issue(
+      kind="dropped_question",
+      location="",
+      description=("The input asks: \"" + questions[-1] + "\"  Stage 1 has no "
+                   "unit for it: no unit is typed `query` and no block's raw "
+                   "text carries the question. A sentence that ends with '?' "
+                   "is a question even when it is worded as a statement — it "
+                   "asks whether what it says is so. Emit every sentence of "
+                   "the input, and emit that one as a unit of type `query`."),
+      evidence=questions[-1][:200])]
+
+
+def check_stage1(s1_json, orig_text=None):
   """Run all registered Stage-1 sanity checks and return the combined
   issue list.
 
@@ -627,11 +666,12 @@ def check_stage1(s1_json):
   issues.extend(_check_stage1_pronoun_as_class(s1_json))
   issues.extend(_check_stage1_spurious_wh_placeholder(s1_json))
   issues.extend(_check_stage1_split_conditional(s1_json))
+  issues.extend(_check_stage1_dropped_question(s1_json, orig_text))
   return issues
 
 
 def check_dropped_question_negation(s1_json, orig_text):
   """Public entry for the prenorm-negation-fallback (llmparse.parse_text):
   return issues if a query unit dropped a sentential negation present in the
-  ORIGINAL question text.  Gated on the -negretry flag inside the checker."""
+  ORIGINAL question text.  Gated on `negretry_flag` inside the checker."""
   return _check_stage1_dropped_question_negation(s1_json, orig_text)

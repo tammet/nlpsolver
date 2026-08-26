@@ -76,6 +76,8 @@ _WHEN_META_PREDS = frozenset({"scheduled for", "happens in", "occurs at",
 WHEN_TEMPORAL_PREPS = frozenset(_TEMPORAL_PREPS)
 
 # Stage-2 variable pattern: uppercase-initial identifier (X, Y, Entity, ...).
+# Kept for importers; the decision itself is `lc_clausify.looks_like_var_broad`,
+# which excludes world constants.
 S2_VAR_RE = re.compile(r'^[A-Z][A-Za-z0-9]*$')
 
 
@@ -431,6 +433,12 @@ def hoist_generic_yn_subject(formula, name, asu_text=None, generic_classes=None)
   # has gained knowledge?" into a proved existential.)
   elif (generic_classes is not None
         and _norm_class(isa_class) not in generic_classes):
+    # (quniv, a `fallback_norm` switch) keep the universal reading instead of the
+    # existential rewrite: the existential defq can neither be proved nor
+    # refuted by a stated counterexample ("a duster ... doesn't suck", FOLIO
+    # 137), while the universal biconditional lets the counterexample refute.
+    if _opts.get("quniv_flag", False):
+      return (None, None, formula)
     existential = ["exists", var, ["and"] + list(atoms) + [body]]
     return (None, None, existential)
 
@@ -629,7 +637,8 @@ def _s2var_to_gk(name_str):
   if isinstance(name_str, str):
     if name_str.startswith("?:"):
       return name_str
-    if S2_VAR_RE.match(name_str):
+    from lc_clausify import looks_like_var_broad
+    if looks_like_var_broad(name_str):
       return "?:" + name_str
   return name_str
 

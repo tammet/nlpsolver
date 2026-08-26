@@ -64,16 +64,19 @@ representation so that maintainers and contributors can extend or modify the sys
    - 9.5 [Spatial and temporal preposition handling](#95-spatial-and-temporal-preposition-handling)
 10. [Extending and modifying the pipeline](#10-extending-and-modifying-the-pipeline)
 11. [Event-encoding and abstraction machinery](#11-event-encoding-and-abstraction-machinery)
-12. [Alternative parsing modes: prenorm, combined single-stage, direct answer, split Stage 2](#12-alternative-parsing-modes-prenorm-combined-single-stage-direct-answer-split-stage-2)
+12. [Abstraction presets and alternative parsing modes](#12-abstraction-presets-and-alternative-parsing-modes)
+    - 12.0 [Abstraction presets](#120-abstraction-presets--abstract-family)
+    - 12.0b [The repair stack: flag sets and resolution order](#120b-the-repair-stack-three-flag-sets-and-the-resolution-order)
 13. [Literal-bridge abstraction (`-litbridge`)](#13-literal-bridge-abstraction--litbridge)
     - 13.1 [Where it sits](#131-where-it-sits)
     - 13.2 [Candidates](#132-candidates-what-the-model-may-build-a-rule-from)
     - 13.3 [Compiling a rule to clauses](#133-compiling-a-rule-to-clauses)
-    - 13.4 [The two code-built channels](#134-the-two-code-built-channels--litbridge_extras)
+    - 13.4 [The two code-built channels](#134-the-two-code-built-channels-litbridge_procedureextras)
     - 13.5 [The encoding the bridge is converted under](#135-the-encoding-the-bridge-is-converted-under)
     - 13.6 [What the output shows](#136-what-the-output-shows)
     - 13.7 [Origin and further reading](#137-origin-and-further-reading)
-14. [Open-relation graph abstraction (`-graphbridge`)](#14-open-relation-graph-abstraction--graphbridge)
+    - 13.8 [The per-cited-rule grader](#138-the-per-cited-rule-grader-litbridge_gradermode)
+14. [Graph abstraction: `-graphtrans` and `-graphbridge`](#14-graph-abstraction--graphtrans-and--graphbridge)
     - 14.1 [What it is and where it sits](#141-what-it-is-and-where-it-sits)
     - 14.2 [The open-triple atom contract](#142-the-open-triple-atom-contract)
     - 14.3 [The graph converter configuration](#143-the-graph-converter-configuration)
@@ -83,6 +86,18 @@ representation so that maintainers and contributors can extend or modify the sys
     - 14.7 [Lifting into the ordinary representation](#147-lifting-into-the-ordinary-representation)
     - 14.8 [Flags, record and output](#148-flags-record-and-output)
     - 14.9 [The study harness](#149-the-study-harness)
+15. [The critique pass (`-critic`)](#15-the-critique-pass--critic)
+16. [The two abstention fallbacks (`-fallback_norm`, `-fallback_hyp`)](#16-the-two-abstention-fallbacks--fallback_norm--fallback_hyp)
+    - 16.1 [Where they sit](#161-where-they-sit)
+    - 16.2 [The normalizations](#162-the-normalizations)
+    - 16.3 [The question rewrites fire on triggers](#163-the-question-rewrites-fire-on-triggers-not-on-formula-shape)
+    - 16.4 [Exclusive before inclusive](#164-exclusive-before-inclusive)
+    - 16.5 [The isolated theory](#165-the-isolated-theory)
+    - 16.6 [The ex falso hazard](#166-the-ex-falso-hazard-and-where-the-reading-disagrees-with-folio)
+    - 16.7 [Configuration, not flags](#167-configuration-not-flags)
+    - 16.8 [Flags, record and output](#168-flags-record-and-output)
+    - 16.9 [Cost, measured](#169-cost-measured)
+    - 16.10 [Fixtures](#1610-fixtures)
 
 ---
 
@@ -147,7 +162,17 @@ procproofs.process_proof()         [procproofs.py → proof_answer_select.py + p
 Answer string
 ```
 
-**One optional detour** (`-litbridge`, on under `-abstract-max`, off by default).  When
+**Two abstention fallbacks sit between `process_proof` and every detour below**
+(`-fallback_norm` and `-fallback_hyp`, both **on by default**).  When
+`process_proof` leaves the question unresolved, each converts the **same** Stage-1/
+Stage-2 parse a second time and calls `prover.call_prover` once more.  Neither makes an
+LLM call, and neither runs at all once the question has a definite answer.
+`fallback_norm` turns on a set of token and shape normalizations and the question
+rewrites the case's own wording licenses; `fallback_hyp` assumes the antecedent of a
+conditional question in an isolated theory and asks the consequent.  Chapter 16.
+
+**One optional detour** (`-litbridge`, off by default; on under `-stack-open` and
+`-abstract-max`).  When
 `process_proof` leaves the question unresolved, `litbridge_procedure` asks the model for
 implication rules over the case's own displayed atoms, compiles them to clauses, appends
 them to the same clause list and calls `prover.call_prover` again.  A proof found then is
@@ -164,6 +189,17 @@ separately.  The two theories are never pooled.  A graph proof is lifted back in
 ordinary representation through the literal bridge's own grammar and compiler, and only
 a lifted proof becomes the run's answer; a graph-only proof is a labelled experimental
 result.  Chapter 14.
+
+**One optional audit** (`-critic`, off by default).  Between the fallbacks and the two
+detours, one LLM call reads the case and the translation the pipeline made and reports
+what is wrong with it.  A blocking finding on its own chain makes Stage 2 run once more
+with the findings appended.  Chapter 15.
+
+The run order after the front door is therefore: `fallback_norm`, `fallback_hyp`, the
+critique pass, then the abstraction routes in the order `globals.ABSTRACTION_ROUTES`
+gives.  The first definite answer stops the rest.  Those six stages are the **repair
+stack**; §12.0b says which flag set turns which of them on, and every case record
+carries `stages_enabled`.
 
 The top-level entry point for library use is `english_to_answer(text, options)` in `solve.py`.
 The command-line entry point is `main()` in the same file.
@@ -858,9 +894,15 @@ See §7 for detailed discussion of the key algorithms.
   Stage-1 generic entity whose **id** is plural while its **category** is singular) never unifies
   with the singular form used elsewhere or with the population witness, so an existential generic
   question (`∃X isa(C,X) ∧ BODY`) finds no witness → Unknown (case 211, gpt/claude/gemini).
-  `_safe_singularize_class` guards the crude trailing-`s` heuristic: it skips proper nouns
-  (capitalized) and `-us` / `-is` / `-ss` / `-es` / `-cs` endings (bus, analysis, class, series,
-  potatoes, physics), gating multi-word classes on their head word, plus a small irregular set.
+  `_safe_singularize_class` guards the crude trailing-`s` heuristic, gating multi-word
+  classes on their head (last) word.  It tests, in this order: a small irregular / mass-noun
+  exception set (`news`, `scissors`, `series`, `species`, `rabies`, `caries`, …); a
+  capitalized head, left intact as a proper noun; a one-letter head, left intact because
+  stripping its only letter would leave a token ending in a space; the `-ies` rule, which
+  gives berries → berry and activities → activity; and only then the `-us` / `-is` / `-ss` /
+  `-es` / `-cs` guard (bus, analysis, class, potatoes, physics, roses), which leaves those
+  intact.  The `-ies` rule must precede that guard, since every `-ies` plural also ends in
+  `-es`; the singular `-ies` nouns are what the exception set is for.
 
 **Clausification pipeline** (inside `clausify`):
 
@@ -1091,6 +1133,26 @@ explicitly in `_STOP_WORDS` (case 1253).
 
 Atom-to-English rendering in `proof_english.py` is table-driven via `_PRED_TABLE`, a dict mapping
 predicate names to `(arity, pos_renderer, neg_renderer)` tuples.
+
+**Open names (`open_names_flag`).**  The graph theory's class and relation names are the
+case's own words (`premiered`, `music_piece`, `sells_greater_than_copies`), so the verb and
+preposition heuristics of the table misfire on them: `looks_like_verb("premiered")` is true
+and `conjugate_verb` makes "premiereds".  Under the flag `proof_english` folds underscores to
+spaces and prints the name as the translator wrote it — `is rel2("premiered", X, Y)` → "X
+premiered Y", negated "it is not the case that X premiered Y" — reads one of the nine fixed
+roles of `graph_stage2.ROLES` as a role ("the agent of E is X"), and keeps the copula only for
+a name that is itself a preposition ("X is on the list").  `isa` folds the underscores and is
+otherwise unchanged.  The flag is off everywhere but the graph route's own rendering, which
+sets it through `graph_compile.GRAPH_OPTION_TABLE` and `graph_compile.open_names()`.
+`PROOF_RENDERING.md` §3.2b has the table.
+
+**Clause labels (`proof_explain.clause_labels`).**  Two kinds of clause say more about
+themselves than their name does, and the label map is built from the submitted clause list:
+a graph wording-variant rule (`norm_<n>`, carrying `@variant`) shows as
+`[wording variant: games -> game]` instead of `[background knowledge]`, and an invented rule
+carrying `@nl` — the program's own English reading of it — gets a `Reads:` line before its
+`Why:` line in the "Added rules" section.  `graph_search` puts `english_of(rule)` on each
+compiled bridge clause.
 
 See `PROOF_RENDERING.md` for the original principles, entity naming rules,
 and proof explanation structure with examples.
@@ -1411,6 +1473,24 @@ No dependency on proof state or any other pipeline module.
 - `make_comparative(adj) -> str` — comparative form (`nice` → `nicer`, `beautiful` → `more beautiful`)
 - `to_gerund(verb) -> str` — gerund form (`run` → `running`, `bite` → `biting`)
 
+### 5.17b fallback_norm.py and fallback_hyp.py
+
+**Role:** The two abstention fallbacks — a second conversion of the same
+Stage-1/Stage-2 parse when the front door ends unresolved, and one more gk
+call.  Described in full in chapter 16.  Neither makes an LLM call.
+
+| module | owns |
+|---|---|
+| `fallback_norm.py` | the nine configuration booleans and the internal option keys they switch on; the `casenorm` pass (`logconvert` calls it beside `dashnorm`); the inclusive-cue and apposition tests and the question rewrites they license (`apply_question_transforms`, which `logconvert` calls and which is inert while both keys are off); `inclusive_theory`; and `run`, the exclusive-before-inclusive submitter |
+| `fallback_hyp.py` | `REFUTATION_CHECK`; `conditional_questions`, the trigger; `hypothetical_theory` and `refutation_theory`; and `run` |
+
+`fallback_hyp` imports `fallback_norm` for its option switching and its
+submitter, so its conversions carry the normalizations too.  Both reach
+`logconvert`, `prover` and `procproofs` through imports inside `run`, so
+`logconvert` can import `fallback_norm` at the point of use without a cycle.
+`solve.py` reaches them only inside the `fallback_norm_flag` /
+`fallback_hyp_flag` branch.
+
 ### 5.18 The litbridge_* modules
 
 **Role:** Literal-bridge abstraction — inventing implication rules over a case's own
@@ -1509,6 +1589,7 @@ unchanged.
 | Check | Kind | Triggers on | Example case |
 |---|---|---|---|
 | `_check_stage1_missing_wh_placeholder` | `missing_wh_placeholder` | A query unit whose text or parent raw begins with a wh-question word but has no entity flagged `wh_placeholder=true`.  The retry prompt asks the LLM to add the placeholder and apply the question-word transformation. | Wh-questions in any LLM |
+| `_check_stage1_dropped_question` | `dropped_question` | The input has a "?"-terminated sentence, no block's `raw` text carries a "?" and no unit is typed `query`: Stage 1 dropped the question outright.  FOLIO writes its conclusion as a declarative ending in "?" and deepseek read it as one more assertion on 19 of 203 cases (2026-08-19); with the sentence gone, `_check_stage2_missing_question` and the downstream `no question given` retry have nothing to key on.  `check_stage1` takes the input text for this check.  A question Stage 1 kept but mistyped still shows in a raw text and is left to the Stage-2 check. | deepseek FOLIO 14/15/20/… (19 cases); `tools/test_dropped_question.py` |
 | `_check_stage1_entity_used_as_location` | `entity_used_as_location` | A unit whose `location` field is a concrete-entity ID declared in the same unit's entities list.  The unit-level `location` field is the SCENE / place of the situation, NEVER a concrete object that participates in a spatial relation as the secondary argument.  The retry prompt explains the distinction and asks the LLM to either move the spatial info into the action's roles (with `location_prep`) or omit `location` entirely. | Case 148 — gemini and gpt put `location: "table 3"` / `"floor 4"` at unit level, polluting `$ctxt` position 3 |
 | `_check_stage1_pronoun_as_class` | `pronoun_as_class` | A **query** unit declares an entity whose id is an indefinite person-pronoun (`someone`/`somebody`/`anyone`/`anybody`/`everyone`/`everybody`, trailing number stripped).  Stage-2 then emits a phantom `isa("someone", X)` class that nothing populates → the question is unprovable.  The retry asks for the common noun `person`.  **Gated to query units only** — in a rule/assertion ("If someone is X then Y") the pronoun is a universal bound variable and a retry damages the parse (regressed 1390/1608 before the gate). | Case 626 — gpt |
 | `_check_stage1_spurious_wh_placeholder` | `spurious_wh_placeholder` | A **query** unit carries a `wh_placeholder` entity but its text (a) leads with a yes/no auxiliary (`did`/`does`/`is`/`are`/`was`/`were`/`has`/`have`/`can`/`will`/…) AND (b) contains **no** wh-word anywhere.  The yes/no question was mis-flagged as wh, so Stage-2 emits an `ask X` (askvars) query that needs a determinate witness an indefinite/disjunctive subject cannot give.  The retry asks for a plain yes/no encoding (drop the placeholder, no "Which …" rewrite).  The two-part gate leaves genuine wh-questions phrased with a leading auxiliary alone, e.g. "Is Ellen afraid of whom?" (1343). | Case 626 — claude |
@@ -1917,9 +1998,9 @@ The list of checks lives in `stage_sanity.py` (§5.17).  Adding a new check = on
 `_check_stage<N>_*` function plus a call inside `check_stage<N>`; no change to `llmparse.py`
 is needed.
 
-**`-nominalretry`: dropped predicate-nominal retry (experimental, flag-gated).**
+**`nominalretry_flag`: dropped predicate-nominal retry (experimental).**
 `_check_stage2_dropped_predicate_nominal` (gated on `globals.options["nominalretry_flag"]`,
-set by `-nominalretry` and folded into `-abstract-max`) addresses a Stage-2 failure where a
+set by `-abstract-max`, with no flag of its own) addresses a Stage-2 failure where a
 Stage-1 copular predication "ENT is a NOUN" loses its type.  `_extract_s1_copular_nominals`
 pulls `(entity, noun)` pairs from concrete fact units (`situation`/`real`), handling a subject
 with an `of …`/`'s …` postmodifier (the definite-description case) and multi-word nouns, and
@@ -2421,18 +2502,24 @@ abstraction primitives (`entitymerge_flag`, `typeenrich_flag` + `typeenrich_gate
 + `combined_instr_file` / `combined_examples_file` / `combined_checklist_file`,
 `directanswer_flag` + `directanswer_file`.
 
-**Literal-bridge keys** (§13): `litbridge_flag` (default `False`; set by `-litbridge`
-and by `-abstract-max`), `litbridge_extras_flag` (default `False`; set by
-`-litbridge_extras` alone — no preset turns it on), and `nolitbridge_flag`, which is
-not read by the pipeline: `solve.py` resolves it after the whole command line is read,
-forcing `litbridge_flag` to `False` so `-nolitbridge` wins from any position.
+**The six stage keys** (§12.0b): `fallback_norm_flag` and `fallback_hyp_flag`
+(default **`True`**), `critic_flag`, `graphtrans_flag`, `litbridge_flag` and
+`graphbridge_flag` (default `False`).  `solve.STAGE_KEYS` lists them in stage order.
+A flag set (`-stack`, `-stack-closed`, `-stack-open`) and `-abstract-max` assign all
+six; an explicit stage switch sets one to `True`; a cancel key
+(`nofallback_norm_flag`, `nofallback_hyp_flag`, `nocritic_flag`,
+`nographtrans_flag`, `nolitbridge_flag`, `nographbridge_flag`) is not read by the
+pipeline at all — `_parse_cmd_line` resolves it after the whole command line by
+forcing its stage key to `False`, so a cancel wins from any position.
+`nographtrans_flag` clears `graphbridge_flag` as well, since layer 2 searches layer
+1's theory.
 
-**Open-relation graph keys** (§14): `graphbridge_flag` (default `False`; set by
-`-graphbridge`, and by no preset), `graphbridge_lift_flag` (default `True`; cleared by
-`-graphbridge_nolift`), `graphbridge_sources` (default `"frontier,exhaustive,composition"`; a comma list set by
-`-graphbridge_sources`), and `nographbridge_flag`, which `_parse_cmd_line` resolves
-after the whole line by forcing `graphbridge_flag` to `False`, so `-nographbridge` wins
-from any position.
+**Settings that are module constants, not option keys.**  Each is read where the
+option key used to be, has no CLI flag and no `globals.options` entry:
+`litbridge_procedure.EXTRAS` (the two code-built literal-bridge channels, §13.4),
+`litbridge_grader.MODE` (`None` / `"stated"` / `"any"`, §13.8),
+`graph_procedure.LIFT`, `graph_procedure.EVIDENCE`, `graph_procedure.DEFAULT_SOURCES`
+(§14.8) and `globals.ABSTRACTION_ROUTES` (the route order, §14.8).
 
 **Two converter keys the graph theory needs** (§14.3), both default `False` and
 therefore inert everywhere else: `noclassnumbernorm_flag` stops the final clause list
@@ -2935,6 +3022,12 @@ python3 runtests.py -version claude-opus-4-8 -think 3000 -maxtokens 16000 ...
 
 # pipeline-mode flags (mirror solve.py; see DOCUMENTATION §11/§12)
 python3 runtests.py -abstract -prenorm [-nocrossstage] ...
+
+# any other solve.py flag: the runner parses its own arguments and hands the
+# rest to solve.py's parser, so -stack, -stack-closed, -stack-open,
+# -graphtrans, -litbridge, -nolitbridge, -critic and the rest work here
+# unchanged.  A flag solve.py does not know is an error, not a silent skip.
+python3 runtests.py -abstract-max -noprenorm -nolitbridge -graphtrans -critic ...
 python3 runtests.py -combined-instr prompts/combined_v2_instructions_full.txt \
                     -combined-examples prompts/combined_examples_pure.txt ...
 python3 runtests.py -directanswer prompts/folio_directanswer_instructions.txt ...
@@ -2946,6 +3039,70 @@ python3 runtests.py -tag myexperiment ...
 Variant modes auto-suffix the set name (`-combined-*` derives a tag from the prompt
 filenames; `-directanswer` uses `directanswer`; `-tag` overrides), so variant results
 live beside — never on top of — the plain two-stage `testresults/<set>/` data.
+
+**The runner's `-abstract-max`.**  The runner parses `-abstract-max` itself, so its
+expansion must assign the same six stage keys `solve.py`'s does: all six on, the
+converter preset plus the open-world stack.  A `-stack*` set, an explicit stage
+switch and every cancel reach `solve.py`'s parser through `_solve_options` and are
+merged after that block, so they still override it.  An experiment that names the
+stage flags explicitly is unambiguous whatever the preset does, and naming them is
+the safer habit — a stored folder's `stages_enabled` says what actually ran.
+
+**Per-case reporting.**  Every case JSON carries `answered_by` (`front_door`,
+`fallback_norm`, `fallback_hyp`, `critic`, `graphtrans`, `litbridge`, `graphbridge`
+or `none`), `front_door_answer`, `abstraction_order`, `stages_enabled` (the six
+stage keys this run had on, in stage order, so the folder says what ran without its
+command line), `llm_call_counts` (per stage tag: calls, live calls, retries),
+`llm_calls_total`, and the stage records (`fallback`, `critic`, `graphtrans`,
+`litbridge`, `graphbridge`).  `summary.json` totals
+`answered_by` and the calls over the whole run.  The same block is printed by
+`solve.py -summary` / `-summary-json`.
+
+**The top-level fields describe the ANSWERING stage's gk call.**  `answer`,
+`nl_proof`, `proof` (the gk result as JSON), `gk_command`, `final_clauses` and
+`final_clause_trace` all describe the one gk call that produced the final answer,
+whichever stage made it — the front door, a fallback, the critic's rerun, or a
+graph or literal bridge.  Two fields are new beside them:
+
+| field | what it holds |
+|---|---|
+| `front_door_proof` | the front door's own gk result, kept when a later stage answered |
+| `front_door_gk_command` | the front door's own command, likewise |
+| `stages` | one row per stage, in stage order: `stage`, `ran`, `answered`, and either the stage's own `answer` (first line, `null` when it found none) or `why` it did not run |
+
+`stages` is a separate information block, so a reader can see which stages ran and
+which produced the result without any ordinary key changing shape.
+
+**A run that returned early** — a truncated Stage-1 reply whose Stage 2 comes back
+empty, or the api-timeout cap — never reaches the block that writes `answered_by`
+and the stage rows.  `solve._english_to_answer` records its `Error: …` message as
+the `answer` and writes `stages_enabled` anyway, and `runtests.py` gives it an
+`error` payload when the run has neither `answered_by` nor `stage2`, so it is
+counted rather than stored as a file indistinguishable from a case that ran.  A run
+that DID parse and then hit a converter or prover error keeps its message as a
+scored answer.  `-summary` and
+`-summary-json` carry the same list, and `-logic` and above print it as an
+`=== stages ===` block:
+
+```
+=== stages ===
+
+  front_door     ran   Unknown.
+  fallback_norm  ran   no answer
+  fallback_hyp   ran   no answer
+  critic         off
+  graphtrans     ran   True.  <- the answer
+  litbridge      off
+  graphbridge    off
+```
+
+`clauses` is the front door's clause list at every level; `final_clauses` is the
+theory the answer rests on, so the two differ whenever a later stage answered.
+When nothing after the front door answers, the top-level fields are the front
+door's and the two `front_door_*` fields are absent.  This matters because every
+`prover.call_prover` writes `collect["gk_command"]`: without the snapshot a stage
+that RAN without answering would leave its own command at the top level.
+`solve._set_answering_call` is the one place that decides it.
 
 **Provenance stamp:** every `summary.json` carries a `pipeline_git` object —
 `{"commit": ..., "dirty": ..., "tags": [...]}` — recorded at run start
@@ -3004,7 +3161,7 @@ Population of the config:
   (`simpleprops`), `propclass_flag` (`propclass`), `numtype_flag` (`numtype`), `compasym_flag`
   (`compasym`), and `typeenrich_flag` (+ optional `typeenrich_gates`).  `collapse_degree` rides
   with `simpleprops`; `parse_canon` rides with `entitymerge` (parse-level entity canonicalization
-  is self-contained, driven by `-entitymerge`).  (`-nominalretry` is a parse-time Stage-2 retry,
+  is self-contained, driven by `-entitymerge`).  (`nominalretry_flag` is a parse-time Stage-2 retry,
   read from `globals.options` directly — not an `EncodingConfig` field; see §7.8.)
 - **`needs_coarsen`** — true iff any of `davidson`/`flatten`/`entitymerge`/`guarddrop`
   is set, i.e. whether `coarsen_events` runs at all.
@@ -3155,6 +3312,11 @@ set-iteration order and fresh-variable numbering).
 
 ---
 
+### 11.8 The two abstention fallbacks
+
+Both fallbacks convert the same parse a second time with some of the switches
+of this chapter turned on, and call gk once more.  Chapter 16 describes them.
+
 ## 12. Abstraction presets and alternative parsing modes
 
 ### 12.0 Abstraction presets (`-abstract` family)
@@ -3168,18 +3330,74 @@ option keys.  Three are defined:
 - **`-abstract-roles`** = `-abstract` but with `-event flatroles`
   (eventprop-tagged objects).
 - **`-abstract-max`** = `-abstract-roles` + `-prenorm` + `-propclass` + `-numtype` +
-  `-compasym` + `-nominalretry` + `-negretry` + `-litbridge` (the strongest
-  abstraction; the FOLIO base configuration).
+  `-compasym` + `nominalretry` + `negretry`, **plus the open-world repair stack** —
+  all six stage keys of §12.0b on.  It is the strongest configuration and the FOLIO
+  base.  `nominalretry_flag` and `negretry_flag` have no flag of their own; this
+  preset is what sets them.
 
-Three of those make live LLM calls beyond the two-stage parse, so `-abstract-max` is
-not a post-LLM-only configuration: `-prenorm` adds one call before Stage 1 (§12.1),
-`-nominalretry` and `-negretry` can each trigger a corrective Stage-2 re-parse (§7.8),
-and `-litbridge` adds one to five calls for a case the pipeline leaves unresolved
-(§13).  `-nolitbridge` cancels the last of these wherever it stands on the command
-line; the other two have no such switch and are cancelled by not using the preset.
+**`-abstract-max` makes LLM calls on every unresolved case.**  `-prenorm` adds one
+call before Stage 1 (§12.1); `nominalretry` and `negretry` can each trigger a
+corrective Stage-2 re-parse (§7.8); and of the six stages only the two fallbacks are
+free — the critic adds one call (chapter 15), the graph translation about three and
+the graph bridges about two more (chapter 14), the literal bridge one to five
+(chapter 13).  A replay of a stored result folder must therefore name the cancels
+that folder ran with, and its `stages_enabled` field says which those were.
 
 Because they expand into primitives, any preset composes with an explicit override
 (e.g. drop one primitive by not letting the preset set it, or layer `-existfold`).
+
+### 12.0b The repair stack: three flag sets and the resolution order
+
+Six **stage keys** name what may run after the front door leaves a question
+unresolved, in the order they run:
+
+    fallback_norm  fallback_hyp  critic  graphtrans  litbridge  graphbridge
+
+`solve.STAGE_KEYS` is that list.  The first definite answer stops the rest.  The two
+fallbacks are on by default and cost no LLM call (chapter 16); the other four are off
+by default and each costs calls.
+
+Three flag sets turn the stack on in its three measured forms.  Each assigns **all
+six** keys, so a set fully replaces whatever an earlier set or preset left behind:
+
+| flag | fallbacks | critic | graphtrans | litbridge | graphbridge | for |
+|---|---|---|---|---|---|---|
+| `-stack` | on | on | on | off | on | material of unknown origin — the general default |
+| `-stack-closed` | on | on | on | off | off | known closed-world material (core-like, FOLIO-like) |
+| `-stack-open` | on | on | on | on | on | known open-world material (EntailmentBank-like) |
+
+The literal bridge is out of `-stack` because it is the one measured net-harmful
+mechanism on closed-world material; the graph bridges are out of `-stack-closed`
+because they add nothing there and carry the one measured loss.
+`memos/MEMO_2026_08_24_mixed_stack_summary.md` §5 is the evidence.
+
+**Resolution order**, applied in `_parse_cmd_line`:
+
+1. **presets and flag sets** (`-abstract-max`, `-stack`, `-stack-closed`,
+   `-stack-open`), left to right — each assigns all six keys, so a later one
+   overwrites an earlier one.
+2. **explicit stage switches** (`-critic`, `-graphtrans`, `-graphbridge`,
+   `-litbridge`, `-fallback_norm`, `-fallback_hyp`) — collected during the scan and
+   applied after it, so each sets its key `True` whatever its position relative to a
+   preset.  `-graphbridge` sets `graphtrans` too, since layer 2 searches layer 1's
+   theory.
+3. **the cancels** (`-nocritic`, `-nographtrans`, `-nographbridge`, `-nolitbridge`,
+   `-nofallback_norm`, `-nofallback_hyp`, `-nofallback`) — applied last, winning over
+   1 and 2 from any position.  `-nographtrans` cancels `graphbridge` as well.
+
+So `-stack-closed -litbridge` and `-litbridge -stack-closed` both run the literal
+bridge, `-abstract-max -stack-closed` and `-stack-closed -abstract-max` differ (the
+later set wins), and `-nolitbridge` beats every one of them.
+`tools/test_stack_flags.py` fixes twelve such lines with their expected six keys.
+
+`runtests.py` parses `-abstract-max` itself and forwards every other flag to
+`solve._parse_cmd_line` through `_solve_options`, which returns the keys the line
+assigned — including a key a set assigns to its default value, so
+`runtests -abstract-max -stack-closed` ends with `litbridge_flag` `False`.  The two
+`-abstract-max` expansions must stay identical.
+
+Every case record carries `stages_enabled`, the stage keys the run had on in stage
+order, next to `abstraction_order`; `-summary` prints it.
 
 The alternative parsing modes below replace or augment the two-LLM-call parse.  All are
 selected per run (CLI flags / option keys), share the LLM cache keyed on their own
@@ -3298,7 +3516,8 @@ isolated per-sentence parses diverge and gpt drops to ~93/100.)
 Every mechanism in §11 and §12 changes how the *text* is converted.  This one changes
 the *theory*: when the pipeline cannot answer, the model is asked for implication rules
 connecting atoms the case already contains, and those rules become extra clauses.  It is
-off by default, on under `-abstract-max`, and cancelled by `-nolitbridge` wherever that
+off by default, on under `-stack-open` and `-abstract-max`, and cancelled by
+`-nolitbridge` wherever that
 stands on the command line.
 
 ### 13.1 Where it sits
@@ -3323,7 +3542,7 @@ Two rounds, in `_english_to_answer_once`:
    pipeline produced, so the run ends exactly where it would have without the detour.
 
 Cost per unresolved case: one LLM call and one gk run at minimum, five calls and two gk
-runs at the maximum with `-litbridge_extras` (§13.4).
+runs at the maximum with `litbridge_procedure.EXTRAS` on (§13.4).
 
 ### 13.2 Candidates: what the model may build a rule from
 
@@ -3368,11 +3587,12 @@ prunes proof search and compounds on repeated application
 already contains is refused (`already_present`, exact up to literal order and variable
 renaming, after the `$block` guard is removed).  Tautological auxiliaries are stripped.
 
-### 13.4 The two code-built channels (`-litbridge_extras`)
+### 13.4 The two code-built channels (`litbridge_procedure.EXTRAS`)
 
-Off by default and set by **no** preset, `-abstract-max` included.  Each adds one LLM
-call in round 1 in which the model does not write a rule — it only picks among pairs the
-code enumerated.
+Off.  `EXTRAS` is a module constant in `solver/litbridge_procedure.py`, with no CLI
+flag and no option key; `solve._run_litbridge` reads it.  Each channel adds one LLM
+call in round 1 in which the model does not write a rule — it only picks among pairs
+the code enumerated.
 
 **Distinctness**, `isa(C,A) ∧ isa(C,B) → ¬(A=B)`.  Eligible when a question clause holds
 a negative equality between two ground names; the English question carries a difference
@@ -3426,7 +3646,10 @@ under, the candidate count, the rules written, the clauses added, whether gk was
 again and whether it proved anything, and for each channel whether it called and why not.
 `-details` and `-debug` add the signed conclusion counts, every rule the compiler refused
 with its reason, the parser's rejection categories and anything over the hypothesis
-limit.  A batch run gets the whole record as `collect["litbridge"]`.
+limit.  A batch run gets the whole record as `collect["litbridge"]`, and the round
+that proved the question is the run's top-level `proof` and `gk_command` (§10) — the
+front door's own call is kept beside them as `front_door_proof` and
+`front_door_gk_command`.
 
 ### 13.7 Origin and further reading
 
@@ -3440,6 +3663,30 @@ the same rounds plus the parts a pipeline does not need: separate submissions pe
 minimisation of the proving set, and a bounded search for a different proof.
 
 ---
+
+### 13.8 The per-cited-rule grader (`litbridge_grader.MODE`)
+
+Off.  `MODE` is a module constant in `solver/litbridge_grader.py` — `None` off,
+else `"stated"` or `"any"` — with no CLI flag and no option key.  When a bridge round
+proves the question and `MODE` is set,
+`solve._grade_litbridge` asks the model about every invented rule the proof cites
+(`litbridge_procedure.proofs_of` → `cited_hypothesis_ids`), one call per rule,
+capped at `litbridge_grader.MAX_GRADED_RULES` (4) in citation order.  The grader
+(`solver/litbridge_grader.py`, prompt
+`prompts/dynamic_alignment/litbridge_grader_v1_system.txt`) sees the passage and
+that one rule — never the answer, never the question: `litbridge_grader.passage_only`
+drops every "?"-terminated sentence, so FOLIO's declarative conclusions
+("Beethoven is not a conductor?") cannot be read as passage facts.  Two evidence
+modes: `"stated"` — the rule must restate or be forced by the passage; `"any"` — the
+rule must be true as general knowledge.  `normalise_mode` reads anything else, `None`
+included, as `"stated"`.  One `FAIL` withdraws that
+proof; a case whose graded proofs are all withdrawn keeps the front door's answer,
+with no new rule search and no further gk round.  The round record carries
+`grading` (mode, per-rule verdict and reason, `withdrawn`), recorded also when
+everything passes.  The call goes through the litbridge responder with role
+`grader`.  Fixtures: `tools/test_litbridge_grader.py`.  Measured 2026-08-20
+(`memos/MEMO_2026_08_21_route_precision_result.md` §2, audited in
+`memos/MEMO_2026_08_23_audit_results_summary.md` §3.3).
 
 ## 14. Graph abstraction: `-graphtrans` and `-graphbridge`
 
@@ -3760,18 +4007,56 @@ Stage 2.  The question package is protected; at most two units per case.
 -nographtrans         force layers 1 and 2 off, wherever it stands
 -graphbridge          layer 2; implies -graphtrans
 -nographbridge        force layer 2 off; layer 1 unaffected
--graphbridge_lift     lift a graph proof into the ordinary theory (experimental)
--graphbridge_sources LIST   frontier (default), exhaustive, composition;
-                      holistic is refused with a message
--graphbridge_evidence any|stated   layer 2's acceptance evidence mode
--abstraction_order LIST     the order the routes run in after the front door
 ```
 
 Option keys: `graphtrans_flag`, `nographtrans_flag`, `graphbridge_flag`,
-`nographbridge_flag`, `graphbridge_lift_flag` (default False),
-`graphbridge_sources` (default `"frontier"`), `graphbridge_evidence` (default
-`"any"`), `abstraction_order` (default `"graphtrans,litbridge,graphbridge"`).
-`globals.ABSTRACTION_ROUTES` names the routes `solve.py` can dispatch.
+`nographbridge_flag`.  Every `-stack*` set and `-abstract-max` turn layer 1 on;
+`-stack`, `-stack-open` and `-abstract-max` turn layer 2 on as well (§12.0b).
+
+Layer 2's three settings are **module constants in `graph_procedure.py`**, with no
+CLI flag and no `globals.options` key:
+
+| constant | default | what it decides |
+|---|---|---|
+| `LIFT` | `False` | lift a graph proof into the ordinary theory.  Measured at 0 net for 56 calls, so a graph proof stays a labelled experimental result |
+| `EVIDENCE` | `"any"` | layer 2's acceptance evidence mode: `"any"` or `"stated"` |
+| `DEFAULT_SOURCES` | `("frontier",)` | the candidate sources layer 2 enumerates; `FULL_SOURCES` adds `exhaustive` and `composition` |
+
+`run_bridges` and `credible_answer` keep their `sources=`, `evidence=` and `lift=`
+parameters, so the study harnesses in `tools/` pass their own values; `solve.py`
+passes the constants.
+
+**What the graph route shows, per output level.**  Whatever `solve.py` shows for an
+ordinary answered case at a given level, the graph route shows for the gk call that
+produced its answer — under the **ordinary headers**.  A stage after the front door
+parses, converts and calls gk again, so those headers appear twice in one run; what
+says whose they are is the single line `--- stage: graphtrans ---` printed before the
+stage runs, and the stages block at the end (§10).
+
+| level | the graph route shows |
+|---|---|
+| `-explain` | the English proof of the graph gk call, rendered under `open_names_flag` (§5.9).  Nothing else: an answer the graph route found looks like an answer the front door found |
+| `-logic` | `--- stage: graphtrans ---`, then `=== sentences mapped to clauses: ===` for the graph theory, the formal clause under each proof step, and the `=== stages ===` block |
+| `-details` | `=== stage 2 (logic JSON, <model>) ===` (the open triples), `=== prover input (JSON) ===` and `=== prover result (JSON) ===` for the graph call |
+| `-debug` | the graph Stage-2 LLM call's raw response, `=== prover params ===` for the graph call, and the route's own step-by-step trace (`=== the second translation, step by step ===`) |
+
+No header carries a route name and no key in the JSON output is graph-specific: a
+reader who wants to know which stages ran, and which produced the answer, reads the
+stages block.
+
+**The record.**  `collect["graphtrans"]` keeps the whole layer-1 record: the
+open-triple `stage2_graph`, the graph `clauses`, the `variant_rules`, `proof` (the
+steps), `gk_result` (the whole gk result as JSON), `gk_verdict` (its one-word
+verdict), `gk_command` and the translation's own measurements.  Only the compiler
+sidecar and the unparsed result string are dropped.  `collect["graphbridge"]` keeps
+the search record; the minimal set `credible_answer` accepted carries `gk_input`,
+`gk_command`, `gk_result`, `answer_string` and `explanation` — the replay call the
+answer rests on — and the verdict carries `set_index`, which is how `solve.py` finds
+that row.  The run's own top-level `proof` and `gk_command` are the graph call's
+(§10).  `globals.ABSTRACTION_ROUTES` — also a constant, not a key —
+names the routes `solve.py` can dispatch and the order it runs them in:
+`graphtrans`, `litbridge`, `graphbridge`.  A route the list omits never runs,
+whatever its own flag says.
 
 **What layer 1 does that nothing else does.**  Every defeasible rule of the graph
 theory carries at most confidence 0.95, so a proof that used one comes back as
@@ -3865,14 +4150,294 @@ second critique.  A rerun that changes a unit nobody asked about is recorded.
 -nocritic   force it off, wherever it stands on the command line
 ```
 
-Option keys: `critic_flag`, `nocritic_flag`.  Position: after the front door's
-Unknown and **before** every abstraction route, so a repaired translation is
-what the graph and literal bridges see.
+Option keys: `critic_flag`, `nocritic_flag`.  Every `-stack*` set and
+`-abstract-max` turn it on (§12.0b).  Position: after the two abstention
+fallbacks (chapter 16) and **before** every abstraction route, so a repaired
+translation is what the graph and literal bridges see.  The fallbacks run
+first because they cost no LLM call; the critique pass sees only what they
+left unresolved.
 
 `collect["critic"]` holds the report, the retained and dropped findings, the
 verdict, the units asked for, the corrective, the answer before and after, and
 which units the rerun changed.  `-explain` prints the reading, the chain, the
 findings, the verdict and what the rerun changed.
 
+**Who answered the rerun.**  The rerun re-enters `_english_to_answer_body`, so
+the two fallbacks run again on the retranslated Stage 2 (the abstraction routes
+do not: `_route_enabled` refuses inside a rerun).  `record["rerun"]` therefore
+carries the inner run's `answered_by` and its `fallback` record beside
+`stage1`, `stage2` and `answer`.  The case's own `answered_by` stays `critic` —
+the retranslation is what made the answer reachable — and `-summary` names the
+stage that closed it:
+
+```
+answered_by: critic (rerun answered by fallback_norm)   (front door: Unknown.)
+```
+
+`_summary_record` carries the same value as `rerun_answered_by`, `None` when
+the critic did not answer.  When the critic answers, the rerun's own gk call —
+its `proof`, `gk_command`, `nl_proof` and `final_clauses` — becomes the run's
+top-level record (§10).
+
 The harness is `tools/run_critic_pass.py` and `tools/score_critic_pass.py`;
 fixtures are `tools/test_critic_pass.py`.
+
+---
+
+## 16. The two abstention fallbacks (`-fallback_norm`, `-fallback_hyp`)
+
+**Both are on by default**, in every configuration, and neither makes an LLM
+call.  When the front door leaves a question unresolved, each converts the same
+Stage-1/Stage-2 parse a second time and calls gk once more.  They are the first
+two stages of the repair stack (§12.0b).
+
+### 16.1 Where they sit
+
+`fallback_norm` runs first, then `fallback_hyp`, then the critique pass
+(chapter 15), then the abstraction routes (chapters 13 and 14).  Three rules
+fix the order:
+
+- A definite front-door answer is never disturbed.  Each fallback runs only
+  while `solve._unresolved(answer)` holds, so a base win cannot be re-opened.
+- The first definite fallback answer stops everything after it, including the
+  second fallback.
+- `fallback_hyp` converts with `fallback_norm`'s switches on.  A case that
+  needs both a normalization and the hypothetical reading is answered there.
+
+`answered_by` carries `fallback_norm` or `fallback_hyp`, and `-summary` prints
+that name as the answering stage.
+
+| fallback | what it changes | file |
+|---|---|---|
+| `fallback_norm` | token and shape normalizations, plus the question rewrites the text licenses | `solver/fallback_norm.py` |
+| `fallback_hyp` | the hypothetical reading of a conditional question, in an isolated theory | `solver/fallback_hyp.py` |
+
+### 16.2 The normalizations
+
+Six switches ride in `fallback_norm`'s conversion.  Each fires only on
+evidence the case itself carries, so no lexical claim is made about a word the
+case does not use.
+
+| switch | what it folds | example |
+|---|---|---|
+| `DASHNORM` | hyphen and space spellings of one word, when both occur | "well-paid" onto "well paid" |
+| `CASENORM` | letter-case variants of one token in one predicate position, when both occur | "Estonian city" onto "estonian city" |
+| `COMPNORM` | a comparative relation name onto its base gradable adjective | "taller than" onto "tall" |
+| `LISTPREP` | membership relations onto `on`, when the object names a list | `in(X, "Top 10 list")` onto `on(X, …)` |
+| `SINGROLE` | a bare plural noun value inside an `eventprop` role tag | `[eventprop, $target, "dogs"]` onto `"dog"` |
+| `QUNIV` | nothing; it keeps a universal generic yes/no question universal when the hoist is refused | "Elephants are not animals?" stays quantified |
+
+`CASENORM` is the one pass this chapter owns; the other five are converter
+passes of chapter 11 that only this fallback turns on.  It collects every
+string argument with its position, where a position is one of `("isa", 1)`,
+`("has property", 1)`, `("is rel2", 1)` or an `eventprop` value.  Two tokens
+fold only when they differ by letter case **and** share a position.  It never
+folds across positions: "Ailton" as an `isa` instance sits in argument 2, so
+it never folds onto "ailton" as an `isa` class in argument 1.  The position is
+what protects an entity name, because the pass runs before `apply_una` marks
+entities and a name is still bare there.  Variables (`?:`), meta tokens
+(`$`), skolems and already-marked entity constants (`#:`) are skipped
+outright.
+
+### 16.3 The question rewrites fire on triggers, not on formula shape
+
+Two rewrites read the question differently, and each needs evidence from the
+case's own words before it fires.
+
+- The **cued `xor -> or` rewrite** reads an `xor` in a question body
+  inclusively only when the question's wording carries an inclusive cue: "or
+  both", "at least one", "one or both", "and/or", "either or both", "possibly
+  both".
+- The **apposition presupposition** asserts a ground typing of a question body
+  only when Stage 1's question text shows that class in an apposition: "X, a
+  Y", "for X, a Y", "X (a Y)".  A class that is a plain conjunct of the
+  question is part of what is being asked.  "Is Ted a student and employed?"
+  asserts nothing.
+
+`fallback_norm._question_text` supplies the wording.  It reads the raw text of
+each Stage-1 unit marked `type: "query"`, and of any raw sentence ending in
+"?".  When it finds neither, it returns the empty string and every trigger
+reads as absent.
+
+### 16.4 Exclusive before inclusive
+
+`fallback_norm` submits at most two theories.
+
+1. The first carries the normalizations and the cued rewrite, and reads any
+   `xor` exclusively.  Its clause set is compared with the front door's, on
+   the clause keys without `@nl`.  An identical set means nothing this
+   fallback enables applies to this case, and no gk call is made.
+2. The second runs only when the first ended unresolved **and** the question
+   body holds an `xor` with no inclusive cue.  It converts
+   `inclusive_theory(s2_json)` with the same switches and calls gk once.
+
+The exclusive reading always goes first.  A question where both disjuncts hold
+is `False.` under the exclusive reading, and letting the inclusive reading run
+first would override that with `True.`.  The record's `answered_by_reading`
+names the reading that answered.
+
+When step 1's conversion comes out identical to the front door's and the
+question carries an uncued `xor`, the front door's own Unknown stands as the
+exclusive reading's answer and only the inclusive submission is made.
+
+### 16.5 The isolated theory
+
+`fallback_hyp` triggers on `["question", ["implies", A, B]]` and takes the
+first such question only.  Without that shape it stops before any gk call.
+
+`hypothetical_theory` builds a copy of the premise packages, plus
+`hyp_<sid>` holding A in W0, plus B as the question.  The original question
+package is dropped, so the material reading is not also present.  Nothing is
+inserted into the ordinary premise set: the answer the front door produced is
+undisturbed, and no later route inherits the assumption.
+
+```
+["and",
+ ["@id", "S1", ["holds", "W0", <premise>]],        ← unchanged
+ ...
+ ["@id", "hyp_S2", ["holds", "W0", A]],            ← the local assumption
+ ["@id", "S2",     ["question", B]]]               ← the consequent is asked
+```
+
+`_strip_normally` removes a `normally` wrapper from A before it is assumed.
+
+### 16.6 The ex falso hazard, and where the reading disagrees with FOLIO
+
+gk searches for a proof of the question and for a proof of its negation.  It
+does not conclude ex falso from an inconsistent premise set.  Assuming an
+antecedent the premises refute therefore answers nothing rather than
+everything.
+
+`REFUTATION_CHECK` (off by default) makes `refutation_theory` ask first
+whether the premises refute A: the premise packages with A as the question,
+one gk call.  A `False.` there stops the fallback and the record says
+`skipped: "the premises refute the antecedent"`.
+
+The hypothetical reading disagrees with FOLIO's vacuous-truth convention.
+FOLIO calls a conditional question `True.` when the premises refute its
+antecedent; this reading answers whatever B follows from A.  The check exists
+for exactly that case, and it only catches the case when gk can prove the
+refutation.  A refutation gk can prove already makes the front door's
+material reading answer `True.`, so the fallback is not reached; that is why
+the check is off.  FOLIO 73 is the other side: gk cannot prove the
+refutation there, the reading runs, and the answer comes out `False.`
+against a gold `True.`, with the check on or off.
+
+### 16.7 Configuration, not flags
+
+Each fallback names its own configuration as module-level booleans, all
+`True`:
+
+```python
+# solver/fallback_norm.py
+QUNIV = True      # keep a generic universal question universal
+DASHNORM = True   # hyphen/space fold when both variants occur
+COMPNORM = True   # comparative relation name -> base form
+LISTPREP = True   # in/include -> on for list-naming objects
+SINGROLE = True   # singularize bare plural eventprop values
+CASENORM = True   # letter-case fold, same predicate position, both variants present
+QOR_CUED = True   # question-body xor -> or when the text carries an inclusive cue
+QPRESUP = True    # assert an apposed typing from the question text
+INCLUSIVE_SECOND = True  # after an Unknown, retry an uncued xor question inclusively
+
+# solver/fallback_hyp.py
+REFUTATION_CHECK = False  # ask first whether the premises refute the antecedent
+```
+
+Each boolean maps to an internal option key that a converter pass already
+reads: `quniv_flag`, `dashnorm_flag`, `casenorm_flag`, `compnorm_flag`,
+`listprep_flag`, `singrole_flag`, `qor_flag`, `qpresup_flag`.  `run` saves
+those keys, sets the ones its booleans enable, converts, and restores them in
+a `finally` block.
+
+None of the eight keys has a CLI flag.  The front door runs with every one of
+them `False`, and its behaviour under always-on normalizations is not
+measured.  An experiment that wants one switch off edits the boolean for one
+arm; `tools/test_fallback.py` asserts that the front door leaves all eight
+off.
+
+### 16.8 Flags, record and output
+
+```
+-fallback_norm     the normalization fallback (on by default; this confirms it)
+-fallback_hyp      the hypothetical-reading fallback (the same)
+-nofallback_norm   force one off, wherever it stands on the command line
+-nofallback_hyp    the same for the other
+-nofallback        force both off
+```
+
+Option keys: `fallback_norm_flag` and `fallback_hyp_flag`, both default
+**`True`**, and the cancel keys `nofallback_norm_flag`,
+`nofallback_hyp_flag`.  The cancels are applied after the whole command line is
+read, so each beats the default and every preset or flag set, whatever their
+order.  `runtests.py` applies pass-through flags after its own `-abstract-max`
+block, so a cancel reaches the runner too.
+
+`collect["fallback"]` holds `{"norm": …, "hyp": …, "answered_by": …}`.  Each
+fallback's record names itself, lists the switches that were on, and carries
+one entry per submission:
+
+| field | what it holds |
+|---|---|
+| `reading` | `exclusive`, `inclusive`, `refutation` or `hypothetical` |
+| `clauses` | the submitted clause list, with `@nl` source English |
+| `clause_diff` | added and removed clauses against the front door's submission |
+| `gk_result` | the raw gk result string |
+| `answer` | the processed answer, first line |
+
+Alongside the submissions the record carries `answered`,
+`answered_by_reading`, and one of `stopped_at`, `skipped` or `note` when the
+fallback made no gk call.  `runtests.py` copies the whole record into every
+case JSON, so a recovery can be read back without re-running anything.  When a
+fallback answers, its submission's gk call becomes the run's top-level `proof`
+and `gk_command`; when one runs without answering, the top level stays the
+front door's (§10).
+
+### 16.9 Cost, measured
+
+At most two gk calls for `fallback_norm`, one for `fallback_hyp` (two with
+`REFUTATION_CHECK` on), and no LLM call ever.  The bounds are measured
+rather than asserted.  On FOLIO (203 cases × 3 models) and MLE-100, with the
+check on:
+
+| set | `fallback_norm` runs | its gk calls | max | `fallback_hyp` runs | its gk calls | max |
+|---|---|---|---|---|---|---|
+| FOLIO | 379 | 82 | 2 | 368 | 36 | 2 |
+| MLE-100 | 218 | 50 | 2 | 212 | 126 | 2 |
+
+Most runs cost nothing.  On FOLIO 300 of 379 `fallback_norm` runs made no gk
+call, because the conversion came out identical to the front door's, and 350
+of 368 `fallback_hyp` runs made none, because the question was not a
+conditional.
+
+Effect, against the same configuration with `-nofallback`:
+
+| set | front door alone | with both fallbacks |
+|---|---|---|
+| FOLIO, no critic and no abstraction route | 376 | 391 |
+| MLE-100, the same | 122 | 129 |
+| FOLIO, full stack | 436 | 445 |
+| MLE-100, full stack | 137 | 145 |
+
+Inside the full stack, 8 of the 16 FOLIO recoveries and 7 of the 12 MLE-100
+recoveries are cases no later route answers on its own.  No fallback answer
+stopped a later route that had the case right without it.
+
+`REFUTATION_CHECK` accounts for half of `fallback_hyp`'s gk calls: MLE-100
+falls from 126 calls to 63 with it off, and no answer changes.  It has not
+returned `False` on any measured set, which is why it is off.
+
+### 16.10 Fixtures
+
+`tools/test_fallback.py` holds 90 checks and calls neither an LLM nor gk.
+Every mechanism with a trigger is written as a fire / must-not-fire pair: the
+cued rewrite against a plain "either … or", the apposition against "Is Ted a
+student and employed?", `casenorm`'s fold against its refusal to cross
+positions, `fallback_hyp`'s trigger against a plain question.  The
+exclusive-before-inclusive order is checked by standing in for the converter
+and gk and reading back which submissions the record holds.
+
+`tools/check_fallback.py` runs named cases through the shipped path and prints
+which fallback answered each.  `tools/score_fallback.py` scores one arm and
+`tools/score_fallback_stack.py` pairs the stack against the same stack with
+`-nofallback`.

@@ -26,6 +26,11 @@ VERSION = "graph_procedure/2026-08-16"
 DEFAULT_SOURCES = ("frontier",)
 FULL_SOURCES = ("frontier", "exhaustive", "composition")
 
+# Layer 2's own settings.  `DEFAULT_SOURCES` above is the third: the candidate
+# sources a run enumerates.
+LIFT = False        # lift a graph proof into the ordinary representation
+EVIDENCE = "any"    # the acceptance evidence mode: "any" or "stated"
+
 TRANSLATION_FAILED = "graph_translation_failed"
 NO_QUESTION = "the graph translation has no question package"
 NO_CANDIDATE = "no candidate pair survived the filters"
@@ -308,8 +313,10 @@ def graph_run(ctx, respond, gk, budget=None, with_sentences=True,
   grades = (GS.grade(result, ctx["inventory"], ctx["view"]["stage1"], respond,
                      case_id, mode=grader)
             if (grader and result["minimal_sets"]) else
-            {"graded": {}, "why": "the grader is off; the judge's label and "
-                                  "confidence stand in"})
+            {"graded": {},
+             "why": ("no proof, so nothing to grade" if grader else
+                     "the grader is off; the judge's label and confidence "
+                     "stand in")})
   record["grades"] = grades
   record["grader_ran"] = bool(grader)
   record["grader_mode"] = (grades.get("mode") if grader else "off")
@@ -352,7 +359,8 @@ def graph_run(ctx, respond, gk, budget=None, with_sentences=True,
     ok_stated, _ = GS.credible_set(row, rules_by_id, graded, "stated")
     rids = list(row.get("minimal_rules") or [])
     wit = GS.witness_verdict(row, ctx["view"]["stage1"])
-    verdicts.append({"minimal_rules": rids,
+    verdicts.append({"set_index": len(verdicts),
+                     "minimal_rules": rids,
                      "answer": row.get("answer"), "credible": ok,
                      "credible_any": ok_any, "credible_stated": ok_stated,
                      "why_not": reasons,

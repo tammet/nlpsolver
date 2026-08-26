@@ -50,9 +50,9 @@ def _content_label(cond_term):
   label.  $arg1 and ordinary constants (class / relation names) are kept, so
   genuinely different sets ("copies" vs "reviews") still differ."""
   def _varlike(s):
-    return (s.startswith("?:")
-            or _SETLABEL_SK_RE.match(s) is not None
-            or (len(s) <= 2 and s[:1].isupper()))   # Stage-2 vars: E, X, ...
+    if s.startswith("?:") or _SETLABEL_SK_RE.match(s) is not None:
+      return True
+    return len(s) <= 2 and s[:1].isupper()      # Stage-2 vars: E, X, ...
 
   def norm(n):
     if isinstance(n, list):

@@ -21,6 +21,7 @@
 
 import time
 import sys
+import contextlib
 import json
 import os
 import random
@@ -95,6 +96,34 @@ calldebug = False
 record_calls = True
 call_log = []
 
+# Every entry also carries the stage that made the call.  Without it a run
+# says how many calls it made and not who made them, which is the whole
+# question when three mechanisms share one pipeline.  `tagged` sets the label
+# for a block; an inner block may rename the tag or only add fields.
+call_tag = "untagged"
+call_fields = {}
+
+
+@contextlib.contextmanager
+def tagged(tag=None, **fields):
+  """Label the calls made inside this block.  tag=None keeps the outer tag."""
+  global call_tag, call_fields
+  old_tag, old_fields = call_tag, call_fields
+  call_tag = tag if tag is not None else old_tag
+  merged = dict(old_fields)
+  merged.update(fields)
+  call_fields = merged
+  try:
+    yield
+  finally:
+    call_tag, call_fields = old_tag, old_fields
+
+
+def _label():
+  out = {"tag": call_tag}
+  out.update(call_fields)
+  return out
+
 _last_usage = None      # set by the provider functions, consumed by call_llm
 
 
@@ -167,8 +196,10 @@ def call_llm(sysprompt, input_text, llm=None, version=None, max_tokens=None, thi
     if debug:
       print("cache hit (" + llm + " " + ver + ")")
     if record_calls:
-      call_log.append({"llm": llm, "version": ver, "source": "cache",
-                       "seconds": round(time.time() - _t0, 3)})
+      rec = {"llm": llm, "version": ver, "source": "cache",
+             "seconds": round(time.time() - _t0, 3)}
+      rec.update(_label())
+      call_log.append(rec)
     return cached
 
   # --- call the LLM (retry on None / empty response) ---
@@ -201,6 +232,7 @@ def call_llm(sysprompt, input_text, llm=None, version=None, max_tokens=None, thi
     if record_calls:
       rec = {"llm": llm, "version": ver, "source": "api",
              "seconds": round(time.time() - _t0, 3)}
+      rec.update(_label())
       if _last_usage:
         rec.update(_last_usage)
       if result is None or not result.strip():

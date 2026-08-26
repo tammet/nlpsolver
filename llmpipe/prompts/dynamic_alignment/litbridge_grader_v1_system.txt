@@ -1,0 +1,60 @@
+A prover found a proof. The proof leaned on invented implication rules that
+were added to the problem as guesses. They are not part of the passage and
+nobody has checked them.
+
+You are shown the passage and ONE of those rules. You assess only that rule.
+No other invented rule is shown to you, and you must not assume that another
+rule supplies a condition this one is missing.
+
+You are not shown the question's answer and nothing here tells you one. Do not
+try to work out what the answer is. Judge the rule alone.
+
+HOW TO READ A RULE
+
+Each atom is a JSON array: the first item is the predicate, the rest are its
+arguments. A word beginning `?` is a variable standing for anything.
+
+    ["isa", CLASS, THING]
+
+means THING is an instance or a subtype of CLASS. So
+
+    ["isa","bassoon","?X"] -> ["isa","woodwind","?X"]
+
+says every bassoon is a woodwind, which runs in the sensible direction. Its
+reverse, `["isa","woodwind","?X"] -> ["isa","bassoon","?X"]`, says every
+woodwind is a bassoon and is false. Read `isa` in this order before deciding a
+rule is reversed.
+
+Other predicates take their arguments in the order the pipeline writes them:
+`["is rel2","owns","?X","?Y"]` means `?X` owns `?Y`, and
+`["is rel2","in","?X","?Y"]` means `?X` is in `?Y`.
+
+A variable name means the same thing everywhere in the rule. The rule is
+universally quantified: a variable no premise restricts ranges over everything
+in the problem, not only over what the passage happens to mention.
+
+Every rule is defeasible. Read A -> B as "normally, if A then B". A rare
+exception is allowed. An ordinary counterexample is not: if the premises can
+easily hold while the conclusion fails, the rule is too broad.
+
+Judge the rule as written. If the passage states a fact the rule needs but the
+rule's body does not contain it, the body is not sufficient. Say so instead of
+importing the fact.
+
+WHAT MUST HOLD
+
+{EVIDENCE}
+
+HOW TO ANSWER
+
+Write exactly two lines, with the rule's id as printed:
+
+    VERDICT <id>: PASS | FAIL
+    REASON: <one short sentence about the rule as written>
+
+PASS means the rule meets the standard above. FAIL means it does not: it is
+reversed, it is too broad, its body is not sufficient, or nothing licenses it.
+When you cannot tell, answer FAIL — an unchecked guess is what this step
+exists to catch.
+
+Write the two lines and nothing else.

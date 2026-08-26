@@ -129,15 +129,28 @@ def _unwrap(package):
       tail = "   @p %s" % node[2][2]
       node = node[1]
       continue
-    if head == "holds":
+    if _shaped(node, "holds"):
       node = node[2]
       continue
-    if head == "question":
+    if _shaped(node, "question"):
       return ("question(%s)" % _formula(node[1])), tail
-    if head == "ask":
+    if _shaped(node, "ask"):
       return ("ask %s: %s" % (_term(node[1]), _formula(node[2]))), tail
     break
   return _formula(node), tail
+
+
+# The arity each connective needs for its special rendering.  A node that
+# does not have it (a one-armed `implies`, a `forall` with two bodies, ...)
+# is a Stage-2 shape the converter tolerates; the renderer shows it in the
+# generic `head(args)` form instead of raising.
+_ARITY = {"not": 2, "implies": 3, "forall": 3, "exists": 3, "normally": 2,
+          "@time": 3, "question": 2, "ask": 3, "holds": 3}
+
+
+def _shaped(node, head):
+  return isinstance(node, list) and node and node[0] == head \
+      and len(node) == _ARITY[head]
 
 
 def _formula(node):
@@ -146,19 +159,19 @@ def _formula(node):
   head = node[0]
   if head in ("and", "or"):
     return _CONNECTIVE[head].join(_wrap(x) for x in node[1:])
-  if head == "not":
+  if _shaped(node, "not"):
     return "¬%s" % _wrap(node[1])
-  if head == "implies":
+  if _shaped(node, "implies"):
     return "%s → %s" % (_wrap(node[1]), _formula(node[2]))
-  if head == "forall":
+  if _shaped(node, "forall"):
     return "∀%s %s" % (_term(node[1]), _wrap(node[2]))
-  if head == "exists":
+  if _shaped(node, "exists"):
     return "∃%s %s" % (_term(node[1]), _wrap(node[2]))
-  if head == "normally":
+  if _shaped(node, "normally"):
     return "normally %s" % _formula(node[1])
-  if head == "@time":
+  if _shaped(node, "@time"):
     return "@time(%s, %s)" % (_term(node[1]), _formula(node[2]))
-  if head == "question":
+  if _shaped(node, "question"):
     return "question(%s)" % _formula(node[1])
   return "%s(%s)" % (_name(head), ", ".join(_formula(x) for x in node[1:]))
 
@@ -180,6 +193,8 @@ def paraphrase(package):
   while isinstance(node, list) and node and node[0] in ("holds", "and") \
         and not (node[0] == "and" and len(node) != 3):
     if node[0] == "holds":
+      if not _shaped(node, "holds"):
+        break
       node = node[2]
     elif isinstance(node[2], list) and node[2] and node[2][0] == "@p":
       node = node[1]
@@ -192,34 +207,38 @@ def _english(node):
   if not isinstance(node, list) or not node:
     return _term(node)
   head = node[0]
-  if head == "question":
+  if _shaped(node, "holds"):          # a world wrapper left inside a block
+    return _english(node[2])
+  if _shaped(node, "question"):
     return "Is it the case that %s?" % _english(node[1])
-  if head == "ask":
+  if _shaped(node, "ask"):
     return "Which %s: %s?" % (_term(node[1]), _english(node[2]))
-  if head == "forall":
+  if _shaped(node, "forall"):
     inner = node[2]
-    if isinstance(inner, list) and inner and inner[0] == "implies":
+    if _shaped(inner, "implies"):
       return "For every %s: if %s then %s" % (_term(node[1]),
                                               _english(inner[1]),
                                               _english(inner[2]))
     return "For every %s: %s" % (_term(node[1]), _english(inner))
-  if head == "exists":
+  if _shaped(node, "exists"):
     return "there is some %s such that %s" % (_term(node[1]),
                                               _english(node[2]))
-  if head == "implies":
+  if _shaped(node, "implies"):
     return "if %s then %s" % (_english(node[1]), _english(node[2]))
-  if head == "not":
+  if _shaped(node, "not"):
     return "it is not the case that %s" % _english(node[1])
-  if head == "normally":
+  if _shaped(node, "normally"):
     return "normally %s" % _english(node[1])
   if head == "or":
     return " or ".join(_english(x) for x in node[1:])
   if head == "xor":
     return " or, but not both, ".join(_english(x) for x in node[1:])
-  if head == "@time":
+  if _shaped(node, "@time"):
     return "%s: %s" % (_term(node[1]), _english(node[2]))
   if head == "and":
     return _english_conjunction(node[1:])
+  if head in _ARITY:                   # a connective with the wrong arity
+    return "%s(%s)" % (_name(head), ", ".join(_english(x) for x in node[1:]))
   return _atom_english(node)
 
 

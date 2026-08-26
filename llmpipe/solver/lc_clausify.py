@@ -93,6 +93,14 @@ def is_world_constant(s):
 def looks_like_var(s):
   """Return True if s looks like a stage-2 variable name (e.g. X, Y, S1).
 
+  This is the pipeline's authoritative test for "is this token a Stage-2
+  variable".  Every site that used to carry its own uppercase pattern calls
+  it or its `broad` sibling below, so the world-constant exclusion holds
+  everywhere: `lc_reference._free_vars`, `lc_rewrites._is_stage2_var`,
+  `lc_questions._to_gk_var`.  A site that has the syntax tree should prefer
+  the enclosing binders (forall/exists/ask) and use this only for tokens no
+  binder explains.
+
   Variables in stage-2 LLM output are a single uppercase letter optionally
   followed by digits: X, Y, Z, E, S, W, S1, S2, X1.  Strings starting
   with '?:' are already in GK format and also count as variables.
@@ -108,6 +116,23 @@ def looks_like_var(s):
   if is_world_constant(s):
     return False
   return bool(re.match(r'^[A-Z][0-9]*$', s))
+
+
+def looks_like_var_broad(s):
+  """`looks_like_var`, widened to multi-letter names such as `Entity`.
+
+  Stage 2 sometimes names a variable with a word (`Entity`, `Person`), and
+  `lc_questions` converts those to GK variables.  The breadth is the only
+  difference: a world constant is not a variable under either test, which is
+  the whole point of routing both through one place.
+  """
+  if not isinstance(s, str) or ' ' in s:
+    return False
+  if s.startswith('?:'):
+    return True
+  if is_world_constant(s):
+    return False
+  return bool(re.match(r'^[A-Z][A-Za-z0-9_]*$', s))
 
 
 # ======== pre-clausification normalization passes ========
@@ -138,6 +163,8 @@ def _singularize(word):
 _SINGULARIZE_EXCEPTIONS = frozenset({
   "news", "means", "scissors", "pants", "trousers", "stairs", "goods",
   "lens", "pyjamas", "pajamas",
+  # singular nouns ending in -ies, which the -ies -> -y rule would mangle
+  "series", "species", "rabies", "caries",
 })
 
 
@@ -156,8 +183,20 @@ def _safe_singularize_class(cls):
   head = cls.rsplit(" ", 1)[-1]     # last word carries the number
   if head in _SINGULARIZE_EXCEPTIONS:
     return cls
+  if len(head) < 2:
+    # a one-letter head ("person s", from the entity name "person S 4") would
+    # lose its only letter and leave a token ending in a space, which then
+    # never unifies with anything (held-out MLE 964, 965).
+    return cls
+  if head.endswith("ies") and len(head) > 4:
+    # berries -> berry, activities -> activity: the -ies rule is safe for
+    # every -ies plural; the singular -ies nouns (series, species, rabies,
+    # caries) are caught by the exception set above.  This must precede the
+    # -es guard below, which would otherwise leave "berries" plural (core
+    # 1477).
+    return _singularize(cls)
   if head.endswith(("us", "is", "ss", "es", "cs")):
-    # bus / virus / analysis / class / series / potatoes / physics — the crude
+    # bus / virus / analysis / class / potatoes / physics / roses — the crude
     # trailing-'s' strip mangles these (and "-es" needs proper -e/-o handling),
     # so leave them intact.
     return cls
@@ -187,6 +226,22 @@ def singularize_isa_classes_in_node(node):
     return [head, cls] + [
       singularize_isa_classes_in_node(x) for x in node[2:]]
   return [singularize_isa_classes_in_node(x) if isinstance(x, list) else x
+          for x in node]
+
+
+def singularize_role_values_in_node(node):
+  """(singrole, a `fallback_norm` switch) Singularize bare plural noun string values inside
+  ["eventprop", $role, VALUE] tags, so a rule consequent's role value
+  ("promotions") unifies with the question's ("promotion").  Constants that are
+  variables, meta tokens, skolems, entity constants (#:) or capitalized names
+  are untouched."""
+  if not isinstance(node, list) or not node:
+    return node
+  if (len(node) == 3 and node[0] == "eventprop" and isinstance(node[2], str)
+      and node[2] and not node[2].startswith(("?", "$", "#", "sk"))
+      and node[2][:1].islower()):
+    return [node[0], node[1], _safe_singularize_class(node[2])]
+  return [singularize_role_values_in_node(x) if isinstance(x, list) else x
           for x in node]
 
 
@@ -228,7 +283,11 @@ def _expand_generic_objects(frm):
   if op in _GENERIC_OBJ_PREDS and len(frm) >= 3:
     obj = frm[2]
     if isinstance(obj, str) and _BARE_TYPE_RE.match(obj):
-      sing = _singularize(obj)
+      # `_safe_singularize_class`, not the raw `_singularize`: the crude
+      # trailing-'s' strip turns "roses" into "ros" and no premise then
+      # unifies with it (FOLIO 166).  The safe form leaves the endings it
+      # cannot handle intact.
+      sing = _safe_singularize_class(obj)
       var  = "Gobj" + str(_gobj_nr)
       _gobj_nr += 1
       rest = [frm[0], frm[1], var] + list(frm[3:])

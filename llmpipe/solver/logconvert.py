@@ -71,6 +71,7 @@ from lc_entity_isa import (collect_positive_isa_entities,
 
 from lc_clausify import (clausify, is_skolem_const, is_skolem_fn,
                          singularize_isa_classes_in_node,
+                         singularize_role_values_in_node,
                          lower_isa_classes_in_node)
 
 from lc_questions import (
@@ -325,6 +326,82 @@ def _dedup_entity_clauses(result):
 
 
 
+_LIST_MEMBER_RELS = ("in", "include", "include in", "be in", "be included in",
+                     "included in")
+
+
+def _canon_list_membership_in_node(node):
+  """(listprep, a `fallback_norm` switch) One membership relation for list-like targets:
+  is_rel2("in"/"include...", X, <...list...>) becomes is_rel2("on", ...), so a
+  rule concluding in(X, "Top 10 list") meets a question asking on(X, ...)."""
+  if not isinstance(node, list) or not node:
+    return node
+  head = node[0]
+  if (isinstance(head, str)
+      and head.lstrip("-") == "is rel2" and len(node) >= 4
+      and isinstance(node[1], str) and node[1] in _LIST_MEMBER_RELS):
+    obj = node[3]
+    val = obj[2] if (isinstance(obj, list) and len(obj) == 3
+                     and obj[0] == "eventprop") else obj
+    if isinstance(val, str) and "list" in val.lower():
+      pref = "-" if head.startswith("-") else ""
+      return [pref + "is rel2", "on"] + [
+        _canon_list_membership_in_node(x) if isinstance(x, list) else x
+        for x in node[2:]]
+  return [_canon_list_membership_in_node(x) if isinstance(x, list) else x
+          for x in node]
+
+
+_WS_RE = re.compile(r"\s+")
+
+
+def _trim_tokens(node):
+  """Strip edge whitespace and collapse internal runs in every string."""
+  if isinstance(node, str):
+    return _WS_RE.sub(" ", node).strip()
+  if isinstance(node, list):
+    return [_trim_tokens(x) for x in node]
+  if isinstance(node, dict):
+    return {k: _trim_tokens(v) for k, v in node.items()}
+  return node
+
+
+def _trim_s1_entity_names(s1_json):
+  """The same trimming for Stage-1 entity ids, which become constants.
+
+  Returns a copy when anything changed, and `s1_json` itself when nothing did,
+  so the caller's Stage-1 object is never rewritten in place.
+  """
+  if not isinstance(s1_json, list):
+    return s1_json
+  changed = False
+  out = []
+  for pkg in s1_json:
+    if not isinstance(pkg, dict):
+      out.append(pkg)
+      continue
+    units = []
+    for asu in (pkg.get("units") or []):
+      if not isinstance(asu, dict):
+        units.append(asu)
+        continue
+      ents = []
+      for ent in (asu.get("entities") or []):
+        if isinstance(ent, dict) and isinstance(ent.get("id"), str):
+          eid = _WS_RE.sub(" ", ent["id"]).strip()
+          if eid != ent["id"]:
+            ent = dict(ent, id=eid)
+            changed = True
+        ents.append(ent)
+      if ents and ents != (asu.get("entities") or []):
+        asu = dict(asu, entities=ents)
+      units.append(asu)
+    if units and units != (pkg.get("units") or []):
+      pkg = dict(pkg, units=units)
+    out.append(pkg)
+  return out if changed else s1_json
+
+
 def rawlogic_convert(logic, s1_json=None, fixes=None):
   """Convert stage-2 LLM output to a GK-compatible clause list.
 
@@ -348,6 +425,15 @@ def rawlogic_convert(logic, s1_json=None, fixes=None):
 
   if not logic or not isinstance(logic, list):
     return None
+
+  # Whitespace trimming, always on.  Stage 2 occasionally writes a class or
+  # relation name with a stray space ("person " beside "person"), and the two
+  # spellings then never unify.  Trim every Stage-2 string and every Stage-1
+  # entity name here, before any pipeline token ($some_..., sk0_..., an
+  # underscored preposition) is built out of them, so no generated token
+  # inherits the stray space.  No reading changes.
+  logic = _trim_tokens(logic)
+  s1_json = _trim_s1_entity_names(s1_json)
 
   # Hoist nested @id blocks to top level.  LLM JSON errors sometimes cause
   # a closing bracket to be dropped, nesting one @id inside another after
@@ -388,6 +474,13 @@ def rawlogic_convert(logic, s1_json=None, fixes=None):
   # entities. The inner-normally form clausifies into the per-entity
   # defeasible rule (with $block guard) other LLMs already produce.
   logic = _lower_normally_through_forall(logic)
+
+  # The text-licensed question rewrites.  Both option keys are off in the
+  # front door, so this returns its input unchanged there; only
+  # `fallback_norm.run` switches them on, and only for its own conversion.
+  import fallback_norm as _fallback_norm
+  logic = _fallback_norm.apply_question_transforms(logic, fixes=fixes,
+                                                   s1_json=s1_json)
 
   # Inject degree presuppositions before any other processing:
   # "not very X" presupposes "X", so expand ["not",["has degree property",P,E,"high",C]]
@@ -490,6 +583,25 @@ def rawlogic_convert(logic, s1_json=None, fixes=None):
   _b = logic
   logic = canonicalize_comparative_relations(logic)
   _note_repair(_b, logic, "canonicalized comparative relation")
+
+  # (compnorm, a `fallback_norm` switch) reduce comparative relation names on is_rel2 /
+  # has_degree_rel2 to the base gradable adjective ("taller"/"taller than" ->
+  # "tall") outside -s2split as well, so the antonym fold and the -compasym
+  # axioms can key on the base form (FOLIO 115/116).
+  if _g_options.get("compnorm_flag", False):
+    from lc_repairs import _comparative_to_base as _c2b
+    def _cn(node):
+      if not isinstance(node, list) or not node:
+        return node
+      out = [node[0]] + [_cn(x) if isinstance(x, list) else x for x in node[1:]]
+      if (isinstance(out[0], str)
+          and out[0].lstrip("-") in ("is rel2", "has degree rel2")
+          and len(out) >= 2 and isinstance(out[1], str)):
+        out[1] = _c2b(out[1])
+      return out
+    _b = logic
+    logic = _cn(logic)
+    _note_repair(_b, logic, "compnorm comparative relation")
 
   # (fix 3) Drop isa conjuncts that only restate a Stage-1 entity `category`
   # the sentence never states.  Must run BEFORE collect_positive_isa_entities
@@ -736,6 +848,8 @@ def rawlogic_convert(logic, s1_json=None, fixes=None):
                     + _inject_reflexive_property_bridge(iv))
       if not _davx:                        # davidson injects its own event<->roles bridge
         sem_axioms = sem_axioms + _lcc.rel2_event_axiom_clauses()
+        if lc_encoding.experiment("objbridge"):
+          sem_axioms = sem_axioms + _lcc.inject_object_class_bridges(result)
     if _g_options.get("s2split_flag"):
       sem_axioms = sem_axioms + _inject_s2split_shape_bridges(iv)
 
@@ -833,6 +947,38 @@ def rawlogic_convert(logic, s1_json=None, fixes=None):
   if _g_options.get("noproptypes_flag", False):
     _strip_degree_predicates(result)
 
+  # (dashnorm, a `fallback_norm` switch) fold hyphen/space variants of one word: when
+  # both "well-paid" and "well paid" style variants of a word occur across the
+  # clause list, rewrite the hyphenated one to the spaced form.
+  if _g_options.get("dashnorm_flag", False):
+    _words = set()
+    def _hw_scan(n):
+      if isinstance(n, list):
+        for x in n: _hw_scan(x)
+      elif isinstance(n, str):
+        _words.add(n)
+    for _c in result:
+      if isinstance(_c, dict):
+        _hw_scan(_c.get("@logic")); _hw_scan(_c.get("@question"))
+    _hmap = {w: w.replace("-", " ") for w in _words
+             if "-" in w and w.replace("-", " ") in _words}
+    if _hmap:
+      def _hw_sub(n):
+        if isinstance(n, list):
+          return [_hw_sub(x) for x in n]
+        return _hmap.get(n, n) if isinstance(n, str) else n
+      for _c in result:
+        if isinstance(_c, dict):
+          for _k in ("@logic", "@question"):
+            if isinstance(_c.get(_k), list):
+              _c[_k] = _hw_sub(_c[_k])
+
+  # (casenorm, `fallback_norm`) fold letter-case variants of one token inside
+  # one predicate position, when the case carries both spellings: "Estonian
+  # city" and "estonian city" as isa classes both become "estonian city".
+  # Off in the front door; only the fallback conversion switches it on.
+  _fallback_norm.apply_casenorm(result)
+
   # Emit a minimal `next` chain over the concrete worlds actually present.
   # Replaces the static W0..W12 chain that used to live in axioms_std.js §11.
   result.extend(_inject_world_geometry(result))
@@ -849,6 +995,10 @@ def rawlogic_convert(logic, s1_json=None, fixes=None):
       for _k in ("@logic", "@question"):
         if isinstance(_c.get(_k), list):
           _c[_k] = singularize_isa_classes_in_node(_c[_k])
+          if _g_options.get("listprep_flag", False):
+            _c[_k] = _canon_list_membership_in_node(_c[_k])
+          if _g_options.get("singrole_flag", False):
+            _c[_k] = singularize_role_values_in_node(_c[_k])
           if _ultra:
             # (typeenrich) fold isa-class case so "American national" and
             # "american national" become one predicate.  Runs after all

@@ -664,11 +664,14 @@ def inject_degree_presuppositions(tree):
 
 # ======== hoist misnested existentials ========
 
-_VAR_PAT = re.compile(r'^[A-Z][A-Z0-9]?$')  # X, Y, Z, E, E1, X1, etc.
-
 def _is_stage2_var(s):
-  """True if s looks like a Stage-2 variable name (short uppercase)."""
-  return isinstance(s, str) and _VAR_PAT.match(s) is not None
+  """True if s looks like a Stage-2 variable name (short uppercase).
+
+  Delegates to `lc_clausify.looks_like_var`, the one place that decides this,
+  so world constants (W0, W1, ...) are not hoisted as variables.
+  """
+  from lc_clausify import looks_like_var
+  return looks_like_var(s)
 
 def _collect_free_vars(node, bound):
   """Collect Stage-2 variable names used free (not in bound) in node."""

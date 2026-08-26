@@ -137,6 +137,38 @@ rendered as conjugated verbs (`"Eve likes John"`) rather than the default
 `"is REL of"` pattern.  Detection uses a built-in verb set and suffix
 heuristics (`-ed`, `-ing`) from `linguistics.py`.
 
+### 3.2b Open names (`open_names_flag`)
+
+The graph theory's class and relation names are the case's own words —
+`premiered`, `music_piece`, `sells_greater_than_copies` — not the controlled
+vocabulary the heuristics of §3.2 were written for.  `looks_like_verb` reads
+`premiered` as a verb and `conjugate_verb` makes "premiereds"; a multiword name
+ending in `for` or `of` is read as a preposition phrase.  Under
+`open_names_flag` the renderer folds the underscores and otherwise prints the
+translator's own word:
+
+| atom | rendering |
+|---|---|
+| `is rel2("premiered", X, Y)` | `X premiered Y` |
+| negated | `it is not the case that X premiered Y` |
+| `is rel2("sells_greater_than_copies", X, N)` | `X sells greater than copies N` |
+| `is rel2("agent", E, X)` — one of the nine fixed roles | `the agent of E is X` |
+| `is rel2("on", X, Y)` — a name that IS a preposition | `X is on Y` |
+| `isa("music_piece", X)` | `X is a music piece` |
+
+The nine role names are `graph_stage2.ROLES`, kept as a literal in
+`proof_english._OPEN_ROLES` so the renderer does not import the graph
+translator; `tools/test_graph_render.py` checks the two lists agree.  A
+relation name that is itself a preposition keeps the copula, because
+"X on the list" is not English; a name that merely *ends* in one does not, so
+`works_for` reads "X works for Y".  The flag is off everywhere but the graph
+route's own rendering, and with it off nothing in this chapter changes.
+
+Only the inflection and the underscores are the renderer's business.  The
+wording is the translator's, and a name it wrote awkwardly stays awkward.
+Argument constants keep their underscores: they are neither a class nor a
+relation.
+
 ### 3.3 Degree Properties
 
 `has degree property` rendering adapts to context:
@@ -252,6 +284,14 @@ Each step shows its origin in square brackets:
 | Background axiom | `[background knowledge]` |
 | Contradiction assumption | `[from question]` or `[assumption]` |
 | Derived step | `[from steps 1, 2]` |
+| Wording-variant rule (graph, `norm_<n>`) | `[wording variant: games -> game]` |
+| Invented rule (literal bridge) | `[added rule (round 1)]` |
+| Invented rule (graph bridge) | `[added open-name rule (graph)]` |
+
+`proof_explain.clause_labels` builds the last three from the submitted clause
+list: a `@variant` key gives the wording-variant label, and an `@nl` key gives
+the program's own English reading of an invented rule, which the "Added rules"
+section prints as a `Reads:` line before the `Why:` line.
 
 ### 5.3 Logic Display
 

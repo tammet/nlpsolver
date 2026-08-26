@@ -149,7 +149,9 @@ def _api_timeout_handler(signum, frame):
   raise _ApiTimeout()
 
 
-def _english_to_answer_once(text, options=None, collect=None, stage2_corrective=""):
+def _english_to_answer_once(text, options=None, collect=None,
+                            stage2_corrective="", stage1_corrective="",
+                            stage1_json=None):
   """Full pipeline: English -> LLM parse -> logic convert -> prove -> answer.
 
   LLM calls within this pipeline are cached by default (controlled by
@@ -171,6 +173,23 @@ def _english_to_answer_once(text, options=None, collect=None, stage2_corrective=
   Returns the answer string.  On any error returns a string starting with
   "Error:" rather than raising an exception or calling sys.exit().
   """
+  global _depth
+  _depth += 1
+  try:
+    return _english_to_answer_body(text, options, collect, stage2_corrective,
+                                   stage1_corrective, stage1_json)
+  finally:
+    _depth -= 1
+
+
+# How deeply the pipeline is calling itself: the critique pass's rerun and the
+# downstream-error retry run the whole thing again from inside it.
+_depth = 0
+
+
+def _english_to_answer_body(text, options=None, collect=None,
+                            stage2_corrective="", stage1_corrective="",
+                            stage1_json=None):
   if options is None:
     options = {}
   if collect is not None:
@@ -232,7 +251,8 @@ def _english_to_answer_once(text, options=None, collect=None, stage2_corrective=
   try:
     s1_json, s2_json, parse_stats = llmparse.parse_text(
       text, llm=llm, version=llm_version, tokens=max_tokens, think=think_flag,
-      stage2_corrective=stage2_corrective
+      stage2_corrective=stage2_corrective,
+      stage1_corrective=stage1_corrective, stage1_json=stage1_json
     )
 
     # ASCII-fold the parsed logic before clausification so accented entity names
@@ -251,7 +271,8 @@ def _english_to_answer_once(text, options=None, collect=None, stage2_corrective=
       for stage_key, out_key in (("s1_fixes", "stage_1_fixes"),
                                   ("s2_fixes", "stage_2_fixes"),
                                   ("s1_retries", "stage_1_retries"),
-                                  ("s2_retries", "stage_2_retries")):
+                                  ("s2_retries", "stage_2_retries"),
+                                  ("calls", "parse_calls")):
         val = parse_stats.get(stage_key) or []
         if val:
           collect[out_key] = list(val)
@@ -312,10 +333,9 @@ def _english_to_answer_once(text, options=None, collect=None, stage2_corrective=
       logic = semnormalize.sem_normalize_clauses(logic)
   except _ApiTimeout:
     msg = "Error: LLM/parse phase exceeded the %ds api-timeout cap." % int(_api_to)
-    # Record it in collect too: a batch runner otherwise stores a case file with
-    # no answer and no error, which is indistinguishable from a case that ran.
-    if collect is not None:
-      collect["answer"] = msg
+    # `_english_to_answer` records this in `collect`, as it does for every
+    # early return: a batch runner otherwise stores a case file with no answer
+    # and no error, which is indistinguishable from a case that ran.
     return msg
   finally:
     if _api_armed:
@@ -367,14 +387,91 @@ def _english_to_answer_once(text, options=None, collect=None, stage2_corrective=
   # One call audits the translation the front door produced.  On RETRANSLATE
   # Stage 2 (or Stage 1 and 2) runs once more with the findings appended, and
   # the ordinary converter and gk follow.  One critique, one rerun, then stop.
-  if globals.options.get("critic_flag") and _unresolved(answer) \
-     and not globals.options.get("_critic_ran"):
-    got = _run_critic(text, s1_json, s2_json, logic, answer, llm, llm_version,
-                      max_tokens, options, collect=collect,
-                      loud=debug or show_details or show_logic
-                      or globals.options.get("prover_explain_flag"))
+  answered_by = "front_door" if not _unresolved(answer) else "none"
+  front_door_answer = answer
+  # which stage answered the critic's retranslation, when the critic answered
+  rerun_answered_by = None
+  # The front door's own gk call, snapshot here.  Every later `call_prover`
+  # overwrites `collect["gk_command"]`, so a stage that RAN without answering
+  # would otherwise leave its command at the top level.  `answering` holds the
+  # gk call that produced the final answer; the top-level `proof` and
+  # `gk_command` are set from it at the end of the run.
+  front_door_proof = proof_result
+  front_door_gk_command = (collect or {}).get("gk_command")
+  answering = None
+  # What each stage did: one row per stage, in stage order.  A separate
+  # information block, printed by `-summary` and by `-logic` and above, and
+  # written to the case record as `stages`.  No ordinary key changes shape
+  # because a later stage answered.
+  stage_rows = []
+  _announced.clear()
+  _note_stage(stage_rows, "front_door", True, answer)
+
+  # --- the two abstention fallbacks, before the critic and the abstraction
+  # routes.  Each converts the SAME Stage-1/Stage-2 parse a second time and
+  # calls gk again; neither makes an LLM call.  They run only when the front
+  # door left the question unresolved, so a definite front-door answer is
+  # never disturbed, and the first definite fallback answer stops the rest.
+  _fb_records = {}
+  for _fb_name, _fb_key in (("fallback_norm", "fallback_norm_flag"),
+                            ("fallback_hyp", "fallback_hyp_flag")):
+    if not globals.options.get(_fb_key):
+      _note_stage(stage_rows, _fb_name, False, why="off")
+      continue
+    if not _unresolved(answer):
+      _note_stage(stage_rows, _fb_name, False,
+                  why="not needed: the question was already answered")
+      continue
+    _announce_stage(_fb_name)
+    try:
+      if _fb_name == "fallback_norm":
+        import fallback_norm as _fb_mod
+      else:
+        import fallback_hyp as _fb_mod
+      got = _fb_mod.run(s1_json, s2_json, text, logic, options)
+      _fb_records[_fb_name.split("_", 1)[1]] = got["record"]
+      _note_stage(stage_rows, _fb_name, True, got.get("answer"))
+      if got["answered"]:
+        answer = got["answer"]
+        logic = got["logic"]
+        proof_result = got["proof"]
+        answered_by = _fb_name
+        answering = {"proof": got["proof"],
+                     "gk_command": (collect or {}).get("gk_command")}
+        if collect is not None and not globals.options.get("nofinaltrace"):
+          collect["final_clauses"] = got["logic"]
+    except KeyboardInterrupt:
+      raise
+    except Exception as _fb_e:                                  # noqa: BLE001
+      _fb_records[_fb_name.split("_", 1)[1] + "_error"] = (
+          "%s: %s" % (type(_fb_e).__name__, str(_fb_e)[:200]))
+  if _fb_records and collect is not None:
+    _fb_records["answered_by"] = (answered_by if answered_by
+                                  in ("fallback_norm", "fallback_hyp")
+                                  else None)
+    collect["fallback"] = _fb_records
+
+  global _critiqued
+  if not _should_critique(answer):
+    _note_stage(stage_rows, "critic", False,
+                why=("off" if not globals.options.get("critic_flag")
+                     else "not needed: the question was already answered"))
+  if _should_critique(answer):
+    _critiqued = True
+    _announce_stage("critic")
+    with llmcall.tagged("critic"):
+      got = _run_critic(text, s1_json, s2_json, logic, answer, llm,
+                        llm_version, max_tokens, options, collect=collect,
+                        loud=debug or show_details or show_logic
+                        or globals.options.get("prover_explain_flag"))
+    _note_stage(stage_rows, "critic", True,
+                (got or {}).get("answer"))
     if got and got.get("answer") is not None:
       answer = got["answer"]
+      answered_by = "critic"
+      rerun_answered_by = got.get("rerun_answered_by")
+      answering = {"proof": got.get("proof"),
+                   "gk_command": got.get("gk_command")}
       if got.get("logic") is not None:
         logic = got["logic"]
       if collect is not None and not globals.options.get("nofinaltrace"):
@@ -392,16 +489,20 @@ def _english_to_answer_once(text, options=None, collect=None, stage2_corrective=
             "litbridge": _run_litbridge,
             "graphbridge": _run_graphbridge}
   state = {"graphtrans": None}          # layer 1's record, reused by layer 2
-  answered_by = "front_door" if not _unresolved(answer) else "none"
   for name in _abstraction_order():
     if not _route_enabled(name):
+      _note_stage(stage_rows, name, False, why="off")
       continue
     if not _unresolved(answer):
-      break
-    got = routes[name](text, s1_json, s2_json, logic, answer, llm,
-                       llm_version, max_tokens, options, loud=loud,
-                       verbose=debug or show_details, collect=collect,
-                       state=state)
+      _note_stage(stage_rows, name, False,
+                  why="not needed: the question was already answered")
+      continue
+    with llmcall.tagged(name):
+      got = routes[name](text, s1_json, s2_json, logic, answer, llm,
+                         llm_version, max_tokens, options, loud=loud,
+                         verbose=debug or show_details, collect=collect,
+                         state=state)
+    _note_stage(stage_rows, name, True, (got or {}).get("answer"))
     if got is None:
       continue
     if got.get("answer") is not None:
@@ -409,11 +510,31 @@ def _english_to_answer_once(text, options=None, collect=None, stage2_corrective=
       if got.get("logic") is not None:
         logic = got["logic"]
       answered_by = name
+      answering = {"proof": got.get("proof"),
+                   "gk_command": got.get("gk_command")}
       if collect is not None and not globals.options.get("nofinaltrace"):
         collect["final_clauses"] = logic
+  for _row in stage_rows:
+    _row["answered"] = (_row["stage"] == answered_by and _row["ran"])
   if collect is not None:
     collect["abstraction_order"] = _abstraction_order()
+    collect["stages_enabled"] = _stages_enabled()
+    collect["stages"] = stage_rows
     collect["answered_by"] = answered_by
+    # the first line only: the explanation, when there is one, is `nl_proof`
+    collect["front_door_answer"] = str(
+        front_door_answer or "").split("\n")[0] or None
+    collect["llm_call_counts"] = _call_counts()
+    collect["llm_calls_total"] = sum(
+        v["calls"] for v in collect["llm_call_counts"].values())
+  if _depth == 1:
+    _print_stages(stage_rows)
+  if (globals.options.get("summary_flag")
+      or globals.options.get("summary_json_flag")) and _depth == 1:
+    # only the outermost pipeline run reports: the critique pass's rerun calls
+    # this function again from inside it, and that inner run is not a case run
+    _print_summary(answer, answered_by, front_door_answer, state,
+                   rerun_answered_by=rerun_answered_by, stages=stage_rows)
 
   if collect is not None:
     # process_proof appends "\n\n<explanation>" when prover_explain_flag is on.
@@ -425,14 +546,8 @@ def _english_to_answer_once(text, options=None, collect=None, stage2_corrective=
         collect["nl_proof"] = expl
     else:
       collect["answer"] = answer
-    if isinstance(proof_result, str) and proof_result.strip():
-      # gk returns JSON; store as parsed object so the dump doesn't drown
-      # in \" escapes.  Fall back to the raw string if parsing fails (e.g.
-      # error messages, "Error: ..." returns).
-      try:
-        collect["proof"] = json.loads(proof_result)
-      except Exception:
-        collect["proof"] = proof_result
+    _set_answering_call(collect, answering, front_door_proof,
+                        front_door_gk_command)
 
   return answer
 
@@ -537,31 +652,171 @@ def _run_critic(text, s1_json, s2_json, logic, answer, llm, llm_version,
       _print_critic(record)
     return out
   blocking = [f for f in report["findings"] if f["severity"] == "blocking"]
-  suffix = critic_pass.corrective_suffix(blocking or report["findings"])
-  record["corrective"] = suffix
-  globals.options["_critic_ran"] = True
+  wanted = blocking or report["findings"]
+  wanted, empty = critic_pass.drop_empty_fixes(wanted)
+  record["empty_fix"] = empty
+  record["compact_fix"] = critic_pass.has_compact_fix(wanted)
+  if not wanted:
+    record["why"] = "every finding said no change was needed"
+    if collect is not None:
+      collect["critic"] = record
+    if loud:
+      _print_critic(record)
+    return out
+  # Stage 1 lost a word: Stage 1 runs again and Stage 2 follows it plainly.
+  # A Stage-2 corrective would name unit ids the new Stage 1 may not use.
+  if stage == 1:
+    s1_corr = critic_pass.corrective_stage1(wanted, s1_json)
+    s2_corr = ""
+  else:
+    s1_corr = ""
+    s2_corr = critic_pass.corrective_suffix(wanted, s2_json)
+  record["corrective"] = s2_corr or s1_corr
+  record["corrective_stage"] = stage
+  global _in_critic_rerun
+  _in_critic_rerun = True
   try:
-    inner = {} if collect is not None else None
-    again = _english_to_answer_once(text, options, inner,
-                                    stage2_corrective="\n\n" + suffix)
+    inner = {}
+    with llmcall.tagged(None, critic_rerun=True):
+      again = _english_to_answer_once(text, options, inner,
+                                      stage2_corrective=s2_corr,
+                                      stage1_corrective=s1_corr)
     record["answer_after"] = again
     record["rerun_changed_units"] = _changed_units(
-        s2_json, (inner or {}).get("stage2"))
-    if inner is not None:
+        s2_json, inner.get("stage2"))
+    touched = (set(record["rerun_changed_units"]["changed"])
+               | set(record["rerun_changed_units"]["added"]))
+    record["touched_units"] = sorted(touched)
+    record["unasked_units"] = sorted(touched - set(units))
+    record["corrective_call"] = _corrective_call(inner, stage)
+    if collect is not None:
+      # `answered_by` and `fallback` say whether a fallback answered the
+      # retranslation: the rerun re-enters the pipeline, so `fallback_norm`
+      # and `fallback_hyp` run again on the new Stage 2 (the abstraction
+      # routes do not — `_route_enabled` refuses inside a rerun).
       record["rerun"] = {k: v for k, v in inner.items()
-                         if k in ("stage1", "stage2", "answer")}
+                         if k in ("stage1", "stage2", "answer",
+                                  "answered_by", "fallback")}
     if not _unresolved(again):
       out["answer"] = again
-      out["logic"] = (inner or {}).get("final_clauses") or logic
+      out["rerun_answered_by"] = inner.get("answered_by")
+      out["logic"] = inner.get("final_clauses") or logic
+      # the rerun's own gk call, for the run's top-level record
+      out["proof"] = inner.get("proof")
+      out["gk_command"] = inner.get("gk_command")
   except Exception as e:                                        # noqa: BLE001
     record["rerun_error"] = "%s: %s" % (type(e).__name__, e)
   finally:
-    globals.options.pop("_critic_ran", None)
+    _in_critic_rerun = False
   if collect is not None:
     collect["critic"] = record
   if loud:
     _print_critic(record)
   return out
+
+
+def _call_counts():
+  """Per stage tag: how many LLM calls, how many live, how many were retries.
+
+  `llmcall.call_log` is reset once per case by the runners, so this counts
+  this case alone.  The tag is set by `llmcall.tagged` at each call site.
+  """
+  out = {}
+  for row in llmcall.call_log:
+    tag = row.get("tag") or "untagged"
+    cell = out.setdefault(tag, {"calls": 0, "live": 0, "retries": 0})
+    cell["calls"] += 1
+    if row.get("source") == "api":
+      cell["live"] += 1
+    if row.get("retry"):
+      cell["retries"] += 1
+  return out
+
+
+def _summary_record(answer, answered_by, front_door_answer, state=None,
+                    rerun_answered_by=None, stages=None):
+  """The one block `-summary` prints, as a dict."""
+  counts = _call_counts()
+  routes = []
+  for name in _abstraction_order():
+    if name == answered_by:
+      routes.append("%s (answer found)" % name)
+    elif not _route_enabled(name):
+      routes.append("%s off" % name)
+    elif counts.get(name):
+      routes.append("%s ran, no answer" % name)
+    else:
+      routes.append("%s not run" % name)
+  return {"answer": str(answer or "").split("\n")[0],
+          "answered_by": answered_by,
+          "front_door_answer": str(front_door_answer or "").split("\n")[0],
+          "abstraction_order": ",".join(_abstraction_order()),
+          "stages_enabled": _stages_enabled(),
+          "stages": stages or [],
+          "rerun_answered_by": rerun_answered_by,
+          "llm_call_counts": counts,
+          "llm_calls_total": sum(v["calls"] for v in counts.values()),
+          "llm_calls_live": sum(v["live"] for v in counts.values()),
+          "routes": routes}
+
+
+# The summary of the attempt now finishing, and whether to hold it back until
+# `english_to_answer`'s retry loop has settled on an answer.
+_last_summary = None
+_suppress_summary = False
+
+
+def _print_summary(answer, answered_by, front_door_answer, state=None,
+                   rerun_answered_by=None, stages=None):
+  """`-summary`: who answered and what it cost, whatever the output level."""
+  global _last_summary
+  rec = _summary_record(answer, answered_by, front_door_answer, state,
+                        rerun_answered_by=rerun_answered_by, stages=stages)
+  _last_summary = rec
+  if _suppress_summary:
+    return
+  _show_summary(rec)
+
+
+def _show_summary(rec):
+  if globals.options.get("summary_json_flag"):
+    print(json.dumps(rec, default=str))
+    if not globals.options.get("summary_flag"):
+      return
+  print("\n=== summary ===")
+  print("answer: %s" % rec["answer"])
+  by = rec["answered_by"]
+  if rec.get("rerun_answered_by") in ("fallback_norm", "fallback_hyp"):
+    by = "%s (rerun answered by %s)" % (by, rec["rerun_answered_by"])
+  print("answered_by: %s   (front door: %s)"
+        % (by, rec["front_door_answer"]))
+  print("stages_enabled: %s" % (", ".join(rec["stages_enabled"]) or "none"))
+  print("abstraction_order: %s" % rec["abstraction_order"])
+  parts = []
+  for tag in sorted(rec["llm_call_counts"]):
+    cell = rec["llm_call_counts"][tag]
+    bits = "live %d" % cell["live"]
+    if cell["retries"]:
+      bits += ", retries %d" % cell["retries"]
+    parts.append("%s %d (%s)" % (tag, cell["calls"], bits))
+  print("llm calls: %s; total %d, live %d"
+        % ("; ".join(parts) or "none", rec["llm_calls_total"],
+           rec["llm_calls_live"]))
+  print("routes run: %s" % "; ".join(rec["routes"]))
+
+
+def _corrective_call(inner, stage):
+  """Was the call carrying the corrective made, and by whom answered?
+
+  A rerun whose corrective call never happened is the first call again, served
+  from the cache; the measurement excludes it.  -> "api" | "cache" | "missing".
+  """
+  want = 1 if stage == 1 else 2
+  rows = [r for r in (inner.get("parse_calls") or [])
+          if r.get("stage") == want]
+  if not rows:
+    return "missing"
+  return rows[0].get("source") or "unknown"
 
 
 def _changed_units(before, after):
@@ -607,9 +862,24 @@ def _print_critic(record):
                                  ", ".join(record["units_to_redo"])))))
   if record.get("rerun_changed_units"):
     got = record["rerun_changed_units"]
-    print("  rerun changed units %s; answer after rerun: %s"
+    print("  corrective call: %s (stage %s)"
+          % (record.get("corrective_call") or "?",
+             record.get("corrective_stage") or 2))
+    print("  rerun changed units %s%s; answer after rerun: %s"
           % (", ".join(got["changed"]) or "none",
+             ("; unasked %s" % ", ".join(record["unasked_units"])
+              if record.get("unasked_units") else ""),
              str(record.get("answer_after") or "").split("\n")[0]))
+
+
+def _stages_enabled():
+  """The stage keys this run has on, in stage order.
+
+  Written into the case record next to `abstraction_order`, so a results
+  folder says what ran without its command line.
+  """
+  import globals
+  return [k[:-5] for k in STAGE_KEYS if globals.options.get(k)]
 
 
 def _abstraction_order():
@@ -619,15 +889,16 @@ def _abstraction_order():
   what this run is allowed to try, and the flags say which of those are on.
   """
   import globals
-  got = globals.options.get("abstraction_order") or ""
-  names = [x.strip() for x in str(got).split(",") if x.strip()]
-  if not names:
-    return list(globals.ABSTRACTION_ROUTES)
-  return names
+  return list(globals.ABSTRACTION_ROUTES)
 
 
 def _route_enabled(name):
   import globals
+  if _in_critic_rerun:
+    # The rerun is a retranslation: Stage 2 again, the converter, gk.  Running
+    # the routes inside it would run them twice per case — once on the
+    # repaired translation and once on the original, in the outer run.
+    return False
   if name == "graphtrans":
     return bool(globals.options.get("graphtrans_flag")
                 or globals.options.get("graphbridge_flag"))
@@ -643,29 +914,131 @@ def _run_graphtrans(text, s1_json, s2_json, logic, answer, llm, llm_version,
                     collect=None, state=None):
   """Layer 1: the graph retranslation and one gk call (`-graphtrans`)."""
   import graph_p0
+  _announce_stage("graphtrans")
   got = graph_p0.run_graph_p0(text, s1_json, llm=llm, version=llm_version,
                               max_tokens=max_tokens, options=None)
   if state is not None:
     state["graphtrans"] = got
   if collect is not None:
     collect["graphtrans"] = _graphtrans_record(got)
-  if loud:
+  if debug:
     _print_graphtrans(got, verbose=verbose)
+  _print_graph_theory(got, s1_json, llm)
   if got.get("answer") is None:
     return {"answer": None, "logic": None}
-  return {"answer": got["answer_string"], "logic": got["clauses"]}
+  return {"answer": got["answer_string"], "logic": got["clauses"],
+          "proof": got.get("gk_result"), "gk_command": got.get("gk_command")}
 
 
 def _graphtrans_record(got):
-  """What a runtests JSON keeps: everything but the clause list itself."""
-  return {k: v for k, v in got.items()
-          if k not in ("clauses", "sidecar", "stage2_graph")}
+  """What a runtests JSON keeps.
+
+  The open-triple Stage 2 and the graph clause list stay: each is the size of
+  an ordinary Stage 2 and clause list, and without them the record cannot say
+  what was proved.  Only the compiler sidecar and the unparsed result string
+  are dropped; `gk_result` carries the same result as JSON.
+  """
+  return {k: v for k, v in got.items() if k not in ("sidecar", "raw")}
+
+
+def _loud_enough():
+  """True from `-logic` up: the level at which the pipeline shows its blocks."""
+  return bool(globals.options.get("show_logic_flag")
+              or globals.options.get("show_details_flag")
+              or globals.options.get("debug_print_flag"))
+
+
+_announced = set()
+
+
+def _announce_stage(name, late=False):
+  """One line naming the stage whose blocks follow.
+
+  A stage after the front door parses, converts and calls gk again, and its
+  blocks carry the ordinary headers — `=== stage 2 (logic JSON, …) ===`,
+  `=== prover input (JSON) ===` and the rest.  This line is what says whose
+  they are, so it is printed only at the levels where those headers actually
+  repeat: `-details` and above, and `-logic` for a stage that prints a clause
+  block there (`late=True`, printed by the block itself).  At most one line
+  per stage per run.  `-explain` prints none: it shows the answer and its
+  proof, as it does for an answer the front door found.
+  """
+  loud = bool(globals.options.get("show_details_flag")
+              or globals.options.get("debug_print_flag"))
+  if late:
+    loud = loud or bool(globals.options.get("show_logic_flag"))
+  if not loud or name in _announced:
+    return
+  _announced.add(name)
+  print("\n--- stage: %s ---" % name)
+
+
+def _print_stages(rows):
+  """The stages block: which stages ran, and which one produced the answer."""
+  if not (rows and _loud_enough()):
+    return
+  print("\n=== stages ===\n")
+  for row in rows:
+    mark = "  <- the answer" if row.get("answered") else ""
+    if not row.get("ran"):
+      print("  %-14s %s%s" % (row["stage"], row.get("why") or "not run", mark))
+      continue
+    print("  %-14s ran   %s%s"
+          % (row["stage"], row.get("answer") or "no answer", mark))
+
+
+def _note_stage(rows, name, ran, answer=None, why=None):
+  """Record what one stage did, for the stages block and the case record."""
+  row = {"stage": name, "ran": bool(ran), "answered": False}
+  head = str(answer or "").split("\n")[0].strip()
+  if ran:
+    row["answer"] = head or None
+  elif why:
+    row["why"] = why
+  rows.append(row)
+  return row
+
+
+def _print_graph_theory(got, s1_json=None, llm=None):
+  """The second translation's own copies of the ordinary output blocks.
+
+  The headers are the ordinary ones: what marks the blocks as the second
+  translation's is the `--- stage: … ---` line printed before the route ran,
+  not a different vocabulary in every header.  `-logic` adds
+  the clause list with its source comments, `-details` the Stage-2 JSON and
+  the prover result.  The prover input and params are printed by
+  `prover.call_prover` itself, as for any call.
+  """
+  show_logic = globals.options.get("show_logic_flag")
+  show_details = globals.options.get("show_details_flag")
+  if not (show_logic or show_details or debug):
+    return
+  clauses = got.get("clauses")
+  if show_details or debug:
+    if got.get("stage2_graph") is not None:
+      print("\n=== stage 2 (logic JSON, %s) ===\n" % (llm or ""))
+      print(json.dumps(got["stage2_graph"], indent=2))
+  if (show_logic or debug) and clauses:
+    # the same renderer the front door's block uses, so the two read alike
+    from proof_render import compute_ambiguity as _compute_ambiguity
+    from utils import format_sentences_to_clauses
+    _announce_stage("graphtrans", late=True)
+    try:
+      _compute_ambiguity(clauses)
+      print("\n" + format_sentences_to_clauses(
+          clauses, s1_json,
+          json_mode=bool(globals.options.get("json_flag"))) + "\n")
+    except Exception as e:                                      # noqa: BLE001
+      print("  (clause block not renderable: %s)" % e)
+  if show_details or debug:
+    if got.get("gk_result") is not None:
+      print("\n=== prover result (JSON) ===\n")
+      print(json.dumps(got["gk_result"], indent=2))
 
 
 def _print_graphtrans(got, verbose=False):
   """The layer-1 block of `-explain` and above."""
-  print("\n=== graphtrans (a second translation of the case into open "
-        "triples) ===")
+  print("\n=== the second translation, step by step ===")
   tr = got.get("translation") or {}
   m = (tr.get("measurements") or {})
   before = got.get("issues_before") or {}
@@ -693,8 +1066,11 @@ def _print_graphtrans(got, verbose=False):
   if got.get("answer") is None:
     print("  gk: no answer")
     return
+  # the first line only: the explanation, when there is one, is printed with
+  # the answer at the end of the run
   print("  gk: answer found, confidence %s -> %s"
-        % (got.get("confidence"), got.get("answer_string")))
+        % (got.get("confidence"),
+           str(got.get("answer_string") or "").split("\n")[0]))
   if verbose and got.get("proof"):
     for line in _graph_proof_lines(got["proof"]):
       print("    %s" % line)
@@ -767,8 +1143,12 @@ def _run_litbridge(text, s1_json, s2_json, logic, answer, llm, llm_version,
   loud = debug or show_details or show_logic
   view = _litbridge_view(text, s1_json, s2_json, logic)
   respond = _litbridge_responder(llm, llm_version, max_tokens)
-  extras = bool(globals.options.get("litbridge_extras_flag"))
+  extras = bool(litbridge_procedure.EXTRAS)
   records = []
+  # the round that answered, for the run's top-level record
+  answering_proof, answering_command = None, None
+  # accumulated across the rounds, so a round-2 proof can name a round-1 rule
+  provenance, rules_by_id = {}, {}
   try:
     ctx, refused = litbridge_procedure.bridge_context(view)
   except Exception as e:                                      # noqa: BLE001
@@ -808,7 +1188,22 @@ def _run_litbridge(text, s1_json, s2_json, logic, answer, llm, llm_version,
                            s2_json=s2_json, logic=logic, options=options)
     rec["gk_called"] = True
     rec["resolved"] = not _unresolved(answer)
+    provenance.update(rec.get("clause_provenance") or {})
+    rules_by_id.update(rec.get("rules_by_id") or {})
+    if rec["resolved"] and _litbridge_grader_mode():
+      grade = _grade_litbridge(text, proof_result, provenance, rules_by_id,
+                               respond)
+      rec["grading"] = grade
+      if grade.get("withdrawn"):
+        # the proof rests on a rule the grader failed: the bridge answers
+        # nothing and the front door's answer stands
+        answer = base_answer
+        rec["resolved"] = False
+        rec["withdrawn"] = True
+        break
     if rec["resolved"]:
+      answering_proof = proof_result
+      answering_command = (collect or {}).get("gk_command")
       break
   # nothing was proved: the run ends exactly where it would have without
   # litbridge, with the answer and the theory the ordinary pipeline produced
@@ -817,13 +1212,104 @@ def _run_litbridge(text, s1_json, s2_json, logic, answer, llm, llm_version,
   if collect is not None:
     collect["litbridge"] = {"extras": extras, "rounds": records,
                             "proved": not _unresolved(answer),
+                            "grader": _litbridge_grader_mode(),
                             "options": view["configuration"]}
     if not globals.options.get("nofinaltrace"):
       collect["final_clauses"] = logic
   if loud:
     _print_litbridge(records, verbose=debug or show_details,
                      options=view["configuration"])
-  return {"answer": None if _unresolved(answer) else answer, "logic": logic}
+  return {"answer": None if _unresolved(answer) else answer, "logic": logic,
+          "proof": answering_proof, "gk_command": answering_command}
+
+
+def _litbridge_grader_mode():
+  """The grader's mode, or None when it is off (`litbridge_grader.MODE`)."""
+  import litbridge_grader
+  return litbridge_grader.MODE
+
+
+def _grade_litbridge(text, proof_result, provenance, rules_by_id, respond):
+  """Grade the rules the proof cites, one call each.  -> the grading record.
+
+  Every proof gk returned is graded, and the answer stands only if some proof
+  survives.  A proof citing no invented rule is not the bridge's doing and is
+  left alone.
+  """
+  import litbridge_grader as grader
+  import litbridge_procedure
+
+  mode = grader.normalise_mode(grader.MODE)
+
+  def ask(rule_id, message):
+    got, _note = respond("grader", str(rule_id), message)
+    return got
+
+  proofs = litbridge_procedure.proofs_of(proof_result, provenance)
+  dynamic = [p for p in proofs if not p["cites_no_dynamic_hypothesis"]]
+  if not dynamic:
+    return {"asked": False, "mode": mode, "proofs": [],
+            "why": "no returned proof cites an invented rule",
+            "withdrawn": False}
+  rows = []
+  for p in dynamic:
+    got = grader.grade_proof(text, p["cited_hypothesis_ids"], rules_by_id,
+                             ask, mode)
+    got["answer"] = p.get("answer")
+    rows.append(got)
+  graded = [r for r in rows if r["graded"]]
+  return {"asked": True, "mode": mode, "proofs": rows,
+          "version": grader.VERSION,
+          # every proof that cited a rule was withdrawn, so nothing invented
+          # is left holding the answer up
+          "withdrawn": bool(graded) and all(r["withdrawn"] for r in graded)}
+
+
+def _set_answering_call(collect, answering, front_door_proof,
+                        front_door_gk_command):
+  """Put the gk call that produced the answer at the top level of the record.
+
+  `proof` and `gk_command` describe the ANSWERING stage's call, whichever
+  stage that was.  When a stage after the front door answered, the front
+  door's own call is kept beside them as `front_door_proof` and
+  `front_door_gk_command`.  When nothing after the front door answered, the
+  front door's call is the top-level one — every `call_prover` writes
+  `collect["gk_command"]`, so a stage that RAN without answering would
+  otherwise leave its own command there.  `clauses` is untouched: it is the
+  front door's clause list at every level.
+  """
+  if collect is None:
+    return
+  if answering is not None:
+    collect["front_door_proof"] = _as_json(front_door_proof)
+    collect["front_door_gk_command"] = front_door_gk_command
+    collect["proof"] = _as_json(answering.get("proof"))
+    if answering.get("gk_command"):
+      collect["gk_command"] = answering["gk_command"]
+  else:
+    collect["proof"] = _as_json(front_door_proof)
+    if front_door_gk_command:
+      collect["gk_command"] = front_door_gk_command
+  if collect.get("proof") is None:
+    collect.pop("proof", None)
+
+
+def _as_json(proof_result):
+  """A gk result as a JSON object, so a dump does not drown in escapes.
+
+  Falls back to the raw string when it does not parse (an "Error: …" return),
+  and to None when there is nothing.
+  """
+  if proof_result is None:
+    return None
+  if isinstance(proof_result, (dict, list)):
+    return proof_result
+  if not (isinstance(proof_result, str) and proof_result.strip()):
+    return None
+  try:
+    return json.loads(proof_result)
+  except Exception:                                             # noqa: BLE001
+    return proof_result
 
 
 def _unresolved(answer):
@@ -946,17 +1432,18 @@ def _run_graphbridge(text, s1_json, s2_json, logic, answer, llm, llm_version,
       return got
   if not p0 or p0.get("stage2_graph") is None:
     return {"answer": None, "logic": None}
+  _announce_stage("graphbridge")
   base_options = graph_compile.graph_options(litbridge_converter.live_options())
   respond = _graphbridge_responder(llm, llm_version, max_tokens)
   gk_log = []
   gk = graph_compile.gk_runner(s1_json, seconds=5, options=base_options,
                                log=gk_log)
   ordinary = None
-  if globals.options.get("graphbridge_lift_flag"):
+  if graph_procedure.LIFT:
     ordinary = {"view": _litbridge_view(text, s1_json, s2_json, logic),
                 "options": litbridge_converter.live_options(),
                 "gk": _graphbridge_ordinary_gk(s1_json, s2_json, text)}
-  evidence = str(globals.options.get("graphbridge_evidence") or "any")
+  evidence = str(graph_procedure.EVIDENCE or "any")
   try:
     record = graph_procedure.run_bridges(
         p0["stage2_graph"], s1_json, respond, gk, case_id="solve",
@@ -967,33 +1454,55 @@ def _run_graphbridge(text, s1_json, s2_json, logic, answer, llm, llm_version,
   record["gk_calls"] = gk_log
   record["evidence_mode"] = evidence
   if collect is not None:
-    collect["graph"] = record
+    collect["graphbridge"] = record   # the key runtests.py copies
   out = {"answer": None, "logic": None}
   value, verdict = graph_procedure.credible_answer(record, evidence)
   if value is not None:
-    out["answer"] = _graph_answer_string(value, verdict)
+    row = _graphbridge_minimal_set(record, verdict)
+    out["answer"] = _graph_answer_string(value, row)
     out["logic"] = p0.get("clauses")
+    out["proof"] = (row or {}).get("gk_result")
+    out["gk_command"] = (row or {}).get("gk_command")
     record["answer_label"] = "bridged"
-  if loud:
+  if globals.options.get("debug_print_flag"):
     _print_graphbridge(record, verbose=verbose)
   return out
 
 
-def _graph_answer_string(value, verdict):
-  """The pipeline's answer string for a bridged answer."""
-  return "True." if value else "False."
+def _graphbridge_minimal_set(record, verdict):
+  """The minimal-set row the accepted verdict was computed from."""
+  rows = record.get("minimal_sets") or []
+  i = (verdict or {}).get("set_index")
+  if isinstance(i, int) and 0 <= i < len(rows):
+    return rows[i]
+  return None
+
+
+def _graph_answer_string(value, row):
+  """The pipeline's answer string for a bridged answer.
+
+  The replay of the accepted minimal set is an ordinary gk call read by
+  `process_proof`, so its answer already carries the hedge and, at `-explain`
+  and above, the English proof.  It is used whenever its polarity agrees with
+  the accepted verdict's; otherwise the bare polarity stands and the record
+  says both.
+  """
+  bare = "True." if value else "False."
+  got = (row or {}).get("answer_string")
+  if not isinstance(got, str) or not got.strip():
+    return bare
+  head = got.split("\n")[0].strip().rstrip(".").lower()
+  for hedge in ("probably ", "likely ", "possibly "):
+    head = head.replace(hedge, "")
+  if head in ("true", "false") and (head == "true") == bool(value):
+    return got
+  return bare
 
 
 def _graphbridge_sources():
   """The candidate sources this run enumerates."""
   import graph_procedure
-  want = str(globals.options.get("graphbridge_sources") or "frontier")
-  rows = tuple(x.strip() for x in want.split(",") if x.strip())
-  return rows or graph_procedure.DEFAULT_SOURCES
-
-
-def _graphbridge_holistic():
-  return "holistic" in str(globals.options.get("graphbridge_sources") or "")
+  return tuple(graph_procedure.DEFAULT_SOURCES)
 
 
 def _graphbridge_ordinary_gk(s1_json, s2_json, text):
@@ -1037,8 +1546,8 @@ def _graphbridge_lifted_answer(record, text, s1_json, s2_json, logic, options):
 
 def _print_graphbridge(record, verbose=False):
   """Show what the graph route did, for -logic and above."""
-  print("\n=== graphbridge (a second, open-name translation of the case) "
-        "===\n")
+  print("\n=== the second translation and its invented rules, step by "
+        "step ===\n")
   if record.get("stopped_at"):
     print("  stopped at: %s" % record["stopped_at"])
   translation = record.get("translation") or {}
@@ -1077,7 +1586,8 @@ def _print_graphbridge(record, verbose=False):
       continue
     print("    %s: %d bridge(s), %s, %s"
           % (row["pool"], row.get("bridges_offered", 0), row.get("outcome"),
-             ", ".join(row.get("answers") or []) or "no answer"))
+             ", ".join(str(a) for a in row.get("answers") or [])
+             or "no answer"))
   for row in record.get("minimal_sets") or []:
     print("    minimal set (%s): %s -> %s"
           % (row.get("pool"), ", ".join(row.get("minimal_rules") or [])
@@ -1130,8 +1640,9 @@ def _graphbridge_responder(llm, llm_version, max_tokens):
       sysprompt = llmparse._stage2_sysprompt
     else:
       return None, "unknown graph role %r" % role
-    return llmcall.call_llm(sysprompt, prompt, llm=llm, version=llm_version,
-                            max_tokens=max_tokens), None
+    with llmcall.tagged(None, role=role):
+      return llmcall.call_llm(sysprompt, prompt, llm=llm, version=llm_version,
+                              max_tokens=max_tokens), None
   return respond
 
 
@@ -1145,13 +1656,60 @@ def _litbridge_responder(llm, llm_version, max_tokens):
       sysprompt = litbridge_procedure.rules.distinct_system_prompt()
     elif role == "negative":
       sysprompt = litbridge_procedure.rules.negative_system_prompt()
-    return llmcall.call_llm(sysprompt, prompt, llm=llm, version=llm_version,
-                            max_tokens=max_tokens), None
+    elif role == "grader":
+      import litbridge_grader
+      sysprompt = litbridge_grader.system_prompt(litbridge_grader.MODE)
+    with llmcall.tagged(None, role=role):
+      return llmcall.call_llm(sysprompt, prompt, llm=llm, version=llm_version,
+                              max_tokens=max_tokens), None
   return respond
 
 
+# True once the critique pass has run for the case now being answered.  Reset
+# by `english_to_answer`, which is where a case run begins.
+_critiqued = False
+
+# True while the critique pass's rerun is running.  The rerun re-enters the
+# whole pipeline, and without this the abstraction routes would run inside it
+# and again in the outer run.
+_in_critic_rerun = False
+
+
+def _should_critique(answer):
+  """One critique per case run, and never inside the rerun it asked for.
+
+  `_critiqued` does both: it is set before the critique runs, so the rerun
+  cannot critique itself, and it survives the downstream-error retry loop in
+  `english_to_answer`, which used to critique the same case once per attempt.
+  It is a module flag on purpose — the earlier guard lived in
+  `globals.options`, where the routes' own option resolvers deep-copied it and
+  rejected it as an unknown key.
+  """
+  return bool(globals.options.get("critic_flag")
+              and _unresolved(answer)
+              and not _critiqued)
+
+
 def english_to_answer(text, options=None, collect=None):
-  """Full pipeline, with the N1 downstream-error corrective retry around it."""
+  """Full pipeline, with the N1 downstream-error corrective retry around it.
+
+  The retry loop runs the whole pipeline again on a downstream error, so the
+  summary block is held back until the loop is done and only the last one is
+  printed: a case run reports once, whatever it took to answer it.
+  """
+  global _critiqued, _suppress_summary, _last_summary
+  _critiqued = False
+  _last_summary = None
+  _suppress_summary = True
+  try:
+    return _english_to_answer(text, options, collect)
+  finally:
+    _suppress_summary = False
+    if _last_summary is not None:
+      _show_summary(_last_summary)
+
+
+def _english_to_answer(text, options=None, collect=None):
   correction = ""
   fired = []
   answer = None
@@ -1172,6 +1730,17 @@ def english_to_answer(text, options=None, collect=None):
                   + "\nReturn only the corrected JSON.")
   if fired and collect is not None:
     collect["downstream_retries"] = fired
+  if collect is not None and collect.get("answer") is None:
+    # The body returned early — a parse that produced nothing, a converter or
+    # prover error — so the block that writes `answer`, `answered_by` and the
+    # stage keys never ran.  Without this the case lands in `testresults/`
+    # with no answer and no error at all, which is indistinguishable from a
+    # case that ran, and invisible to an error count.  The `_ApiTimeout` path
+    # inside the body already did this for itself; every other early return
+    # is covered here.
+    if answer is not None:
+      collect["answer"] = answer
+    collect.setdefault("stages_enabled", _stages_enabled())
   return answer
 
 
@@ -1253,6 +1822,24 @@ def _parse_te_gates(spec):
   return gates
 
 
+# The six stage keys, in the order the stages run.  A flag set assigns every
+# one of them, so a set fully replaces whatever an earlier set left behind.
+STAGE_KEYS = ("fallback_norm_flag", "fallback_hyp_flag", "critic_flag",
+              "graphtrans_flag", "litbridge_flag", "graphbridge_flag")
+
+
+def _set_stages(opts, litbridge, graphbridge):
+  """Assign all six stage keys.  The fallbacks, the critic and the graph
+  translation are on in every set; the two bridges are what the sets differ
+  in."""
+  opts["fallback_norm_flag"] = True
+  opts["fallback_hyp_flag"] = True
+  opts["critic_flag"] = True
+  opts["graphtrans_flag"] = True
+  opts["litbridge_flag"] = bool(litbridge)
+  opts["graphbridge_flag"] = bool(graphbridge)
+
+
 def _parse_cmd_line():
   """Parse sys.argv; return (text, options_dict)."""
   global debug, llm, llm_version
@@ -1266,6 +1853,16 @@ def _parse_cmd_line():
   params = sys.argv[1:]
   elpos = -1
   skippos = 0
+  # Stage-key resolution, in three rounds (§12.0):
+  #   1. presets and flag sets (-abstract-max, -stack*) assign ALL SIX stage
+  #      keys, left to right, so a later one overwrites an earlier one;
+  #   2. explicit stage switches (-critic, -graphtrans, -graphbridge,
+  #      -litbridge, -fallback_norm, -fallback_hyp) set their key True
+  #      whatever their position relative to a preset — they are collected
+  #      here and applied after the loop;
+  #   3. the cancels (-nocritic, -nographtrans, -nographbridge, -nolitbridge,
+  #      -nofallback*) are applied last and win over 1 and 2.
+  explicit_on = set()
 
   for el in params:
     elpos += 1
@@ -1375,60 +1972,33 @@ def _parse_cmd_line():
     # --- Abstraction presets: pure expansions into primitives (read nowhere
     #     else in the pipeline). -abstract / -abstract-roles / -abstract-max. ---
     elif el in ["-litbridge", "--litbridge"]:
-      opts["litbridge_flag"] = True
-    elif el in ["-litbridge_extras", "--litbridge_extras"]:
-      opts["litbridge_extras_flag"] = True
+      explicit_on.add("litbridge_flag")
     elif el in ["-nolitbridge", "--nolitbridge"]:
       opts["nolitbridge_flag"] = True
+    elif el in ["-summary", "--summary"]:
+      opts["summary_flag"] = True
+    elif el in ["-summary-json", "--summary-json"]:
+      opts["summary_json_flag"] = True
     elif el in ["-critic", "--critic"]:
-      opts["critic_flag"] = True
+      explicit_on.add("critic_flag")
     elif el in ["-nocritic", "--nocritic"]:
       opts["nocritic_flag"] = True
     elif el in ["-graphtrans", "--graphtrans"]:
-      opts["graphtrans_flag"] = True
+      explicit_on.add("graphtrans_flag")
     elif el in ["-nographtrans", "--nographtrans"]:
       opts["nographtrans_flag"] = True
     elif el in ["-graphbridge", "--graphbridge"]:
       # layer 2 searches layer 1's theory, so it turns layer 1 on as well
-      opts["graphbridge_flag"] = True
-      opts["graphtrans_flag"] = True
+      explicit_on.add("graphbridge_flag")
+      explicit_on.add("graphtrans_flag")
     elif el in ["-nographbridge", "--nographbridge"]:
       opts["nographbridge_flag"] = True
-    elif el in ["-graphbridge_lift", "--graphbridge_lift"]:
-      opts["graphbridge_lift_flag"] = True
-    elif el in ["-graphbridge_evidence", "--graphbridge_evidence"]:
-      if elpos + 1 >= len(params) or params[elpos + 1] not in ("any",
-                                                               "stated"):
-        print("-graphbridge_evidence requires any or stated")
-        sys.exit(0)
-      opts["graphbridge_evidence"] = params[elpos + 1]
-      skippos = 1
-    elif el in ["-abstraction_order", "--abstraction_order"]:
-      if elpos + 1 >= len(params):
-        print("-abstraction_order requires a comma list of "
-              "graphtrans, litbridge, graphbridge")
-        sys.exit(0)
-      import globals as _g
-      want = [x.strip() for x in params[elpos + 1].split(",") if x.strip()]
-      unknown = [x for x in want if x not in _g.ABSTRACTION_ROUTES]
-      if unknown:
-        print("-abstraction_order: unknown route %s; the routes are %s"
-              % (", ".join(unknown), ", ".join(_g.ABSTRACTION_ROUTES)))
-        sys.exit(0)
-      opts["abstraction_order"] = ",".join(want)
-      skippos = 1
-    elif el in ["-graphbridge_sources", "--graphbridge_sources"]:
-      if elpos + 1 >= len(params):
-        print("-graphbridge_sources requires a comma list of "
-              "frontier, exhaustive, composition")
-        sys.exit(0)
-      if "holistic" in params[elpos + 1]:
-        print("-graphbridge_sources: holistic was measured and dropped "
-              "(net negative); the sources are frontier, exhaustive, "
-              "composition")
-        sys.exit(0)
-      opts["graphbridge_sources"] = params[elpos + 1]
-      skippos = 1
+    elif el in ["-stack", "--stack", "-stack-closed", "--stack-closed",
+                "-stack-open", "--stack-open"]:
+      # A flag set assigns all six stage keys, so it fully replaces whatever
+      # an earlier set or preset put there.  Round 1 of the resolution order.
+      _set_stages(opts, litbridge=("open" in el),
+                  graphbridge=("closed" not in el))
     elif el in ["-abstract", "--abstract", "-abstract-roles", "--abstract-roles",
                 "-abstract-max", "--abstract-max"]:
       opts["event_base"] = "flatroles" if ("roles" in el or "max" in el) else "flat"
@@ -1446,17 +2016,25 @@ def _parse_cmd_line():
         opts["compasym_flag"] = True
         opts["nominalretry_flag"] = True
         opts["negretry_flag"] = True
-        opts["litbridge_flag"] = True
+        # the converter preset plus the open-world stack
+        _set_stages(opts, litbridge=True, graphbridge=True)
     elif el in ["-propclass", "--propclass"]:
       opts["propclass_flag"] = True
+    elif el in ["-fallback_norm", "--fallback_norm"]:
+      explicit_on.add("fallback_norm_flag")
+    elif el in ["-fallback_hyp", "--fallback_hyp"]:
+      explicit_on.add("fallback_hyp_flag")
+    elif el in ["-nofallback_norm", "--nofallback_norm"]:
+      opts["nofallback_norm_flag"] = True
+    elif el in ["-nofallback_hyp", "--nofallback_hyp"]:
+      opts["nofallback_hyp_flag"] = True
+    elif el in ["-nofallback", "--nofallback"]:
+      opts["nofallback_norm_flag"] = True
+      opts["nofallback_hyp_flag"] = True
     elif el in ["-numtype", "--numtype"]:
       opts["numtype_flag"] = True
     elif el in ["-compasym", "--compasym"]:
       opts["compasym_flag"] = True
-    elif el in ["-nominalretry", "--nominalretry"]:
-      opts["nominalretry_flag"] = True
-    elif el in ["-negretry", "--negretry"]:
-      opts["negretry_flag"] = True
     elif el in ["-prenorm", "--prenorm"]:
       opts["prenorm_flag"] = True
     elif el in ["-noprenorm", "--noprenorm"]:
@@ -1582,19 +2160,29 @@ def _parse_cmd_line():
     elif textpart:
       text = textpart
 
-  # -nolitbridge wins wherever it stands on the line, so it also cancels the
-  # -litbridge that -abstract-max turns on.
+  # Round 2 of the resolution order: an explicit stage switch sets its key
+  # True whatever its position relative to a preset or a flag set, so
+  # `-stack-closed -litbridge` and `-litbridge -stack-closed` mean the same.
+  for _key in explicit_on:
+    opts[_key] = True
+
+  # Round 3: the cancels are applied after the whole line and win over both
+  # rounds above, so `-nolitbridge` beats `-litbridge`, `-stack-open` and the
+  # `-abstract-max` that turns the literal bridge on, wherever each stands.
   if opts.get("nolitbridge_flag"):
     opts["litbridge_flag"] = False
-  # -nographbridge wins wherever it stands on the line, exactly as -nolitbridge
-  # does for the literal bridge.
   if opts.get("nographbridge_flag"):
     opts["graphbridge_flag"] = False
   if opts.get("nocritic_flag"):
     opts["critic_flag"] = False
   if opts.get("nographtrans_flag"):
+    # layer 2 searches layer 1's theory, so cancelling layer 1 cancels both
     opts["graphtrans_flag"] = False
     opts["graphbridge_flag"] = False
+  if opts.get("nofallback_norm_flag"):
+    opts["fallback_norm_flag"] = False
+  if opts.get("nofallback_hyp_flag"):
+    opts["fallback_hyp_flag"] = False
 
   return (text, opts)
 
@@ -1612,6 +2200,10 @@ output format:
  -json      : show all logic in raw JSON instead of traditional pred(arg,...) syntax
  -jsonlogic : shortcut for -logic -json
  -gkin FILE : save the GK prover input to FILE (with the GK command as a comment)
+ -summary   : one block at the end, whatever the output level: the answer, which
+              stage produced it (front door / graphtrans / litbridge / graphbridge
+              / critic), the front door's own answer, and the LLM calls per stage
+ -summary-json : the same block as one JSON line, for scripts
 
 other:
  -nosolve   : parse to logic only, do not run the prover
@@ -1680,46 +2272,65 @@ logic conversion / representation (transform the Stage-2 logic before the prover
   -abstract       : -event flat + entitymerge + guarddrop + bridges + dropdefinites
                     + typeenrich + localantonyms + simpleprops
   -abstract-roles : as -abstract but -event flatroles (eventprop-tagged objects)
-  -abstract-max   : as -abstract-roles + -prenorm + propclass + numtype + compasym
-                    + nominalretry + negretry + litbridge (strongest; nominalretry/
-                    negretry/litbridge can make live LLM retries)
- literal-bridge abstraction (off by default; costs extra LLM calls per case):
-  -litbridge     : when the ordinary pipeline leaves the question unresolved, propose
-                   implication rules over the case's own displayed atoms, compile them
-                   beside the stored theory and resubmit to gk. On automatically with
-                   -abstract-max.
-  -nolitbridge   : force it off, wherever it stands on the command line. It cancels
-                   both -litbridge and the -litbridge that -abstract-max turns on.
-  -litbridge_extras : also run the two code-built channels in round 1, each one more
-                   LLM call in which the model only picks among enumerated pairs:
-                   distinctness (isa(C,A) & isa(C,B) -> NOT A=B, when the question
-                   needs an inequality and its English says "different"/"distinct"/
-                   ...) and negative relation (A -> NOT B, when a question clause
-                   asks B positively and the passage states A about the same
-                   participants). Off by default; NO preset turns it on, not even
-                   -abstract-max. Without -litbridge it does nothing.
- open-relation graph abstraction (off by default; NO preset turns it on):
-  -graphbridge   : when the ordinary pipeline (and the literal bridge, if on) leaves
-                   the question unresolved, translate the case a second time into
-                   three-item open triples, invent implications between the open
-                   names and search that theory separately. A proof is lifted back
-                   into the ordinary representation; a graph-only proof is printed
-                   as a labelled experimental result and never becomes the answer.
-  -nographbridge : force it off, wherever it stands on the command line.
-  -graphbridge_nolift : do not lift a graph proof back into the ordinary theory.
-                   Every graph proof then stays a labelled experimental result.
-  -graphbridge_sources LIST : which candidate sources to enumerate, a comma list of
-                   frontier (default), exhaustive, composition, holistic.
+  -abstract-max   : as -abstract-roles + prenorm + propclass + numtype + compasym
+                    + nominalretry + negretry, plus the open-world repair stack
+                    (all six stages below). prenorm, nominalretry and negretry can
+                    make live LLM calls, and so does every stage but the two
+                    fallbacks.
  -prenorm       : pre-Stage-1 LLM wording normalisation (composable; FOLIO base)
+ -noprenorm     : force prenorm off after a preset
  -nocrossstage  : disable the cross-stage guard-retry
- -nominalretry  : (experimental) Stage-2 retry when a Stage-1 "ENT is a NOUN"
-                  predication's type is dropped from ENT but used elsewhere (case 126;
-                  in -abstract-max; can make live LLM retries)
- -negretry      : (experimental) prenorm-negation-fallback: when prenorm strips a
-                  sentential negation from the conclusion question ("X is not a Y?" ->
-                  "Is X a Y?", flipping the answer), re-parse from the original text;
-                  general correctness fix (cases 80/127/189/200; in -abstract-max;
-                  can make live LLM calls)
+
+the repair stack: six stages, run in this order when the front door leaves the
+question unresolved, each stopping the rest once it answers definitely --
+ fallback_norm, fallback_hyp, critic, graphtrans, litbridge, graphbridge.
+`-summary` prints stages_enabled, and every case JSON carries it.
+
+ flag sets (each assigns all six stage keys, so it replaces an earlier set):
+  -stack         : fallbacks + critic + graphtrans + graphbridge, no literal
+                   bridge. Material of unknown origin: the general default.
+  -stack-closed  : fallbacks + critic + graphtrans. Known closed-world material
+                   (core-like, FOLIO-like), where neither bridge pays.
+  -stack-open    : all six. Known open-world material (EntailmentBank-like).
+ resolution order:
+  1. presets and flag sets, left to right; a later one overwrites an earlier one
+  2. an explicit stage switch turns its stage on from any position on the line
+  3. a cancel wins over both, wherever it stands
+
+ the stages:
+  -fallback_norm : ON BY DEFAULT. When the front door ends unresolved, convert the
+                   same parse again with the token and shape normalizations on,
+                   plus the question rewrites the text licenses, and call gk once
+                   more. No LLM call, at most two gk calls (DOCUMENTATION.md 16).
+  -fallback_hyp  : ON BY DEFAULT. When the question is a conditional and both the
+                   front door and fallback_norm ended unresolved, assume the
+                   antecedent in an isolated theory and ask the consequent. Nothing
+                   is inserted into the ordinary premise set. No LLM call, one gk
+                   call (DOCUMENTATION.md 16).
+  -critic        : one LLM call audits the translation the front door produced; a
+                   blocking finding on its own chain makes Stage 2 run once more
+                   with the findings appended. One critique, one rerun
+                   (DOCUMENTATION.md 15).
+  -graphtrans    : translate the case a second time into open triples, compile it
+                   and call gk once. No judge, no bridge (DOCUMENTATION.md 14).
+  -litbridge     : propose implication rules over the case's own displayed atoms,
+                   compile them beside the stored theory and resubmit to gk. Two
+                   rounds (DOCUMENTATION.md 13). Net-harmful on closed-world
+                   material, so only -stack-open and -abstract-max turn it on.
+  -graphbridge   : invent implications between the open names and search layer 1's
+                   theory with them. Turns -graphtrans on as well, since layer 2
+                   searches layer 1's theory (DOCUMENTATION.md 14).
+ the cancels, each winning from any position:
+  -nofallback_norm  -nofallback_hyp  -nofallback (both)
+  -nocritic  -nographtrans (cancels graphbridge too)  -nolitbridge  -nographbridge
+
+ settings that are module constants, not flags:
+  litbridge_procedure.EXTRAS         the two code-built litbridge channels
+  litbridge_grader.MODE              None / "stated" / "any"
+  graph_procedure.LIFT               lift a graph proof into the ordinary theory
+  graph_procedure.EVIDENCE           "any" / "stated"
+  graph_procedure.DEFAULT_SOURCES    the candidate sources layer 2 enumerates
+  globals.ABSTRACTION_ROUTES         the order the three routes run in
 
 LLM reasoning:
  -think       : enable medium reasoning/thinking mode (GPT: reasoning_effort=medium;

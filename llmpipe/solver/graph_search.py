@@ -77,6 +77,32 @@ def _drop_population(world):
   return dropped
 
 
+def _label_bridge_clauses(clauses, rules, world):
+  """Put the program's English reading of each rule on the clause it compiled to.
+
+  `clause_provenance` maps a clause name to a hypothesis id and
+  `rule_by_hypothesis_id` maps that to a rule id, so a compiled clause can be
+  traced back to the rule it came from.  The explanation's "Added rules"
+  section then says what the rule claims, not only that one was added.
+  Modifies `clauses` in place.
+  """
+  by_id = {r["rule_id"]: r for r in (rules or []) if isinstance(r, dict)}
+  rule_of_hyp = world.get("rule_by_hypothesis_id") or {}
+  prov = world.get("clause_provenance") or {}
+  english = {}
+  for cname, hyp in prov.items():
+    rule = by_id.get(rule_of_hyp.get(hyp))
+    if rule is None:
+      continue
+    try:
+      english[cname] = english_of(rule)
+    except Exception:                                           # noqa: BLE001
+      continue
+  for c in clauses:
+    if isinstance(c, dict) and c.get("@name") in english and "@nl" not in c:
+      c["@nl"] = english[c["@name"]]
+
+
 def run_world(view, rules, gk, options, world_id, tag, sidecar=None,
               seconds=None):
   """Compile a bridge set, append it to the graph theory, ask gk."""
@@ -104,6 +130,7 @@ def run_world(view, rules, gk, options, world_id, tag, sidecar=None,
       return record, world
     clauses = list(view["final_clauses"]) + [
         dict(c) for c in world["compiled_bridge_clauses"]]
+    _label_bridge_clauses(clauses, rules, world)
   record.update({
       "refused_by_the_compiler": world["refused_by_the_compiler"],
       "hypotheses_offered": world["hypotheses_in_this_world"],
@@ -152,6 +179,10 @@ def run_world(view, rules, gk, options, world_id, tag, sidecar=None,
       "seconds": got.get("seconds"), "error": got.get("error"),
       "raw_gk_output_sha256": hashlib.sha256(
           (got.get("raw") or "").encode()).hexdigest()})
+  # the call's own input and processed answer, so a world that becomes the
+  # run's answer can be explained and re-read without re-running anything
+  record["gk_input"] = got.get("gk_input")
+  record["answer_string"] = got.get("answer")
   if sidecar is not None:
     record["sidecar"] = sidecar(world_id, clauses, got)
   else:
@@ -160,6 +191,16 @@ def run_world(view, rules, gk, options, world_id, tag, sidecar=None,
 
 
 # --------------------------------------------------- minimal sets, exclusion
+
+def _as_json(raw):
+  """A gk result as JSON, so a record carries it the way `proof` is kept."""
+  if raw is None or isinstance(raw, (dict, list)):
+    return raw
+  try:
+    return json.loads(raw)
+  except (ValueError, TypeError):
+    return None
+
 
 def minimise(view, gk, options, case_id, rules_by_id, proof, budget, tag,
              sidecar=None, seconds=None):
@@ -195,11 +236,21 @@ def minimise(view, gk, options, case_id, rules_by_id, proof, budget, tag,
                       "removing_it_destroys_the_proof": not still})
     if still:
       keep = trial
+  answer_string = replay.get("answer_string")
+  explanation = None
+  if isinstance(answer_string, str) and "\n\n" in answer_string:
+    explanation = answer_string.split("\n\n", 1)[1].strip() or None
   return {"minimised": True, "cited_rules": proof["cited_rules"],
           "minimal_rules": [r["rule_id"] for r in keep],
           "minimal_printed": [r["printed"] for r in keep],
           "size": len(keep), "answer": proof["answer"],
           "deletions": deletions,
+          # the replay is the gk call this set's answer rests on
+          "gk_input": replay.get("gk_input"),
+          "gk_command": replay.get("gk_command"),
+          "gk_result": _as_json(replay.get("raw_gk_output")),
+          "answer_string": answer_string,
+          "explanation": explanation,
           "cites_witness": bool(proof.get("cites_witness")
                                 or any(p.get("cites_witness") for p in kept)),
           "note": "deletion-minimal, not globally minimum"}

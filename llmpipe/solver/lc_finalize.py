@@ -19,6 +19,9 @@
 
 
 def finalize_strict_clauses(result, preserve_generated_blocks=False):
+  from lc_encoding import experiment as _exp
+  _keepdef = _exp("keepdef")      # experiment: keep normally/$block/typical
+  _keepctxt = _exp("keepctxt")    # experiment: keep every $ctxt term
   # Equality elimination: Stage 2 reifies a definite description ("the winner of
   # X was Steinhauer") as a separate entity plus a ground `=(winner 1,
   # Steinhauer 3)`.  After UNA wrapping the two `#:` constants are forced UNEQUAL
@@ -68,10 +71,22 @@ def finalize_strict_clauses(result, preserve_generated_blocks=False):
       return [_unwrap_normally(x) for x in node]
     return node
 
+  def _has_formula_shape(node):
+    """(keepdef) True iff a quantifier or a nested `and` survives in the
+    body: gk accepts such a formula plainly but not inside `normally`, so
+    defeasibility is kept only for clause-shaped rules."""
+    if isinstance(node, list) and node:
+      if node[0] in ("exists", "forall", "and"):
+        return True
+      return any(_has_formula_shape(x) for x in node[1:])
+    return False
+
   def _is_meta_lit(lit, strip_block=True):
     if not (isinstance(lit, list) and lit and isinstance(lit[0], str)):
       return False
     base = lit[0][1:] if lit[0].startswith("-") else lit[0]
+    if _keepdef and not _strict_here[0]:
+      return False
     return base == "typical" or (base == "$block" and strip_block)
 
   def _share_ctxt(node, cuvar):
@@ -150,22 +165,27 @@ def finalize_strict_clauses(result, preserve_generated_blocks=False):
   result = result + _eq_instances
 
   new_result = []
+  _strict_here = [True]        # per clause: strip defeasibility here?
   for _c in result:
     if not isinstance(_c, dict):
       new_result.append(_c)
       continue
     if isinstance(_c.get("@question"), list):
-      _c["@question"] = _freshen_ctxt_per_atom(_c["@question"])
+      if not _keepctxt:
+        _c["@question"] = _freshen_ctxt_per_atom(_c["@question"])
     body = _c.get("@logic")
     _strip_block = not (preserve_generated_blocks
                         and str(_c.get("@name", "")).startswith("frm_"))
     if isinstance(body, list) and body:
-      body = _unwrap_normally(body)            # 0a: normally -> strict
+      _strict_here[0] = (not _keepdef) or _has_formula_shape(body)
+      if _strict_here[0]:
+        body = _unwrap_normally(body)          # 0a: normally -> strict
       if not (isinstance(body, list) and body):
         new_result.append(_c)
         continue
-      _ctxt_ctr[0] += 1
-      body = _share_ctxt(body, "?:Cu" + str(_ctxt_ctr[0]))
+      if not _keepctxt:
+        _ctxt_ctr[0] += 1
+        body = _share_ctxt(body, "?:Cu" + str(_ctxt_ctr[0]))
       # Treat a list of literals (or a single top-level "or") as a clause.
       if isinstance(body[0], list) or body[0] == "or":
         lits = _flatten_ors(body if isinstance(body[0], list) else [body])

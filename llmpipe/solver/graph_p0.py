@@ -202,7 +202,7 @@ def run_graph_p0(text, s1_json, llm=None, version=None, max_tokens=None,
          "probably": False, "confidence": None, "answer_string": None,
          "stage2_graph": None, "issues_before": {}, "issues_after": {},
          "retries": 0, "variant_rules": [], "clauses": None,
-         "gk_result": None, "proof": None, "llm_calls": 0,
+         "gk_result": None, "gk_verdict": None, "proof": None, "llm_calls": 0,
          "gk_seconds": 0.0, "sidecar": None, "stopped_at": None}
   s2, translation = _translate_with_retry(case_id, s1_json, llm, version,
                                           max_tokens, out, text)
@@ -228,7 +228,9 @@ def run_graph_p0(text, s1_json, llm=None, version=None, max_tokens=None,
   out["sidecar"] = sidecar
   got = _call_gk(clauses, s1_json, s2, text, opts, seconds, gk)
   out["gk_seconds"] = got.get("seconds")
-  out["gk_result"] = got.get("result")
+  # the short verdict ("answer found", "time limit", ...) and the whole result
+  out["gk_verdict"] = got.get("result")
+  out["gk_result"] = _parsed(got.get("raw"))
   out["gk_command"] = got.get("gk_command")
   out["proof"] = got.get("proof")
   out["answer_string"] = got.get("answer_string")
@@ -317,16 +319,23 @@ def _call_gk(clauses, s1_json, s2_graph, text, opts, seconds, gk=None):
     g.options["prover_seconds"] = seconds
   out = {"answer": None, "answer_string": None, "confidence": None,
          "result": None, "proof": None}
+  render = GC.render_options()
   try:
     raw = prover.call_prover(clauses, s1_json=s1_json)
-    got = procproofs.process_proof(raw, text=text, s1_json=s1_json,
-                                   s2_json=s2_graph, logic=clauses)
+    # `to_stage2` is the controlled form of the same triples, so `entity_map`'s
+    # `is rel2` scan sees the relation names; `open_names` says the names are
+    # the case's own words, so the renderer does not conjugate them.
+    with GC.open_names():
+      got = procproofs.process_proof(raw, text=text, s1_json=s1_json,
+                                     s2_json=GC.to_stage2(s2_graph),
+                                     logic=clauses, options=render)
     if isinstance(got, tuple):
       got = got[0]
     out["answer_string"] = got
     out["answer"] = _polarity(got)
     out["confidence"] = _confidence(got, raw)
     out["result"] = _result_string(raw)
+    out["raw"] = raw
     out["proof"] = _proof_steps(raw)
   except Exception as e:                                       # noqa: BLE001
     out["error"] = "%s: %s" % (type(e).__name__, e)
@@ -380,6 +389,16 @@ def _raw_confidence(raw):
     if isinstance(got, (int, float)):
       return float(got)
   return None
+
+
+def _parsed(raw):
+  """The gk result as JSON, so the record carries it the way `proof` is kept."""
+  if raw is None:
+    return None
+  try:
+    return json.loads(raw) if isinstance(raw, str) else raw
+  except (ValueError, TypeError):
+    return None
 
 
 def _result_string(raw):

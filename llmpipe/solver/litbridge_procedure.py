@@ -40,6 +40,10 @@ import litbridge_rules as rules
 
 VERSION = "litbridge_procedure/2026-08-15"
 
+# Round 1 also runs the two code-built channels (distinctness, negative
+# relation), one more LLM call each, when this is True.
+EXTRAS = False
+
 WEIGHT_POLICY = ("no weight is applied anywhere: the clause is full confidence "
                  "and the reported result carries gk's own confidence, the "
                  "number of invented rules, and their post-proof grades")
@@ -1109,7 +1113,7 @@ def _blank(term):
 # asked only when round 1's clauses reached gk and gk still proved nothing; it
 # says so and asks for rules not already tried.  The two code-built channels,
 # distinctness and negative relation, belong to round 1 and run only when the
-# caller asks for them (-litbridge_extras).
+# caller asks for them (`EXTRAS`).
 
 ROUND_LABEL = {1: "r1", 2: "r2"}
 
@@ -1241,5 +1245,14 @@ def bridge_round(ctx, view, respond, round_number=1, extras=False, cap=None):
                         for h in world.get("bridge_hypotheses") or []],
       "refused_by_the_compiler": world.get("refused_by_the_compiler"),
       "signed_counts": world.get("signed_counts"),
+      # what a grader needs to name the rules a proof leans on: clause name ->
+      # hypothesis id, and hypothesis id -> the rule as printed
+      "clause_provenance": world.get("clause_provenance") or {},
+      "rules_by_id": dict(
+          (h.get("hypothesis_id") or h.get("rule_id"),
+           {"printed": h.get("printed_formula"),
+            "meaning": h.get("meaning") or ""})
+          for h in world.get("bridge_hypotheses") or []
+          if h.get("hypothesis_id") or h.get("rule_id")),
   })
   return clauses, record

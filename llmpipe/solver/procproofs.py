@@ -144,6 +144,7 @@ def process_proof(proof_result, text=None, s1_json=None, s2_json=None, logic=Non
   answers = _filter_tautological_population_answers(answers, logic,
                                                    class_names=class_names)
   answers = _deduplicate_proofs(answers)
+
   if not answers:
     return "Unknown."
 

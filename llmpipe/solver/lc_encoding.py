@@ -70,3 +70,27 @@ class EncodingConfig:
 def current():
   """Resolve the encoding config from the live global options."""
   return EncodingConfig(_g.options)
+
+
+# ======== abstraction experiments (2026-08-26 core-regression study) ========
+#
+# `LLMPIPE_ABSEXP` is a comma list of experiment names.  Each name switches one
+# augmentation of the -abstract* encoding on; unset (the default) leaves every
+# encoding exactly as it was.  Read once per process.  Names in use:
+#   keepdef    the strict finaliser keeps `normally`, `$block` and `typical`
+#   keepctxt   the strict finaliser keeps every $ctxt term (tense and world)
+#   strictfold the flat fold folds only actor + exactly one core object role
+#              (target/recipient/beneficiary/goal/topic) with no adjunct and
+#              no modified typed-existential filler; every other event stays
+#              reified
+#   objbridge  is_rel2(V,A,[R,X]) & isa(K,X) -> is_rel2(V,A,[R,K]) for each
+#              bare-class-token object atom (V,R,K) in the clause list
+import os as _os
+
+_EXPERIMENTS = frozenset(
+  x.strip() for x in _os.environ.get("LLMPIPE_ABSEXP", "").split(",") if x.strip())
+
+
+def experiment(name):
+  """True iff `name` is listed in LLMPIPE_ABSEXP."""
+  return name in _EXPERIMENTS

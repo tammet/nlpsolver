@@ -86,11 +86,13 @@ def apply_una(clauses, stage1_set):
   if not stage1_set:
     return clauses
 
-  def visit(node):
+  def visit(node, in_question=False, under_eq=False):
     if isinstance(node, str):
+      if under_eq:
+        return node
       return "#:" + node if is_stage1_entity(node, stage1_set) else node
     if isinstance(node, list):
-      return [visit(x) for x in node]
+      return [visit(x, in_question, under_eq) for x in node]
     return node
 
   out = []
@@ -99,7 +101,7 @@ def apply_una(clauses, stage1_set):
       new_c = dict(c)
       for k in ("@logic", "@question"):
         if k in new_c:
-          new_c[k] = visit(new_c[k])
+          new_c[k] = visit(new_c[k], in_question=(k == "@question"))
       out.append(new_c)
     elif isinstance(c, list):
       out.append(visit(c))

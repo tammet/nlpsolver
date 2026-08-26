@@ -1741,7 +1741,7 @@ def _check_stage2_constant_vs_class(logic, s1_json):
 
 
 
-# ======== dropped predicate-nominal type (-nominalretry, experimental) ========
+# ======== dropped predicate-nominal type (nominalretry_flag) ========
 #
 # Stage 1 may state a copular predication "ENT is a NOUN [of Y]" (e.g.
 # "Rock 2 is a pet of Peter 1"), but Stage 2 sometimes encodes only the entity
@@ -1751,7 +1751,7 @@ def _check_stage2_constant_vs_class(logic, s1_json):
 # is load-bearing and its omission silently kills the derivation (case 126).
 # This is detection only -> a corrective Stage-2 RETRY (not a clause-level patch,
 # which can't tell the intended type from co-occurring guards).  Gated on
-# -nominalretry so the default pipeline and existing cached runs are unchanged.
+# `nominalretry_flag` so the default pipeline and existing cached runs are unchanged.
 
 _S1_NOMINAL_RE = re.compile(r"\bis an?\s+([a-z][a-z]+)\b")
 _NOMINAL_STOP = (" not ", "n't", "cannot", " can ", " could ", " may ", " might ",
@@ -1810,7 +1810,7 @@ def _extract_s1_copular_nominals(s1_json):
 def _check_stage2_dropped_predicate_nominal(logic, s1_json):
   """Detect a Stage-1 'ENT is a NOUN' predication whose NOUN is used elsewhere
   in Stage-2 but never asserted of ENT (no isa/has property(NOUN,ENT)).  Gated
-  on the -nominalretry flag; emits an Issue that drives the Stage-2 retry."""
+  on `nominalretry_flag`; emits an Issue that drives the Stage-2 retry."""
   import globals as _g
   if not _g.options.get("nominalretry_flag"):
     return []

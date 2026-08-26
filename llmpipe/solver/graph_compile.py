@@ -17,6 +17,7 @@ replaces `globals.options` for the duration, so a set read inside a conversion
 would be the scope and not the run.
 """
 
+import contextlib
 import copy
 import hashlib
 import json
@@ -63,11 +64,13 @@ GRAPH_OPTION_TABLE = {
     "combined_flag": False,
     "directanswer_flag": False,
     "litbridge_flag": False,
-    "litbridge_extras_flag": False,
     "crossstage_retry_flag": False,
     "nominalretry_flag": False,
     "negretry_flag": False,
     "prover_seconds_cli": True,   # the pool's seconds, never an auto-estimate
+    "open_names_flag": True,      # the proof is rendered as open names: no
+                                  # conjugation, no "is ... of", underscores
+                                  # folded to spaces
 }
 
 STAYS_ACTIVE = (
@@ -294,6 +297,36 @@ def _names_in(node, out=None):
 
 # --------------------------------------------------------------- the prover
 
+def render_options():
+  """The options a graph gk result is read back with.
+
+  `prover_explain_flag` and `show_logic_flag` come from the RUN's own options,
+  so a graph answer is explained at exactly the output level an ordinary answer
+  is; `open_names_flag` says the names being rendered are the case's own words.
+  Read the run's flags before entering `BW.scoped`, which replaces the whole
+  option state with the graph configuration.
+  """
+  import globals as g
+  return {"prover_explain_flag": bool(g.options.get("prover_explain_flag")),
+          "show_logic_flag": bool(g.options.get("show_logic_flag")),
+          "open_names_flag": True}
+
+
+@contextlib.contextmanager
+def open_names():
+  """Render open names inside this block, whatever the live options say."""
+  import globals as g
+  before = g.options.get("open_names_flag")
+  g.options["open_names_flag"] = True
+  try:
+    yield
+  finally:
+    if before is None:
+      g.options.pop("open_names_flag", None)
+    else:
+      g.options["open_names_flag"] = before
+
+
 def prover_call(clauses, s1_json, seconds=5, options=None):
   """Ask gk for the graph theory, with no axiom file and this pool's seconds."""
   import prover
@@ -320,6 +353,9 @@ def gk_runner(s1_json, seconds=5, options=None, log=None, budget=None):
   def call(clauses, stored, tag, seconds=None, dynamic=False):
     t0 = time.time()
     call.calls += 1
+    # the RUN's rendering flags, read before the graph option state replaces
+    # them; `open_names_flag` is in GRAPH_OPTION_TABLE, so it is on inside
+    render = render_options()
     before = g.options.get("_collect")
     g.options["_collect"] = {}
     text = None
@@ -340,7 +376,8 @@ def gk_runner(s1_json, seconds=5, options=None, log=None, budget=None):
           raw = prover.call_prover(clauses, s1_json=s1_json)
           answer = procproofs.process_proof(
               raw, text=stored.get("input_text"), s1_json=s1_json,
-              s2_json=stored.get("stage2"), logic=clauses)
+              s2_json=stored.get("stage2"), logic=clauses,
+              options=render)
           if isinstance(answer, tuple):
             answer = answer[0]
           got = {"answer": answer, "gk_input": text,

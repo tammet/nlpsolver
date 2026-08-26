@@ -11,7 +11,11 @@ from globals import options as _g_options
 from lc_clausify import _safe_singularize_class
 
 
-_VAR_RE = re.compile(r"^[A-Z][0-9]*$")
+# The Stage-2 variable test lives in one place (`lc_clausify.looks_like_var`),
+# which excludes world constants (W0, W1, ...).  The old local pattern matched
+# W0 and made a rule conclusion about a world look like a free variable, so the
+# package was rejected (FOLIO 84/93/95).
+from lc_clausify import looks_like_var as _is_s2_var
 _ROLE_PREDS = frozenset({
   "has actor", "has target", "has recipient", "has beneficiary",
   "has source", "has destination", "has location", "has instrument",
@@ -465,7 +469,7 @@ def _free_vars(node, bound):
     return result
   result = set()
   for arg in node[1:]:
-    if isinstance(arg, str) and _VAR_RE.match(arg) and arg not in bound:
+    if isinstance(arg, str) and _is_s2_var(arg) and arg not in bound:
       result.add(arg)
     elif isinstance(arg, list):
       result |= _free_vars(arg, bound)

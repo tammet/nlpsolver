@@ -689,9 +689,51 @@ def _intro(arg, role_hint=None):
 # neg_fn(e, args) returns the negated English string.
 # Complex predicates use dedicated helpers; simple ones use inline lambdas.
 
+# ---------------------------------------------------------- open names
+# The graph theory's class and relation names are the case's own words
+# (`premiered`, `music_piece`, `sells_greater_than_copies`), not the ordinary
+# controlled vocabulary.  Under `open_names_flag` the renderer folds the
+# underscores and otherwise leaves the word exactly as the translator wrote
+# it: no conjugation, no "is ... of" fallback.  See DOCUMENTATION.md §14.8.
+
+# The nine fixed event roles of `graph_stage2.ROLES`, kept here as a literal
+# so the renderer does not import the graph translator.  The fixture checks
+# the two lists agree.
+_OPEN_ROLES = ("agent", "theme", "recipient", "source", "destination",
+               "location", "instrument", "time", "manner")
+
+
+def _open_names():
+  return bool(_g.options.get("open_names_flag"))
+
+
+def _open_name(word):
+  """A graph name as English: the translator's own word, underscores folded."""
+  return str(word).replace("_", " ")
+
+
+def _open_rel2(e, rel_raw, neg):
+  """`is rel2(R, X, Y)` with R an open name.
+
+  Three forms: a fixed event role reads as a role, a relation name that is
+  itself a preposition keeps the copula ("X is on the list"), and every other
+  name is the verb of the sentence exactly as written.
+  """
+  rel = _open_name(rel_raw)
+  if str(rel_raw) in _OPEN_ROLES:
+    body = "the " + rel + " of " + e(1) + " is " + e(2)
+  elif rel.lower() in _PREPOSITIONS:
+    body = e(1) + " is " + rel + " " + e(2)
+  else:
+    body = e(1) + " " + rel + " " + e(2)
+  return ("it is not the case that " + body) if neg else body
+
+
 def _isa_pos(e, args):
   # Use raw type string to avoid entity_map turning "man" into "the strong man".
   typ = str(args[0]) if args else e(0)
+  if _open_names():
+    typ = _open_name(typ)
   ent = e(1)
   if typ == "activity": return ent + " is an activity"
   if typ == "set":      return ent + " is a set"
@@ -699,6 +741,8 @@ def _isa_pos(e, args):
 
 def _isa_neg(e, args):
   typ = str(args[0]) if args else e(0)
+  if _open_names():
+    typ = _open_name(typ)
   ent = e(1)
   if typ == "activity": return ent + " is not an activity"
   if typ == "set":      return ent + " is not a set"
@@ -761,6 +805,8 @@ def _is_rel2_pos(e, args):
   # the same clause that differ only in $ctxt render distinguishably.
   if isinstance(rel_raw, str) and looks_like_var(rel_raw):
     return _is_rel2_var_rel_render(e, args, neg=False)
+  if _open_names() and isinstance(rel_raw, str):
+    return _open_rel2(e, rel_raw, neg=False)
   rel = e(0)
   last = rel.split()[-1].lower() if rel else ""
   if rel.lower() in _PREPOSITIONS or last in _PREPOSITIONS or last == "of":
@@ -773,6 +819,8 @@ def _is_rel2_neg(e, args):
   rel_raw = args[0] if args else ""
   if isinstance(rel_raw, str) and looks_like_var(rel_raw):
     return _is_rel2_var_rel_render(e, args, neg=True)
+  if _open_names() and isinstance(rel_raw, str):
+    return _open_rel2(e, rel_raw, neg=True)
   rel = e(0)
   last = rel.split()[-1].lower() if rel else ""
   if rel.lower() in _PREPOSITIONS or last in _PREPOSITIONS or last == "of":

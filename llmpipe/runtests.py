@@ -113,8 +113,20 @@ def _worker(args):
   error_payload = None
   # The api_timeout cap (option key) is enforced inside english_to_answer, scoped
   # to the LLM-parse + clause-conversion phase and disarmed before the prover.
+  early = None
   try:
-    english_to_answer(input_text, options=ro, collect=collect)
+    got = english_to_answer(input_text, options=ro, collect=collect)
+    # `answered_by` is written by the block that ends a completed run and
+    # `stage2` by a parse that produced something, so a run missing both
+    # returned before it had anything to reason from: a truncated Stage-1
+    # reply whose Stage 2 comes back empty, or the api-timeout cap.  There is
+    # no answer to score there, and the case has to be counted as an error
+    # rather than stored as a wrong answer.  A run that DID parse and then hit
+    # a converter or prover error keeps its message as its answer and is
+    # scored, as it is today.
+    if ("answered_by" not in collect and "stage2" not in collect
+        and isinstance(got, str) and got.startswith("Error")):
+      early = got.split("\n", 1)[0]
   except KeyboardInterrupt:
     raise
   except Exception as e:
@@ -141,6 +153,8 @@ def _worker(args):
       "examples": run_opts.get("combined_examples_file"),
       "checklist": run_opts.get("combined_checklist_file"),
     }
+  if error_payload is None and early is not None:
+    error_payload = {"exception": "PipelineError", "message": early}
   if error_payload is not None:
     collect["_error"] = error_payload
   return (case_id, llm, collect)
@@ -155,6 +169,43 @@ def _import_matcher():
     sys.path.insert(0, here)
   import test as _test_mod
   return _test_mod._result_matches
+
+
+# ======== solve.py's own flags ========
+
+def _solve_options(extra):
+  """Parse the flags the runner does not define with solve.py's own parser.
+
+  `solve._parse_cmd_line` returns only the keys the command line changed, so
+  the result merges straight into `run_opts`.  A flag solve.py does not know
+  makes it print its help and exit 0; that would look like success here, so it
+  is caught and turned into an error.
+  """
+  if not extra:
+    return {}
+  import contextlib
+  import io
+  _solver = os.path.join(os.path.dirname(os.path.abspath(__file__)), "solver")
+  if _solver not in sys.path:
+    sys.path.insert(0, _solver)
+  import solve
+  sentinel = "RUNTESTS_SENTINEL_TEXT"
+  argv = list(sys.argv)
+  said = io.StringIO()
+  try:
+    sys.argv = ["solve.py"] + list(extra) + [sentinel]
+    with contextlib.redirect_stdout(said):    # solve.py prints its whole help
+      text, opts = solve._parse_cmd_line()
+  except SystemExit:
+    raise SystemExit("runtests: %s"
+                     % (said.getvalue().split("\n")[0]
+                        or "solve.py rejected one of %s" % extra))
+  finally:
+    sys.argv = argv
+  if text.strip() != sentinel:
+    raise SystemExit("runtests: %r was read as input text, not as a flag"
+                     % text.replace(sentinel, "").strip())
+  return opts
 
 
 # ======== per-case JSON builder ========
@@ -210,7 +261,13 @@ def build_case_json(testname, case_id, input_text, expected, llm, collect, match
             "clauses", "final_clauses", "final_clause_trace",
             "final_clause_trace_error",
             "gk_command", "proof", "nl_proof",
-            "downstream_retries"):
+            "front_door_proof", "front_door_gk_command",
+            "downstream_retries",
+            # which stage answered, what it cost, and what each route did
+            "answered_by", "front_door_answer", "abstraction_order",
+            "stages_enabled", "stages",
+            "llm_call_counts", "llm_calls_total",
+            "graphtrans", "litbridge", "graphbridge", "critic", "fallback"):
     v = collect.get(k)
     if not v:   # skip None/[]/'' — omit empty keys
       continue
@@ -517,6 +574,9 @@ def update_summary(outdir, llm):
     return
   passed = failed = errored = 0
   by_case = []
+  answered_by = {}
+  calls = {}
+  calls_total = calls_live = 0
   for fn in sorted(os.listdir(outdir)):
     if not fn.startswith("case_") or not fn.endswith(".json"):
       continue
@@ -526,6 +586,16 @@ def update_summary(outdir, llm):
     except Exception:
       continue
     cid = d.get("case_id")
+    # who answered, and what the case cost in LLM calls, per stage
+    who = d.get("answered_by")
+    if who:
+      answered_by[who] = answered_by.get(who, 0) + 1
+    for tag, cell in (d.get("llm_call_counts") or {}).items():
+      got = calls.setdefault(tag, {"calls": 0, "live": 0, "retries": 0})
+      for k in got:
+        got[k] += cell.get(k) or 0
+      calls_total += cell.get("calls") or 0
+      calls_live += cell.get("live") or 0
     if "error" in d:
       errored += 1
       by_case.append({"case_id": cid, "status": "error"})
@@ -543,6 +613,10 @@ def update_summary(outdir, llm):
     "failed":  failed,
     "errored": errored,
     "failed_or_errored": by_case,
+    "answered_by": answered_by,
+    "llm_call_counts": calls,
+    "llm_calls_total": calls_total,
+    "llm_calls_live": calls_live,
     "updated": datetime.datetime.now(datetime.timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
   }
   if _pipeline_git:
@@ -649,7 +723,8 @@ def main():
   ap.add_argument("-tag", dest="tag", default=None,
                   help="General output-dir suffix: results go to testresults/<set>_<tag>/. "
                        "Use to keep a variant (directanswer, ultracoarse, ...) separate.")
-  args = ap.parse_args()
+  args, extra = ap.parse_known_args()
+  extra_opts = _solve_options(extra)
 
   llms = [s.strip() for s in args.llms.split(",") if s.strip()]
   if not llms:
@@ -733,6 +808,23 @@ def main():
       run_opts["compasym_flag"] = True
       run_opts["nominalretry_flag"] = True
       run_opts["negretry_flag"] = True
+      # solve.py's -abstract-max turns the literal bridge on and the CLI
+      # documentation says the preset includes it.  This expansion omitted it
+      # until 2026-08-20, so every `…absnp` folder made through this runner
+      # before that date ran WITHOUT the bridge.  Name -litbridge or
+      # -nolitbridge explicitly in an experiment and the question does not
+      # arise.
+      # All six stage keys, exactly as solve.py's -abstract-max sets them: the
+      # converter preset plus the open-world stack.  The two expansions must
+      # agree.  A -stack* set, an explicit stage switch and every cancel reach
+      # solve.py through `_solve_options` and are merged after this block, so
+      # they still override it.
+      run_opts["fallback_norm_flag"] = True
+      run_opts["fallback_hyp_flag"] = True
+      run_opts["critic_flag"] = True
+      run_opts["graphtrans_flag"] = True
+      run_opts["litbridge_flag"] = True
+      run_opts["graphbridge_flag"] = True
   if args.noprenorm:                       # prenorm ablation: force OFF after presets
     run_opts["prenorm_flag"] = False
   if args.existfold:
@@ -765,6 +857,13 @@ def main():
     run_opts["_maxtokens_override"] = args.maxtokens
   if args.api_timeout and args.api_timeout > 0:
     run_opts["api_timeout"] = args.api_timeout
+  # Flags the runner does not define go to solve.py's own parser, so every
+  # solve.py flag works here without being restated (-graphtrans, -critic,
+  # -nolitbridge, -stack-closed, ...).  An explicit flag wins over the
+  # runner's preset expansion.
+  if extra_opts:
+    print("Extra solve.py options: %s" % extra_opts)
+    run_opts.update(extra_opts)
 
   # Per-case parallel: one worker per (case, llm).  Pool size = len(llms).
   ctx = get_context("fork")

@@ -186,7 +186,6 @@ Example logic argument:
 """
 
 def call_prover(logic, s1_json=None):
-
   # Build GK input JSON with // comment lines between ASU groups.
   instr=clause_list_to_json_commented(logic, s1_json=s1_json)
   show_details = options.get("show_details_flag") or options["debug_print_flag"] or options["show_prover_flag"]
@@ -264,22 +263,27 @@ def call_prover(logic, s1_json=None):
     cmd_params = [p if p != infilename else "<gk-input>" for p in params]
     collect["gk_command"] = " ".join(cmd_params)
 
-  sres=get_proof_from_cache(None,params)
-  if not sres:
+  def _run_gk(run_params):
+    cached = get_proof_from_cache(None, run_params)
+    if cached:
+      return cached
     try:
-      calc=subprocess.Popen(params, stdout=subprocess.PIPE).communicate()[0]
+      calc = subprocess.Popen(run_params, stdout=subprocess.PIPE).communicate()[0]
     except KeyboardInterrupt:
-      raise  
+      raise
     except:
       return "Error: prover gk is not available or crashed: check globals.py for the gk path."
-    sres=calc.decode('ascii')
+    out = calc.decode('ascii')
     # High printlevel produces debug output before the result JSON.
     # The final result is preceded by "= showing final result =".
     marker = "= showing final result ="
-    idx = sres.find(marker)
+    idx = out.find(marker)
     if idx >= 0:
-      sres = sres[idx + len(marker):].lstrip("\n\r")
-    add_proof_to_cache(params,sres)
+      out = out[idx + len(marker):].lstrip("\n\r")
+    add_proof_to_cache(run_params, out)
+    return out
+
+  sres = _run_gk(params)
   os.remove(infilename)
   # Prover result is displayed by solve.py (with -details+), not here,
   # to avoid duplicate output.

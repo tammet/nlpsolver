@@ -86,7 +86,7 @@ prenorm_enabled = False
 # from the conclusion question ("X is not a Y?" -> "Is X a Y?"), flipping the
 # answer.  When the produced query unit dropped a negation present in the
 # ORIGINAL question, re-parse from the original (pre-prenorm) text.  Set True by
-# solve.py's -negretry flag (folded into -abstract-max).  Only meaningful when
+# `negretry_flag`, which -abstract-max sets and no flag of its own does.  Only meaningful when
 # prenorm actually changed the text.
 negretry_enabled = False
 
@@ -364,6 +364,13 @@ def normalize_text(text, llm=None, version=None, tokens=None):
       _prenorm_sysprompt = ""
   if not _prenorm_sysprompt:
     return text
+  import llmcall as _lc
+  with _lc.tagged("prenorm"):
+    out = _call_prenorm(text, llm, version, tokens)
+  return out
+
+
+def _call_prenorm(text, llm, version, tokens):
   out = call_llm(_prenorm_sysprompt, text, llm=llm, version=version,
                  max_tokens=tokens)
   if not isinstance(out, str) or not out.strip():
@@ -553,12 +560,21 @@ def _run_stage2_split(s1_json, eff_llm, eff_version, eff_tokens, eff_think, stat
 # ======== main entry point ========
 
 def parse_text(text, llm=None, version=None, tokens=None, think=None,
-               stage2_corrective=""):
+               stage2_corrective="", stage1_corrective="", stage1_json=None):
   """Parse English text through stage 1 (ASUs) then stage 2 (logic).
 
   stage2_corrective -- (plan fix N1) text appended to the Stage-2 input on a
   downstream-error retry.  Stage 1 is unchanged and therefore served from the
   LLM cache, so only Stage 2 is actually re-called.
+
+  stage1_corrective -- text appended to the Stage-1 input, for the critique
+  pass's `stage1_unit` findings.  Stage 1 then really runs again and the unit
+  ids may change, so a Stage-2 corrective naming the old ids is not combined
+  with it.
+
+  stage1_json -- a Stage 1 to use instead of calling the model.  The critique
+  measurement reads the arm's stored translation, and the critic's unit ids
+  must be the ids Stage 2 sees.
 
   Optional llm/version/tokens/think override the module-level defaults.
 
@@ -608,19 +624,29 @@ def parse_text(text, llm=None, version=None, tokens=None, think=None,
 
   # --- stage 1 then stage 2 (re-runnable once with a corrective hint) ---
   def _stage1_then_stage2(base_text, corrective=""):
-    s1in = base_text + corrective
-    s1_json, s1_raw, s1_err = _run_stage(1, s1in, _stage1_sysprompt,
-                                          eff_llm, eff_version, eff_tokens, eff_think, stats,
-                                          check_fn=lambda parsed: _check_stage1(parsed))
-    _debug_write("STAGE 1 " + ("ERROR: " + s1_err if s1_err else "OK"))
-    if s1_json is None:
-      return (None, None)
+    if stage1_json is not None:
+      import copy as _copy
+      s1_json = _copy.deepcopy(stage1_json)
+      stats["stage1_given"] = True
+      _debug_write("STAGE 1 GIVEN (no call)")
+    else:
+      s1in = base_text + corrective + stage1_corrective
+      s1_json, s1_raw, s1_err = _run_stage(1, s1in, _stage1_sysprompt,
+                                            eff_llm, eff_version, eff_tokens, eff_think, stats,
+                                            check_fn=lambda parsed: _check_stage1(parsed, base_text))
+      _debug_write("STAGE 1 " + ("ERROR: " + s1_err if s1_err else "OK"))
+      if s1_json is None:
+        return (None, None)
     # Normalize entity IDs that differ only by sentence-start capitalization.
-    _normalize_entity_id_case(s1_json, stats)
-    # (entity canon) Aggressively canonicalize entity names across the Stage-1
-    # output (ids + text), so the same entity worded several ways becomes one id.
-    if canon_entities_enabled:
-      s1_json = canonicalize_entity_ids(s1_json, stats)
+    # A given Stage 1 is already past both steps (it is a stored translation),
+    # and re-running them would move the ids the critic's findings name.
+    if stage1_json is None:
+      _normalize_entity_id_case(s1_json, stats)
+      # (entity canon) Aggressively canonicalize entity names across the
+      # Stage-1 output (ids + text), so the same entity worded several ways
+      # becomes one id.
+      if canon_entities_enabled:
+        s1_json = canonicalize_entity_ids(s1_json, stats)
     # (entity canon) Enable the constant-vs-class / dropped-fact repair check.
     _ss.set_aggressive_repair(canon_entities_enabled)
     if s2split_enabled:
@@ -684,7 +710,9 @@ def parse_text(text, llm=None, version=None, tokens=None, think=None,
       stats["crossstage_guards"] = guards
       _debug_write("UNSATISFIABLE GUARDS: " + str(guards))
       suffix = "\n\n" + _ss.format_guard_retry_suffix(guards)
-      ns1, ns2 = _stage1_then_stage2(orig_text, suffix)
+      import llmcall as _lc3
+      with _lc3.tagged(None, crossstage=True):
+        ns1, ns2 = _stage1_then_stage2(orig_text, suffix)
       stats["crossstage_retries"] = 1
       # Keep the retry iff it resolved ALL originally-flagged guards (none of
       # the original (kind,name) pairs remain).  New guards it may introduce
@@ -724,7 +752,13 @@ def _run_stage(stage_nr, input_text, sysprompt, llm, version, tokens, think, sta
   _debug_write("\n=== stage " + str(stage_nr) + " LLM call (" + actual_llm + ") ===\n")
   _debug_write_json("INPUT:", input_text)
 
-  raw = call_llm(sysprompt, input_text, llm=llm, version=version, max_tokens=tokens, think=think)
+  # What was actually sent, and whether the model or the cache answered it.
+  # The critique pass needs this: a "rerun" that never sent the corrective is
+  # the first call served from cache, and must not be counted as a rerun.
+  _n_before = len(_llmcall.call_log)
+  with _llmcall.tagged(_stage_tag(stage_nr), stage=stage_nr):
+    raw = call_llm(sysprompt, input_text, llm=llm, version=version, max_tokens=tokens, think=think)
+  _note_call(stats, stage_nr, input_text, _llmcall.call_log[_n_before:])
 
   if raw is None:
     stats[key + "_llm_errors"] += 1
@@ -760,7 +794,8 @@ def _run_stage(stage_nr, input_text, sysprompt, llm, version, tokens, think, sta
   retry_input = _build_retry_prompt(input_text, raw)
   _debug_write("Retrying stage " + str(stage_nr) + " with error feedback...")
 
-  raw2 = call_llm(sysprompt, retry_input, llm=llm, version=version, max_tokens=tokens, think=think)
+  with _llmcall.tagged(_stage_tag(stage_nr), stage=stage_nr, retry=True):
+    raw2 = call_llm(sysprompt, retry_input, llm=llm, version=version, max_tokens=tokens, think=think)
 
   if raw2 is None:
     stats[key + "_llm_errors"] += 1
@@ -838,8 +873,10 @@ def _maybe_sanity_retry(stage_nr, input_text, parsed, raw, check_fn,
     suffix = _format_retry_suffix(current_issues, current_parsed)
     retry_input = input_text + suffix
 
-    raw_new = call_llm(sysprompt, retry_input,
-                       llm=llm, version=version, max_tokens=tokens, think=think)
+    import llmcall as _lc2
+    with _lc2.tagged(_stage_tag(stage_nr), stage=stage_nr, retry=True):
+      raw_new = call_llm(sysprompt, retry_input,
+                         llm=llm, version=version, max_tokens=tokens, think=think)
     if raw_new is None:
       stats[key + "_sanity_fail"] += 1
       _debug_write("Stage " + str(stage_nr) + " sanity retry #" + str(attempt)
@@ -1465,6 +1502,33 @@ def _build_retry_prompt(original_input, bad_output):
 
 
 # ======== stats ========
+
+def _stage_tag(stage_nr):
+  """The label a stage call carries.
+
+  A route that retranslates (the graph layer 1) runs its own Stage 2 through
+  this same runner.  Its calls belong to the route, not to the front door, so
+  a route tag already in force is kept and the stage goes into a field.
+  """
+  import globals as _g
+  import llmcall as _lc
+  if _lc.call_tag in getattr(_g, "ABSTRACTION_ROUTES", ()):
+    return None
+  return "stage" + str(stage_nr)
+
+
+def _note_call(stats, stage_nr, input_text, entries):
+  """Record one stage call: what went in, and who answered it."""
+  import hashlib
+  sources = [e.get("source") for e in entries] or ["unknown"]
+  stats.setdefault("calls", []).append({
+      "stage": stage_nr,
+      "source": "api" if "api" in sources else sources[0],
+      "sources": sources,
+      "input_sha": hashlib.sha256(
+          (input_text or "").encode("utf-8", "replace")).hexdigest()[:16],
+      "input_chars": len(input_text or "")})
+
 
 def _make_stats():
   keys = [
