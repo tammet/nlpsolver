@@ -93,6 +93,16 @@ def render_term_english(term, proof_mode=True):
       return subj + suffix + " " + type_name
     return "the " + type_name + " of " + subj
 
+  # $typed_partof / $typed_have -> "a C of SUBJECT".  The witness an
+  # existential-attribute fold reconstructs is not a named object: the theory
+  # says only that SUBJECT has some C, so the reading stays existential.  Its
+  # arguments are (possessor, class), the reverse of $theof1's order.
+  if op in ("$typed_partof", "$typed_have") and len(term) >= 3:
+    cls = term[2] if isinstance(term[2], str) else str(term[2])
+    subj = entity_name(term[1], proof_mode=proof_mode)
+    article = "an " if cls[:1].lower() in "aeiou" else "a "
+    return article + cls + " of " + subj
+
   # $measure_of -> "the TYPE of SUBJECT"
   if op == "$measure_of" and len(term) >= 3:
     type_name = term[1] if isinstance(term[1], str) else str(term[1])

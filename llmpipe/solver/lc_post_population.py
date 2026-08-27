@@ -131,6 +131,13 @@ def _walk_question_for_neg(frm, polarity, cls, prop, deg):
     for a in frm[1:]:
       _walk_question_for_neg(a, polarity, cls, prop, deg)
     return
+  # A structured term in the class or property slot -- ["$has_part", C] from an
+  # existential-attribute fold, say -- names no population class, so it is
+  # skipped.  This is the same policy `_walk_assertion_for_pos` states below,
+  # and it is what keeps a list out of these sets: a list is unhashable, and
+  # adding one raised TypeError on a negative question.
+  if not _population_name(frm, 1):
+    return
   if op == "isa" and len(frm) >= 3 and polarity < 0 and looks_like_var(frm[2]):
     cls.add(frm[1])
   elif op == "-isa" and len(frm) >= 3 and polarity > 0 and looks_like_var(frm[2]):
@@ -140,9 +147,18 @@ def _walk_question_for_neg(frm, polarity, cls, prop, deg):
   elif op == "-has property" and len(frm) >= 3 and polarity > 0 and looks_like_var(frm[2]):
     prop.add(frm[1])
   elif op == "has degree property" and len(frm) >= 5 and polarity < 0 and looks_like_var(frm[2]):
-    deg.add((frm[1], frm[4]))
+    if _population_name(frm, 4):
+      deg.add((frm[1], frm[4]))
   elif op == "-has degree property" and len(frm) >= 5 and polarity > 0 and looks_like_var(frm[2]):
-    deg.add((frm[1], frm[4]))
+    if _population_name(frm, 4):
+      deg.add((frm[1], frm[4]))
+
+
+def _population_name(frm, pos):
+  """True when argument `pos` of the literal can key a population class or
+  property.  Only a structured term is rejected: it names no class, and it is
+  the one shape these sets cannot hold, being unhashable."""
+  return len(frm) > pos and not isinstance(frm[pos], (list, dict))
 
 
 def _walk_assertion_for_pos(frm, cls, prop, deg):
@@ -164,10 +180,12 @@ def _walk_assertion_for_pos(frm, cls, prop, deg):
   if op in ("forall", "exists") and len(frm) >= 3:
     _walk_assertion_for_pos(frm[-1], cls, prop, deg)
     return
-  if op == "isa" and len(frm) >= 3 and looks_like_var(frm[2]):
+  if op == "isa" and len(frm) >= 3 and looks_like_var(frm[2]) \
+     and _population_name(frm, 1):
     cls.add(frm[1])
   elif op == "has property" and len(frm) >= 3 and looks_like_var(frm[2]) \
-       and isinstance(frm[1], str):
+       and _population_name(frm, 1):
     prop.add(frm[1])                      # structured props ([$has_part,C]) skip: not population-relevant
-  elif op == "has degree property" and len(frm) >= 5 and looks_like_var(frm[2]):
+  elif op == "has degree property" and len(frm) >= 5 and looks_like_var(frm[2]) \
+       and _population_name(frm, 1) and _population_name(frm, 4):
     deg.add((frm[1], frm[4]))

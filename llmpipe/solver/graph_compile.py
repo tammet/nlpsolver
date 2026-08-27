@@ -48,6 +48,12 @@ GRAPH_OPTION_TABLE = {
     "noentitycat_flag": True,     # v2/C2: no `entity_S*` name enters supply
     "prover_axiomfiles": [],      # no axioms_std.js
     "event_base": "neodavidson",  # no event reaches the fold
+    # The graph theory is a separate representation, so the ordinary theory's
+    # default proof shorteners stay out of it.  Without this the 2026-08-26
+    # default would switch davidson2 and existfold2 on here too, because the
+    # base is neodavidson and nothing else in this table marks the request as
+    # historical.  -noproofshort2 cancels both from any position.
+    "noproofshort2_flag": True,
     "entitymerge_flag": False,
     "guarddrop_flag": False,
     "bridges_flag": False,

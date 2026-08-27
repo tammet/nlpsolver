@@ -28,6 +28,49 @@ _root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # global vars changed by command line options
 
+# ---------------------------------------------------------------------------
+# The retry pipeline: what stages exist, in what order, and what each named
+# configuration selects.
+#
+# This is the single source.  `solve.py` re-exports these names, `runtests.py`
+# resolves through the same functions, and the six stage defaults below are
+# filled from `PIPELINES[DEFAULT_PIPELINE]` rather than written out a second
+# time -- two independent sets of defaults are exactly how the two front doors
+# would drift apart.
+# ---------------------------------------------------------------------------
+
+PIPELINE_ORDER = ("front_door", "fallback_norm", "fallback_hyp", "critic",
+                  "graphtrans", "litbridge", "graphbridge")
+
+PIPELINES = {
+  "conservative": {"fallback_norm": True, "fallback_hyp": True,
+                   "critic": False, "graphtrans": False,
+                   "litbridge": False, "graphbridge": False},
+  "balanced":     {"fallback_norm": True, "fallback_hyp": True,
+                   "critic": True, "graphtrans": True,
+                   "litbridge": False, "graphbridge": False},
+  "high-recall":  {"fallback_norm": True, "fallback_hyp": True,
+                   "critic": True, "graphtrans": True,
+                   "litbridge": False, "graphbridge": True},
+}
+
+# The historical `-stack-open` vector matches no named configuration: it is the
+# only set that includes the literal bridge.  It keeps its own name.
+STACK_OPEN_VECTOR = {"fallback_norm": True, "fallback_hyp": True,
+                     "critic": True, "graphtrans": True,
+                     "litbridge": True, "graphbridge": True}
+
+# The ordinary no-option configuration, adopted 2026-08-27 on the evidence of
+# the two complete Task 2A arms: 111 correct additions against 8 wrong ones.
+DEFAULT_PIPELINE = "balanced"
+
+# The default per-logical-LLM-call deadline, in seconds.  It covers provider
+# attempts, retries and the sleeps between them, for the initial translation
+# and every later stage; it never encloses gk.  `-llm-call-timeout N` overrides
+# it and `-llm-call-timeout 0` disables it.
+DEFAULT_LLM_CALL_TIMEOUT = 240
+
+
 options={
   "debug_print_flag":False, # if True, print a lot of details of the parsing process (turn on by -debug)
   "prover_print_flag":False, # if True, print prover logic input and output
@@ -42,10 +85,21 @@ options={
   "noproptypes_flag":False,  # if True, remove prop strength and type information (set by -simpleprops / -simple / -abstract*)
   # Event-encoding base. One mutually-exclusive selector, set by -event MODE:
   #   "neodavidson" (default) | "davidson" (compact event(V,A,O,E)) |
+  #   "davidson2" (the exact event-spine compression, solver/lc_davidson2.py) |
   #   "flat" (flat is_rel2, bare positional) | "flatroles" (flat is_rel2, eventprop-tagged).
   # The -abstract* presets set "flat"/"flatroles". See analysis/FLAG_RESTRUCTURE_PLAN.md.
   "event_base":"neodavidson",
   "existfold_flag":False,  # (L2) if True, fold a bare existential attribute "exists Y. isa(C,Y) & has_part/have(X,Y)" into a unary has_property([$has_part/$have, C], X), deleting the Skolem cross-product; a generic bidirectional bridge with a named witness $typed_partof(X,C) reconstructs the existential on demand. See memos/L2_EXISTFOLD_PLAN.md
+  # --- The versioned proof shorteners (attempted by default on the unnamed
+  # canonical base; -proofshort2 requests both explicitly).  Each sits beside
+  # its v1 and never changes it. ---
+  "event_base_explicit":False,  # True when the command line named -event MODE itself. The v2 defaults apply only to the unnamed canonical base, so naming any base -- including neodavidson -- reproduces that base's pre-2026-08-26 theory
+  "abstract_preset_flag":False, # True when -abstract / -abstract-roles / -abstract-max was used. Those presets reproduce their historical theories, so they suppress the v2 defaults unless a v2 fold is requested outright
+  "nodavidson2_flag":False,     # -nodavidson2: davidson2 off from any position, beating the default and any request
+  "noexistfold2_flag":False,    # -noexistfold2: the same for existfold2
+  "noproofshort2_flag":False,   # -noproofshort2: both off. This is the documented command for reproducing the pre-2026-08-26 ordinary theory
+  "davidson2_flag":False,  # -davidson2: request the exact event-spine compression without naming a base. On the neo-Davidsonian base it selects davidson2; on a flat base (-abstract*) it declines and the config records davidson2_not_applicable, so the flat theory is left alone. `-event davidson2` selects it as the base outright. See solver/lc_davidson2.py
+  "existfold2_flag":False,  # -existfold2: fold the bare "exists Y. isa(C,Y) & has part(X,Y)" pattern only, and only for a class with at least lc_existfold_v2.MIN_OCCURRENCES occurrences, emitting three class-specific compatibility clauses. No `have`, no generic schema. See solver/lc_existfold_v2.py
   # Additive abstraction primitives (each also set by the -abstract* presets).
   "entitymerge_flag":False,  # proper-noun entity canonicalization + content-keyed set-label coreference (+ parse-level canon)
   "typeenrich_flag":False,   # taxonomy/isa enrichment: broad supertypes, gender-from-name, name-as-type, gendered-noun bridges, compound subsumption over entity cats, plural->singular norm
@@ -71,24 +125,43 @@ options={
   "compnorm_flag":False,     # normalize comparative relation names (taller/shorter/higher than) to the base gradable adjective outside -s2split too
   # --- The two abstention fallbacks themselves (CLI: -fallback_norm / -fallback_hyp,
   # -nofallback_norm / -nofallback_hyp / -nofallback; both on under -abstract-max) ---
-  "fallback_norm_flag":True,    # ON BY DEFAULT. When the front door ends unresolved, convert the same parse again with the normalizations on and call gk once more (no LLM call). -nofallback_norm / -nofallback turn it off. See solver/fallback_norm.py
-  "fallback_hyp_flag":True,     # ON BY DEFAULT. When the front door and fallback_norm end unresolved and the question is a conditional, ask the consequent in an isolated theory that assumes the antecedent (no LLM call). -nofallback_hyp / -nofallback turn it off. See solver/fallback_hyp.py
+  "fallback_norm_flag":PIPELINES[DEFAULT_PIPELINE]["fallback_norm"],    # from PIPELINES[DEFAULT_PIPELINE]. When the front door ends unresolved, convert the same parse again with the normalizations on and call gk once more (no LLM call). -nofallback_norm / -nofallback turn it off. See solver/fallback_norm.py
+  "fallback_hyp_flag":PIPELINES[DEFAULT_PIPELINE]["fallback_hyp"],     # from PIPELINES[DEFAULT_PIPELINE]. When the front door and fallback_norm end unresolved and the question is a conditional, ask the consequent in an isolated theory that assumes the antecedent (no LLM call). -nofallback_hyp / -nofallback turn it off. See solver/fallback_hyp.py
   "nofallback_norm_flag":False, # -nofallback_norm: forces fallback_norm_flag False after the whole command line is read, so it beats the default and every preset whatever their order
   "nofallback_hyp_flag":False,  # -nofallback_hyp: the same for fallback_hyp_flag
+  # Per-LLM-call deadline (seconds), covering provider attempts, retries and
+  # the sleeps between them, for the initial translation AND every later stage
+  # (critic, graph, bridges).  It never encloses gk.  0 disables it.
+  "llm_call_timeout":DEFAULT_LLM_CALL_TIMEOUT,
+  # Total logical LLM calls allowed for one case, counted across every role
+  # (Stage 1, Stage 2 and its format corrections, critic, critic rerun, graph
+  # retranslation, graph bridges, literal bridges) and including local cache
+  # hits.  0 disables the limit.
+  "llm_call_limit":0,
   "api_timeout":0,  # hard wall-clock cap (seconds) on the LLM-parse + clause-conversion phase (disarmed before the prover); 0 disables
   "prenorm_flag":False,  # if True, run an experimental pre-Stage-1 LLM phase that unifies repeated entity/property/relation wordings
   "s2split_flag":False,  # if True, run Stage 2 sentence-by-sentence (one LLM call per Stage-1 sentence package, outputs joined, worlds renumbered per rule c'), and apply the cross-sentence shape-unification repair (off-inventory predicate rename, shape bridges, compound composition, broad-supertype isa) that reconciles the divergent per-sentence parses
   "crossstage_retry_flag":True,  # if False, disable the abstraction cross-stage unsatisfiable-guard retry (avoids live corrective LLM calls)
   "nominalretry_flag":False,  # (experimental) if True, a Stage-2 sanity check flags a Stage-1 copular "ENT is a NOUN" predication whose NOUN is dropped from ENT in Stage-2 (but used elsewhere), triggering a corrective Stage-2 retry. See analysis/P3_TIER_A_PLAN.md (case 126)
   "negretry_flag":False,      # (experimental) prenorm-negation-fallback: if True and prenorm dropped a sentential negation from the conclusion question ("X is not a Y?" rewritten to the positive "Is X a Y?"), re-parse from the original (pre-prenorm) text so the negation survives. General correctness fix (not encoding-specific); currently gated so it can later be promoted to default. See analysis/FOLIO_GPT_FAILURES.md G2 (cases 80/127/189/200)
-  "litbridge_flag":False,     # literal-bridge abstraction: when the ordinary pipeline leaves the question unresolved, propose implication rules over the case's own displayed atoms, compile them beside the stored theory and resubmit to gk. Off by default because it costs extra LLM calls per unresolved case and is net-harmful on closed-world material; -litbridge, -stack-open and -abstract-max turn it on, -nolitbridge forces it off. See solver/litbridge_procedure.py and memos/MEMO_2026_08_15_litbridge_merge.md
-  "graphbridge_flag":False,    # open-relation graph abstraction: when the ordinary pipeline (and the literal bridge, if on) leaves the question unresolved, translate the case a second time into three-item open triples, invent implications between the open names, and search that theory separately. Off by default; -graphbridge, -stack, -stack-open and -abstract-max turn it on, -nographbridge forces it off. See solver/graph_procedure.py and DOCUMENTATION.md §14
+  "litbridge_flag":PIPELINES[DEFAULT_PIPELINE]["litbridge"],     # from PIPELINES[DEFAULT_PIPELINE]; explicit only. literal-bridge abstraction: when the ordinary pipeline leaves the question unresolved, propose implication rules over the case's own displayed atoms, compile them beside the stored theory and resubmit to gk. Off by default because it costs extra LLM calls per unresolved case and is net-harmful on closed-world material; -litbridge, -stack-open and -abstract-max turn it on, -nolitbridge forces it off. See solver/litbridge_procedure.py and memos/MEMO_2026_08_15_litbridge_merge.md
+  "graphbridge_flag":PIPELINES[DEFAULT_PIPELINE]["graphbridge"],    # from PIPELINES[DEFAULT_PIPELINE]; outside the ordinary default. open-relation graph abstraction: when the ordinary pipeline (and the literal bridge, if on) leaves the question unresolved, translate the case a second time into three-item open triples, invent implications between the open names, and search that theory separately. Off by default; -graphbridge, -stack, -stack-open and -abstract-max turn it on, -nographbridge forces it off. See solver/graph_procedure.py and DOCUMENTATION.md §14
   "nographbridge_flag":False,  # if True, graphbridge_flag is forced False after the whole command line is read, so -nographbridge beats -graphbridge whatever their order
   "summary_flag":False,    # -summary: one block at the end saying which stage answered and what the run cost in LLM calls
   "summary_json_flag":False, # -summary-json: the same block as one JSON line, for scripts
-  "critic_flag":False,     # -critic: one LLM call audits the front door's translation when it ends Unknown, and may ask for one retranslation. -critic, every -stack* set and -abstract-max turn it on; -nocritic forces it off
+  "critic_flag":PIPELINES[DEFAULT_PIPELINE]["critic"],     # from PIPELINES[DEFAULT_PIPELINE] (ON in balanced). -critic: one LLM call audits the front door's translation when it ends Unknown, and may ask for one retranslation. -critic, every -stack* set and -abstract-max turn it on; -nocritic forces it off
   "nocritic_flag":False,   # -nocritic: forces critic_flag False after the whole command line is read
-  "graphtrans_flag":False,   # -graphtrans: layer 1, the graph retranslation and one gk call; no judge, no bridge. -graphtrans, -graphbridge, every -stack* set and -abstract-max turn it on; -nographtrans forces it off
+  # EXPERIMENTAL (Task 2B, off by default): proof-local acceptance checks on the
+  # critic and graph retranslations.  None or "" disables them entirely;
+  # "permissive" | "balanced" | "strict" select a trust setting.
+  "accept_policy":None,
+  # The retry configuration this run FINALLY resolved to, derived from the six
+  # stage flags after the whole command line and all three precedence rounds.
+  # An ordinary run records the default, `balanced`; naming a configuration or
+  # a flag set records that one (`conservative`, `high-recall`, `stack-open`);
+  # any other explicit combination records `custom`.  Recorded in the case JSON.
+  "pipeline_name":None,
+  "graphtrans_flag":PIPELINES[DEFAULT_PIPELINE]["graphtrans"],   # from PIPELINES[DEFAULT_PIPELINE] (ON in balanced). -graphtrans: layer 1, the graph retranslation and one gk call; no judge, no bridge. -graphtrans, -graphbridge, every -stack* set and -abstract-max turn it on; -nographtrans forces it off
   "nographtrans_flag":False, # -nographtrans: forces graphtrans_flag AND graphbridge_flag False after the whole command line is read
   "nolitbridge_flag":False,   # if True, litbridge_flag is forced False after the whole command line is read, so -nolitbridge beats both -litbridge and the -abstract-max default whatever their order
   "prover_axiomfiles":False,  # if not False, use these as axioms instead of the default prover_axiomfile below

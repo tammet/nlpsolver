@@ -553,6 +553,7 @@ def rawlogic_convert(logic, s1_json=None, fixes=None):
                                       flatten=_enc.flatten,
                                       eventprop=_enc.eventprop,
                                       davidson=_enc.davidson,
+                                      davidson2=_enc.davidson2,
                                       do_canon=_enc.entitymerge,
                                       do_guard=_enc.guarddrop,
                                       collapse_degree=_enc.collapse_degree)
@@ -564,6 +565,14 @@ def rawlogic_convert(logic, s1_json=None, fixes=None):
     import lc_existfold as _lc_existfold
     _lc_existfold.reset()
     logic = _lc_existfold.fold_existential_attributes(logic)
+
+  # (-existfold2) the narrow version: count the bare `has part` pattern per class
+  # first, rewrite only a class that occurs often enough to pay for its three
+  # class-specific clauses.  Same position in the pipeline as the legacy fold.
+  if _enc.existfold2:
+    import lc_existfold_v2 as _lc_existfold2
+    _lc_existfold2.reset()
+    logic = _lc_existfold2.fold_existential_attributes(logic)
 
   # Strip @definite tags from the logic tree.  These are metadata annotations
   # produced by Stage 2 but not consumed by the pipeline (definite info comes
@@ -819,8 +828,13 @@ def rawlogic_convert(logic, s1_json=None, fixes=None):
     # Give them a SCAN-ONLY expanded view so they recognise folded events exactly
     # as the reified encoding; the real clause list is unchanged (the event<->roles
     # bridge supplies the roles at prove time).
-    _davx = lc_encoding.current().davidson
+    _enc_now = lc_encoding.current()
+    _davx = _enc_now.davidson
+    _davx2 = _enc_now.davidson2
     def _dv(r):
+      if _davx2:
+        import lc_davidson2 as _d2
+        return _d2.scan_expand(r)
       if not _davx:
         return r
       import lc_coarse as _lcc
@@ -846,7 +860,7 @@ def rawlogic_convert(logic, s1_json=None, fixes=None):
                     + _inject_occasion_location_bridges(iv)
                     + _inject_in_haspart_bridge(iv)
                     + _inject_reflexive_property_bridge(iv))
-      if not _davx:                        # davidson injects its own event<->roles bridge
+      if not (_davx or _davx2):            # both event folds inject their own bridge
         sem_axioms = sem_axioms + _lcc.rel2_event_axiom_clauses()
         if lc_encoding.experiment("objbridge"):
           sem_axioms = sem_axioms + _lcc.inject_object_class_bridges(result)
@@ -860,12 +874,24 @@ def rawlogic_convert(logic, s1_json=None, fixes=None):
     import lc_coarse as _lcc
     sem_axioms = sem_axioms + _lcc.event_axiom_clauses()
 
+  # (-event davidson2) the same purpose, but one clause set per concrete verb
+  # that actually has a compact atom, and only the directions the case earns.
+  if _enc.davidson2:
+    import lc_davidson2 as _d2
+    sem_axioms = sem_axioms + _d2.interop_clauses(result)
+
   # (L2 -existfold) named-witness bidirectional bridge, injected only when a fold
   # actually fired (avoids the reverse clause firing on unrelated problems).
   if _g_options.get("existfold_flag", False):
     import lc_existfold as _lc_existfold
     if _lc_existfold.any_fired():
       sem_axioms = sem_axioms + _lc_existfold.bridge_clauses()
+
+  # (-existfold2) three clauses for each class that was actually rewritten.
+  if _enc.existfold2:
+    import lc_existfold_v2 as _lc_existfold2
+    if _lc_existfold2.any_fired():
+      sem_axioms = sem_axioms + _lc_existfold2.bridge_clauses()
 
   # Append population facts, synonym axioms, and exclusion axioms after
   # all sentence clauses (assertions + questions come first).

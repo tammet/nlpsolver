@@ -141,12 +141,33 @@ def _is_litbridge_source(source):
   return is_litbridge_clause_name(source)
 
 
+# Clauses that adapt a compact representation to another pipeline spelling
+# rather than add case-specific knowledge.  The strict definitions connect the
+# compact event to its canonical spine.  The one-way event -> is_rel2 projection
+# connects that event reading to the pipeline's flat relation spelling.  It is
+# intentionally one-way, but to a proof reader it is still representation
+# conversion, not background knowledge (otherwise "X chases Y -> X chases Y"
+# is presented as if it were an external fact).
+_REPRESENTATION_DEFINITIONS = frozenset((
+  "frm_event2_def", "frm_event2_def_rev",       # solver/lc_davidson2.py
+  "frm_event2_rel2",                             # compact -> flat adapter
+  "frm_existfold2", "frm_existfold2_rev",       # solver/lc_existfold_v2.py
+))
+
+
+def _is_representation_definition(source):
+  """True for a clause that only converts a fact between representations."""
+  return isinstance(source, str) and source in _REPRESENTATION_DEFINITIONS
+
+
 def _is_background_source(source):
   """Return True if source is a background-knowledge axiom (not a sentence)."""
   if not isinstance(source, str):
     return False
   if _is_litbridge_source(source):
     return False
+  if _is_representation_definition(source):
+    return False       # a definition of the notation, not knowledge
   # frm_N comes from axioms_std.js; other non-sent_ sources are also background
   return bool(re.match(r'^frm_\d+', source)) or (
     source and not source.startswith("sent_") and not source.startswith("$"))
@@ -200,6 +221,8 @@ def _format_why(reason, sent_nr, clause=None, labels=None):
       return "sentence " + str(sent_nr[source])
     if _is_litbridge_source(source):
       return _litbridge_label(source)
+    if _is_representation_definition(source):
+      return "representation conversion"
     if _is_background_source(source):
       return "background knowledge"
     return source
@@ -342,6 +365,8 @@ def format_explanation(answers, sentence_map, show_logic=False, logic=None):
       if not (isinstance(reason, list) and len(reason) > 1 and reason[0] == "in"):
         continue
       source = reason[1]
+      if _is_representation_definition(source):
+        continue      # a spelling conversion; the step already says so
       added = isinstance(source, str) and _is_litbridge_source(source)
       if not (added or (isinstance(source, str)
                         and _is_background_source(source))):

@@ -17,7 +17,8 @@ _ALL_TE_GATES = frozenset(
 
 class EncodingConfig:
   __slots__ = (
-    "event_base", "flatten", "eventprop", "davidson",
+    "event_base", "flatten", "eventprop", "davidson", "davidson2",
+    "davidson2_not_applicable", "existfold2",
     "entitymerge", "guarddrop", "bridges", "dropdefinites", "localantonyms",
     "simpleprops", "collapse_degree", "parse_canon", "needs_coarsen",
     "typeenrich", "typeenrich_gates", "propclass", "numtype", "compasym",
@@ -31,6 +32,48 @@ class EncodingConfig:
     self.flatten   = base in ("flat", "flatroles")   # flat is_rel2 fold
     self.eventprop = base == "flatroles"             # role-tag the folded object
     self.davidson  = base == "davidson"              # compact event(V,A,O,E) fold
+
+    # ---- the two safe proof-shortening transformations -------------------
+    #
+    # Both are ATTEMPTED by default on the ordinary canonical theory, and each
+    # refuses locally when its own conditions fail, leaving that source form as
+    # it was.  The default reaches exactly one configuration: the canonical
+    # neo-Davidsonian base that the command line did not name.  Anything the
+    # command line names for itself -- an explicit -event MODE, an -abstract*
+    # preset, the legacy -existfold -- keeps that base's own historical theory,
+    # so every earlier run reproduces.  An explicit request turns a
+    # transformation on from any position; a cancellation turns it off from any
+    # position and beats both.
+    explicit_base = bool(o.get("event_base_explicit"))
+    preset = bool(o.get("abstract_preset_flag"))
+    legacy_existfold = bool(o.get("existfold_flag"))
+    no_short = bool(o.get("noproofshort2_flag"))
+    cancel_d2 = bool(o.get("nodavidson2_flag")) or no_short
+    cancel_e2 = bool(o.get("noexistfold2_flag")) or no_short
+    # the command line asked for the historical behaviour of some other base
+    historical = explicit_base or preset or legacy_existfold
+
+    self.davidson2 = False
+    self.davidson2_not_applicable = False
+    if cancel_d2:
+      pass                                    # cancelled: nothing else matters
+    elif base == "davidson2":
+      self.davidson2 = True                   # named as the base outright
+    elif o.get("davidson2_flag"):
+      if base == "neodavidson":
+        self.davidson2 = True                 # requested, and there is a spine
+      else:
+        self.davidson2_not_applicable = True  # requested on a base without one
+    elif not historical and base == "neodavidson":
+      self.davidson2 = True                   # the default
+
+    self.existfold2 = False
+    if cancel_e2:
+      pass
+    elif o.get("existfold2_flag"):
+      self.existfold2 = True                  # requested outright
+    elif not historical:
+      self.existfold2 = True                  # the default
 
     # Additive abstraction primitives (one flag each; presets set a subset).
     self.entitymerge   = bool(o.get("entitymerge_flag"))   # proper-noun canon + set coref
@@ -60,7 +103,8 @@ class EncodingConfig:
 
     # Whether coarsen_events runs at all.
     self.needs_coarsen = bool(
-      self.davidson or self.flatten or self.entitymerge or self.guarddrop)
+      self.davidson or self.davidson2 or self.flatten
+      or self.entitymerge or self.guarddrop)
 
   def te(self, gate):
     """True if the given typeenrich sub-gate is enabled."""

@@ -67,8 +67,26 @@ ENCODINGS.md §6, DOCUMENTATION.md §11). All resolved by one source of truth,
 
 -event MODE      Event-encoding base (one mutually-exclusive selector; default
                  neodavidson): neodavidson (reified neo-Davidsonian) |
-                 davidson (compact event(V,A,O,E)) | flat (is_rel2) |
+                 davidson (compact event(V,A,O,E)) | davidson2 (the exact
+                 spine compression) | flat (is_rel2) |
                  flatroles (is_rel2 with eventprop-tagged object)
+
+The safe proof shorteners, ATTEMPTED BY DEFAULT (2026-08-26) on the ordinary
+canonical theory.  `davidson2` compresses a complete event spine to
+event(V,A,T,E) only when expanding it back reproduces the group; `existfold2`
+folds the bare "exists Y. isa(C,Y) & has part(X,Y)" pattern for a class with at
+least four occurrences.  Either refuses locally and leaves that source form
+unchanged.  Bidirectional adapters keep the canonical role predicates as the KB
+interface; a compact atom may appear in a proof and drive its English, and an
+adapter step reads "representation conversion", never "Knowledge used".
+-nodavidson2     davidson2 off, canonical spine restored (wins from any position)
+-noexistfold2    existfold2 off
+-noproofshort2   both off -- the command that reproduces the pre-2026-08-26
+                 ordinary theory and answers
+-davidson2 / -existfold2 / -proofshort2   request them where they are not the
+                 default (e.g. on top of an -abstract* preset)
+Naming a base or a preset asks for that base's historical theory, so the
+defaults stand aside for -event <any mode>, legacy -existfold, and -abstract*.
 Additive abstraction primitives (compose with any -event base):
 -entitymerge     Proper-noun entity canonicalization + set-label coreference
 -typeenrich[=GATES]  Taxonomy/isa enrichment; bare = all six sub-gates, or a comma
@@ -98,16 +116,77 @@ Abstraction presets (pure CLI expansions into the primitives above):
 The repair stack (DOCUMENTATION.md §12.0b): six stages after the front door,
 in this order, the first definite answer stopping the rest —
   fallback_norm, fallback_hyp, critic, graphtrans, litbridge, graphbridge.
-Flag sets, each assigning all six stage keys:
+`solve.PIPELINE_ORDER` is the one declaration of that order; execution, the
+summary and the tests all read it.
+
+Each stage is a separate attempt.  The critic theory, the graph theory and a
+bridge theory are their own clause sets, not additions to the canonical one,
+except where a mechanism already merges deliberately.
+
+Named configurations (`-pipeline NAME`, also `-pipeline=NAME`), which select
+retry stages and nothing else — no encoding, preset, prompt, model or prover
+option:
+                 norm  cond  critic  graph  gbridge  litbridge
+conservative      on    on     off     off     off       off
+balanced          on    on     on      on      off       off
+high-recall       on    on     on      on      on        off
+The literal bridge belongs to no named configuration; add it with -litbridge.
+
+**`balanced` is the ordinary default (adopted 2026-08-27).**  A bare command
+line and `-pipeline balanced` resolve identically, and both record
+`pipeline_name: balanced`.  `globals.PIPELINES[globals.DEFAULT_PIPELINE]` is
+where the six stage defaults come from, so the two front doors cannot drift.
+The evidence is the two complete Task 2A arms: 111 correct additions against 8
+wrong ones (MEMO_2026_08_27_canonical_stack_census_closed.md).  Wider
+evaluation follows the audit of this implementation.
+
+`-pipeline conservative` is the lower-cost retry sequence: the two
+deterministic fallbacks, no LLM call after the front door.
+
+Flag sets, each assigning all six stage keys.  `-stack-closed` resolves
+identically to `-pipeline balanced` and `-stack` to `-pipeline high-recall`:
 -stack           fallbacks + critic + graphtrans + graphbridge (no literal
                  bridge).  Material of unknown origin: the general default.
 -stack-closed    fallbacks + critic + graphtrans.  Known closed-world material
                  (core-like, FOLIO-like), where neither bridge pays.
 -stack-open      All six.  Known open-world material (EntailmentBank-like).
-Resolution order: (1) presets and flag sets, left to right, a later one
-overwriting an earlier one; (2) an explicit stage switch turns its stage on
-from any position; (3) a cancel wins over both from any position.
-`-summary` prints stages_enabled and every case JSON carries it.
+Resolution order: (1) named configurations, presets and flag sets, left to
+right, a later one overwriting an earlier one; (2) an explicit stage switch
+turns its stage on from any position; (3) a cancel wins over both from any
+position.  An unknown -pipeline name is an error in both front doors.
+`-summary` prints stages_enabled and every case JSON carries it, plus
+`pipeline_name`, `run_outcome` and one `stages` row per stage.
+
+Errors and timeouts: `None`, empty output, `Unknown`, `no answer` and every
+`Error:` value are unresolved, never answers and never correct abstentions.  A
+stage exception or timeout is recorded on that stage's row and the run
+continues with the next enabled stage.  An earlier definite answer is never
+replaced.  `run_outcome` separates a definite answer, `Unknown` after every
+enabled stage ran, `Unknown` because a later stage failed, and a translation
+failure before a valid gk question existed.
+
+-llm-call-timeout N   Per-LLM-call deadline in seconds, covering provider
+                 attempts, retries and the sleeps between them, for the initial
+                 translation AND every later stage (critic, graph, bridges).
+                 It never encloses gk.  **The default is 240 seconds**;
+                 `-llm-call-timeout 0` disables it, and any other number
+                 replaces it.  Absence of the option and an explicit zero are
+                 different things.  This is the bound `api_timeout` did not
+                 give: that one covered only the parse and conversion phase.
+-llm-call-limit N     Total logical LLM calls one case may make, counting every
+                 role and counting a local cache hit as a call.  0 (the
+                 default) is unlimited.  Call N+1 is refused before the cache
+                 lookup and before any provider request, leaving that stage
+                 unresolved.  Per-case accounting uses one vocabulary:
+                 attempted = allowed + refused, allowed = cached + live, and
+                 `provider_requests` counts outbound requests separately.
+-accept POLICY   EXPERIMENTAL, off by default: proof-local acceptance checks on
+                 critic and graph-retranslation answers
+                 (permissive|balanced|strict).  `balanced` and `strict`
+                 discarded far more correct answers than wrong ones
+                 (MEMO_2026_08_27_retranslation_acceptance_result.md), so they
+                 are a diagnostic, not a candidate default.  Graph bridges and
+                 literal bridges are never judged by it.
 
 The stages:
 -fallback_norm   ON BY DEFAULT (DOCUMENTATION.md §16).  When the front door ends

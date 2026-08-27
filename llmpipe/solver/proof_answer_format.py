@@ -37,6 +37,12 @@ from proof_answer_select import _extract_class_names, _ans_object_tier
 
 # ======== formatting helpers ========
 
+
+# Reconstruction witnesses of the existential-attribute folds (lc_existfold.py,
+# lc_existfold_v2.py).  A proof may name one; an answer may not.
+_INTERNAL_WITNESS_FUNCTORS = frozenset(("$typed_partof", "$typed_have"))
+
+
 def _join_and_finish(parts):
   """Join parts with commas/and, capitalize first letter, ensure trailing period."""
   if len(parts) == 1:
@@ -398,6 +404,12 @@ def _format_who_answers(answers, logic=None):
         continue
       v = atom[1]
       if isinstance(v, list):
+        # Canonical witnesses introduced by existential folds represent "some
+        # such object" inside the proof, not a user-facing answer.  Inspect the
+        # original term narrowly: an unrelated structured answer must not be
+        # discarded merely because its fallback rendering begins with '['.
+        if _is_internal_fold_witness(v):
+          continue
         # Complex term (e.g., ["$theof1","sister","Mary 1",...]) — render
         # via entity_name → render_term_english to get an English string
         # like "Mary's sister".  Without this, $theof1 answers fall through
@@ -514,6 +526,12 @@ def _format_who_answers(answers, logic=None):
     result = result[0].upper() + result[1:] + "."
 
   return result, surviving_values
+
+
+def _is_internal_fold_witness(term):
+  """True only for canonical witness terms created by existential folds."""
+  return (isinstance(term, list) and bool(term)
+          and term[0] in _INTERNAL_WITNESS_FUNCTORS)
 
 
 def _resolve_skolem_entity(val):

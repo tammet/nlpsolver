@@ -144,6 +144,7 @@ _verb_index = {}    # event var -> its has-type verb, built per coarsen_events r
 _in_antecedent = False   # (laxrules experiment) folding a rule antecedent right now
 _eventprop_mode = False  # (flatroles) tag folded object roles as ["eventprop", role, value]
 _davidson_mode = False   # (-event davidson) structure-preserving fold: spine -> event(V,A,O,E), keep the rest
+_davidson2_mode = False  # (-event davidson2) the exact spine compression in lc_davidson2.py
 _dav_nr = 0              # counter for fresh existential agent/patient vars (reset per coarsen_events run)
 
 # (-event davidson) Roles eligible to fill the event() PATIENT slot: the THEME/target
@@ -466,7 +467,13 @@ def _coarsen_node(node, content_inner, ultra):
     E = node[1]
     inner = node[2]
     if _event_var(inner) == E:
-      if _davidson_mode:
+      if _davidson2_mode:
+        import lc_davidson2 as _d2
+        body = _d2.davidson2_event(inner, E, content_inner)
+        if body is not None:
+          return ([node[0], node[1], _coarsen_node(body, content_inner, ultra)]
+                  + [_coarsen_node(x, content_inner, ultra) for x in node[3:]])
+      elif _davidson_mode:
         body = _davidson_event(inner, E, content_inner)
         if body is not None:
           # keep the exists E wrapper (E stays live in event(...) and adjuncts);
@@ -897,7 +904,8 @@ def _coarsen_one(node, content_inner, flatten, do_guard):
 
 
 def coarsen_events(tree, flatten=False, eventprop=False, davidson=False,
-                   do_canon=False, do_guard=False, collapse_degree=False):
+                   do_canon=False, do_guard=False, collapse_degree=False,
+                   davidson2=False):
   """Top-level entry: fold collapsible events / apply the lc_coarse abstraction mods.
 
   All gating is resolved by the caller (lc_encoding.EncodingConfig); the params
@@ -909,9 +917,10 @@ def coarsen_events(tree, flatten=False, eventprop=False, davidson=False,
   - do_guard : drop redundant antecedent type guards (no-op without a fold).
   - collapse_degree : degree nodes -> simple, before guard-drop.
   See memos/ABSTRACTION_BUCKETS_PLAN.md and analysis/FLAG_INVENTORY.md."""
-  global _eventprop_mode, _davidson_mode, _dav_nr, _verb_index
+  global _eventprop_mode, _davidson_mode, _davidson2_mode, _dav_nr, _verb_index
   _eventprop_mode = eventprop
   _davidson_mode = davidson
+  _davidson2_mode = davidson2
   if not isinstance(tree, list) or not tree:
     return tree
 
@@ -920,6 +929,28 @@ def coarsen_events(tree, flatten=False, eventprop=False, davidson=False,
     tree = _canonicalize_entities(tree)
   if collapse_degree:
     tree = _collapse_degree_node(tree)     # degrees -> simple, before guard-drop
+
+  if davidson2:
+    # the exact spine compression: same walk as the legacy fold, but every group
+    # is folded only when expanding it back reproduces the source (lc_davidson2).
+    import lc_davidson2 as _d2
+    _d2.reset()
+    _verb_index = _build_verb_index(tree)
+    def _d2_pkg(child):
+      # name the sentence, so a recorded fold says which one it came from
+      if (isinstance(child, list) and len(child) >= 2 and child[0] == "@id"
+          and isinstance(child[1], str)):
+        _d2.set_source("sent_" + child[1])
+      else:
+        _d2.set_source(None)
+      out = _coarsen_node(child, _collect_content_inner_vars(child), False)
+      if do_guard:
+        out = _drop_redundant_guards(out)
+      return out
+    if tree[0] == "and":
+      return [tree[0]] + [_d2_pkg(child) if isinstance(child, list) else child
+                          for child in tree[1:]]
+    return _d2_pkg(tree)
 
   if davidson:
     # structure-preserving Davidsonian fold: spine -> event(V,A,O,E), keep adjuncts.

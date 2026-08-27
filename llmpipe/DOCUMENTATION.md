@@ -66,7 +66,7 @@ representation so that maintainers and contributors can extend or modify the sys
 11. [Event-encoding and abstraction machinery](#11-event-encoding-and-abstraction-machinery)
 12. [Abstraction presets and alternative parsing modes](#12-abstraction-presets-and-alternative-parsing-modes)
     - 12.0 [Abstraction presets](#120-abstraction-presets--abstract-family)
-    - 12.0b [The repair stack: flag sets and resolution order](#120b-the-repair-stack-three-flag-sets-and-the-resolution-order)
+    - 12.0b [The repair stack: named configurations, flag sets and resolution order](#120b-the-repair-stack-named-configurations-flag-sets-and-the-resolution-order)
 13. [Literal-bridge abstraction (`-litbridge`)](#13-literal-bridge-abstraction--litbridge)
     - 13.1 [Where it sits](#131-where-it-sits)
     - 13.2 [Candidates](#132-candidates-what-the-model-may-build-a-rule-from)
@@ -3149,6 +3149,54 @@ pipeline consults: `flatten`, `eventprop`, `davidson`, `coarse`, `entitymerge`,
 `logconvert.py`, `lc_sets.py`, `lc_coarse.py`, `semnormalize.py`, `lc_post_reify.py`
 and `solve.py` goes through this config, so the gating logic lives in exactly one place.
 
+#### The safe proof shorteners are attempted by default
+
+`davidson2` and `existfold2` are attempted on the ordinary canonical theory
+without being asked for.  Both are guarded, exactly reversible rewrites: each
+checks its own conditions per occurrence and, when any fails, refuses and leaves
+that source form exactly as it was.  A refusal is local, so one refused event
+does not stop another from folding.
+
+The canonical neo-Davidsonian role predicates remain the public language of
+`axioms_std.js` and of any later knowledge base.  A compact atom is an internal
+proof-search form, tied to the canonical spine by the strict definition in both
+directions (`frm_event2_def`, `frm_event2_def_rev`) and, for the attribute fold,
+by three class-specific clauses (`frm_existfold2`, `frm_existfold2_rev`).  A
+compact atom may appear in the formal proof and is the basis of the English
+proof; a step that converts between the two spellings reads
+`[representation conversion]` and is never listed under `Knowledge used:`.
+
+The resolution is one rule, applied in `EncodingConfig.__init__` after the whole
+command line is read, so no position on the command line matters:
+
+| the command line | davidson2 | existfold2 |
+|---|---|---|
+| no encoding option | on | on |
+| `-event neodavidson` / `davidson` / `flat` / `flatroles` | off | off |
+| `-event davidson2` | on | off |
+| legacy `-existfold` | off | off |
+| `-abstract`, `-abstract-roles`, `-abstract-max` | off | off |
+| `-davidson2` / `-existfold2` / `-proofshort2` | requested | requested |
+| `-abstract-max -proofshort2` | declines (no spine on a flat base) | on |
+| `-nodavidson2` | off | on |
+| `-noexistfold2` | on | off |
+| `-noproofshort2` | off | off |
+
+Naming a base or a preset asks for that base's own historical theory, so the
+defaults stand aside and every earlier run reproduces.  A request turns a
+transformation on from any position; a cancellation turns it off from any
+position and beats both.
+
+**`-noproofshort2` is the command that reproduces the ordinary theory and answers
+as they stood before 2026-08-26.**  Legacy `-event davidson`, legacy
+`-existfold` and the three `-abstract*` presets reproduce byte-identically on
+their own.
+
+The graph translation and the graph bridge are a separate representation:
+`graph_compile.GRAPH_OPTION_TABLE` cancels both shorteners, so the default does
+not reach that theory.  The literal bridge continues to compile against the
+ordinary theory stored for its case, whatever that theory resolved to.
+
 Population of the config:
 
 - **Event base** — `-event MODE` sets `event_base` ∈ {`neodavidson` (default, reified
@@ -3346,16 +3394,131 @@ that folder ran with, and its `stages_enabled` field says which those were.
 Because they expand into primitives, any preset composes with an explicit override
 (e.g. drop one primitive by not letting the preset set it, or layer `-existfold`).
 
-### 12.0b The repair stack: three flag sets and the resolution order
+### 12.0b The repair stack: named configurations, flag sets and the resolution order
 
 Six **stage keys** name what may run after the front door leaves a question
 unresolved, in the order they run:
 
     fallback_norm  fallback_hyp  critic  graphtrans  litbridge  graphbridge
 
-`solve.STAGE_KEYS` is that list.  The first definite answer stops the rest.  The two
-fallbacks are on by default and cost no LLM call (chapter 16); the other four are off
-by default and each costs calls.
+`solve.PIPELINE_ORDER` is the one declaration of the full order, front door
+first; `solve.STAGE_KEYS` is derived from it.  Execution, the summary block and
+the tests all read those two names, so a stage cannot be added to one and
+forgotten in another.  The first definite answer stops the rest.  The two
+fallbacks are on by default and cost no LLM call (chapter 16); the other four
+are off by default and each costs calls.
+
+**Each stage is a separate attempt, not an addition to one growing theory.**
+The critic retranslation, the graph retranslation and each bridge build their
+own clause sets.  Only a mechanism that already merges deliberately does so.
+
+#### Named configurations
+
+`-pipeline NAME` (also `-pipeline=NAME`) selects retry stages and nothing else:
+never an event encoding, an abstraction preset, a prompt, a model or a prover
+option.  Both front doors accept it, and `runtests.py` forwards it to
+`solve.py`'s own parser so the two cannot resolve it differently.
+
+| configuration | normalization | conditional question | critic | graph retranslation | graph bridges | literal bridges |
+|---|---|---|---|---|---|---|
+| `conservative` | on | on | off | off | off | off |
+| `balanced` | on | on | on | on | off | off |
+| `high-recall` | on | on | on | on | on | off |
+
+The literal bridge belongs to no named configuration; add it explicitly with
+`-litbridge`.  An unknown name is an error, not a silent default.
+
+`-stack-closed` resolves identically to `-pipeline balanced`, and `-stack` to
+`-pipeline high-recall`.
+
+#### The ordinary default
+
+**`balanced` is the ordinary default, adopted 2026-08-27.**  A bare command
+line resolves to exactly the balanced stage vector and records
+`pipeline_name: balanced`; naming it explicitly changes nothing.  The six stage
+defaults in `globals.options` are filled from
+`globals.PIPELINES[globals.DEFAULT_PIPELINE]`, so there is one source rather
+than two sets of defaults that could drift.
+
+The ordinary sequence is therefore:
+
+    canonical Davidson2/Existfold2 theory
+      -> gk
+      -> normalization fallback
+      -> conditional-question fallback
+      -> critic retranslation
+      -> graph retranslation
+      -> Unknown
+
+Later work is attempted only after the earlier stages return `Unknown`, and the
+first definite answer stops everything after it.  The critic retranslation and
+the graph retranslation are **separate alternative theories**, not clauses
+accumulated into the canonical one.
+
+Graph bridges and literal bridges stay outside the default: graph bridges are
+the explicit higher-recall option (`-pipeline high-recall`, `-stack`), and the
+literal bridge is explicit only (`-litbridge`).  The experimental acceptance
+policy (`-accept`) is off.  `-pipeline conservative` is the lower-cost retry
+sequence, the two deterministic fallbacks and no LLM call after the front door.
+
+The evidence for the adopted stack is the two complete Task 2A arms: **111
+correct additions against 8 wrong ones**, measured in
+`memos/MEMO_2026_08_27_canonical_stack_census_closed.md`.  Those eight wrong
+additions remain visible in the records, because no acceptance policy is
+enabled; they are the known cost of the selected tradeoff.  Wider evaluation
+follows the audit of this implementation.
+
+`-abstract` and `-abstract-roles` are converter presets and select no retry
+stage of their own, so they follow the ordinary default like a bare command
+line.  `-abstract-max` selects all six stages itself, and that is unchanged.
+
+#### Errors, timeouts and the run outcome
+
+`None`, empty output, `Unknown`, `no answer` and every `Error:` value are
+**unresolved**: never an answer, never a correct abstention.  A stage exception
+or timeout is recorded on that stage's row and the run continues with the next
+enabled stage; it never aborts the case.  An earlier definite answer is never
+replaced by a later one.
+
+Every case record carries one ordered row per stage — enabled, ran, why not,
+raw answer or error, whether it was accepted as final, the submitted theory's
+hash, gk and LLM call counts and time, provider and version, and any
+experimental acceptance record.  `run_outcome` separates four cases: a definite
+answer, `Unknown` after every enabled stage ran, `Unknown` because a later
+stage failed, and a translation failure before a valid gk question existed.
+
+Top-level `answer`, `answered_by`, `proof`, `final_clauses` and `gk_command`
+always describe the same final attempt.  A refused, timed-out or superseded
+stage stays visible in its row and never populates them.
+
+#### Bounding the model calls
+
+`-llm-call-timeout N` is one per-call deadline at the `llmcall.call_llm`
+boundary.  **The default is 240 seconds.**  `-llm-call-timeout 0` disables it;
+the parser tells an absent option from an explicit zero, so a zero is never
+turned back into the default.  It covers the complete logical call — provider attempts, retries and
+the sleeps between them — for the initial translation and for every later stage
+alike, and it never encloses gk.  A timeout returns a named LLM-call failure
+recording provider, version, stage, elapsed time and reason; the stage stays
+unresolved and the pipeline continues.  A cached response never times out.  The
+wait is a thread join rather than a signal, so it works the same in a worker
+process as in a direct `solve.py` call and leaves no global state behind.
+`api_timeout` remains, but it only ever covered the parse and conversion phase;
+the per-call deadline is what bounds the critic, graph and bridge calls.
+
+`-llm-call-limit N` bounds the total number of logical LLM calls one case may
+make, across every role, counting a local cache hit as a call.  It is unlimited
+by default.  Call N+1 is refused before the cache lookup and before any
+provider request, and the refused stage is left unresolved.  One vocabulary is
+used for the accounting, globally and per stage: `attempted = allowed +
+refused`, `allowed = cached + live`, a live call is counted once however many
+provider attempts it makes, and `provider_requests` counts outbound requests
+including internal HTTP retries.
+
+One run uses one provider and one version for every call it makes.
+`llmcall.locked_model` pins them for the case, and a call naming anything else
+raises `ModelMismatch` immediately, including when a response for that other
+model sits in the cache.
 
 Three flag sets turn the stack on in its three measured forms.  Each assigns **all
 six** keys, so a set fully replaces whatever an earlier set or preset left behind:
@@ -3373,8 +3536,8 @@ because they add nothing there and carry the one measured loss.
 
 **Resolution order**, applied in `_parse_cmd_line`:
 
-1. **presets and flag sets** (`-abstract-max`, `-stack`, `-stack-closed`,
-   `-stack-open`), left to right — each assigns all six keys, so a later one
+1. **named configurations, presets and flag sets** (`-pipeline`,
+   `-abstract-max`, `-stack`, `-stack-closed`, `-stack-open`), left to right — each assigns all six keys, so a later one
    overwrites an earlier one.
 2. **explicit stage switches** (`-critic`, `-graphtrans`, `-graphbridge`,
    `-litbridge`, `-fallback_norm`, `-fallback_hyp`) — collected during the scan and
@@ -3388,7 +3551,9 @@ because they add nothing there and carry the one measured loss.
 So `-stack-closed -litbridge` and `-litbridge -stack-closed` both run the literal
 bridge, `-abstract-max -stack-closed` and `-stack-closed -abstract-max` differ (the
 later set wins), and `-nolitbridge` beats every one of them.
-`tools/test_stack_flags.py` fixes twelve such lines with their expected six keys.
+`tools/test_stack_flags.py` fixes twelve such lines with their expected six
+keys, and `tools/test_pipeline_options.py` resolves the whole matrix through
+both front doors and requires them to agree on every line.
 
 `runtests.py` parses `-abstract-max` itself and forwards every other flag to
 `solve._parse_cmd_line` through `_solve_options`, which returns the keys the line

@@ -51,6 +51,12 @@ _GENERIC_OBJ_PREDS = frozenset({
 # Bare type name: all lowercase letters (no digits, no uppercase, no suffix number).
 _BARE_TYPE_RE = re.compile(r'^[a-z][a-z]*$')
 
+
+def _davidson2_objects():
+  """True when the compact davidson2 atom is the event shape in use."""
+  import lc_encoding
+  return lc_encoding.current().davidson2
+
 # Skolem name pattern: matches sk0 (old/untyped), sk0_house (typed constant),
 # sk0 in ["sk0", "?:X"] (function).
 _SKOLEM_RE = re.compile(r'^sk\d+(_\w+)?$')
@@ -280,6 +286,20 @@ def _expand_generic_objects(frm):
   if not isinstance(frm, list) or not frm:
     return frm
   op = frm[0]
+  # (-event davidson2) the compact atom carries the object in slot 3, so the
+  # same bare plural that gets a witness in `has target(E, "berries")` must get
+  # one in `event(V, A, "berries", E)` too.  Without this the compact form
+  # silently loses the expansion and a generic object no longer unifies with an
+  # instance (core 1583, "John only eats apples.  Does John eat bananas?").
+  # Gated on davidson2: the legacy `-event davidson` keeps its own behaviour.
+  if op == "event" and len(frm) >= 5 and _davidson2_objects():
+    obj = frm[3]
+    if isinstance(obj, str) and _BARE_TYPE_RE.match(obj):
+      sing = _safe_singularize_class(obj)
+      var = "Gobj" + str(_gobj_nr)
+      _gobj_nr += 1
+      rest = [frm[0], frm[1], frm[2], var] + list(frm[4:])
+      return ["exists", var, ["and", ["isa", sing, var], rest]]
   if op in _GENERIC_OBJ_PREDS and len(frm) >= 3:
     obj = frm[2]
     if isinstance(obj, str) and _BARE_TYPE_RE.match(obj):

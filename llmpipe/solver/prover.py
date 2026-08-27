@@ -19,6 +19,8 @@
 # ==== standard libraries ====
 
 import sys
+import contextlib
+import time
 import subprocess
 import tempfile
 import os
@@ -185,6 +187,69 @@ Example logic argument:
 ]
 """
 
+# ---------------------------------------------------------------------------
+# Which pipeline stage owns a prover call
+#
+# Attribution used to be read off the LLM call label, which was wrong twice
+# over: the two fallbacks make no LLM call at all, so their gk calls fell to
+# the front door, and the critic's rerun re-enters the whole pipeline, so its
+# gk call was labelled by whatever ran inside the rerun.
+#
+# The stage is now declared explicitly around each stage's body.  The stack's
+# OUTER entry owns the call -- a critic rerun's inner front door still belongs
+# to the critic -- and the inner entry is kept alongside it for reading.
+# ---------------------------------------------------------------------------
+
+_stage_stack = []
+
+
+@contextlib.contextmanager
+def stage(name):
+  """Declare that the prover calls made in this block belong to `name`."""
+  _stage_stack.append(name)
+  try:
+    yield
+  finally:
+    _stage_stack.pop()
+
+
+def current_stage():
+  """The stage that owns a prover call now: the outermost declared one."""
+  return _stage_stack[0] if _stage_stack else "front_door"
+
+
+def inner_stage():
+  """The innermost declared stage, when it differs from the owner."""
+  if len(_stage_stack) > 1:
+    return _stage_stack[-1]
+  return None
+
+
+def reset_stages():
+  """Drop any stage left declared; called once per case."""
+  del _stage_stack[:]
+  global _collector
+  _collector = None
+
+
+# The case's collector, so a prover call made deep inside a stage -- the graph
+# route runs its own gk calls -- is recorded even when the caller has no
+# collector to hand.  An explicit `collect=` argument still wins.
+_collector = None
+
+
+@contextlib.contextmanager
+def collector(c):
+  """Record every prover call made in this block into `c`."""
+  global _collector
+  old = _collector
+  _collector = c
+  try:
+    yield
+  finally:
+    _collector = old
+
+
 def call_prover(logic, s1_json=None):
   # Build GK input JSON with // comment lines between ASU groups.
   instr=clause_list_to_json_commented(logic, s1_json=s1_json)
@@ -283,7 +348,22 @@ def call_prover(logic, s1_json=None):
     add_proof_to_cache(run_params, out)
     return out
 
+  _t_gk = time.time()
   sres = _run_gk(params)
+  # Collection only: how long this gk call took, and how many clauses went in.
+  # Written into the run collector after the call, so it cannot reach the gk
+  # command line, the theory, the answer or any cache key.
+  # The run-scoped collector is the authority for `gk_calls`: a stage that
+  # installs its own `_collect` (the graph route does) would otherwise keep its
+  # prover calls to itself and they would never reach the case's totals.
+  _rec_into = _collector if _collector is not None else collect
+  if _rec_into is not None:
+    _rec_into.setdefault("gk_calls", []).append({
+      "seconds": round(time.time() - _t_gk, 3),
+      "input_clauses": sum(1 for c in logic if isinstance(c, dict)),
+      "stage": current_stage(),
+      "inner_stage": inner_stage(),
+    })
   os.remove(infilename)
   # Prover result is displayed by solve.py (with -details+), not here,
   # to avoid duplicate output.

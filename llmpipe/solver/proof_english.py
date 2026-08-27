@@ -775,17 +775,31 @@ def _event_pos(e, args):
   verb = str(args[0]) if args else ""
   subj = e(1)
   patient = args[2] if len(args) > 2 else None
+  ctxt = args[4] if len(args) > 4 else None
+  tense = (ctxt[1] if isinstance(ctxt, list) and len(ctxt) >= 2
+           and ctxt[0] == "$ctxt" else None)
+  if tense == "past":
+    action = "did " + verb
+  elif tense == "future":
+    action = "will " + verb
+  else:
+    action = _conjugate_verb(verb)
   if _dav_patient_is_real(patient):
-    return subj + " " + _conjugate_verb(verb) + " " + _intro(patient)
-  return subj + " " + _conjugate_verb(verb)
+    return subj + " " + action + " " + _intro(patient)
+  return subj + " " + action
 
 def _event_neg(e, args):
   verb = str(args[0]) if args else ""
   subj = e(1)
   patient = args[2] if len(args) > 2 else None
+  ctxt = args[4] if len(args) > 4 else None
+  tense = (ctxt[1] if isinstance(ctxt, list) and len(ctxt) >= 2
+           and ctxt[0] == "$ctxt" else None)
+  auxiliary = ("did not " if tense == "past" else
+               "will not " if tense == "future" else "does not ")
   if _dav_patient_is_real(patient):
-    return subj + " does not " + verb + " " + _intro(patient)
-  return subj + " does not " + verb
+    return subj + " " + auxiliary + verb + " " + _intro(patient)
+  return subj + " " + auxiliary + verb
 
 def _has_property_render(e, args, neg=False):
   """has property(PROP, ENT).  Default: 'ENT is PROP'.  (L2 -existfold) a folded
@@ -1294,5 +1308,4 @@ def _atom_to_english_negated(atom):
   The atom argument is the BASE atom (predicate name WITHOUT the leading "-").
   """
   return _render_atom(atom, negated=True)
-
 

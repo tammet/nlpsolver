@@ -87,6 +87,58 @@ def combined_tag(instr_file, examples_file, explicit_tag):
 
 # ======== worker (runs in a separate process) ========
 
+def _collect_representation(collect):
+  """Record which representation ran and what its folds decided.
+
+  Collection only.  It reads state the conversion already left behind and never
+  writes any of it back, so the theory, the question, the gk command, the answer
+  and every cache key are exactly what they would have been without it.
+  """
+  try:
+    import globals as _g
+    import lc_encoding
+    enc = lc_encoding.current()
+    collect["_representation"] = {
+      "event_base": _g.options.get("event_base"),
+      "existfold_flag": bool(_g.options.get("existfold_flag")),
+      "davidson2_flag": bool(_g.options.get("davidson2_flag")),
+      "existfold2_flag": bool(_g.options.get("existfold2_flag")),
+      "resolved": {
+        "davidson": enc.davidson,
+        "davidson2": enc.davidson2,
+        "davidson2_not_applicable": enc.davidson2_not_applicable,
+        "existfold2": enc.existfold2,
+        "flatten": enc.flatten,
+        "eventprop": enc.eventprop,
+        "needs_coarsen": enc.needs_coarsen,
+      },
+    }
+  except Exception as e:
+    collect["_representation"] = {"error": "%s: %s" % (type(e).__name__, e)}
+  report = {}
+  try:
+    import lc_davidson2
+    rep = lc_davidson2.report()
+    if rep:
+      report["davidson2"] = rep
+  except Exception:
+    pass
+  try:
+    import lc_existfold_v2
+    rep = lc_existfold_v2.report()
+    if rep.get("per_key") or rep.get("rewrites"):
+      report["existfold2"] = rep
+  except Exception:
+    pass
+  try:
+    import lc_existfold
+    report["existfold_legacy_fired"] = bool(lc_existfold.any_fired())
+  except Exception:
+    pass
+  if report:
+    collect["_conversion_report"] = report
+
+
 def _worker(args):
   case_id, input_text, expected, llm, run_opts = args
   # Importing inside the worker keeps each process clean of solver-global state.
@@ -127,6 +179,7 @@ def _worker(args):
     if ("answered_by" not in collect and "stage2" not in collect
         and isinstance(got, str) and got.startswith("Error")):
       early = got.split("\n", 1)[0]
+    _collect_representation(collect)
   except KeyboardInterrupt:
     raise
   except Exception as e:
@@ -267,7 +320,14 @@ def build_case_json(testname, case_id, input_text, expected, llm, collect, match
             "answered_by", "front_door_answer", "abstraction_order",
             "stages_enabled", "stages",
             "llm_call_counts", "llm_calls_total",
-            "graphtrans", "litbridge", "graphbridge", "critic", "fallback"):
+            "graphtrans", "litbridge", "graphbridge", "critic", "fallback",
+            # EXPERIMENTAL (Task 2B): one acceptance record per judged stage
+            "acceptance",
+            # Task 3: the resolved configuration and which of the four
+            # outcomes the run reached
+            "pipeline_name", "run_outcome",
+            # Task 4: the case-level LLM accounting vocabulary
+            "llm_accounting", "llm_accounting_stages"):
     v = collect.get(k)
     if not v:   # skip None/[]/'' — omit empty keys
       continue
@@ -276,10 +336,62 @@ def build_case_json(testname, case_id, input_text, expected, llm, collect, match
     elif k == "nl_proof" and isinstance(v, str):
       v = v.split("\n")
     out[k] = v
+  # ---- collection only: what representation ran, what it did, what gk cost ----
+  # Read after the run has closed.  None of it reaches the theory, the question,
+  # the gk command, the answer selection or a cache key.
+  rep = collect.get("_representation")
+  if rep:
+    out["representation"] = rep
+  conv = collect.get("_conversion_report")
+  if conv:
+    out["conversion_report"] = conv
+  if collect.get("gk_calls"):
+    out["gk_calls"] = collect["gk_calls"]
+    out["gk_seconds_total"] = round(
+      sum(g.get("seconds") or 0 for g in collect["gk_calls"]), 3)
+    out["input_clauses"] = collect["gk_calls"][-1].get("input_clauses")
+  # GK may retain a below-reporting-threshold evidence trace even when the
+  # user-facing answer is Unknown.  That trace is useful diagnostics, but it
+  # is not a proof the pipeline accepted and must not enter proof-length
+  # comparisons.
+  pl = _proof_length(out.get("proof")) if _answer_is_definite(out.get("answer")) else None
+  if pl is not None:
+    out["proof_length"] = pl
+
   if "_error" in collect:
     out["error"] = collect["_error"]
   out["timestamp"] = datetime.datetime.now(datetime.timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
   return out
+
+
+def _proof_length(proof):
+  """Derived clauses in a proof, excluding input clauses (the paper's count)."""
+  if not isinstance(proof, dict):
+    return None
+  best = None
+  for a in proof.get("answers") or []:
+    for key in ("positive proof", "negative proof", "proof"):
+      steps = a.get(key)
+      if not steps:
+        continue
+      derived = 0
+      for st in steps:
+        rule = st[1] if isinstance(st, list) and len(st) > 1 else None
+        head = rule[0] if isinstance(rule, list) and rule else None
+        if head != "in":
+          derived += 1
+      best = derived if best is None else min(best, derived)
+  return best
+
+
+def _answer_is_definite(answer):
+  """Whether the pipeline exposed a definite answer rather than abstaining."""
+  if not isinstance(answer, str) or not answer.strip():
+    return False
+  s = answer.strip().lower()
+  if s.startswith("error"):
+    return False
+  return not s.startswith(("unknown", "no answer"))
 
 
 # ======== file IO ========
@@ -627,9 +739,12 @@ def update_summary(outdir, llm):
 
 # ======== main loop ========
 
-def main():
-  global _pipeline_git
-  _pipeline_git = pipeline_git_state()
+def make_parser():
+  """The runner's own command-line parser.
+
+  Split out of `main` so the option resolution can be exercised without running
+  a batch.  It defines exactly the same flags `main` always defined.
+  """
   ap = argparse.ArgumentParser(description="Batch test runner for nlpsolver.")
   ap.add_argument("testfile", nargs="?", default=DEFAULT_TESTFILE,
                   help=f"Test file (default: {DEFAULT_TESTFILE})")
@@ -652,6 +767,20 @@ def main():
                        "default. Kept so older command lines keep working.")
   ap.add_argument("-nogeminicache", action="store_true",
                   help="Disable Gemini context caching (on by default)")
+  ap.add_argument("-llm-call-timeout", dest="llm_call_timeout", type=float,
+                  default=None,
+                  help="Per-LLM-call deadline in seconds, covering attempts, "
+                       "retries and backoff sleeps, for the initial parse and "
+                       "every later stage. 0 disables.")
+  ap.add_argument("-llm-call-limit", dest="llm_call_limit", type=int,
+                  default=None,
+                  help="Total logical LLM calls allowed for one case, counting "
+                       "every role and local cache hits. 0 (default) is "
+                       "unlimited.")
+  ap.add_argument("-accept", metavar="POLICY", default=None,
+                  help="EXPERIMENTAL: proof-local acceptance checks on critic "
+                       "and graph answers (permissive|balanced|strict). Off "
+                       "unless named; permissive reproduces current behaviour.")
   ap.add_argument("-sequential", action="store_true",
                   help="Run the requested LLMs SEQUENTIALLY in-process (no "
                        "parallel Pool). Best for cache-served reruns where the "
@@ -676,10 +805,12 @@ def main():
                   help="Run Stage 2 sentence-by-sentence: one Stage-2 LLM call "
                        "per Stage-1 sentence package, outputs joined. Output "
                        "goes to a <set>_s2split dir unless -tag is given.")
-  ap.add_argument("-event", choices=["neodavidson", "davidson", "flat", "flatroles"],
+  ap.add_argument("-event",
+                  choices=["neodavidson", "davidson", "davidson2", "flat", "flatroles"],
                   default="neodavidson",
                   help="event-encoding base: neodavidson (default) | davidson "
-                       "(compact event(V,A,O,E)) | flat (is_rel2) | flatroles "
+                       "(compact event(V,A,O,E)) | davidson2 (the exact spine "
+                       "compression) | flat (is_rel2) | flatroles "
                        "(is_rel2 with eventprop-tagged object)")
   ap.add_argument("-abstract", action="store_true",
                   help="preset: -event flat + all abstraction buckets + simpleprops + localantonyms")
@@ -689,6 +820,22 @@ def main():
                   help="preset: as -abstract-roles + -prenorm (strongest abstraction)")
   ap.add_argument("-existfold", action="store_true",
                   help="(L2) fold exists Y.isa(C,Y)&has_part/have(X,Y) into has_property([$has_part/$have,C],X); named-witness bridge")
+  # The versioned proof shorteners are attempted by default on the unnamed
+  # canonical base.  These flags request or cancel them explicitly.
+  ap.add_argument("-davidson2", action="store_true",
+                  help="exact event-spine compression: fold only a reversible "
+                       "group, never invent a participant, decline on a flat base")
+  ap.add_argument("-existfold2", action="store_true",
+                  help="fold only the bare has-part pattern, only for a class "
+                       "with at least four occurrences, class-specific clauses")
+  ap.add_argument("-proofshort2", action="store_true",
+                  help="-davidson2 and -existfold2 together")
+  ap.add_argument("-nodavidson2", action="store_true",
+                  help="disable davidson2, restoring the canonical neo-Davidsonian spine")
+  ap.add_argument("-noexistfold2", action="store_true",
+                  help="disable existfold2")
+  ap.add_argument("-noproofshort2", action="store_true",
+                  help="disable both; reproduces the pre-2026-08-26 ordinary theory")
   ap.add_argument("-noprenorm", dest="noprenorm", action="store_true",
                   help="override: force prenorm OFF even under -abstract-max (prenorm ablation experiment)")
   # Additive abstraction primitives (compose with any -event base).
@@ -723,8 +870,23 @@ def main():
   ap.add_argument("-tag", dest="tag", default=None,
                   help="General output-dir suffix: results go to testresults/<set>_<tag>/. "
                        "Use to keep a variant (directanswer, ultracoarse, ...) separate.")
-  args, extra = ap.parse_known_args()
-  extra_opts = _solve_options(extra)
+  return ap
+
+
+def parse_args(argv=None):
+  """Parse `argv` (default sys.argv[1:]) into (args, extra solve.py options)."""
+  ap = make_parser()
+  args, extra = ap.parse_known_args(argv)
+  # `-event neodavidson` names the canonical base outright, which argparse cannot
+  # distinguish from the default.  Keep the raw words so the resolution can.
+  args._raw_argv = list(sys.argv[1:] if argv is None else argv)
+  return args, _solve_options(extra)
+
+
+def main():
+  global _pipeline_git
+  _pipeline_git = pipeline_git_state()
+  args, extra_opts = parse_args()
 
   llms = [s.strip() for s in args.llms.split(",") if s.strip()]
   if not llms:
@@ -773,9 +935,32 @@ def main():
     os.makedirs(os.path.join(outroot, llm), exist_ok=True)
 
   # Solver options — keep cache on per project rules.
+  run_opts = build_run_options(args, extra_opts)
+
+  # Per-case parallel: one worker per (case, llm).  Pool size = len(llms).
+  return _run_batch(args, llms, tests, testname, outroot, run_opts, matcher)
+
+
+def build_run_options(args, extra_opts):
+  """The solver options one parsed command line resolves to.
+
+  Every option the runner sets goes through here, so a test can ask what a
+  command line resolves to without running anything.
+  """
+  combined_on = bool(args.combined_instr)
+  directanswer_on = bool(args.directanswer)
   run_opts = {}
   if args.nogeminicache:
     run_opts["use_gemini_cache_flag"] = False
+  # `is not None`, not truthiness: an explicit `-llm-call-timeout 0` disables
+  # the deadline and must not fall back to the 240s default.
+  if getattr(args, "llm_call_timeout", None) is not None:
+    run_opts["llm_call_timeout"] = args.llm_call_timeout
+  if getattr(args, "llm_call_limit", None) is not None:
+    run_opts["llm_call_limit"] = args.llm_call_limit
+  if getattr(args, "accept", None):
+    # EXPERIMENTAL (Task 2B): proof-local acceptance checks, off unless named.
+    run_opts["accept_policy"] = args.accept
   if combined_on:
     # Only solver-known keys go into run_opts (set_global_options rejects unknowns).
     run_opts["combined_flag"] = True
@@ -791,8 +976,12 @@ def main():
     run_opts["s2split_flag"] = True
   if args.event != "neodavidson":
     run_opts["event_base"] = args.event
+    run_opts["event_base_explicit"] = True
+  elif "-event" in (getattr(args, "_raw_argv", None) or []):
+    run_opts["event_base_explicit"] = True   # -event neodavidson, named outright
   if args.abstract or args.abstract_roles or args.abstract_max:
     # Preset expansion into primitives (mirrors solve.py).
+    run_opts["abstract_preset_flag"] = True
     run_opts["event_base"] = "flatroles" if (args.abstract_roles or args.abstract_max) else "flat"
     run_opts["entitymerge_flag"] = True
     run_opts["guarddrop_flag"] = True
@@ -829,6 +1018,16 @@ def main():
     run_opts["prenorm_flag"] = False
   if args.existfold:
     run_opts["existfold_flag"] = True
+  if args.davidson2 or args.proofshort2:
+    run_opts["davidson2_flag"] = True
+  if args.existfold2 or args.proofshort2:
+    run_opts["existfold2_flag"] = True
+  if args.nodavidson2 or args.noproofshort2:
+    run_opts["nodavidson2_flag"] = True
+  if args.noexistfold2 or args.noproofshort2:
+    run_opts["noexistfold2_flag"] = True
+  if args.noproofshort2:
+    run_opts["noproofshort2_flag"] = True
   if args.entitymerge:
     run_opts["entitymerge_flag"] = True
   if args.typeenrich or args.typeenrich_gates:
@@ -858,13 +1057,30 @@ def main():
   if args.api_timeout and args.api_timeout > 0:
     run_opts["api_timeout"] = args.api_timeout
   # Flags the runner does not define go to solve.py's own parser, so every
-  # solve.py flag works here without being restated (-graphtrans, -critic,
-  # -nolitbridge, -stack-closed, ...).  An explicit flag wins over the
-  # runner's preset expansion.
+  # solve.py flag works here without being restated (-pipeline, -graphtrans,
+  # -critic, -nolitbridge, -stack-closed, ...).  An explicit flag wins over the
+  # runner's preset expansion.  `-pipeline` deliberately belongs here rather
+  # than in the runner's own argparse: forwarding keeps it in the same
+  # left-to-right resolution pass as -stack* and -abstract*, so both front
+  # doors agree on a line that names two sets.
   if extra_opts:
-    print("Extra solve.py options: %s" % extra_opts)
     run_opts.update(extra_opts)
+  # Both front doors derive the recorded configuration name the same way, from
+  # the final resolved stage vector (WP3).
+  import solve
+  run_opts.pop("_pipeline_named", None)
+  run_opts["pipeline_name"] = solve.finalize_pipeline_name(run_opts)
+  return run_opts
 
+
+def run_options_for(argv):
+  """The resolved solver options for a raw runner command line."""
+  args, extra_opts = parse_args(list(argv))
+  return build_run_options(args, extra_opts)
+
+
+def _run_batch(args, llms, tests, testname, outroot, run_opts, matcher):
+  """The batch itself, unchanged; split out so option resolution is testable."""
   # Per-case parallel: one worker per (case, llm).  Pool size = len(llms).
   ctx = get_context("fork")
   total_done = 0

@@ -34,6 +34,7 @@
 
 import sys
 import re
+import contextlib
 import json
 import signal
 import threading
@@ -173,6 +174,13 @@ def _english_to_answer_once(text, options=None, collect=None,
   Returns the answer string.  On any error returns a string starting with
   "Error:" rather than raising an exception or calling sys.exit().
   """
+  global _call_log_mark
+  # This attempt's calls start here; the downstream-error retry keeps the log
+  # growing.  Only the outermost attempt marks it: the critic's rerun re-enters
+  # this function, and marking there would drop the critic's own call out of
+  # the window the stage rows are computed from.
+  if not _in_critic_rerun:
+    _call_log_mark = len(llmcall.call_log)
   global _depth
   _depth += 1
   try:
@@ -405,7 +413,8 @@ def _english_to_answer_body(text, options=None, collect=None,
   # because a later stage answered.
   stage_rows = []
   _announced.clear()
-  _note_stage(stage_rows, "front_door", True, answer)
+  _note_stage(stage_rows, "front_door", True, answer, theory=logic,
+              provider=llm, version=llm_version)
 
   # --- the two abstention fallbacks, before the critic and the abstraction
   # routes.  Each converts the SAME Stage-1/Stage-2 parse a second time and
@@ -415,36 +424,38 @@ def _english_to_answer_body(text, options=None, collect=None,
   _fb_records = {}
   for _fb_name, _fb_key in (("fallback_norm", "fallback_norm_flag"),
                             ("fallback_hyp", "fallback_hyp_flag")):
-    if not globals.options.get(_fb_key):
-      _note_stage(stage_rows, _fb_name, False, why="off")
-      continue
-    if not _unresolved(answer):
-      _note_stage(stage_rows, _fb_name, False,
-                  why="not needed: the question was already answered")
-      continue
-    _announce_stage(_fb_name)
-    try:
-      if _fb_name == "fallback_norm":
-        import fallback_norm as _fb_mod
+    def _fb_run(_n=_fb_name):
+      if _n == "fallback_norm":
+        import fallback_norm as _m
       else:
-        import fallback_hyp as _fb_mod
-      got = _fb_mod.run(s1_json, s2_json, text, logic, options)
-      _fb_records[_fb_name.split("_", 1)[1]] = got["record"]
-      _note_stage(stage_rows, _fb_name, True, got.get("answer"))
-      if got["answered"]:
-        answer = got["answer"]
-        logic = got["logic"]
-        proof_result = got["proof"]
-        answered_by = _fb_name
-        answering = {"proof": got["proof"],
-                     "gk_command": (collect or {}).get("gk_command")}
-        if collect is not None and not globals.options.get("nofinaltrace"):
-          collect["final_clauses"] = got["logic"]
-    except KeyboardInterrupt:
-      raise
-    except Exception as _fb_e:                                  # noqa: BLE001
-      _fb_records[_fb_name.split("_", 1)[1] + "_error"] = (
-          "%s: %s" % (type(_fb_e).__name__, str(_fb_e)[:200]))
+        import fallback_hyp as _m
+      got = _m.run(s1_json, s2_json, text, logic, options)
+      _fb_records[_n.split("_", 1)[1]] = got["record"]
+      # a fallback reports `answered` itself; the driver reads `answer`
+      return got if got.get("answered") else {"answer": None}
+
+    def _fb_adopt(got, _n=_fb_name):
+      nonlocal_state["logic"] = got["logic"]
+      nonlocal_state["proof_result"] = got["proof"]
+      nonlocal_state["answering"] = {
+        "proof": got["proof"],
+        "gk_command": (collect or {}).get("gk_command")}
+      if collect is not None and not globals.options.get("nofinaltrace"):
+        collect["final_clauses"] = got["logic"]
+
+    def _fb_err(msg, _n=_fb_name):
+      _fb_records[_n.split("_", 1)[1] + "_error"] = msg
+
+    nonlocal_state = {"logic": logic, "proof_result": proof_result,
+                      "answering": answering}
+    answer, _by = run_stage(_fb_name, globals.options.get(_fb_key), answer,
+                            stage_rows, _fb_run, adopt=_fb_adopt,
+                            announce=_announce_stage, on_error=_fb_err)
+    if _by:
+      answered_by = _by
+      logic = nonlocal_state["logic"]
+      proof_result = nonlocal_state["proof_result"]
+      answering = nonlocal_state["answering"]
   if _fb_records and collect is not None:
     _fb_records["answered_by"] = (answered_by if answered_by
                                   in ("fallback_norm", "fallback_hyp")
@@ -452,30 +463,49 @@ def _english_to_answer_body(text, options=None, collect=None,
     collect["fallback"] = _fb_records
 
   global _critiqued
-  if not _should_critique(answer):
-    _note_stage(stage_rows, "critic", False,
-                why=("off" if not globals.options.get("critic_flag")
-                     else "not needed: the question was already answered"))
-  if _should_critique(answer):
+  _critic_state = {}
+
+  def _critic_run():
+    global _critiqued
     _critiqued = True
-    _announce_stage("critic")
-    with llmcall.tagged("critic"):
-      got = _run_critic(text, s1_json, s2_json, logic, answer, llm,
-                        llm_version, max_tokens, options, collect=collect,
-                        loud=debug or show_details or show_logic
-                        or globals.options.get("prover_explain_flag"))
-    _note_stage(stage_rows, "critic", True,
-                (got or {}).get("answer"))
-    if got and got.get("answer") is not None:
-      answer = got["answer"]
-      answered_by = "critic"
-      rerun_answered_by = got.get("rerun_answered_by")
-      answering = {"proof": got.get("proof"),
-                   "gk_command": got.get("gk_command")}
-      if got.get("logic") is not None:
-        logic = got["logic"]
+    return _run_critic(text, s1_json, s2_json, logic, answer, llm,
+                       llm_version, max_tokens, options, collect=collect,
+                       loud=debug or show_details or show_logic
+                       or globals.options.get("prover_explain_flag"))
+
+  def _critic_adopt(got):
+    _critic_state["rerun_answered_by"] = got.get("rerun_answered_by")
+    _critic_state["answering"] = {"proof": got.get("proof"),
+                                  "gk_command": got.get("gk_command")}
+    if got.get("logic") is not None:
+      _critic_state["logic"] = got["logic"]
       if collect is not None and not globals.options.get("nofinaltrace"):
-        collect["final_clauses"] = logic
+        collect["final_clauses"] = got["logic"]
+
+  # The experimental acceptance check refuses an answer by making the stage
+  # look unresolved, so the ordinary rules carry the run on to the next stage.
+  def _critic_run_checked():
+    got = _critic_run()
+    if got and got.get("answer") is not None and not _acceptance(
+        {"answered_by": "critic", "stage1": s1_json, "stage2": s2_json,
+         "proof": got.get("proof"),
+         "critic": ((collect or {}).get("critic")
+                    or got.get("critic_record") or {})}, collect):
+      got = dict(got)
+      got["answer"] = None
+    return got
+
+  answer, _by = run_stage(
+    "critic", _should_critique_enabled(), answer, stage_rows,
+    _critic_run_checked, adopt=_critic_adopt, announce=_announce_stage,
+    tag="critic",
+    disabled_why=("off" if not globals.options.get("critic_flag")
+                  else "not needed: the critique already ran in this run"))
+  if _by:
+    answered_by = "critic"
+    rerun_answered_by = _critic_state.get("rerun_answered_by")
+    answering = _critic_state.get("answering", answering)
+    logic = _critic_state.get("logic", logic)
 
   # --- the abstraction routes, in the order `abstraction_order` gives ---
   # Each route runs only when the question is still unresolved, and only when
@@ -489,42 +519,67 @@ def _english_to_answer_body(text, options=None, collect=None,
             "litbridge": _run_litbridge,
             "graphbridge": _run_graphbridge}
   state = {"graphtrans": None}          # layer 1's record, reused by layer 2
-  for name in _abstraction_order():
-    if not _route_enabled(name):
-      _note_stage(stage_rows, name, False, why="off")
-      continue
-    if not _unresolved(answer):
-      _note_stage(stage_rows, name, False,
-                  why="not needed: the question was already answered")
-      continue
-    with llmcall.tagged(name):
-      got = routes[name](text, s1_json, s2_json, logic, answer, llm,
-                         llm_version, max_tokens, options, loud=loud,
-                         verbose=debug or show_details, collect=collect,
-                         state=state)
-    _note_stage(stage_rows, name, True, (got or {}).get("answer"))
-    if got is None:
-      continue
-    if got.get("answer") is not None:
-      answer = got["answer"]
+  order = _abstraction_order()
+  for name in order:
+    _route_state = {}
+
+    def _route_run(_n=name):
+      got = routes[_n](text, s1_json, s2_json, logic, answer, llm,
+                       llm_version, max_tokens, options, loud=loud,
+                       verbose=debug or show_details, collect=collect,
+                       state=state)
+      if got and got.get("answer") is not None and _n == "graphtrans" \
+         and not _acceptance(
+           {"answered_by": _n, "stage1": s1_json, "stage2": s2_json,
+            "graphtrans": ((collect or {}).get(_n)
+                           or _graphtrans_record(got))}, collect):
+        got = dict(got)
+        got["answer"] = None
+      return got
+
+    def _route_adopt(got):
+      _route_state["answering"] = {"proof": got.get("proof"),
+                                   "gk_command": got.get("gk_command")}
       if got.get("logic") is not None:
-        logic = got["logic"]
+        _route_state["logic"] = got["logic"]
+        if collect is not None and not globals.options.get("nofinaltrace"):
+          collect["final_clauses"] = got["logic"]
+
+    answer, _by = run_stage(name, _route_enabled(name), answer, stage_rows,
+                            _route_run, adopt=_route_adopt,
+                            announce=_announce_stage, tag=name)
+    if _by:
       answered_by = name
-      answering = {"proof": got.get("proof"),
-                   "gk_command": got.get("gk_command")}
-      if collect is not None and not globals.options.get("nofinaltrace"):
-        collect["final_clauses"] = logic
-  for _row in stage_rows:
-    _row["answered"] = (_row["stage"] == answered_by and _row["ran"])
+      answering = _route_state.get("answering", answering)
+      logic = _route_state.get("logic", logic)
+  stage_rows = _complete_stage_rows(stage_rows, answered_by, collect)
   if collect is not None:
     collect["abstraction_order"] = _abstraction_order()
     collect["stages_enabled"] = _stages_enabled()
     collect["stages"] = stage_rows
+    collect["pipeline_name"] = globals.options.get("pipeline_name")
+    collect["run_outcome"] = _run_outcome(answer, stage_rows, answered_by)
     collect["answered_by"] = answered_by
     # the first line only: the explanation, when there is one, is `nl_proof`
     collect["front_door_answer"] = str(
         front_door_answer or "").split("\n")[0] or None
     collect["llm_call_counts"] = _call_counts()
+    # Two figures, because they answer two questions.  `llm_accounting` is the
+    # whole case, retries included: that is the true cost and what the
+    # `-llm-call-limit` counter bounds.  `llm_accounting_stages` is the final
+    # attempt only, which is what the stage rows describe, so the rows sum to
+    # it exactly.  They differ only when the downstream-error retry ran the
+    # pipeline more than once; `downstream_retries` says when.
+    collect["llm_accounting"] = llmcall.call_counts()
+    collect["llm_accounting_stages"] = {
+      "attempted": sum(r["llm_calls"] for r in stage_rows),
+      "allowed": sum(r.get("llm_allowed") or 0 for r in stage_rows),
+      "cached": sum(r.get("llm_cached") or 0 for r in stage_rows),
+      "live": sum(r.get("llm_live") or 0 for r in stage_rows),
+      "refused": sum(r.get("llm_refused") or 0 for r in stage_rows),
+      "provider_requests": sum(r.get("llm_provider_requests") or 0
+                               for r in stage_rows),
+    }
     collect["llm_calls_total"] = sum(
         v["calls"] for v in collect["llm_call_counts"].values())
   if _depth == 1:
@@ -930,6 +985,33 @@ def _run_graphtrans(text, s1_json, s2_json, logic, answer, llm, llm_version,
           "proof": got.get("gk_result"), "gk_command": got.get("gk_command")}
 
 
+def _acceptance(view, collect):
+  """EXPERIMENTAL (Task 2B).  Judge a later stage's answer with the proof-local
+  acceptance checks and record the verdict.  Returns True when the answer may
+  be adopted.  With the option off, every answer is adopted, as before."""
+  policy = globals.options.get("accept_policy")
+  if not policy:
+    return True
+  import retrans_accept as _ra
+  if view.get("answered_by") not in _ra.JUDGED_STAGES:
+    return True                       # only the two stages Task 2B measured
+  try:
+    import retrans_accept
+    rec = retrans_accept.check(view, policy)
+  except Exception as exc:                                       # pragma: no cover
+    rec = {"decision": "CAUTION", "reasons": ["record_incomplete"],
+           "answering_stage": view.get("answered_by"), "used_units": [],
+           "changed_units": [], "policy": policy,
+           "evidence": {"error": str(exc)[:200]}}
+  if collect is not None:
+    collect.setdefault("acceptance", []).append(rec)
+  ok = rec["decision"] == "ACCEPT"
+  if not ok and _loud_enough():
+    print("--- acceptance (%s): %s %s ---"
+          % (policy, rec["decision"], ", ".join(rec["reasons"]) or "-"))
+  return ok
+
+
 def _graphtrans_record(got):
   """What a runtests JSON keeps.
 
@@ -987,16 +1069,236 @@ def _print_stages(rows):
           % (row["stage"], row.get("answer") or "no answer", mark))
 
 
-def _note_stage(rows, name, ran, answer=None, why=None):
-  """Record what one stage did, for the stages block and the case record."""
-  row = {"stage": name, "ran": bool(ran), "answered": False}
+def _theory_sha(logic):
+  """An immutable reference to the theory a stage submitted."""
+  if not logic:
+    return None
+  try:
+    import hashlib
+    return hashlib.sha256(
+      json.dumps(logic, sort_keys=True, default=str).encode("utf-8")
+    ).hexdigest()[:16]
+  except Exception:                                              # pragma: no cover
+    return None
+
+
+def _note_stage(rows, name, ran, answer=None, why=None, enabled=None,
+                error=None, theory=None, provider=None, version=None):
+  """Record what one stage did, for the stages block and the case record.
+
+  One row per stage, whether or not it ran, so a results folder says what the
+  run tried without its command line.  `answered` is set later, once the run
+  knows which stage produced the final answer.
+  """
+  row = {"stage": name, "ran": bool(ran), "answered": False,
+         "enabled": bool(ran) if enabled is None else bool(enabled),
+         "answer": None, "error": None, "why": None,
+         "theory_sha256": _theory_sha(theory),
+         "gk_calls": 0, "gk_seconds": 0.0,
+         "llm_calls": 0, "llm_seconds": 0.0, "llm_allowed": 0,
+         "llm_cached": 0, "llm_live": 0, "llm_refused": 0,
+         "llm_provider_requests": 0,
+         "provider": provider, "version": version, "acceptance": None}
   head = str(answer or "").split("\n")[0].strip()
   if ran:
     row["answer"] = head or None
-  elif why:
+    if error is None and _is_error(answer):
+      error = head
+  if error:
+    row["error"] = str(error).split("\n")[0][:200]
+  if not ran and why:
     row["why"] = why
   rows.append(row)
   return row
+
+
+# Where the current attempt's calls begin in `llmcall.call_log`.  Set at the
+# top of every attempt by `_english_to_answer_once`.
+_call_log_mark = 0
+
+
+def run_stage(name, enabled, answer, rows, run, adopt=None, announce=None,
+             on_error=None, tag=None, disabled_why="off"):
+  """Run one retry stage under the pipeline's rules, and say what came of it.
+
+  This is the whole control flow, in one place, so the pipeline and the tests
+  exercise the same implementation rather than two loops that can drift:
+
+    * a disabled stage does not run and says so;
+    * an enabled stage runs only while the question is unresolved;
+    * an exception becomes a recorded error and the run continues;
+    * `None`, empty output, `Unknown`, `no answer` and every `Error:` value
+      leave the question unresolved;
+    * an earlier definite answer is never replaced.
+
+  Returns (answer, answered_by_or_None).  `adopt(got)` runs only when the
+  stage's answer is definite and is where a stage does its own bookkeeping.
+  """
+  if not enabled:
+    _note_stage(rows, name, False, why=disabled_why)
+    return answer, None
+  if not _unresolved(answer):
+    _note_stage(rows, name, False,
+                why="not needed: the question was already answered")
+    return answer, None
+  if announce:
+    announce(name)
+  ctx = contextlib.ExitStack()
+  with ctx:
+    if tag is not None:
+      ctx.enter_context(llmcall.tagged(tag))
+    ctx.enter_context(prover.stage(name))
+    got, err = _guarded(name, rows, run)
+  if err and on_error:
+    on_error(err)
+  _note_stage(rows, name, True, (got or {}).get("answer"), error=err,
+              theory=(got or {}).get("logic"),
+              provider=llm, version=llm_version)
+  if err or not got:
+    return answer, None
+  got_answer = got.get("answer")
+  if got_answer is None or _unresolved(got_answer):
+    return answer, None
+  if adopt:
+    adopt(got)
+  return got_answer, name
+
+
+def _complete_stage_rows(rows, answered_by, collect=None):
+  """One ordered row per stage in `PIPELINE_ORDER`, whether or not it ran.
+
+  A stage that never reached its call site still gets a row saying it was off
+  or not needed, so a case record can be read without the command line.  The
+  per-stage gk and LLM accounting is attached here, from the tagged call log.
+  """
+  seen = {}
+  for r in rows:
+    seen.setdefault(r["stage"], r)
+  out = []
+  for name in PIPELINE_ORDER:
+    row = seen.get(name)
+    if row is None:
+      on = (name == "front_door") or bool(
+        globals.options.get(name + "_flag"))
+      row = {"stage": name, "ran": False, "answered": False, "enabled": on,
+             "answer": None, "error": None,
+             "why": ("off" if not on else
+                     "not needed: an earlier stage answered"),
+             "theory_sha256": None, "gk_calls": 0, "gk_seconds": 0.0,
+             "llm_calls": 0, "llm_seconds": 0.0, "llm_allowed": 0,
+             "llm_cached": 0, "llm_live": 0, "llm_refused": 0,
+             "llm_provider_requests": 0, "provider": None,
+             "version": None, "acceptance": None}
+    # `enabled` comes from the resolved options, not from whether the stage
+    # happened to run: a stage skipped because an earlier one answered is still
+    # an enabled stage.
+    row["enabled"] = (True if name == "front_door"
+                      else bool(globals.options.get(name + "_flag")))
+    if not row["ran"] and not row.get("why"):
+      row["why"] = ("off" if not row["enabled"]
+                    else "not needed: an earlier stage answered")
+    if not row["ran"] and row["enabled"] and row.get("why") == "off":
+      # the stage is on; something other than the flag stopped it
+      row["why"] = "not needed: the stage was already used in this run"
+    row["answered"] = bool(row["ran"] and name == answered_by)
+    out.append(row)
+  _attach_call_accounting(out, collect)
+  return out
+
+
+def _attach_call_accounting(rows, collect):
+  """Per-stage LLM and gk counts, provider and version, from the call log.
+
+  Only the calls of the attempt these rows describe are counted: the
+  downstream-error retry runs the whole pipeline again, and the call log keeps
+  growing across attempts.
+  """
+  by = {r["stage"]: r for r in rows}
+  try:
+    log = list(llmcall.call_log)[_call_log_mark:]
+  except Exception:                                              # pragma: no cover
+    log = []
+  for entry in log:
+    # `tagged` labels each call with the stage that made it; an untagged call
+    # is the front door's own parse.
+    stage = entry.get("tag") or "front_door"
+    if stage in ("untagged", "stage1", "stage2", "parse", "prenorm"):
+      stage = "front_door"
+    row = by.get(stage)
+    if row is None:
+      continue
+    row["llm_seconds"] = round(
+      row["llm_seconds"] + float(entry.get("seconds") or 0), 3)
+    source = entry.get("source")
+    # Every provider attempt is one log entry; only the first of a logical call
+    # carries `logical`, so an empty-response retry adds a provider request and
+    # not a second logical call.
+    if source == "api":
+      row["llm_provider_requests"] = row.get("llm_provider_requests", 0) + 1
+    if not entry.get("logical"):
+      continue
+    row["llm_calls"] += 1              # attempted: allowed + refused
+    if source == "cache":
+      row["llm_cached"] = row.get("llm_cached", 0) + 1
+      row["llm_allowed"] = row.get("llm_allowed", 0) + 1
+    elif source == "refused":
+      # refused before the cache lookup and before any dispatch: never live
+      row["llm_refused"] = row.get("llm_refused", 0) + 1
+    else:
+      row["llm_live"] = row.get("llm_live", 0) + 1
+      row["llm_allowed"] = row.get("llm_allowed", 0) + 1
+    for a, b in (("input", "input_tokens"), ("output", "output_tokens")):
+      if entry.get(a) is not None:
+        row[b] = row.get(b, 0) + int(entry[a] or 0)
+    if entry.get("reason"):
+      row["error"] = row.get("error") or ("Error: %s" % entry["reason"])
+    if entry.get("llm"):
+      row["provider"] = entry["llm"]
+    if entry.get("version"):
+      row["version"] = entry["version"]
+  for g in (collect or {}).get("gk_calls") or []:
+    stage = g.get("stage") or "front_door"
+    row = by.get(stage)
+    if row is None:
+      continue
+    row["gk_calls"] += 1
+    row["gk_seconds"] = round(row["gk_seconds"] + float(g.get("seconds") or 0), 3)
+  for rec in (collect or {}).get("acceptance") or []:
+    row = by.get(rec.get("answering_stage"))
+    if row is not None:
+      row["acceptance"] = {k: rec[k] for k in ("decision", "reasons", "policy")
+                           if k in rec}
+  return rows
+
+
+def _run_outcome(answer, rows, answered_by):
+  """Which of the four outcomes this run reached.
+
+  `Unknown` after every enabled stage ran is not the same as `Unknown` because
+  a later stage failed, and neither is a translation failure before a valid gk
+  question existed.
+  """
+  if not _unresolved(answer):
+    return "answered"
+  ran = [r for r in rows if r["ran"]]
+  front = next((r for r in rows if r["stage"] == "front_door"), None)
+  if front is not None and front.get("error"):
+    return "translation_failure"
+  if any(r.get("error") for r in ran):
+    return "unknown_after_stage_failure"
+  return "unknown_all_stages_ran"
+
+
+def _guarded(name, rows, fn, *a, **kw):
+  """Run one stage.  An exception becomes a recorded error on that stage's row
+  and the run continues with the next enabled stage; it never aborts the case
+  and never becomes an answer."""
+  try:
+    return fn(*a, **kw), None
+  except KeyboardInterrupt:
+    raise
+  except Exception as exc:
+    return None, "Error: %s: %s" % (type(exc).__name__, str(exc)[:160])
 
 
 def _print_graph_theory(got, s1_json=None, llm=None):
@@ -1312,16 +1614,33 @@ def _as_json(proof_result):
     return proof_result
 
 
-def _unresolved(answer):
-  """The question is still open, so invented rules are worth a second gk run.
+# Everything a stage can hand back that is not a definite answer.  An error is
+# never an answer and never a correct abstention: it means the stage failed.
+_NON_ANSWERS = ("unknown", "no answer", "none", "n/a")
 
-  `Unknown.`, nothing at all, or an `Error:` string.  The error case follows
-  litbridge_procedure.FRONT_DOOR_POLICY: an error is not a definite answer.
+
+def _unresolved(answer):
+  """The question is still open, so a later stage is worth running.
+
+  `None`, empty output, `Unknown.`, `no answer`, and every `Error:` value.  The
+  error case follows litbridge_procedure.FRONT_DOOR_POLICY: an error is not a
+  definite answer.
   """
   if answer is None:
     return True
   head = str(answer).split("\n", 1)[0].strip()
-  return (not head) or head == "Unknown." or head.lower().startswith("error")
+  if not head:
+    return True
+  low = head.lower().rstrip(".").strip()
+  return (low in _NON_ANSWERS or head.lower().startswith("error")
+          or low.startswith("unknown"))
+
+
+def _is_error(answer):
+  """The value is a stage failure rather than an abstention."""
+  if answer is None:
+    return False
+  return str(answer).split("\n", 1)[0].strip().lower().startswith("error")
 
 
 def _print_litbridge(records, verbose=False, options=None):
@@ -1675,19 +1994,23 @@ _critiqued = False
 _in_critic_rerun = False
 
 
-def _should_critique(answer):
-  """One critique per case run, and never inside the rerun it asked for.
+def _should_critique_enabled():
+  """Whether the critic stage may run at all.
 
-  `_critiqued` does both: it is set before the critique runs, so the rerun
-  cannot critique itself, and it survives the downstream-error retry loop in
-  `english_to_answer`, which used to critique the same case once per attempt.
-  It is a module flag on purpose — the earlier guard lived in
+  `run_stage` applies the `unresolved` rule itself, so this must not repeat it,
+  but every other part of the old guard still belongs here:
+
+  `_critiqued` does double duty.  It is set before the critique runs, so the
+  rerun cannot critique itself, and it survives the downstream-error retry loop
+  in `english_to_answer`, which used to critique the same case once per
+  attempt.  It is a module flag on purpose -- the earlier guard lived in
   `globals.options`, where the routes' own option resolvers deep-copied it and
   rejected it as an unknown key.
   """
-  return bool(globals.options.get("critic_flag")
-              and _unresolved(answer)
-              and not _critiqued)
+  if _in_critic_rerun or _critiqued:
+    return False
+  return bool(globals.options.get("critic_flag"))
+
 
 
 def english_to_answer(text, options=None, collect=None):
@@ -1701,8 +2024,18 @@ def english_to_answer(text, options=None, collect=None):
   _critiqued = False
   _last_summary = None
   _suppress_summary = True
+  # This is the case entry: the critic's rerun re-enters
+  # `_english_to_answer_once`, not this function, so resetting here cannot
+  # discard the outer stage or the running call count.
+  prover.reset_stages()
+  llmcall.reset_call_limit()
   try:
-    return _english_to_answer(text, options, collect)
+
+    # Every call this case makes -- parse, critic, critic rerun, graph, bridges
+    # -- is pinned to the run's own provider and version.  A call that names
+    # another model raises instead of quietly answering.
+    with llmcall.locked_model(llm, llm_version):
+      return _english_to_answer(text, options, collect)
   finally:
     _suppress_summary = False
     if _last_summary is not None:
@@ -1715,8 +2048,13 @@ def _english_to_answer(text, options=None, collect=None):
   answer = None
   for attempt in range(_MAX_DOWNSTREAM_RETRIES + 1):
     inner = {} if collect is not None else None
-    answer = _english_to_answer_once(text, options, inner,
-                                     stage2_corrective=correction)
+    # The prover records into this attempt's own collector.  A stage that runs
+    # gk without one to hand -- the graph route calls the prover directly --
+    # is recorded here too, and `prover.stage` says which stage owns it.
+    with (prover.collector(inner) if inner is not None
+          else contextlib.nullcontext()):
+      answer = _english_to_answer_once(text, options, inner,
+                                       stage2_corrective=correction)
     if collect is not None:
       collect.clear()
       collect.update(inner)
@@ -1822,16 +2160,92 @@ def _parse_te_gates(spec):
   return gates
 
 
-# The six stage keys, in the order the stages run.  A flag set assigns every
-# one of them, so a set fully replaces whatever an earlier set left behind.
-STAGE_KEYS = ("fallback_norm_flag", "fallback_hyp_flag", "critic_flag",
-              "graphtrans_flag", "litbridge_flag", "graphbridge_flag")
+# ---------------------------------------------------------------------------
+# The one declaration of what stages exist and in what order they run.
+# Execution, the summary output and the tests all read these, so a stage
+# cannot be added to one and forgotten in another.
+# ---------------------------------------------------------------------------
+
+# Every stage, in execution order, and the named configurations: one source,
+# `globals`, so the two front doors and the option defaults cannot drift.  The
+# names are re-exported here because the whole pipeline reads them from
+# `solve`.
+PIPELINE_ORDER = globals.PIPELINE_ORDER
+STAGE_KEYS = tuple(s + "_flag" for s in PIPELINE_ORDER[1:])
+PIPELINES = globals.PIPELINES
+STACK_OPEN_VECTOR = globals.STACK_OPEN_VECTOR
+
+# The ordinary no-option configuration, adopted 2026-08-27.  `globals.options`
+# takes its six stage defaults from `PIPELINES[DEFAULT_PIPELINE]`, so naming it
+# explicitly and naming nothing at all resolve to the same stage vector.
+DEFAULT_PIPELINE = globals.DEFAULT_PIPELINE
+
+# The cancels, so a line that only cancels still counts as naming a
+# configuration explicitly.
+CANCEL_KEYS = ("nocritic_flag", "nographtrans_flag", "nographbridge_flag",
+               "nolitbridge_flag", "nofallback_norm_flag",
+               "nofallback_hyp_flag", "nofallback_flag")
+
+
+def stage_vector(opts):
+  """The six stage flags a resolved option dict holds, as a plain dict."""
+  return {s: bool(opts.get(s + "_flag", globals.options.get(s + "_flag")))
+          for s in PIPELINE_ORDER[1:]}
+
+
+def names_a_configuration(opts, extra=False):
+  """True when the command line said anything about the retry stages."""
+  return bool(extra or opts.get("_pipeline_named")
+              or (set(opts) & set(STAGE_KEYS))
+              or (set(opts) & set(CANCEL_KEYS)))
+
+
+def finalize_pipeline_name(opts, named=False):
+  """The configuration name to record, derived from the FINAL stage vector.
+
+  `-pipeline` used to stamp the name where it was parsed, so a later `-stack*`,
+  an explicit stage switch or a cancel left it stale.  The name is now read
+  back from what the run actually resolved to.
+
+  A command line that says nothing about the retry stages still gets a name:
+  since the adoption it is the default configuration's own name, so an
+  ordinary run records `balanced` rather than nothing.
+  """
+  vec = stage_vector(opts)
+  for name, want in PIPELINES.items():
+    if vec == want:
+      return name
+  if vec == STACK_OPEN_VECTOR:
+    return "stack-open"
+  return "custom"
+
+
+def apply_pipeline(opts, name):
+  """Assign all six stage keys from a named configuration.
+
+  Shared by `solve.py` and `runtests.py` so the two front doors cannot grow
+  different meanings for the same word.  Round 1 of the resolution order.
+  """
+  key = (name or "").strip().lower()
+  if key not in PIPELINES:
+    raise ValueError(
+      "unknown -pipeline value %r; expected one of %s"
+      % (name, ", ".join(sorted(PIPELINES))))
+  for stage, on in PIPELINES[key].items():
+    opts[stage + "_flag"] = bool(on)
+  opts["_pipeline_named"] = True
+  return opts
 
 
 def _set_stages(opts, litbridge, graphbridge):
   """Assign all six stage keys.  The fallbacks, the critic and the graph
   translation are on in every set; the two bridges are what the sets differ
-  in."""
+  in.
+
+  `-stack-closed` is `-pipeline balanced` and `-stack` is
+  `-pipeline high-recall`; `-stack-open` keeps its documented meaning, which
+  includes the literal bridge and so matches no named configuration.
+  """
   opts["fallback_norm_flag"] = True
   opts["fallback_hyp_flag"] = True
   opts["critic_flag"] = True
@@ -1942,18 +2356,38 @@ def _parse_cmd_line():
     # --- Event-encoding base: one mutually-exclusive selector. ---
     elif el in ["-event", "--event"]:
       if elpos + 1 >= len(params):
-        print("Error: -event requires a mode (neodavidson|davidson|flat|flatroles)")
+        print("Error: -event requires a mode "
+              "(neodavidson|davidson|davidson2|flat|flatroles)")
         sys.exit(0)
       mode = params[elpos + 1]
-      if mode not in ("neodavidson", "davidson", "flat", "flatroles"):
+      if mode not in ("neodavidson", "davidson", "davidson2", "flat", "flatroles"):
         print("Error: unknown -event mode:", mode,
-              "(expected neodavidson|davidson|flat|flatroles)")
+              "(expected neodavidson|davidson|davidson2|flat|flatroles)")
         sys.exit(0)
       opts["event_base"] = mode
+      # Naming a base asks for that base's own historical theory, so the v2
+      # defaults stand aside (lc_encoding.EncodingConfig).
+      opts["event_base_explicit"] = True
       skippos = 1
     # --- Additive abstraction primitives (compose with any base). ---
     elif el in ["-existfold", "--existfold"]:
       opts["existfold_flag"] = True
+    # --- The versioned proof shorteners (experimental, off by default). ---
+    elif el in ["-davidson2", "--davidson2"]:
+      opts["davidson2_flag"] = True
+    elif el in ["-existfold2", "--existfold2"]:
+      opts["existfold2_flag"] = True
+    elif el in ["-proofshort2", "--proofshort2"]:
+      opts["davidson2_flag"] = True
+      opts["existfold2_flag"] = True
+    # --- Cancellations.  Each wins from any position; -noproofshort2 is the
+    # documented command for reproducing the pre-2026-08-26 ordinary theory. ---
+    elif el in ["-nodavidson2", "--nodavidson2"]:
+      opts["nodavidson2_flag"] = True
+    elif el in ["-noexistfold2", "--noexistfold2"]:
+      opts["noexistfold2_flag"] = True
+    elif el in ["-noproofshort2", "--noproofshort2"]:
+      opts["noproofshort2_flag"] = True
     elif el in ["-entitymerge", "--entitymerge"]:
       opts["entitymerge_flag"] = True
     elif el in ["-guarddrop", "--guarddrop"]:
@@ -1979,6 +2413,18 @@ def _parse_cmd_line():
       opts["summary_flag"] = True
     elif el in ["-summary-json", "--summary-json"]:
       opts["summary_json_flag"] = True
+    elif el.startswith(("-accept=", "--accept=")):
+      # EXPERIMENTAL (Task 2B): proof-local acceptance checks on the critic and
+      # graph retranslations.  Off unless named.  `permissive` reproduces the
+      # behaviour without the option.
+      opts["accept_policy"] = el.split("=", 1)[1].strip()
+    elif el in ["-accept", "--accept"]:
+      # `-accept POLICY`, like `-llm NAME`: the value is the next argument.
+      if elpos + 1 >= len(params):
+        print("-accept requires a policy: permissive, balanced, or strict")
+        sys.exit(0)
+      opts["accept_policy"] = params[elpos + 1]
+      skippos = 1
     elif el in ["-critic", "--critic"]:
       explicit_on.add("critic_flag")
     elif el in ["-nocritic", "--nocritic"]:
@@ -1993,15 +2439,45 @@ def _parse_cmd_line():
       explicit_on.add("graphtrans_flag")
     elif el in ["-nographbridge", "--nographbridge"]:
       opts["nographbridge_flag"] = True
+    elif el in ["-llm-call-limit", "--llm-call-limit"]:
+      if elpos + 1 >= len(params):
+        print("-llm-call-limit requires a number of calls (0 = unlimited)")
+        sys.exit(0)
+      opts["llm_call_limit"] = int(params[elpos + 1])
+      skippos = 1
+    elif el in ["-llm-call-timeout", "--llm-call-timeout"]:
+      if elpos + 1 >= len(params):
+        print("-llm-call-timeout requires a number of seconds")
+        sys.exit(0)
+      opts["llm_call_timeout"] = float(params[elpos + 1])
+      skippos = 1
+    elif el in ["-pipeline", "--pipeline"]:
+      if elpos + 1 >= len(params):
+        print("-pipeline requires a name: %s" % ", ".join(sorted(PIPELINES)))
+        sys.exit(0)
+      try:
+        apply_pipeline(opts, params[elpos + 1])
+      except ValueError as exc:
+        print("Error: %s" % exc)
+        sys.exit(0)
+      skippos = 1
+    elif el.startswith(("-pipeline=", "--pipeline=")):
+      try:
+        apply_pipeline(opts, el.split("=", 1)[1])
+      except ValueError as exc:
+        print("Error: %s" % exc)
+        sys.exit(0)
     elif el in ["-stack", "--stack", "-stack-closed", "--stack-closed",
                 "-stack-open", "--stack-open"]:
       # A flag set assigns all six stage keys, so it fully replaces whatever
       # an earlier set or preset put there.  Round 1 of the resolution order.
       _set_stages(opts, litbridge=("open" in el),
                   graphbridge=("closed" not in el))
+      opts["_pipeline_named"] = True
     elif el in ["-abstract", "--abstract", "-abstract-roles", "--abstract-roles",
                 "-abstract-max", "--abstract-max"]:
       opts["event_base"] = "flatroles" if ("roles" in el or "max" in el) else "flat"
+      opts["abstract_preset_flag"] = True   # reproduce this preset's own theory
       opts["entitymerge_flag"] = True
       opts["guarddrop_flag"] = True
       opts["bridges_flag"] = True
@@ -2018,6 +2494,7 @@ def _parse_cmd_line():
         opts["negretry_flag"] = True
         # the converter preset plus the open-world stack
         _set_stages(opts, litbridge=True, graphbridge=True)
+
     elif el in ["-propclass", "--propclass"]:
       opts["propclass_flag"] = True
     elif el in ["-fallback_norm", "--fallback_norm"]:
@@ -2184,6 +2661,11 @@ def _parse_cmd_line():
   if opts.get("nofallback_hyp_flag"):
     opts["fallback_hyp_flag"] = False
 
+  # Round 4: the recorded name is read back from the final vector, so it can
+  # never disagree with the stages the run will actually use.
+  opts.pop("_pipeline_named", None)
+  opts["pipeline_name"] = finalize_pipeline_name(opts)
+
   return (text, opts)
 
 helptext = """call solve.py with a natural language text like
@@ -2242,6 +2724,7 @@ logic conversion / representation (transform the Stage-2 logic before the prover
  event-encoding base -- one selector, default neodavidson:
   -event MODE   neodavidson : reified neo-Davidsonian events (default)
                 davidson    : compact event(V,A,O,E), keep handle + adjuncts
+                davidson2   : the exact spine compression (see -davidson2)
                 flat        : flat relational is_rel2(V,subj,obj)
                 flatroles   : flat relational, eventprop-tagged object
  additive abstraction primitives (compose with any -event base):
@@ -2256,6 +2739,37 @@ logic conversion / representation (transform the Stage-2 logic before the prover
   -localantonyms : restrict antonym folding to the problem + axiom vocabulary
   -existfold     : (L2) fold "exists Y. isa(C,Y) & has_part/have(X,Y)" into
                    has_property([$has_part/$have,C], X) + named-witness bridge
+ the safe proof shorteners -- ATTEMPTED BY DEFAULT on the ordinary canonical
+ theory.  Each is a guarded, exactly reversible rewrite that refuses locally
+ whenever its own conditions fail, leaving that source form unchanged, and each
+ keeps bidirectional adapters to the canonical neo-Davidsonian predicates, which
+ remain the language of axioms_std.js and of any later knowledge base.  A compact
+ atom is an internal proof-search form, but it may appear in the formal proof and
+ is the basis of the English proof; a step that converts between the two
+ spellings is labelled "representation conversion" and is not presented as
+ knowledge:
+  davidson2      : compress the event spine {isa(activity,E), has type(E,V),
+                   has actor(E,A), has target(E,T)} to event(V,A,T,E), and only
+                   when expanding it back reproduces the group.  Never replaces a
+                   participant by its class, never invents a missing actor or
+                   target, never puts a goal or topic in the object slot.
+  existfold2     : fold only the bare "exists Y. isa(C,Y) & has part(X,Y)"
+                   pattern, and only for a class with at least four occurrences,
+                   emitting three class-specific compatibility clauses.  No
+                   `have`, no schema quantified over the class.
+ turning them off, each winning from any position on the command line:
+  -nodavidson2   : davidson2 off; the canonical neo-Davidsonian spine is restored
+  -noexistfold2  : existfold2 off
+  -noproofshort2 : both off.  THIS IS THE COMMAND that reproduces the ordinary
+                   theory and answers as they stood before 2026-08-26.
+ asking for them where they are not the default:
+  -davidson2 / -existfold2 / -proofshort2 : request one or both from any
+                   position, including on top of an -abstract* preset (davidson2
+                   declines on a flat base and leaves it alone).
+  -event davidson2 : select davidson2 as the base outright.
+ Naming a base or a preset asks for that base's own historical theory, so the
+ defaults stand aside for `-event neodavidson`, `-event davidson`, `-event flat`,
+ `-event flatroles`, the legacy `-existfold`, and every `-abstract*` preset.
   -propclass     : property<->class canonicalization: bridge isa(W,X)<->has_property(W,X)
                    for a concept the flat fold left in both shapes (safe isa->has_property;
                    promote has_property->isa only for a nominal compound). (in -abstract-max)

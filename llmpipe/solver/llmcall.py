@@ -160,6 +160,234 @@ def _usage_number(d, *path):
 
 # ======== main entry point ========
 
+# ---------------------------------------------------------------------------
+# Per-call deadline
+#
+# `api_timeout` bounded only the initial parse and conversion phase, so a
+# critic, graph or bridge call -- with its retries and its backoff sleeps --
+# could block a case for an unbounded time.  This deadline sits at the one
+# boundary every LLM call passes through, so it covers the initial translation
+# and every later stage alike.  It bounds the complete logical call: provider
+# attempts, retries, the sleeps between them, and Gemini's context-cache
+# requests.  It never encloses gk, which runs outside this function.
+#
+# The deadline is cooperative and absolute: one monotonic instant is computed
+# per logical `call_llm`, and every place that can block consults it.  An
+# earlier version waited on a daemon thread, which returned on time but left
+# the provider request running -- it could consume a request after the
+# timeout, overlap the next stage and mutate the usage accounting afterwards.
+# Nothing is abandoned now: when the instant passes, the code raises and
+# unwinds, so no request, retry, sleep, thread or timer outlives the call.
+# ---------------------------------------------------------------------------
+
+TIMEOUT_MARKER = "llm_call_timeout"
+LIMIT_MARKER = "llm_call_limit"
+
+
+def _now():
+  """Monotonic clock.  A test may replace this to run a fake clock."""
+  return time.monotonic()
+
+
+class LlmDeadlineExceeded(Exception):
+  """The per-call deadline passed.  Raised from wherever the call was."""
+
+  def __init__(self, where):
+    Exception.__init__(self, where)
+    self.where = where
+
+
+class LlmCallLimitExceeded(Exception):
+  """The run's total logical-call limit is already used up."""
+
+
+class Deadline(object):
+  """One absolute instant, plus the arithmetic every caller needs."""
+
+  def __init__(self, seconds, started=None):
+    self.limit = float(seconds)
+    self.started = _now() if started is None else started
+    self.at = self.started + self.limit
+
+  def elapsed(self):
+    return _now() - self.started
+
+  def remaining(self):
+    return self.at - _now()
+
+  def expired(self):
+    return self.remaining() <= 0
+
+  def check(self, where):
+    if self.expired():
+      raise LlmDeadlineExceeded(where)
+
+  def bounded(self, base):
+    """`base` seconds, never past the deadline.  The lower-level HTTP timeout
+    stays an upper bound when it is the smaller of the two."""
+    left = self.remaining()
+    if left <= 0:
+      raise LlmDeadlineExceeded("bounding a wait")
+    return min(base, left) if base else left
+
+  def sleep(self, seconds, where="backoff"):
+    """Sleep, never past the deadline, then check it."""
+    self.check(where)
+    time.sleep(max(0.0, min(seconds, self.remaining())))
+    self.check(where)
+
+
+# The deadline of the logical call now in progress, or None.  Set and cleared
+# by `call_llm`; read by `_post_with_retry` and the Gemini cache helpers, which
+# are several frames below and take it as a default argument.
+_deadline = None
+
+
+def _check_deadline(where, deadline=None):
+  d = deadline if deadline is not None else _deadline
+  if d is not None:
+    d.check(where)
+
+
+def _http_timeout(deadline=None):
+  """The connection timeout for one request: the configured HTTP timeout, cut
+  down to what is left of the deadline."""
+  d = deadline if deadline is not None else _deadline
+  if d is None:
+    return timeout
+  return d.bounded(timeout)
+
+
+def _sleep_bounded(seconds, where="backoff", deadline=None):
+  d = deadline if deadline is not None else _deadline
+  if d is None:
+    time.sleep(seconds)
+    return
+  d.sleep(seconds, where)
+
+
+# ---------------------------------------------------------------------------
+# Model identity
+#
+# One run uses one provider and one version for every call it makes: Stage 1,
+# Stage 2 and its format corrections, the critic, the critic's retranslation,
+# the graph retranslation, the graph bridges and the literal bridges.  A call
+# that names anything else is a defect, not a fallback, so it fails at once
+# rather than quietly answering from another model.  A cached response from
+# another model is refused for the same reason.
+# ---------------------------------------------------------------------------
+
+class ModelMismatch(RuntimeError):
+  """A call named a provider or version other than the run's own."""
+
+
+_model_lock = None
+
+
+@contextlib.contextmanager
+def locked_model(llm, version):
+  """Pin the provider and version for every call made inside this block."""
+  global _model_lock
+  old = _model_lock
+  _model_lock = (llm, version) if llm else old
+  try:
+    yield
+  finally:
+    _model_lock = old
+
+
+def _check_model(llm, ver):
+  if _model_lock is None:
+    return
+  want_llm, want_ver = _model_lock
+  if llm != want_llm or (want_ver and ver != want_ver):
+    raise ModelMismatch(
+      "this run is pinned to %s %s; a call named %s %s"
+      % (want_llm, want_ver, llm, ver))
+
+
+# ---------------------------------------------------------------------------
+# Total logical-call limit
+#
+# One counter for the whole run, incremented by every `call_llm` from every
+# role -- Stage 1, Stage 2 and its format corrections, the critic and its
+# rerun, the graph retranslation, the graph bridges, the literal bridges -- and
+# by a local cache hit as well, because a cache hit is still a logical call the
+# pipeline decided to make.  Checked before the cache lookup and before any
+# provider dispatch, so a refused call touches neither.
+# ---------------------------------------------------------------------------
+
+# One vocabulary for the whole run, so the global record and the per-stage rows
+# cannot disagree:
+#
+#   allowed            logical call_llm invocations the limit permitted
+#   cached             allowed calls answered from the local cache
+#   live               allowed calls dispatched to a provider, counted ONCE
+#                      each, whether they then succeed, fail or time out
+#   refused            invocations refused before cache lookup and dispatch
+#   attempted          allowed + refused
+#   provider_requests  actual outbound requests, including the HTTP retries
+#                      inside _post_with_retry
+#
+# The invariants are `allowed == cached + live` and
+# `attempted == allowed + refused`.
+_counts = {"allowed": 0, "cached": 0, "live": 0, "refused": 0,
+           "provider_requests": 0}
+
+
+def reset_call_limit():
+  """Start a new run's accounting.  Called once per case."""
+  for k in _counts:
+    _counts[k] = 0
+
+
+def call_counts():
+  out = dict(_counts)
+  out["attempted"] = out["allowed"] + out["refused"]
+  return out
+
+
+def _call_limit():
+  try:
+    import globals
+    v = globals.options.get("llm_call_limit", 0)
+  except Exception:                                              # pragma: no cover
+    return 0
+  try:
+    v = int(v or 0)
+  except (TypeError, ValueError):
+    return 0
+  return v if v > 0 else 0
+
+
+def _take_call_slot():
+  """Claim one logical call, or raise when the run's limit is used up.
+
+  A refused invocation never becomes an allowed one, so it consumes no slot and
+  is counted separately.
+  """
+  limit = _call_limit()
+  if limit and _counts["allowed"] >= limit:
+    _counts["refused"] += 1
+    raise LlmCallLimitExceeded(
+      "this run's limit of %d logical LLM calls is used up" % limit)
+  _counts["allowed"] += 1
+
+
+def _call_timeout():
+  """The per-call deadline in seconds, or 0 for none."""
+  try:
+    import globals
+    v = globals.options.get("llm_call_timeout", 0)
+  except Exception:                                              # pragma: no cover
+    return 0
+  try:
+    v = float(v or 0)
+  except (TypeError, ValueError):
+    return 0
+  return v if v > 0 else 0
+
+
 def call_llm(sysprompt, input_text, llm=None, version=None, max_tokens=None, think=False):
   """Call the configured LLM with a system prompt and input text.
 
@@ -189,14 +417,30 @@ def call_llm(sysprompt, input_text, llm=None, version=None, max_tokens=None, thi
   else:
     ver = version or gptversion
 
+  _check_model(llm, ver)
+
+  # One logical call, counted before the cache is consulted and before any
+  # provider is dispatched: a refused call touches neither.
+  try:
+    _take_call_slot()
+  except LlmCallLimitExceeded as exc:
+    if record_calls:
+      rec = {"llm": llm, "version": ver, "source": "refused", "seconds": 0.0,
+             "failed": True, "reason": LIMIT_MARKER, "logical": True,
+             "limit": _call_limit()}
+      rec.update(_label())
+      call_log.append(rec)
+    return llm_error("%s: %s" % (LIMIT_MARKER, exc))
+
   # --- check cache ---
   _t0 = time.time()
   cached = _get_llm_cached(llm, ver, max_tokens, think, sysprompt, input_text)
   if cached is not None:
     if debug:
       print("cache hit (" + llm + " " + ver + ")")
+    _counts["cached"] += 1
     if record_calls:
-      rec = {"llm": llm, "version": ver, "source": "cache",
+      rec = {"llm": llm, "version": ver, "source": "cache", "logical": True,
              "seconds": round(time.time() - _t0, 3)}
       rec.update(_label())
       call_log.append(rec)
@@ -209,40 +453,86 @@ def call_llm(sysprompt, input_text, llm=None, version=None, max_tokens=None, thi
   if debug:
     print("calling " + llm + " " + ver + " ...")
   result = None
-  global _last_usage
-  for attempt in range(1, empty_response_retries + 2):
-    _last_usage = None
-    _t0 = time.time()
-    try:
-      if llm == "claude":
-        result = call_claude(ver, input_text, sysprompt, max_tokens, think=think)
-      elif llm == "gemini":
-        result = call_gemini(ver, input_text, sysprompt, max_tokens, think=think)
-      elif llm == "deepseek":
-        result = call_deepseek(ver, input_text, sysprompt, max_tokens, think=think)
-      else:
-        result = call_gpt(ver, input_text, sysprompt, max_tokens, think=think)
-    except KeyboardInterrupt:
-      raise
-    except MissingApiKeyError as e:
-      # Permanent configuration error — do not retry.
-      return llm_error(str(e))
-    except Exception as e:
-      return llm_error("unexpected error calling LLM: " + str(e))
+  global _last_usage, _deadline
+  budget = _call_timeout()
+  deadline = Deadline(budget) if budget else None
+  outer_deadline = _deadline
+  _deadline = deadline
+  # An allowed cache miss is one logical live call, counted once here.  The
+  # empty-response retries below are further provider requests, not further
+  # logical calls.
+  _counts["live"] += 1
+  _first_api_entry = [True]
+
+  def _timed_out(where):
+    """Record and report one timed-out logical call."""
+    elapsed = round(deadline.elapsed(), 3)
     if record_calls:
       rec = {"llm": llm, "version": ver, "source": "api",
-             "seconds": round(time.time() - _t0, 3)}
+             "seconds": elapsed, "failed": True,
+             "logical": _first_api_entry[0],
+             "reason": TIMEOUT_MARKER, "where": where,
+             "timeout_seconds": budget}
+      _first_api_entry[0] = False
       rec.update(_label())
-      if _last_usage:
-        rec.update(_last_usage)
-      if result is None or not result.strip():
-        rec["failed"] = True
       call_log.append(rec)
-    if result is not None and result.strip():
-      break
-    if attempt <= empty_response_retries:
-      print(llm + " returned an empty/None response, retrying...")
-      time.sleep(sleepseconds * attempt)
+    return llm_error(
+      "%s call to %s %s exceeded the %gs per-call deadline after %.1fs (%s)"
+      % (TIMEOUT_MARKER, llm, ver, budget, elapsed, where))
+
+  try:
+    for attempt in range(1, empty_response_retries + 2):
+      _last_usage = None
+      _t0 = time.time()
+      try:
+        if deadline is not None:
+          deadline.check("before attempt %d" % attempt)
+        if llm == "claude":
+          result = call_claude(ver, input_text, sysprompt, max_tokens,
+                               think=think)
+        elif llm == "gemini":
+          result = call_gemini(ver, input_text, sysprompt, max_tokens,
+                               think=think)
+        elif llm == "deepseek":
+          result = call_deepseek(ver, input_text, sysprompt, max_tokens,
+                                 think=think)
+        else:
+          result = call_gpt(ver, input_text, sysprompt, max_tokens, think=think)
+        # the request may have returned just as the deadline passed
+        if deadline is not None:
+          deadline.check("after attempt %d" % attempt)
+      except LlmDeadlineExceeded as late:
+        return _timed_out(late.where)
+      except KeyboardInterrupt:
+        raise
+      except MissingApiKeyError as e:
+        # Permanent configuration error — do not retry.
+        return llm_error(str(e))
+      except Exception as e:
+        return llm_error("unexpected error calling LLM: " + str(e))
+      if record_calls:
+        rec = {"llm": llm, "version": ver, "source": "api",
+               "logical": _first_api_entry[0],
+               "seconds": round(time.time() - _t0, 3)}
+        _first_api_entry[0] = False
+        rec.update(_label())
+        if _last_usage:
+          rec.update(_last_usage)
+        if result is None or not result.strip():
+          rec["failed"] = True
+        call_log.append(rec)
+      if result is not None and result.strip():
+        break
+      if attempt <= empty_response_retries:
+        print(llm + " returned an empty/None response, retrying...")
+        try:
+          _sleep_bounded(sleepseconds * attempt,
+                         "empty-response retry %d" % attempt, deadline)
+        except LlmDeadlineExceeded as late:
+          return _timed_out(late.where)
+  finally:
+    # nothing of this call outlives it
+    _deadline = outer_deadline
 
   # --- store to cache (skip None / empty — likely a transient failure) ---
   if result is not None and result.strip():
@@ -305,30 +595,44 @@ def _read_api_key(filepath, provider):
 _rate_limit_max_retries = 7   # 429: exponential backoff goes 2,4,8,16,32,64,128s
 
 
-def _post_with_retry(host, url, body, headers, provider):
+def _post_with_retry(host, url, body, headers, provider, deadline=None):
   """POST JSON body to host/url with retries. Returns parsed response dict or None.
 
   Two retry tracks:
     - 429 (rate limit): exponential backoff with jitter, _rate_limit_max_retries
       attempts. Quota windows are typically per-minute, so short retries don't help.
-    - Other HTTP / connection failures: linear backoff, max_retries attempts."""
+    - Other HTTP / connection failures: linear backoff, max_retries attempts.
+
+  Both tracks are inside the per-call deadline: the remaining time is checked
+  before every attempt and every sleep, each connection timeout is cut down to
+  what is left, and no sleep runs past the instant.  `LlmDeadlineExceeded`
+  unwinds to `call_llm`, so nothing keeps running once it fires."""
   trycount = 0
   rate_tries = 0
   while True:
-    conn = http.client.HTTPSConnection(host, timeout=timeout)
+    _check_deadline("before a %s request" % provider, deadline)
+    _counts["provider_requests"] += 1
+    conn = http.client.HTTPSConnection(host,
+                                       timeout=_http_timeout(deadline))
     try:
       conn.request("POST", url, body, headers=headers)
       response = conn.getresponse()
     except KeyboardInterrupt:
       raise
+    except LlmDeadlineExceeded:
+      if conn: conn.close()
+      raise
     except Exception:
       trycount += 1
       if conn: conn.close()
+      _check_deadline("after a %s connection failure" % provider, deadline)
       if trycount > max_retries:
         return llm_error(provider + " connection failed after " + str(max_retries) + " retries")
       print(provider + " connection failure, retrying...")
-      time.sleep(sleepseconds * trycount)
+      _sleep_bounded(sleepseconds * trycount,
+                     "%s connection backoff" % provider, deadline)
       continue
+    _check_deadline("after a %s response" % provider, deadline)
     if response.status == 429:
       # Rate-limited: exponential backoff with jitter. Provider quota
       # windows are typically per-minute, so we wait long enough for the
@@ -348,7 +652,7 @@ def _post_with_retry(host, url, body, headers, provider):
       delay = base + random.uniform(0, base * 0.25)
       print(provider + " rate-limited (429), waiting " + str(round(delay, 1)) +
             "s before retry " + str(rate_tries) + "/" + str(_rate_limit_max_retries))
-      time.sleep(delay)
+      _sleep_bounded(delay, "%s rate-limit backoff" % provider, deadline)
       continue
     if response.status != 200 or response.reason != "OK":
       message = ""
@@ -363,7 +667,8 @@ def _post_with_retry(host, url, body, headers, provider):
       if trycount > max_retries:
         return llm_error(provider + " API error " + str(response.status) + " " + str(response.reason) + message)
       print(provider + " API failure, retrying:", str(response.status), str(response.reason) + message)
-      time.sleep(sleepseconds * trycount)
+      _sleep_bounded(sleepseconds * trycount,
+                     "%s API-error backoff" % provider, deadline)
     else:
       break
 
@@ -412,7 +717,7 @@ def _gemini_invalidate_cache(model, sysprompt):
   _gemini_cache_map.pop(_gemini_cache_key(model, sysprompt), None)
 
 
-def _gemini_get_or_create_cache(model, sysprompt, api_key):
+def _gemini_get_or_create_cache(model, sysprompt, api_key, deadline=None):
   """Return a live cachedContents name for this (model, sysprompt), creating
   one if no live entry exists.  Returns None on failure (caller should
   fall back to inline system_instruction)."""
@@ -428,7 +733,10 @@ def _gemini_get_or_create_cache(model, sysprompt, api_key):
     "ttl": str(_GEMINI_CACHE_TTL) + "s",
   }
   host = "generativelanguage.googleapis.com"
-  conn = http.client.HTTPSConnection(host, timeout=timeout)
+  # the context-cache request is part of the logical call, so it is inside the
+  # same deadline as the generation request
+  _check_deadline("before the Gemini context-cache request", deadline)
+  conn = http.client.HTTPSConnection(host, timeout=_http_timeout(deadline))
   try:
     conn.request("POST", "/v1beta/cachedContents", json.dumps(body),
                  headers={"content-Type": "application/json",
@@ -441,6 +749,8 @@ def _gemini_get_or_create_cache(model, sysprompt, api_key):
       return None
     data = json.loads(raw)
   except KeyboardInterrupt:
+    raise
+  except LlmDeadlineExceeded:
     raise
   except Exception as e:
     print("Gemini cache creation error: " + str(e))
@@ -539,7 +849,8 @@ def _gemini_cheapest_level(version):
   return "low" if _gemini_version_pair(version) >= (3, 7) else "minimal"
 
 
-def call_gemini(version, sentences, sysprompt, max_tokens, think=False):
+def call_gemini(version, sentences, sysprompt, max_tokens, think=False,
+                 deadline=None):
   key = _read_api_key(gemini_secrets_file, "Gemini")
   if key is None: return None
 
@@ -547,7 +858,9 @@ def call_gemini(version, sentences, sysprompt, max_tokens, think=False):
   # the per-request input-token ceiling that triggers instant 429s.  The
   # cache stays alive for ~30 min and is reused across calls.
   use_cache = _gemini_should_cache(sysprompt)
-  cache_name = _gemini_get_or_create_cache(version, sysprompt, key) if use_cache else None
+  cache_name = (_gemini_get_or_create_cache(version, sysprompt, key,
+                                           deadline=deadline)
+                if use_cache else None)
 
   # Gemini 3 and later: temperature is deprecated and thinking is configured
   # by level rather than by token budget (thinkingBudget is rejected with 400).
@@ -595,7 +908,7 @@ def call_gemini(version, sentences, sysprompt, max_tokens, think=False):
     data = _post_with_retry("generativelanguage.googleapis.com", url,
                             json.dumps(call),
                             {"content-Type": "application/json", "x-goog-api-key": key},
-                            "Gemini")
+                            "Gemini", deadline=deadline)
     if data is None:
       return None, None
     um = data.get("usageMetadata")
@@ -628,7 +941,8 @@ def call_gemini(version, sentences, sysprompt, max_tokens, think=False):
   # least surfaces a useful error rather than silently failing).
   if res is None and cache_name:
     _gemini_invalidate_cache(version, sysprompt)
-    new_cache = _gemini_get_or_create_cache(version, sysprompt, key)
+    new_cache = _gemini_get_or_create_cache(version, sysprompt, key,
+                                            deadline=deadline)
     if new_cache:
       res, finish = _attempt(max_tokens, new_cache)
     if res is None:
@@ -663,7 +977,8 @@ def _claude_effort(think):
   return "medium"
 
 
-def call_claude(version, sentences, sysprompt, max_tokens, think=False):
+def call_claude(version, sentences, sysprompt, max_tokens, think=False,
+                 deadline=None):
   key = _read_api_key(claude_secrets_file, "Claude")
   if key is None: return None
 
@@ -698,7 +1013,7 @@ def call_claude(version, sentences, sysprompt, max_tokens, think=False):
                           {"content-Type": "application/json",
                            "anthropic-version": "2023-06-01",
                            "x-api-key": key},
-                          "Claude")
+                          "Claude", deadline=deadline)
   if data is None: return None
 
   # Claude's input_tokens already excludes both cache-read and cache-write.
@@ -722,7 +1037,8 @@ def call_claude(version, sentences, sysprompt, max_tokens, think=False):
 
 # ======== gpt ========
 
-def call_gpt(version, sentences, sysprompt, max_tokens, think=False):
+def call_gpt(version, sentences, sysprompt, max_tokens, think=False,
+              deadline=None):
   key = _read_api_key(gpt_secrets_file, "GPT")
   if key is None: return None
 
@@ -761,7 +1077,7 @@ def call_gpt(version, sentences, sysprompt, max_tokens, think=False):
   data = _post_with_retry(host, url, json.dumps(call),
                           {"Host": host, "Content-Type": "application/json",
                            "Authorization": "Bearer " + key},
-                          "GPT")
+                          "GPT", deadline=deadline)
   if data is None: return None
 
   utils.debug_print("gpt response:", data, flag=debug)
@@ -811,7 +1127,8 @@ def call_gpt(version, sentences, sysprompt, max_tokens, think=False):
 # https://api-docs.deepseek.com/
 # DeepSeek uses an OpenAI-compatible chat completions API.
 
-def call_deepseek(version, sentences, sysprompt, max_tokens, think=False):
+def call_deepseek(version, sentences, sysprompt, max_tokens, think=False,
+                   deadline=None):
   key = _read_api_key(deepseek_secrets_file, "DeepSeek")
   if key is None: return None
 
@@ -844,7 +1161,7 @@ def call_deepseek(version, sentences, sysprompt, max_tokens, think=False):
                           json.dumps(call),
                           {"Content-Type": "application/json",
                            "Authorization": "Bearer " + key},
-                          "DeepSeek")
+                          "DeepSeek", deadline=deadline)
   if data is None: return None
 
   utils.debug_print("deepseek response:", data, flag=debug)
