@@ -916,7 +916,7 @@ def coarsen_events(tree, flatten=False, eventprop=False, davidson=False,
   - do_canon : proper-noun entity canonicalization (independent of folding).
   - do_guard : drop redundant antecedent type guards (no-op without a fold).
   - collapse_degree : degree nodes -> simple, before guard-drop.
-  See memos/ABSTRACTION_BUCKETS_PLAN.md and analysis/FLAG_INVENTORY.md."""
+  See docs/architecture/abstraction.md."""
   global _eventprop_mode, _davidson_mode, _davidson2_mode, _dav_nr, _verb_index
   _eventprop_mode = eventprop
   _davidson_mode = davidson

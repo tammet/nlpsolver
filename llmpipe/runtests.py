@@ -318,7 +318,7 @@ def build_case_json(testname, case_id, input_text, expected, llm, collect, match
             "downstream_retries",
             # which stage answered, what it cost, and what each route did
             "answered_by", "front_door_answer", "abstraction_order",
-            "stages_enabled", "stages",
+            "stages_enabled", "stages", "encoding_experiments",
             "llm_call_counts", "llm_calls_total",
             "graphtrans", "litbridge", "graphbridge", "critic", "fallback",
             # EXPERIMENTAL (Task 2B): one acceptance record per judged stage

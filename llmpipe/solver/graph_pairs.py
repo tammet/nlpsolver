@@ -160,12 +160,6 @@ def _by_name(rows):
   return out
 
 
-def _relation_occurrences(inventory):
-  """-> [(name, left, right, sign, package, position)] over open relations."""
-  return [(r["name"], r["left"], r["right"], r["sign"], r["package"],
-           r["position"]) for r in inventory["relations"]]
-
-
 def _constant_shapes(inventory, sd, add):
   """`A(X,k1) -> B(X,k2)` and `R(X,k1) -> R(X,k2)`, from occurrences."""
   demand_names = set(n for n, k in sd["demand_names"] if k == "relation")

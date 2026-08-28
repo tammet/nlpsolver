@@ -1,6 +1,6 @@
 """Provenance for the clause list actually handed to the prover.
 
-Plan step M1.1 of memos/PLAN_2026_08_07_abstraction_initial_phases.md.
+Written for the abstraction study; the plan memo is a local archive.
 
 Why this module exists.  Three later components (the proof audit, the
 break-point locator and the fidelity diff) all need to know what gk actually

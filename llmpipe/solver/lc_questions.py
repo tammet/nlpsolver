@@ -282,29 +282,6 @@ def _norm_class(cls):
 _EXIST_DET_RE_CACHE = {}
 
 
-def _has_existential_determiner(asu_text, isa_class):
-  """(plan fix 4) True when the question text introduces the class with an
-  explicit existential determiner — "a square", "an elephant", "some spoon".
-
-  Bare plurals ("Do animals have legs?") and definites are NOT existential in
-  this sense; only the a/an/some forms mark the question as being about SOME
-  instance, which must not be answered about a fresh generic witness.
-  """
-  if not isinstance(asu_text, str) or not asu_text:
-    return False
-  head = str(isa_class or "").strip().lower()
-  if not head:
-    return False
-  # Match the last word of the class name (compound classes: "kitchen door").
-  last = head.split()[-1]
-  rx = _EXIST_DET_RE_CACHE.get(last)
-  if rx is None:
-    rx = re.compile(r"\b(?:a|an|some)\s+(?:[a-z]+\s+){0,2}" + re.escape(last) + r"s?\b",
-                    re.IGNORECASE)
-    _EXIST_DET_RE_CACHE[last] = rx
-  return bool(rx.search(asu_text))
-
-
 def collect_generic_rule_classes(items):
   """(plan fix 4) Classes that some premise package quantifies over generically.
 

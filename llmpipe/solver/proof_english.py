@@ -136,8 +136,6 @@ def block_to_english(block_atom):
   return _atom_to_english_negated(body)
 
 
-
-
 def _defq_ans_bridge(clause):
   """Detect the $defq/$ans bridge pattern in a 2-atom clause.
 
@@ -442,10 +440,6 @@ _RENDER_CTX = None   # module-level slot; clause_to_str owns the lifetime
 def _looks_like_var_arg(arg):
   """True if arg is a variable that should get an intro prefix on first mention."""
   return isinstance(arg, str) and looks_like_var(arg)
-
-
-def _looks_like_world_const(arg):
-  return isinstance(arg, str) and is_world_constant(arg)
 
 
 def _is_event_skolem(arg):
@@ -920,7 +914,6 @@ def _has_degree_rel2_render(e, args, neg=False):
   if degree_raw == "least":
     return ent1 + cop.rstrip() + " the least " + rel + " of all compared to " + ent2
   return ent1 + cop + rel + " of " + ent2
-
 
 
 def _render_member(e, args, negated):

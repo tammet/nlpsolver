@@ -30,7 +30,7 @@ never reconverted; abstract-max keeps its global meaning.
 
 A bridge clause carries no `@confidence`.  Writing a low confidence onto the
 clause prunes proof search and compounds on repeated application, which
-`memos/MEMO_2026_08_10_bridge_world.md` §5 measured.
+measured during the bridge study (the memo is a local archive).
 """
 
 import contextlib

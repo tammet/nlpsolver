@@ -66,6 +66,14 @@ from lc_repairs import (hoist_nested_ids, repair_misnested_normally_implies,
                         canonicalize_comparative_relations)
 from lc_query_guards import (strip_phantom_query_guards, has_what_query,
                             generate_what_population)
+# Compatibility re-exports.  `logconvert` was one module before the split into
+# the `lc_*` files, so `logconvert.<name>` was how everything reached these.
+# Nothing in this file uses them and nothing in the repository reaches them
+# through this module any more, but an outside script or an interactive session
+# may, so they are kept and named here rather than silently dropped.  A tool
+# that reports them as unused imports is reading them correctly; this comment
+# is the reason they stay.
+
 from lc_entity_isa import (collect_positive_isa_entities,
                           build_entity_category_clauses, merge_typeonly_skolems)
 
@@ -146,23 +154,13 @@ from lc_post_inject import (
 
 from lc_post_una import (
   collect_stage1_entities as _collect_stage1_entities,
-  is_stage1_entity as _is_stage1_entity,
-  apply_una as _apply_una,
-)
+  apply_una as _apply_una)
 
 # $ctxt injection and time handling (in lc_ctxt.py).
 import lc_ctxt
 from lc_ctxt import (
-  fresh_fv as _fresh_fv,
-  is_rule_formula as _is_rule_formula,
-  strip_time_wrappers as _strip_time_wrappers,
-  inject_ctxt_atom as _inject_ctxt_atom,
-  inject_ctxt_into_objs as _inject_ctxt_into_objs,
-  inject_ctxt_question as _inject_ctxt_question,
-  inject_const_ctxt_into_objs as _inject_const_ctxt_into_objs,
-  build_question_tense_bridges as _build_question_tense_bridges,
-  MAIN_RELATION_PREDS as _MAIN_RELATION_PREDS,
-)
+  fresh_fv as _fresh_fv, inject_ctxt_into_objs as _inject_ctxt_into_objs,
+  inject_const_ctxt_into_objs as _inject_const_ctxt_into_objs)
 
 
 # Pre-clausification formula rewrites (in lc_rewrites.py).
@@ -174,14 +172,9 @@ from lc_rewrites import (
   strip_neg_tense_agreement_in_clause as _strip_neg_tense_agreement_in_clause,
   inject_actuality as _inject_actuality,
   inject_degree_presuppositions as _inject_degree_presuppositions,
-  hoist_misnested_exists as _hoist_misnested_exists,
-  strip_spurious_can as _strip_spurious_can,
-  negate_consequent as _negate_consequent,
-  inject_query_specific_noun_isas as _inject_query_specific_noun_isas,
   lower_normally_through_forall as _lower_normally_through_forall,
   drop_category_isa_conjuncts as _drop_category_isa_conjuncts,
-  fold_class_name_case as _fold_class_name_case,
-)
+  fold_class_name_case as _fold_class_name_case)
 
 # Per-package processing — split into lc_packages.py.
 import lc_packages
@@ -418,6 +411,17 @@ def rawlogic_convert(logic, s1_json=None, fixes=None):
   def _note_repair(before, after, name):
     if fixes is not None and after != before:
       fixes.append("logconvert: " + name)
+
+  def _repair(tree, f, name, *args):
+    """Apply one structural repair and record it if it changed anything.
+
+    The before/after comparison is the only reason a repair needs three lines
+    rather than one; this keeps the ordered call, its name and its arguments
+    visible while the bookkeeping happens once.
+    """
+    after = f(tree, *args)
+    _note_repair(tree, after, name)
+    return after
   lc_ctxt._fv_nr = 0             # reset once for the whole conversion
   lc_clausify._skolem_nr = 0
   lc_clausify._gobj_nr   = 0
@@ -438,33 +442,28 @@ def rawlogic_convert(logic, s1_json=None, fixes=None):
   # Hoist nested @id blocks to top level.  LLM JSON errors sometimes cause
   # a closing bracket to be dropped, nesting one @id inside another after
   # auto-fix.  @id blocks are never legitimately nested.
-  _b = logic
-  logic = hoist_nested_ids(logic)
-  _note_repair(_b, logic, "hoist nested @ids")
+  logic = _repair(logic, hoist_nested_ids, "hoist nested @ids")
 
   # Repair a rule consequent that an LLM hung off `normally` as a 2nd arg
   # instead of inside the `implies` (case 1418, deepseek): rewrite
   # ["normally", ["implies", A], C] -> ["normally", ["implies", A, C]].
-  _b = logic
-  logic = repair_misnested_normally_implies(logic)
-  _note_repair(_b, logic, "repair misnested normally/implies")
+  logic = _repair(logic, repair_misnested_normally_implies,
+                  "repair misnested normally/implies")
 
   # Repair a self-defeating conditional caused by a "not A and B" negation-scope
   # mis-parse: widen ["implies", ["and", ["not", A], B], CONS] to ¬(A∧B) when the
   # current reading makes CONS impossible under its antecedent (-guarddrop,
   # case 41).
-  _b = logic
-  logic = repair_self_defeating_conditional(logic)
-  _note_repair(_b, logic, "repair self-defeating conditional")
+  logic = _repair(logic, repair_self_defeating_conditional,
+                  "repair self-defeating conditional")
 
   # (-s2split repair) Normalize off-inventory predicate-name drift: an isolated
   # per-sentence Stage-2 call sometimes writes "has" for "have" or "has rel2" for
   # "is rel2" (cases 190/248).  Whole-head rename, before any other pass reads
   # predicate names.
   if _g_options.get("s2split_flag", False):
-    _b = logic
-    logic = rename_offinventory_preds(logic)
-    _note_repair(_b, logic, "rename off-inventory predicates (s2split)")
+    logic = _repair(logic, rename_offinventory_preds,
+                    "rename off-inventory predicates (s2split)")
 
   # Lower outer `normally` into the consequent of forall...implies bodies:
   # ["normally", ["forall", X, ["implies", A, B]]] →
@@ -512,26 +511,26 @@ def rawlogic_convert(logic, s1_json=None, fixes=None):
   # Remove has_time atoms where the value is a grammatical tense ("past", etc.)
   # LLMs sometimes put tense in has_time instead of leaving it to $ctxt.
   logic = _strip_tense_has_time(logic)
+  if logic is None:
+    # The pass returns None for "drop this conjunct", and an input whose every
+    # conjunct is a stripped tense atom leaves nothing to convert.  Without
+    # this the next pass indexes None.
+    return None
 
   # Preserve Stage-1 participant identity and generic-kind information before
   # the event fold can erase it.  These are construction-level repairs: they
   # consume explicit Stage-1 scope/role/modifier/coreference annotations, not
   # a list of favored words.
-  _b = logic
-  logic = lc_reference.normalize_stage1_kind_constants(logic, s1_json)
-  _note_repair(_b, logic, "normalized Stage-1 kind number")
-  _b = logic
-  logic = lc_reference.resolve_unique_definite_rule_entities(logic, s1_json)
-  _note_repair(_b, logic, "resolved unique definite rule entity")
-  _b = logic
-  logic = lc_reference.introduce_modified_generic_participants(logic, s1_json)
-  _note_repair(_b, logic, "bound modified generic participant")
-  _b = logic
-  logic = lc_reference.coindex_dependent_rule_participants(logic, s1_json)
-  _note_repair(_b, logic, "coindexed dependent rule participant")
-  _b = logic
-  logic = lc_reference.repair_rule_variable_scope(logic)
-  _note_repair(_b, logic, "repaired rule variable scope")
+  logic = _repair(logic, lc_reference.normalize_stage1_kind_constants,
+                  "normalized Stage-1 kind number", s1_json)
+  logic = _repair(logic, lc_reference.resolve_unique_definite_rule_entities,
+                  "resolved unique definite rule entity", s1_json)
+  logic = _repair(logic, lc_reference.introduce_modified_generic_participants,
+                  "bound modified generic participant", s1_json)
+  logic = _repair(logic, lc_reference.coindex_dependent_rule_participants,
+                  "coindexed dependent rule participant", s1_json)
+  logic = _repair(logic, lc_reference.repair_rule_variable_scope,
+                  "repaired rule variable scope")
 
   # Attach ["actuality", E] to every Davidsonian event without a modal
   # classifier.  Pipeline-only marker; Stage 2 doesn't emit it.  Skips
@@ -583,15 +582,13 @@ def rawlogic_convert(logic, s1_json=None, fixes=None):
   # (fix 5) Deterministic repair of query packaging, after the Stage-2 sanity
   # retry has had its chance: a query package on an assertion ASU, a missing
   # query package, or an answer variable on a yes/no question.
-  _b = logic
-  logic = repair_question_packaging(logic, s1_json)
-  _note_repair(_b, logic, "repaired question packaging")
+  logic = _repair(logic, repair_question_packaging,
+                  "repaired question packaging", s1_json)
 
   # (fix 7d) Rewrite opaque comparative relations ("taller than") into the
   # pipeline's degree form, so premise and question share one representation.
-  _b = logic
-  logic = canonicalize_comparative_relations(logic)
-  _note_repair(_b, logic, "canonicalized comparative relation")
+  logic = _repair(logic, canonicalize_comparative_relations,
+                  "canonicalized comparative relation")
 
   # (compnorm, a `fallback_norm` switch) reduce comparative relation names on is_rel2 /
   # has_degree_rel2 to the base gradable adjective ("taller"/"taller than" ->
@@ -608,30 +605,24 @@ def rawlogic_convert(logic, s1_json=None, fixes=None):
           and len(out) >= 2 and isinstance(out[1], str)):
         out[1] = _c2b(out[1])
       return out
-    _b = logic
-    logic = _cn(logic)
-    _note_repair(_b, logic, "compnorm comparative relation")
+    logic = _repair(logic, _cn, "compnorm comparative relation")
 
   # (fix 3) Drop isa conjuncts that only restate a Stage-1 entity `category`
   # the sentence never states.  Must run BEFORE collect_positive_isa_entities
   # below, so the pipeline's own entity-category injection sees the filtered
   # logic and applies its normal skip policy.
-  _b = logic
-  logic = _drop_category_isa_conjuncts(logic, s1_json)
-  _note_repair(_b, logic, "dropped category-only isa")
+  logic = _repair(logic, _drop_category_isa_conjuncts,
+                  "dropped category-only isa", s1_json)
 
   # (fix 7c) Unify class constants differing only in capitalization.
-  _b = logic
-  logic = _fold_class_name_case(logic)
-  _note_repair(_b, logic, "folded class-name case")
+  logic = _repair(logic, _fold_class_name_case, "folded class-name case")
 
   # Drop phantom isa-guards from query bodies: a leaked definite-description
   # presupposition (isa on a Stage-1 entity that nothing asserts) makes the
   # whole conjunctive query unprovable.  Removing the dead guard is a sound
   # simplification (see strip_phantom_query_guards).
-  _b = logic
-  logic = strip_phantom_query_guards(logic, _collect_stage1_entities(s1_json))
-  _note_repair(_b, logic, "strip phantom query guard")
+  logic = _repair(logic, strip_phantom_query_guards,
+                  "strip phantom query guard", _collect_stage1_entities(s1_json))
 
   # Rewrite $setof terms to canonical form (replaces ?:X with $arg1,
   # extracts anchors, $-prefixes internal predicates, generates membership

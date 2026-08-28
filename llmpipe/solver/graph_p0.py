@@ -482,10 +482,9 @@ def _call_gk(clauses, s1_json, s2_graph, text, opts, seconds, gk=None):
     out["error"] = "%s: %s" % (type(e).__name__, e)
   finally:
     out["gk_command"] = (g.options.get("_collect") or {}).get("gk_command")
-    if before_collect is None:
-      g.options.pop("_collect", None)
-    else:
-      g.options["_collect"] = before_collect
+    # restore, never delete: `_collect` is a declared option key, and
+    # removing it makes the next `set_global_options` call reject it
+    g.options["_collect"] = before_collect
     if seconds:
       if before_seconds is None:
         g.options.pop("prover_seconds", None)

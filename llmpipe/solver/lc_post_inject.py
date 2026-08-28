@@ -642,7 +642,8 @@ def inject_reflexive_property_bridge(result, axiom_vocab=frozenset()):
 #
 # The flat fold sometimes leaves ONE concept in both predicate shapes: a class
 # atom isa(W,X) and a property atom has_property(W,X,C).  A rule guard and the
-# query/fact then fail to unify.  Bridge them (analysis/P1_DESIGN.md):
+# query/fact then fail to unify.  Bridge them
+# (docs/architecture/abstraction.md):
 #   SAFE   isa(W,X) -> has_property(W,X,C): a class member has the property in
 #          every context, so this is sound for ANY W (no word-category gate).
 #          Two trigger shapes: same word (W in both isa and has_property), and

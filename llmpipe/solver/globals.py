@@ -74,7 +74,7 @@ DEFAULT_LLM_CALL_TIMEOUT = 240
 options={
   "debug_print_flag":False, # if True, print a lot of details of the parsing process (turn on by -debug)
   "prover_print_flag":False, # if True, print prover logic input and output
-  "prover_nosolve_flag":False, # if True, attempt to solve the question, if False, just output logic
+  "prover_nosolve_flag":False, # -nosolve. INVERTED SENSE, as the name says: if True, stop after the clause list and return it instead of calling gk; if False (the default), call gk and answer
   "use_cache_flag":False, # if True, use cache for GK, if False, do not use cache
   "prover_rawresult_flag":False, # if True, give a raw json result (handled by procproofs.py)
   "prover_explain_flag":False, # if True, output nlp explanation
@@ -87,9 +87,10 @@ options={
   #   "neodavidson" (default) | "davidson" (compact event(V,A,O,E)) |
   #   "davidson2" (the exact event-spine compression, solver/lc_davidson2.py) |
   #   "flat" (flat is_rel2, bare positional) | "flatroles" (flat is_rel2, eventprop-tagged).
-  # The -abstract* presets set "flat"/"flatroles". See analysis/FLAG_RESTRUCTURE_PLAN.md.
+  # The -abstract* presets set "flat"/"flatroles".  Every base is defined in
+  # docs/encodings/compiled-representations.md.
   "event_base":"neodavidson",
-  "existfold_flag":False,  # (L2) if True, fold a bare existential attribute "exists Y. isa(C,Y) & has_part/have(X,Y)" into a unary has_property([$has_part/$have, C], X), deleting the Skolem cross-product; a generic bidirectional bridge with a named witness $typed_partof(X,C) reconstructs the existential on demand. See memos/L2_EXISTFOLD_PLAN.md
+  "existfold_flag":False,  # (L2) if True, fold a bare existential attribute "exists Y. isa(C,Y) & has_part/have(X,Y)" into a unary has_property([$has_part/$have, C], X), deleting the Skolem cross-product; a generic bidirectional bridge with a named witness $typed_partof(X,C) reconstructs the existential on demand. See docs/encodings/compiled-representations.md
   # --- The versioned proof shorteners (attempted by default on the unnamed
   # canonical base; -proofshort2 requests both explicitly).  Each sits beside
   # its v1 and never changes it. ---
@@ -108,9 +109,9 @@ options={
   "bridges_flag":False,      # frame/bridge axioms: rel2<->event equivalence, occasion-location, in-haspart, reflexive-property
   "dropdefinites_flag":False, # skip $theof1 definite reification -> leave definites as plain relations
   "localantonyms_flag":False, # restrict antonym folding to pairs whose words occur in the problem + axiom vocabulary
-  "propclass_flag":False,    # property<->class canonicalization (P1): bridge isa(W,X)<->has_property(W,X) for one concept that the flat fold left in both shapes. SAFE isa->has_property always; PROMOTE has_property->isa only for a nominal compound (compound_sub) demanded as -isa. See analysis/P1_DESIGN.md
-  "numtype_flag":False,      # numeric-literal typing (P3): parse pure-numeral string args ("34") to int/float, and materialize a ground isa(TYPE,N) (TYPE in number/integer/float/...) when -isa(TYPE,N) is demanded but never supplied. See analysis/P3_TIER_A_PLAN.md
-  "compasym_flag":False,     # comparative asymmetry (P3): for a relation R that occurs as binary is_rel2(R,X,Y) and is a strict-scalar dimensional adjective (solver/comparable_adjectives.txt), emit asymmetry is_rel2(R,X,Y)->-is_rel2(R,Y,X) (+ flat property bridge). Restores the §3.1 comparative-order axioms the flat/simpleprops fold drops. See analysis/P3_TIER_A_PLAN.md
+  "propclass_flag":False,    # property<->class canonicalization (P1): bridge isa(W,X)<->has_property(W,X) for one concept that the flat fold left in both shapes. SAFE isa->has_property always; PROMOTE has_property->isa only for a nominal compound (compound_sub) demanded as -isa. See docs/architecture/abstraction.md
+  "numtype_flag":False,      # numeric-literal typing (P3): parse pure-numeral string args ("34") to int/float, and materialize a ground isa(TYPE,N) (TYPE in number/integer/float/...) when -isa(TYPE,N) is demanded but never supplied. See docs/architecture/abstraction.md
+  "compasym_flag":False,     # comparative ANTIsymmetry: for a relation R that occurs as binary is_rel2(R,X,Y) and is a strict-scalar dimensional adjective (solver/comparable_adjectives.txt), emit is_rel2(R,X,Y) & is_rel2(R,Y,X) -> X=Y (+ the flat property bridge is_rel2(R,X,Y)->has_property(R,X) when a consumer exists). NOT strict asymmetry: the flat fold can collapse a "more R than before" comparison onto one constant, which strict asymmetry would make self-contradictory. Restores the comparative-order axioms of axioms_std.js that the flat/simpleprops fold drops. See docs/architecture/abstraction.md
   # --- Internal switches for the two abstention fallbacks (solver/fallback_norm.py,
   # solver/fallback_hyp.py).  None of these has a CLI flag: the initial attempt runs with
   # every one of them False, and only `fallback_norm.run` / `fallback_hyp.run` turn
@@ -142,9 +143,9 @@ options={
   "prenorm_flag":False,  # if True, run an experimental pre-Stage-1 LLM phase that unifies repeated entity/property/relation wordings
   "s2split_flag":False,  # if True, run Stage 2 sentence-by-sentence (one LLM call per Stage-1 sentence package, outputs joined, worlds renumbered per rule c'), and apply the cross-sentence shape-unification repair (off-inventory predicate rename, shape bridges, compound composition, broad-supertype isa) that reconciles the divergent per-sentence parses
   "crossstage_retry_flag":True,  # if False, disable the abstraction cross-stage unsatisfiable-guard retry (avoids live corrective LLM calls)
-  "nominalretry_flag":False,  # (experimental) if True, a Stage-2 sanity check flags a Stage-1 copular "ENT is a NOUN" predication whose NOUN is dropped from ENT in Stage-2 (but used elsewhere), triggering a corrective Stage-2 retry. See analysis/P3_TIER_A_PLAN.md (case 126)
-  "negretry_flag":False,      # (experimental) prenorm-negation-fallback: if True and prenorm dropped a sentential negation from the conclusion question ("X is not a Y?" rewritten to the positive "Is X a Y?"), re-parse from the original (pre-prenorm) text so the negation survives. General correctness fix (not encoding-specific); currently gated so it can later be promoted to default. See analysis/FOLIO_GPT_FAILURES.md G2 (cases 80/127/189/200)
-  "litbridge_flag":PIPELINES[DEFAULT_PIPELINE]["litbridge"],     # from PIPELINES[DEFAULT_PIPELINE]; explicit only. literal-bridge abstraction: when the ordinary pipeline leaves the question unresolved, propose implication rules over the case's own displayed atoms, compile them beside the stored theory and resubmit to gk. Off by default because it costs extra LLM calls per unresolved case and is net-harmful on closed-world material; -litbridge, -stack-open and -abstract-max turn it on, -nolitbridge forces it off. See solver/litbridge_procedure.py and memos/MEMO_2026_08_15_litbridge_merge.md
+  "nominalretry_flag":False,  # (experimental) if True, a Stage-2 sanity check flags a Stage-1 copular "ENT is a NOUN" predication whose NOUN is dropped from ENT in Stage-2 (but used elsewhere), triggering a corrective Stage-2 retry (case 126). See docs/architecture/translation.md
+  "negretry_flag":False,      # (experimental) prenorm-negation-fallback: if True and prenorm dropped a sentential negation from the conclusion question ("X is not a Y?" rewritten to the positive "Is X a Y?"), re-parse from the original (pre-prenorm) text so the negation survives. General correctness fix (not encoding-specific); currently gated so it can later be promoted to default (cases 80/127/189/200)
+  "litbridge_flag":PIPELINES[DEFAULT_PIPELINE]["litbridge"],     # from PIPELINES[DEFAULT_PIPELINE]; explicit only. literal-bridge abstraction: when the ordinary pipeline leaves the question unresolved, propose implication rules over the case's own displayed atoms, compile them beside the stored theory and resubmit to gk. Off by default because it costs extra LLM calls per unresolved case and is net-harmful on closed-world material; -litbridge, -stack-open and -abstract-max turn it on, -nolitbridge forces it off. See solver/litbridge_procedure.py and docs/architecture/literal-bridges.md
   "graphbridge_flag":PIPELINES[DEFAULT_PIPELINE]["graphbridge"],    # from PIPELINES[DEFAULT_PIPELINE]; outside the ordinary default. open-relation graph abstraction: when the ordinary pipeline (and the literal bridge, if on) leaves the question unresolved, translate the case a second time into three-item open triples, invent implications between the open names, and search that theory separately. Off by default; -graphbridge, -stack, -stack-open and -abstract-max turn it on, -nographbridge forces it off. See solver/graph_procedure.py and docs/architecture/graph-representation.md
   "nographbridge_flag":False,  # if True, graphbridge_flag is forced False after the whole command line is read, so -nographbridge beats -graphbridge whatever their order
   "summary_flag":False,    # -summary: one block at the end saying which stage answered and what the run cost in LLM calls
@@ -167,7 +168,11 @@ options={
   "prover_axiomfiles":False,  # if not False, use these as axioms instead of the default prover_axiomfile below
   "prover_print":False,  # if not False, use the argument integer for gk printout level, instead of the default
   "prover_strategy":False,  # if not False, use the argument as a gk strategy file, instead of the default
-  "prover_seconds":2,  # give the prover this many seconds, instead of the default 1
+  # Proof-search seconds for one gk call.  With `-seconds N` on the command
+  # line (`prover_seconds_cli`) this value is used exactly; without it,
+  # `prover._estimate_seconds` may raise it for a many-world theory, so it is
+  # a floor rather than the time gk gets.
+  "prover_seconds":2,
   "prover_seconds_cli":False,  # True when -seconds was given on CLI (disables auto-estimation)
   # LLM response caching: ON by default.
   # The cache key covers provider, version, temperature, seed, max_tokens,
@@ -197,7 +202,7 @@ options={
   "nopopulate_flag": False,     # if True, emit no population witnesses ($some_C / $some_not_C) at all. Off everywhere except the open-relation graph theory, where a witness the theory minted for a quantified class can ground an invented bridge's own body and prove a question the passage never settles (MEMO_2026_08_17 C1)
   "noentitycat_flag": False,    # if True, emit no Stage-1 entity-category isa clauses (entity_S*) and no base-word entity isa. Off everywhere except the open-relation graph theory, where a name the translator never wrote must not enter supply (MEMO_2026_08_17 C2)
   # Per-fix kill switches for the 2026-08 programmatic repairs
-  # (memos/PLAN_2026_08_04_programmatic_fixes.md).  Development/measurement
+  # (the plan memo is a local archive, not tracked).  Development/measurement
   # aids: set one True to replay a tree with that repair disabled and attribute
   # a recovery or a breakage to it.  All default False (every repair active).
   "nofix_tense": False,        # fix 1  ASU tense completion
@@ -263,14 +268,23 @@ prover_axiomfile=os.path.join(_root, "axioms_std.js")
 prover_params=["-taxonomy","-confidence","0.1","-keepconfidence","0.1"] # additional prover params, always appended
 
 
+class UnknownOption(KeyError):
+  """A caller passed an option key that is not in `options`."""
+
+
 def set_global_options(newoptions):
+  """Copy `newoptions` into the live option dict.
+
+  An unknown key is a programming error -- every command-line branch writes a
+  declared key -- so it raises.  It used to call `sys.exit(0)`, which ended a
+  batch worker with a success status and no record of why.
+  """
   global options
+  unknown = [k for k in newoptions if k not in options]
+  if unknown:
+    raise UnknownOption("option(s) not recognized: %s" % ", ".join(sorted(unknown)))
   for key in newoptions:
-    if key in options:
-      options[key]=newoptions[key]
-    else:
-      print("Error: option",key,"is not recognized.")
-      sys.exit(0)
+    options[key] = newoptions[key]
 
 
 # =========== the end ==========

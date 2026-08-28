@@ -393,10 +393,8 @@ def gk_runner(s1_json, seconds=5, options=None, log=None, budget=None):
                  "error": "%s: %s" % (type(e).__name__, e)}
       command = (g.options.get("_collect") or {}).get("gk_command")
     finally:
-      if before is None:
-        g.options.pop("_collect", None)
-      else:
-        g.options["_collect"] = before
+      # restore, never delete: see the same note in graph_p0
+      g.options["_collect"] = before
     got["gk_command"] = command
     got["seconds"] = round(time.time() - t0, 2)
     got["gk_input_sha256"] = hashlib.sha256(

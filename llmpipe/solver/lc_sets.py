@@ -746,48 +746,6 @@ def _instantiate_elements(setof_info, source_name, count, tense=None, world=None
   return clauses
 
 
-def _instantiate_distributive_events(formula, setof_term, elements, source_name):
-  """Find forall/implies/member blocks that distribute events over the set.
-  For each element, instantiate the event body with fresh event constants.
-  Returns list of clause dicts."""
-  results = []
-  blocks = _find_distributive_blocks(formula, setof_term)
-
-  for block in blocks:
-    # block is the body of the implies (the exists part)
-    member_var = block["member_var"]
-    body = block["body"]
-
-    for i, el in enumerate(elements):
-      # Fresh event constant
-      ev_name = "$set" + source_name + "_ev" + str(i + 1)
-
-      # Replace member var with element, existential var with event constant
-      instantiated = _replace_var(body, member_var, el)
-
-      # Find and replace existential variables
-      if (isinstance(instantiated, list) and len(instantiated) >= 3 and
-          instantiated[0] == "exists"):
-        ex_var = instantiated[1]
-        ex_body = instantiated[2]
-        instantiated = _replace_var(ex_body, ex_var, ev_name)
-
-      # Flatten and conjuncts into individual clauses
-      if isinstance(instantiated, list) and instantiated[0] == "and":
-        for atom in instantiated[1:]:
-          results.append({
-            "@name": "sent_" + source_name + "_ev" + str(i + 1),
-            "@logic": atom
-          })
-      else:
-        results.append({
-          "@name": "sent_" + source_name + "_ev" + str(i + 1),
-          "@logic": instantiated
-        })
-
-  return results
-
-
 def _find_distributive_blocks(formula, setof_term):
   """Find forall/implies/member patterns that distribute over a $setof."""
   results = []

@@ -1,4 +1,28 @@
-# The cache machine of nlpsolver
+# The cache machine of nlpsolver.
+#
+# Three tables in one SQLite file (`cache_db_name`, normally `cache.db`):
+#
+#   llm_cache    provider responses, keyed by every parameter of the call
+#   proof_cache  gk results, keyed by the command and the hashes of its files
+#   parse_cache  present for compatibility; no pipeline code reads or writes it
+#
+# Every table is reached through the same three helpers below -- `_connect`,
+# `_ensure_table` and `_fetch_one` / `_insert` -- so the connection lifetime,
+# the lock timeout and the failure policy are stated once.
+#
+# FAILURE POLICY.  A cache is not the answer, so a failure must not end the
+# process; but it must not be silent either, because a read failure treated as
+# a miss can cost a paid provider call and can make a cached run produce a new
+# translation.  So: on the first `sqlite3.Error` for a table, print one line,
+# record it in `errors`, and disable that table for the rest of the run.  The
+# caller decides what to do about it -- `cache_errors()` reports what happened,
+# and a cache-required experiment can check it and stop.  Nothing here calls
+# `sys.exit`, and no handler catches `KeyboardInterrupt`.
+#
+# CONCURRENCY.  `runtests.py` runs one worker process per provider against one
+# file.  Writes are `insert or ignore`, so two workers inserting the same key
+# race harmlessly instead of raising `IntegrityError`; `_LOCK_TIMEOUT` bounds
+# how long a writer waits for the other's lock.
 #
 #-----------------------------------------------------------------
 # Copyright 2022 Tanel Tammet (tanel.tammet@gmail.com)
@@ -18,10 +42,10 @@
 
 # ==== standard libraries ====
 
-import sys
+import contextlib
+import hashlib
 import json
 import sqlite3
-import hashlib
 
 # ==== import other source files ====
 
@@ -30,270 +54,271 @@ from globals import *
 
 import utils
 
-# ======= code ==========
+
+# ======== the shared SQLite layer ========
+
+# Seconds a writer waits for another process's lock before giving up.  A gk
+# result or a provider response is worth a short wait and never a long one:
+# the work that produced it is already done, and losing the row only costs a
+# repeat later.
+_LOCK_TIMEOUT = 10.0
+
+# One row per table that has failed, so a caller can tell a cold cache from a
+# broken one.  `{"llm_cache": "unable to open database file", ...}`
+errors = {}
+
+# A table is dropped from use after its first failure, so one broken file does
+# not print a line per case.
+_disabled = set()
 
 
-# ----------- add to caches --------------
+def cache_errors():
+  """-> {table: first error message}, empty when every cache worked.
+
+  A run that requires its cache -- a replay, a paired comparison -- should
+  check this and stop rather than silently make live calls.
+  """
+  return dict(errors)
 
 
-def add_parse_to_cache(ctxt,intxt,outdata):
-  if ("use_cache_flag" not in options) or not(options["use_cache_flag"]): return 
-  if not cache_db_name: return
-  if not intxt or not outdata: return
-  if type(intxt)!=str: return  
-  if type(outdata)!=str:
-    outtxt=json.dumps(outdata)
-    outtype="json"
-  else:
-    outtxt=outdata
-    outtype="text" 
+def _fail(table, exc):
+  """Record one cache failure, say so once, and stop using that table."""
+  if table not in errors:
+    errors[table] = str(exc)
+    print("Cache warning: %s unusable (%s); continuing without it."
+          % (table, exc))
+  _disabled.add(table)
+  return None
 
-  try:
-    conn = sqlite3.connect(cache_db_name) 
-  except:
-    print("Error: could not connect to the cache database",cache_db_name)
-    sys.exit(0)  
-  
-  try:
-    sql_query = """select outtxt,outtype from parse_cache where intxt=?"""
-    cur = conn.cursor()
-    cur.execute(sql_query,(intxt,))
-    row = cur.fetchone()
-  except sqlite3.OperationalError:
-    #print("cache note: no cache present, trying to create the cache first")
-    try:
-      sql_create = """create table parse_cache 
-        (id integer primary key autoincrement, intxt text, outtxt text, outtype text, 
-        timestamp datetime default current_timestamp)"""
-      conn.execute(sql_create)
-      conn.commit()
-      row=None
-    except:
-      print("Error: cache table creation failed")
-      sys.exit(0)  
-    try:
-      sql_create = """create unique index parse_cache_intxt on parse_cache (intxt);"""
-      conn.execute(sql_create)
-      conn.commit()
-      row=None
-    except:
-      print("Error: cache index creation failed")
-      sys.exit(0)  
-    utils.debug_print("Cache database created.")
-  except:
-    #print("cache note: could not check input presence in cache")
-    conn.close()
-    return None
-  if row:
-    #print("cache insert already present")
+
+@contextlib.contextmanager
+def _connect(table):
+  """A connection that always closes, or None when the table is unusable.
+
+  The caller writes `with _connect(t) as conn:` and checks `conn`; every exit
+  path closes, which the hand-written paths this replaced did not.
+  """
+  if not cache_db_name or table in _disabled:
+    yield None
     return
-  
-  sql_insert = """insert into parse_cache (intxt, outtxt, outtype) values (?,?,?)"""
-  conn.execute(sql_insert,(intxt,outtxt,outtype))
-  conn.commit()
-  conn.close() 
-  utils.debug_print("Parse cache insert done")
-  return
-
-
-
-def add_proof_to_cache(inparams,outdata):
-  if ("use_cache_flag" not in options) or not(options["use_cache_flag"]): return
-  if not cache_db_name: return
-  if not inparams or not outdata: return
-  
-  # fetch file params and non-file-params from input
-  intxt=make_proof_key(inparams)
-  if not intxt: return
-
-  if type(intxt)!=str: return  
-  if type(outdata)!=str:
-    outtxt=json.dumps(outdata)
-    outtype="json"
-  else:
-    outtxt=outdata
-    outtype="text" 
-
   try:
-    conn = sqlite3.connect(cache_db_name) 
-  except:
-    print("Error: could not connect to the cache database",cache_db_name)
-    sys.exit(0)  
-  
-  try:
-    sql_query = """select outtxt,outtype from proof_cache where intxt=?"""
-    cur = conn.cursor()
-    cur.execute(sql_query,(intxt,))
-    row = cur.fetchone()
-  except sqlite3.OperationalError:
-    #print("cache note: no cache present, trying to create the cache first")
-    try:
-      sql_create = """create table proof_cache 
-        (id integer primary key autoincrement, intxt text, outtxt text, outtype text, 
-        timestamp datetime default current_timestamp)"""
-      conn.execute(sql_create)
-      conn.commit()
-      row=None
-    except:
-      print("Error: cache table creation failed")
-      sys.exit(0)  
-    try:
-      sql_create = """create unique index proof_cache_intxt on proof_cache (intxt);"""
-      conn.execute(sql_create)
-      conn.commit()
-      row=None
-    except:
-      print("Error: cache index creation failed")
-      sys.exit(0)  
-    utils.debug_print("Cache database created.")
-  except:
-    #print("cache note: could not check input presence in cache")
-    conn.close()
-    return None
-  if row:
-    #print("cache insert already present")
+    conn = sqlite3.connect(cache_db_name, timeout=_LOCK_TIMEOUT)
+  except sqlite3.Error as e:
+    _fail(table, e)
+    yield None
     return
-  
-  sql_insert = """insert into proof_cache (intxt, outtxt, outtype) values (?,?,?)"""
-  conn.execute(sql_insert,(intxt,outtxt,outtype))
-  conn.commit()
-  conn.close() 
-  utils.debug_print("proof cache insert done")
-  return
+  try:
+    try:
+      yield conn
+    except sqlite3.Error as e:
+      # A context manager must yield exactly once. Record and suppress a
+      # database error escaping from the body, then finish normally; yielding
+      # None here would make contextlib hide it behind "generator didn't stop
+      # after throw()".
+      _fail(table, e)
+  finally:
+    try:
+      conn.close()
+    except sqlite3.Error:
+      pass
+
+
+# table -> (its own columns, the column that must be unique)
+_TABLES = {
+  "llm_cache":   ("keyhash text, outtxt text", "keyhash"),
+  "proof_cache": ("intxt text, outtxt text, outtype text", "intxt"),
+  "parse_cache": ("intxt text, outtxt text, outtype text", "intxt"),
+}
+
+
+def _ensure_table(conn, table):
+  """Create the table and its unique index if they are missing.
+
+  `if not exists` on both, so two workers creating the same table at once do
+  not race.  -> True when the table is usable.
+  """
+  cols, uniq = _TABLES[table]
+  try:
+    conn.execute("create table if not exists %s "
+                 "(id integer primary key autoincrement, %s, "
+                 "timestamp datetime default current_timestamp)" % (table, cols))
+    conn.execute("create unique index if not exists %s_%s on %s (%s)"
+                 % (table, uniq, table, uniq))
+    conn.commit()
+    return True
+  except sqlite3.Error as e:
+    _fail(table, e)
+    return False
+
+
+def _fetch_one(table, sql, args):
+  """-> the first row, or None for a miss, a missing table or a failure."""
+  with _connect(table) as conn:
+    if conn is None:
+      return None
+    try:
+      cur = conn.cursor()
+      cur.execute(sql, args)
+      return cur.fetchone()
+    except sqlite3.OperationalError:
+      # Almost always "no such table": a cold cache, not a fault.  Create it
+      # so the next write has somewhere to go, and report the miss.
+      _ensure_table(conn, table)
+      return None
+    except sqlite3.Error as e:
+      return _fail(table, e)
+
+
+def _insert(table, columns, values):
+  """Insert one row, ignoring a key another worker already wrote."""
+  with _connect(table) as conn:
+    if conn is None:
+      return False
+    if not _ensure_table(conn, table):
+      return False
+    try:
+      conn.execute("insert or ignore into %s (%s) values (%s)"
+                   % (table, ", ".join(columns),
+                      ", ".join("?" * len(values))), values)
+      conn.commit()
+      return True
+    except sqlite3.Error as e:
+      _fail(table, e)
+      return False
+
+
+def _encode(outdata):
+  """-> (text, "text"|"json") for a value going into a cache row."""
+  if isinstance(outdata, str):
+    return outdata, "text"
+  return json.dumps(outdata), "json"
+
+
+def _decode(row):
+  """-> the value a `(outtxt, outtype)` row holds."""
+  return row[0] if row[1] == "text" else json.loads(row[0])
+
+
+# ======== the parse cache ========
+#
+# Kept as a compatibility interface: no pipeline module reads or writes it, and
+# an existing cache.db may still hold its rows.  `clear_all_caches` clears it
+# with the others.
+
+def add_parse_to_cache(ctxt, intxt, outdata):
+  if not options.get("use_cache_flag"):
+    return
+  if not intxt or not outdata or not isinstance(intxt, str):
+    return
+  outtxt, outtype = _encode(outdata)
+  if _insert("parse_cache", ("intxt", "outtxt", "outtype"),
+             (intxt, outtxt, outtype)):
+    utils.debug_print("parse cache insert done")
+
+
+def get_parse_from_cache(ctxt, intxt):
+  if not options.get("use_cache_flag"):
+    return None
+  if not intxt or not isinstance(intxt, str):
+    return None
+  row = _fetch_one("parse_cache",
+                   "select outtxt,outtype from parse_cache where intxt=?",
+                   (intxt,))
+  if not row:
+    return None
+  utils.debug_print("Parse obtained from cache")
+  return _decode(row)
+
+
+# ======== the proof cache ========
+
+def add_proof_to_cache(inparams, outdata):
+  if not options.get("use_cache_flag"):
+    return
+  if not inparams or not outdata:
+    return
+  intxt = make_proof_key(inparams)
+  if not intxt or not isinstance(intxt, str):
+    return
+  outtxt, outtype = _encode(outdata)
+  if _insert("proof_cache", ("intxt", "outtxt", "outtype"),
+             (intxt, outtxt, outtype)):
+    utils.debug_print("proof cache insert done")
+
+
+def get_proof_from_cache(ctxt, inparams):
+  if not options.get("use_cache_flag"):
+    return None
+  if not inparams:
+    return None
+  intxt = make_proof_key(inparams)
+  if not intxt or not isinstance(intxt, str):
+    return None
+  row = _fetch_one("proof_cache",
+                   "select outtxt,outtype from proof_cache where intxt=?",
+                   (intxt,))
+  if not row:
+    return None
+  utils.debug_print("Proof obtained from cache")
+  return _decode(row)
 
 
 def make_proof_key(inparams):
-  file_params=[]
-  non_file_params=[]
-  i=0
-  lastel_key=False
-  while True:
-    if i>=len(inparams): break  
-    el=inparams[i]  
-    i+=1
+  """The gk command as a cache key: its flags verbatim, its files by content.
+
+  A file argument is replaced by the hash of what it held, so a changed axiom
+  file or clause file misses the cache instead of returning the old proof.
+  The first argument (the gk binary) and every `-flag value` pair stay
+  literal.  -> None when a named file cannot be read.
+  """
+  file_params = []
+  non_file_params = []
+  lastel_key = False
+  for i, el in enumerate(inparams):
     if el and el.startswith("-"):
-      lastel_key=True
+      lastel_key = True
       non_file_params.append(el)
-      continue
-    if lastel_key:
-      lastel_key=False
+    elif lastel_key:
+      lastel_key = False
       non_file_params.append(el)
-      continue
-    if i==1:
-      non_file_params.append(el)
-      continue
-    file_params.append(el)
-  #print("fileparams",file_params)
-  #rint("non_file_params",non_file_params)
-  hashes=[]
+    elif i == 0:
+      non_file_params.append(el)          # the binary itself
+    else:
+      file_params.append(el)
+  hashes = []
   for fname in file_params:
-    tmp=get_file_hash(fname)
-    if not tmp: return None
-    hashes.append(get_file_hash(fname))
-  #print("hashes",hashes)  
-  paramstr=" ".join(non_file_params+hashes)
-  return paramstr
+    h = get_file_hash(fname)
+    if not h:
+      return None
+    hashes.append(h)
+  return " ".join(non_file_params + hashes)
 
 
 def get_file_hash(fname):
+  """-> the md5 of a file's contents, or None when it cannot be read."""
   try:
     with open(fname, "rb") as f:
       file_hash = hashlib.md5()
       while True:
-        chunk=f.read(8192)
-        if not chunk: break
+        chunk = f.read(8192)
+        if not chunk:
+          break
         file_hash.update(chunk)
-  except:
-    return None     
+  except OSError:
+    return None
   return file_hash.hexdigest()
 
-# ----- fetch from caches -----------
 
+# ======== the model-response cache ========
 
-def get_parse_from_cache(ctxt,intxt):
-  if ("use_cache_flag" not in options) or not(options["use_cache_flag"]): return None
-  if not cache_db_name: return None
-  if not intxt: return None
-  if type(intxt)!=str: return None 
+def make_llm_cache_key(llm, version, temperature, seed, max_tokens, think,
+                       sysprompt, input_text):
+  """A deterministic SHA-256 digest identifying one model call.
 
-  try:
-    conn = sqlite3.connect(cache_db_name) 
-  except:
-    return None   
-  try:
-    sql_query = """select outtxt,outtype from parse_cache where intxt=?"""
-    cur = conn.cursor()
-    cur.execute(sql_query,(intxt,))
-    row = cur.fetchone()
-  except:
-    conn.close()
-    utils.debug_print("Parse cache query failed.")
-    return None
-    
-  if not row: return None
-  if row[1]=="text":
-    out=row[0]
-  else:
-    out=json.loads(row[0])
-  conn.close()    
-  if out:
-    utils.debug_print("Parse obtained from cache")
-  return out  
-
-
-def get_proof_from_cache(ctxt,inparams):
-  if ("use_cache_flag" not in options) or not(options["use_cache_flag"]): return None
-  if not cache_db_name: return None
-  if not inparams: return None
-  intxt=make_proof_key(inparams)
-  if not intxt: return None
-  if type(intxt)!=str: return None 
-  try:
-    conn = sqlite3.connect(cache_db_name) 
-  except:
-    return None   
-  try:
-    sql_query = """select outtxt,outtype from proof_cache where intxt=?"""
-    cur = conn.cursor()
-    cur.execute(sql_query,(intxt,))
-    row = cur.fetchone()
-  except:
-    conn.close()
-    utils.debug_print("GK proof cache query failed.")
-    return None
-    
-  if not row: return None
-  if row[1]=="text":
-    out=row[0]
-  else:
-    out=json.loads(row[0])
-  conn.close()    
-  if out:
-    utils.debug_print("GK proof obtained from cache")
-  return out  
-
-
-# --------- LLM response cache -----------
-#
-# LLM calls are cached by default (use_llm_cache_flag defaults to True).
-# The cache key is a SHA-256 hash that encodes every parameter that can
-# affect the model response: provider, version, temperature, seed,
-# max_tokens, sysprompt and the user input text.  A cached result is
-# therefore only reused when ALL of these are identical to a previous call.
-#
-# The underlying table is llm_cache in the same SQLite database used for
-# parse_cache and proof_cache.
-
-
-def make_llm_cache_key(llm, version, temperature, seed, max_tokens, think, sysprompt, input_text):
-  """Return a deterministic SHA-256 hex digest that uniquely identifies an
-  LLM call by all parameters that affect its output.
-
-  Any change in provider, version, temperature, seed, max_tokens, think,
-  sysprompt or input produces a different key, so stale results are
-  never returned.
+  Every parameter that can change the response is in the key, so a changed
+  provider, version, temperature, seed, token limit, thinking setting, system
+  prompt or input misses the cache rather than returning a stale response.
   """
-  import hashlib
   key_obj = {
     "llm":         llm         or "",
     "version":     version     or "",
@@ -309,31 +334,17 @@ def make_llm_cache_key(llm, version, temperature, seed, max_tokens, think, syspr
 
 
 def get_llm_from_cache(key):
-  """Look up a cached LLM response by its key.
+  """-> the cached response for `key`, or None.
 
-  LLM caching is ON by default (use_llm_cache_flag defaults to True in
-  globals.options).  Returns the cached output string, or None if there
-  is no matching entry or caching is disabled.
+  None means a miss, a cold cache or a failed read; the three are separated by
+  `cache_errors()`, which a caller that must not make a live call should check.
   """
-  if not options.get("use_llm_cache_flag", True): return None
-  if not cache_db_name: return None
-  if not key: return None
-
-  try:
-    conn = sqlite3.connect(cache_db_name)
-  except:
+  if not options.get("use_llm_cache_flag", True):
     return None
-  try:
-    sql_query = """select outtxt from llm_cache where keyhash=?"""
-    cur = conn.cursor()
-    cur.execute(sql_query, (key,))
-    row = cur.fetchone()
-  except:
-    conn.close()
-    utils.debug_print("LLM cache query failed.")
+  if not key:
     return None
-
-  conn.close()
+  row = _fetch_one("llm_cache",
+                   "select outtxt from llm_cache where keyhash=?", (key,))
   if not row:
     return None
   utils.debug_print("LLM response obtained from cache")
@@ -341,148 +352,56 @@ def get_llm_from_cache(key):
 
 
 def add_llm_to_cache(key, result):
-  """Store an LLM response in the cache under the given key.
-
-  Silently skipped when caching is disabled (use_llm_cache_flag=False)
-  or when key / result are empty.  Creates the llm_cache table on first use.
-  """
-  if not options.get("use_llm_cache_flag", True): return
-  if not cache_db_name: return
-  if not key or not result: return
-  if type(result) != str: return
-
-  try:
-    conn = sqlite3.connect(cache_db_name)
-  except:
-    print("Error: could not connect to the cache database", cache_db_name)
+  """Store one model response.  A key another worker already wrote is kept."""
+  if not options.get("use_llm_cache_flag", True):
     return
+  if not key or not result or not isinstance(result, str):
+    return
+  if _insert("llm_cache", ("keyhash", "outtxt"), (key, result)):
+    utils.debug_print("LLM cache insert done")
 
-  try:
-    sql_query = """select outtxt from llm_cache where keyhash=?"""
-    cur = conn.cursor()
-    cur.execute(sql_query, (key,))
-    row = cur.fetchone()
-  except sqlite3.OperationalError:
-    # Table does not exist yet — create it.
+
+# ======== clearing ========
+
+def _clear_one(table):
+  """Delete every row of one table.  -> the number deleted."""
+  with _connect(table) as conn:
+    if conn is None:
+      return 0
     try:
-      sql_create = """create table llm_cache
-        (id integer primary key autoincrement, keyhash text, outtxt text,
-        timestamp datetime default current_timestamp)"""
-      conn.execute(sql_create)
+      cur = conn.cursor()
+      cur.execute("select count(*) from %s" % table)
+      n = cur.fetchone()[0]
+      conn.execute("delete from %s" % table)
       conn.commit()
-      sql_idx = """create unique index llm_cache_keyhash on llm_cache (keyhash)"""
-      conn.execute(sql_idx)
-      conn.commit()
-      row = None
-    except:
-      print("Error: llm_cache table creation failed")
-      conn.close()
-      return
-  except:
-    conn.close()
-    return
-
-  if row:
-    conn.close()
-    return  # already cached
-
-  sql_insert = """insert into llm_cache (keyhash, outtxt) values (?,?)"""
-  conn.execute(sql_insert, (key, result))
-  conn.commit()
-  conn.close()
-  utils.debug_print("LLM cache insert done")
+      return n
+    except sqlite3.OperationalError:
+      return 0                            # no such table: nothing to delete
+    except sqlite3.Error as e:
+      _fail(table, e)
+      return 0
 
 
-# --------- clear caches -------------------
+# Kept as a compatibility interface: the pipeline uses `clear_all_caches`, but
+# an interactive session or a local script may clear one table on its own.
+
+def clear_parse_cache(ctxt=None):
+  return _clear_one("parse_cache")
 
 
-def clear_parse_cache(ctxt):
-  if not cache_db_name: return
-
-  try:
-    conn = sqlite3.connect(cache_db_name) 
-  except:
-    return  
-  
-  sql = """delete from parse_cache;"""    
-  try:   
-    cur = conn.cursor()
-    cur.execute(sql)
-  except:
-    print("Error: cache clearing failed.")
-    sys.exit(0)
-  conn.close()
-  return
-
-def clear_proof_cache(ctxt):
-  if not cache_db_name: return
-
-  try:
-    conn = sqlite3.connect(cache_db_name)
-  except:
-    return
-
-  sql = """delete from proof_cache;"""
-  try:
-    cur = conn.cursor()
-    cur.execute(sql)
-  except:
-    print("Error: cache clearing failed.")
-    sys.exit(0)
-  conn.close()
-  return
+def clear_proof_cache(ctxt=None):
+  return _clear_one("proof_cache")
 
 
 def clear_llm_cache():
-  """Delete all entries from the LLM response cache."""
-  if not cache_db_name: return
-
-  try:
-    conn = sqlite3.connect(cache_db_name)
-  except:
-    return
-
-  sql = """delete from llm_cache;"""
-  try:
-    cur = conn.cursor()
-    cur.execute(sql)
-    conn.commit()
-  except:
-    print("Error: llm cache clearing failed.")
-  conn.close()
-  return
+  return _clear_one("llm_cache")
 
 
 def clear_all_caches():
-  """Clear all cache tables (llm_cache, proof_cache, parse_cache).
+  """Delete every row of every cache table.
 
-  Returns a dict {"llm": N, "proof": N, "parse": N} with the number of
-  rows deleted from each table.  Missing tables count as 0 deleted rows.
+  -> {"llm": N, "proof": N, "parse": N}, the rows deleted from each.  A table
+  that does not exist counts as 0.  A failure is recorded in `errors` and
+  reported as 0 for that table, never as an exception.
   """
-  if not cache_db_name:
-    return {"llm": 0, "proof": 0, "parse": 0}
-
-  try:
-    conn = sqlite3.connect(cache_db_name)
-  except:
-    print("Error: could not connect to the cache database", cache_db_name)
-    return {"llm": 0, "proof": 0, "parse": 0}
-
-  counts = {}
-  for table in ("llm_cache", "proof_cache", "parse_cache"):
-    key = table.split("_")[0]   # "llm", "proof", "parse"
-    try:
-      cur = conn.cursor()
-      cur.execute("delete from " + table)
-      conn.commit()
-      counts[key] = cur.rowcount
-    except sqlite3.OperationalError:
-      counts[key] = 0   # table does not exist yet
-    except:
-      counts[key] = 0
-
-  conn.close()
-  return counts
-
-
-# =========== the end ==========
+  return {table.split("_")[0]: _clear_one(table) for table in _TABLES}

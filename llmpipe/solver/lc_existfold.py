@@ -11,7 +11,7 @@
 #
 # Gated entirely on -existfold (option existfold_flag); nothing here runs
 # otherwise.  Pre-clausification TREE pass: run after coarsen_events, before
-# lc_ctxt.  See memos/L2_EXISTFOLD_PLAN.md.
+# lc_ctxt.  See docs/encodings/compiled-representations.md.
 
 # relation -> (property functor, named-witness functor)
 _HAS_RELS = {"has part": ("$has_part", "$typed_partof"),

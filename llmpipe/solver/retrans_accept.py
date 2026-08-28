@@ -6,8 +6,9 @@ used, and returns an acceptance record.  It never looks at the accepted answer,
 the expected answer, the dataset name or the case id: every check reads the
 translation, the clauses and the proof.
 
-The three policy levels share one reason-code vocabulary, frozen in
-`elogs/retrans_acceptance_2026_08_27/WP0_policy_declaration.json`:
+The three policy levels share one reason-code vocabulary.  It was frozen
+before the measurement, in a local archive that this repository does not track,
+and `SEVERITY` below is its authoritative copy:
 
   permissive  current behaviour, except structural corruption is refused
   balanced    also refuses demonstrated information additions and losses
@@ -25,6 +26,8 @@ or an unparsable proof yields CAUTION, never a silent ACCEPT.
 
 import json
 import re
+
+import lc_clausify
 
 try:
   from lc_clausify import _safe_singularize_class as _sing_class
@@ -192,8 +195,23 @@ _VAR = re.compile(r"^[A-Z][a-zA-Z]?\d*$")
 
 def _is_var(x):
   """Stage-2 variables: `?:X` in clause form, or a short capitalized token such
-  as X, E1, Z3, Fv135 in package form."""
-  return isinstance(x, str) and (x.startswith("?:") or bool(_VAR.match(x)))
+  as X, E1, Z3, Fv135 in package form.
+
+  A world constant (W0, W1, ...) is NOT a variable, which is what
+  `lc_clausify.looks_like_var` says as well.  This module keeps its own
+  narrower pattern rather than calling that one: the broad sibling there also
+  accepts a multi-letter word, so `Mary` and `English` would become variables
+  and drop out of the vocabulary this module traces.  The two agree on every
+  token they both classify; only the range differs.
+
+  """
+  if not isinstance(x, str):
+    return False
+  if x.startswith("?:"):
+    return True
+  if lc_clausify.is_world_constant(x):
+    return False
+  return bool(_VAR.match(x))
 
 
 def canon(node, env=None, depth=0):
@@ -271,8 +289,12 @@ def _content_symbols(pkg):
         if isinstance(x, str) and not _is_var(x):
           syms.add(_norm_symbol(x))
     for x in a[1:]:
+      # A world constant is not a variable and not content either: it names
+      # the state an atom holds in.  The literal "W0" that used to stand here
+      # covered only the first world; `is_world_constant` covers W1, W2 too.
       if isinstance(x, str) and not _is_var(x) and not x.startswith("$") \
-         and x not in ("W0", "none", "activity"):
+         and not lc_clausify.is_world_constant(x) \
+         and x not in ("none", "activity"):
         syms.add(_norm_symbol(x))
   out = set()
   for s in syms:
@@ -705,14 +727,6 @@ def _verb_modes(pkg, s1_unit):
       if isinstance(mode, str):
         out[root].add(mode.strip().lower())
   return {v: m for v, m in out.items() if v}
-
-
-def _canonical_modal(pkg, s1_unit):
-  """Non-default modal or event classification a unit carries canonically."""
-  m = set()
-  for v, modes in _verb_modes(pkg, s1_unit).items():
-    m |= set(x for x in modes if x not in DEFAULT_MODES)
-  return m
 
 
 def _has_content_event(pkg, s1_unit):

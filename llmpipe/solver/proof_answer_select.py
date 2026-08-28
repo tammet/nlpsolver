@@ -344,38 +344,6 @@ def _extract_class_names(logic):
   return class_names
 
 
-def _filter_class_name_leaks(answers, logic):
-  """Drop answers whose every $ans atom binds to a CLASS name string
-  (a name appearing as the first arg of some isa(CLASS, *) in the logic).
-  These answers arise when part-inheritance-style bg axioms unify the
-  answer variable with a class name via a population fact; they are not
-  legitimate entity answers.  Answers mixing entity + class values are
-  preserved; pure class-leak answers are removed."""
-  class_names = _extract_class_names(logic)
-  if not class_names:
-    return answers
-  result = []
-  for ans in answers:
-    val = ans.get("answer")
-    if not isinstance(val, list):
-      result.append(ans)
-      continue
-    has_any_ans = False
-    all_class = True
-    for atom in val:
-      if not isinstance(atom, list) or len(atom) < 2 or atom[0] != "$ans":
-        continue
-      has_any_ans = True
-      v = atom[1]
-      if not isinstance(v, str) or v not in class_names:
-        all_class = False
-        break
-    if has_any_ans and all_class:
-      continue                     # drop: every $ans value is a class name
-    result.append(ans)
-  return result
-
-
 def _extract_question_pop_keys(logic):
   """Extract a list of (pred, prop_or_class) tuples identifying predicates queried.
 

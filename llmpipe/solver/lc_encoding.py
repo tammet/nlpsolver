@@ -6,7 +6,8 @@
 # semnormalize.py / lc_post_reify.py / solve.py. The pipeline reads ONLY
 # EncodingConfig fields; the CLI flags and the -abstract* presets only change how
 # the config is POPULATED (in EncodingConfig.__init__), never how it is read.
-# See analysis/FLAG_INVENTORY.md.
+# The CLI key -> option key -> config field map is in
+# docs/reference/experimental-options.md.
 
 import globals as _g
 
@@ -118,23 +119,71 @@ def current():
 
 # ======== abstraction experiments (2026-08-26 core-regression study) ========
 #
-# `LLMPIPE_ABSEXP` is a comma list of experiment names.  Each name switches one
-# augmentation of the -abstract* encoding on; unset (the default) leaves every
-# encoding exactly as it was.  Read once per process.  Names in use:
-#   keepdef    the strict finaliser keeps `normally`, `$block` and `typical`
-#   keepctxt   the strict finaliser keeps every $ctxt term (tense and world)
-#   strictfold the flat fold folds only actor + exactly one core object role
-#              (target/recipient/beneficiary/goal/topic) with no adjunct and
-#              no modified typed-existential filler; every other event stays
-#              reified
-#   objbridge  is_rel2(V,A,[R,X]) & isa(K,X) -> is_rel2(V,A,[R,K]) for each
-#              bare-class-token object atom (V,R,K) in the clause list
+# `LLMPIPE_ABSEXP` is a comma list of experiment names.  Each switches on one
+# augmentation of the -abstract* encoding; unset -- the default, and the only
+# state an ordinary run should ever be in -- leaves every encoding exactly as
+# it was.
+#
+# These are the one pipeline control that is NOT an option key, so they do not
+# pass through `_parse_cmd_line` and are not visible in a command line.  That
+# makes them easy to inherit by accident: a worker process started from a shell
+# where the variable is still set would compile a different theory.  Three
+# things guard against that.  The set is read once, here, and validated against
+# `EXPERIMENTS` below, so a typo is an error rather than a silently inactive
+# switch.  `active_experiments()` reports what is on, and `solve` writes it
+# into every case record and summary, so a result says how it was produced.
+# And `tools/test_encoding_experiments.py` asserts the set is empty under the
+# ordinary defaults.
+
 import os as _os
 
-_EXPERIMENTS = frozenset(
-  x.strip() for x in _os.environ.get("LLMPIPE_ABSEXP", "").split(",") if x.strip())
+
+# name -> what it changes.  A name not in this table is rejected.
+EXPERIMENTS = {
+  "keepdef":    "the strict finaliser keeps `normally`, `$block` and `typical`",
+  "keepctxt":   "the strict finaliser keeps every $ctxt term (tense and world)",
+  "strictfold": "the flat fold folds only actor + exactly one core object role "
+                "(target/recipient/beneficiary/goal/topic), with no adjunct and "
+                "no modified typed-existential filler; every other event stays "
+                "reified",
+  "laxrules":   "inside a rule antecedent, strictfold's restriction is lifted",
+  "strictmod":  "the flat fold drops its modifier rule",
+  "rolebridge": "on an eventprop base, bridge the role-tagged object to its "
+                "bare positional form",
+  "objbridge":  "is_rel2(V,A,[R,X]) & isa(K,X) -> is_rel2(V,A,[R,K]) for each "
+                "bare-class-token object atom (V,R,K) in the clause list",
+}
+
+
+class UnknownExperiment(ValueError):
+  """LLMPIPE_ABSEXP named something that is not an experiment."""
+
+
+def _read_experiments():
+  raw = [x.strip() for x in _os.environ.get("LLMPIPE_ABSEXP", "").split(",")]
+  names = frozenset(x for x in raw if x)
+  unknown = sorted(names - set(EXPERIMENTS))
+  if unknown:
+    raise UnknownExperiment(
+      "LLMPIPE_ABSEXP names %s; known experiments are %s"
+      % (", ".join(unknown), ", ".join(sorted(EXPERIMENTS))))
+  return names
+
+
+_EXPERIMENTS = _read_experiments()
 
 
 def experiment(name):
-  """True iff `name` is listed in LLMPIPE_ABSEXP."""
+  """True iff `name` is listed in LLMPIPE_ABSEXP.
+
+  Asking about a name that is not in `EXPERIMENTS` raises: a misspelled query
+  would otherwise read as "off" for ever and the switch would look dead.
+  """
+  if name not in EXPERIMENTS:
+    raise UnknownExperiment("no such experiment: %r" % (name,))
   return name in _EXPERIMENTS
+
+
+def active_experiments():
+  """-> the sorted list of experiments this process has on; [] is ordinary."""
+  return sorted(_EXPERIMENTS)
