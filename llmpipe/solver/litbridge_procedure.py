@@ -6,7 +6,7 @@ The order is fixed and every step is recorded:
      `Error:` answer is repaired once and otherwise stopped as a translation
      failure.  It never reaches bridge generation and is never counted as an
      abstention;
-  2. **the conservative front door** — gk on the case's own clauses.  A
+  2. **the conservative initial attempt** — gk on the case's own clauses.  A
      definite answer ends the case with no LLM call and no dynamic gk call;
   3. **candidates**, then the **initial call**, then the two channels that
      build rules in code;
@@ -246,7 +246,7 @@ def stage2_correction(question, units, error, failed_reply):
                               (failed_reply or "")[:4000])
 
 
-# ---------------------------------------------------------- the front door
+# ---------------------------------------------------------- the initial attempt
 
 UNRESOLVED_ANSWERS = ("Unknown.", None, "")
 

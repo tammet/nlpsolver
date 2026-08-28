@@ -392,14 +392,14 @@ def _english_to_answer_body(text, options=None, collect=None,
   answer = process_proof(proof_result, text=text, s1_json=s1_json, s2_json=s2_json, logic=logic, options=options)
 
   # --- the critique pass (-critic), before any abstraction route ---
-  # One call audits the translation the front door produced.  On RETRANSLATE
+  # One call audits the translation the initial attempt produced.  On RETRANSLATE
   # Stage 2 (or Stage 1 and 2) runs once more with the findings appended, and
   # the ordinary converter and gk follow.  One critique, one rerun, then stop.
   answered_by = "front_door" if not _unresolved(answer) else "none"
   front_door_answer = answer
   # which stage answered the critic's retranslation, when the critic answered
   rerun_answered_by = None
-  # The front door's own gk call, snapshot here.  Every later `call_prover`
+  # The initial attempt's own gk call, snapshot here.  Every later `call_prover`
   # overwrites `collect["gk_command"]`, so a stage that RAN without answering
   # would otherwise leave its command at the top level.  `answering` holds the
   # gk call that produced the final answer; the top-level `proof` and
@@ -1036,14 +1036,14 @@ _announced = set()
 def _announce_stage(name, late=False):
   """One line naming the stage whose blocks follow.
 
-  A stage after the front door parses, converts and calls gk again, and its
+  A stage after the initial attempt parses, converts and calls gk again, and its
   blocks carry the ordinary headers — `=== stage 2 (logic JSON, …) ===`,
   `=== prover input (JSON) ===` and the rest.  This line is what says whose
   they are, so it is printed only at the levels where those headers actually
   repeat: `-details` and above, and `-logic` for a stage that prints a clause
   block there (`late=True`, printed by the block itself).  At most one line
   per stage per run.  `-explain` prints none: it shows the answer and its
-  proof, as it does for an answer the front door found.
+  proof, as it does for an answer the initial attempt found.
   """
   loud = bool(globals.options.get("show_details_flag")
               or globals.options.get("debug_print_flag"))
@@ -1220,7 +1220,7 @@ def _attach_call_accounting(rows, collect):
     log = []
   for entry in log:
     # `tagged` labels each call with the stage that made it; an untagged call
-    # is the front door's own parse.
+    # is the initial attempt's own parse.
     stage = entry.get("tag") or "front_door"
     if stage in ("untagged", "stage1", "stage2", "parse", "prenorm"):
       stage = "front_door"
@@ -1321,7 +1321,7 @@ def _print_graph_theory(got, s1_json=None, llm=None):
       print("\n=== stage 2 (logic JSON, %s) ===\n" % (llm or ""))
       print(json.dumps(got["stage2_graph"], indent=2))
   if (show_logic or debug) and clauses:
-    # the same renderer the front door's block uses, so the two read alike
+    # the same renderer the initial attempt's block uses, so the two read alike
     from proof_render import compute_ambiguity as _compute_ambiguity
     from utils import format_sentences_to_clauses
     _announce_stage("graphtrans", late=True)
@@ -1498,7 +1498,7 @@ def _run_litbridge(text, s1_json, s2_json, logic, answer, llm, llm_version,
       rec["grading"] = grade
       if grade.get("withdrawn"):
         # the proof rests on a rule the grader failed: the bridge answers
-        # nothing and the front door's answer stands
+        # nothing and the initial attempt's answer stands
         answer = base_answer
         rec["resolved"] = False
         rec["withdrawn"] = True
@@ -1572,13 +1572,13 @@ def _set_answering_call(collect, answering, front_door_proof,
   """Put the gk call that produced the answer at the top level of the record.
 
   `proof` and `gk_command` describe the ANSWERING stage's call, whichever
-  stage that was.  When a stage after the front door answered, the front
+  stage that was.  When a stage after the initial attempt answered, the front
   door's own call is kept beside them as `front_door_proof` and
-  `front_door_gk_command`.  When nothing after the front door answered, the
-  front door's call is the top-level one — every `call_prover` writes
+  `front_door_gk_command`.  When nothing after the initial attempt answered, the
+  initial attempt's call is the top-level one — every `call_prover` writes
   `collect["gk_command"]`, so a stage that RAN without answering would
   otherwise leave its own command there.  `clauses` is untouched: it is the
-  front door's clause list at every level.
+  initial attempt's clause list at every level.
   """
   if collect is None:
     return
@@ -2167,7 +2167,8 @@ def _parse_te_gates(spec):
 # ---------------------------------------------------------------------------
 
 # Every stage, in execution order, and the named configurations: one source,
-# `globals`, so the two front doors and the option defaults cannot drift.  The
+# `globals`, so the two command-line entry points and the option defaults
+# cannot drift.  The
 # names are re-exported here because the whole pipeline reads them from
 # `solve`.
 PIPELINE_ORDER = globals.PIPELINE_ORDER
@@ -2223,7 +2224,7 @@ def finalize_pipeline_name(opts, named=False):
 def apply_pipeline(opts, name):
   """Assign all six stage keys from a named configuration.
 
-  Shared by `solve.py` and `runtests.py` so the two front doors cannot grow
+  Shared by `solve.py` and `runtests.py` so the two entry points cannot grow
   different meanings for the same word.  Round 1 of the resolution order.
   """
   key = (name or "").strip().lower()
@@ -2670,193 +2671,212 @@ def _parse_cmd_line():
 
 helptext = """call solve.py with a natural language text like
 "Elephants are big. John is an elephant. Who is big?"
-and/or a filename as an argument, with optional keys:
+and/or a filename as an argument, with optional keys.
 
-output level (hierarchy — each level includes everything from previous levels):
- -explain   : show English proof explanation
- -logic     : show simplified ASU texts, sentences-mapped-to-clauses, logic under proof steps
- -details   : show stage-1/2 JSON, prover input/output JSON
- -debug     : show raw LLM responses, prover params, full pipeline trace
+Every -x key is also accepted as --x.  Full reference:
+docs/reference/command-line.md, and docs/reference/experimental-options.md for
+everything under EXPERIMENTAL AND LEGACY below.
 
-output format:
- -json      : show all logic in raw JSON instead of traditional pred(arg,...) syntax
- -jsonlogic : shortcut for -logic -json
- -gkin FILE : save the GK prover input to FILE (with the GK command as a comment)
- -summary   : one block at the end, whatever the output level: the answer, which
-              stage produced it (front door / graphtrans / litbridge / graphbridge
-              / critic), the front door's own answer, and the LLM calls per stage
- -summary-json : the same block as one JSON line, for scripts
+=== COMMON ===
 
-other:
- -nosolve   : parse to logic only, do not run the prover
- -rawresult : output only the raw JSON result from the prover
- -cache     : cache GK prover results (prover cache is OFF by default)
- -help      : output this helptext
-
-LLM caching (ON by default — cached per provider, version, all parameters and input):
- -nollmcache  : disable LLM response caching for this run
- -clearcache  : clear all caches (LLM, proof, parse) and exit
- -nogeminicache : disable Gemini context caching (on by default for large sysprompts)
-
-semantic normalisation (ON by default):
- -nosemnormal : disable antonym folding and canonical word substitution
-
-LLM selection:
- -llm NAME    : LLM provider: gpt, claude, gemini, or deepseek (default: from llmcall.py config)
+model:
+ -llm NAME    : provider: gpt, claude, gemini or deepseek (default: llmcall.py)
  -version VER : model version string, e.g. claude-sonnet-4-6, gpt-5.1
 
+retry configuration (which stages run when the initial attempt answers Unknown):
+ -pipeline NAME : conservative | balanced | high-recall.  Also -pipeline=NAME.
+                  balanced is the default: the two fallbacks, the critic and
+                  the graph retranslation.  conservative is the two fallbacks
+                  only.  high-recall adds graph bridges.
+
+output level (a hierarchy; each level includes everything above it):
+ -explain   : show the English proof explanation
+ -logic     : + simplified ASU texts, sentences mapped to clauses, step logic
+ -details   : + stage-1/2 JSON, prover input/output JSON
+ -debug     : + raw LLM responses, prover params, full pipeline trace
+
+output format:
+ -json      : show all logic in raw JSON instead of pred(arg,...) syntax
+ -jsonlogic : shortcut for -logic -json
+ -summary   : one block at the end, whatever the output level: the answer, the
+              stage that produced it, the answer the initial attempt reached, the enabled
+              stages and the LLM calls per stage
+ -summary-json : the same block as one JSON line, for scripts
+ -gkin FILE : save the GK prover input to FILE (with the GK command as comment)
+
+time and call bounds:
+ -seconds N          : proof search time for one gk call (default 2)
+ -llm-call-timeout N : deadline in seconds for one logical LLM call, covering
+                       provider attempts, retries and the waits between them.
+                       It never encloses gk.  Default 240; 0 disables it.
+ -llm-call-limit N   : bound on the logical LLM calls for one case, across all
+                       stages, counting cache hits.  0 is unlimited (default).
+
+ -help      : output this helptext
+
+=== ADVANCED ===
+
+caching (LLM responses are cached by default, per provider, version, all
+parameters and input):
+ -nollmcache    : disable LLM response caching for this run
+ -clearcache    : clear all caches (LLM, proof, parse) and exit
+ -nogeminicache : disable Gemini context caching (on by default)
+ -cache         : cache GK prover results as well (off by default)
+
+single retry stages, on top of the chosen configuration.  A switch turns its
+stage on from any position on the command line; a cancel turns it off from any
+position and wins over everything:
+ -fallback_norm  : the normalization fallback (on by default; this confirms it).
+                   Converts the same parse again with the token and shape
+                   normalizations on, and calls gk once more.  No LLM call.
+ -fallback_hyp   : the conditional-question fallback (on by default).  Assumes
+                   the antecedent in an isolated theory and asks the consequent.
+                   No LLM call.
+ -critic         : one LLM call audits the initial attempt's translation; a blocking
+                   finding on its own chain makes Stage 2 run once more with the
+                   findings appended.  One critique, one rerun.
+ -graphtrans     : translate the case a second time into open triples, compile
+                   it and call gk once.  No judge, no bridge.
+ -graphbridge    : invent implications between the open names and search the
+                   graph theory with them.  Turns -graphtrans on as well.
+ -litbridge      : propose implication rules over the case's own displayed
+                   atoms, compile them beside the stored theory and resubmit to
+                   gk, in two rounds.  In no named configuration.
+ cancels: -nofallback_norm  -nofallback_hyp  -nofallback (both)
+          -nocritic  -nographtrans (cancels graphbridge too)
+          -nolitbridge  -nographbridge
+
+the prover:
+ -prover       : show prover params (also included in -debug)
+ -axioms file1.js ... fileN.js : use these files instead of axioms_std.js
+ -strategy file.js : use the given JSON strategy file instead of the default
+ -printlevel N : N>10 shows more of the search process (10 is default, try 12)
+ -nosolve      : parse to logic only, do not run the prover
+ -rawresult    : output only the raw JSON result from the prover
+
+other:
+ -think        : reasoning mode (GPT: reasoning_effort=medium; Claude: extended
+                 thinking; Gemini: needs a 2.5+ model; DeepSeek: reasoner).
+                 -think N sets an integer budget.
+ -nosemnormal  : disable antonym folding and canonical word substitution
+
+settings that are module constants, not flags:
+ litbridge_procedure.EXTRAS      the two code-built litbridge channels
+ litbridge_grader.MODE           None / "stated" / "any"
+ graph_procedure.LIFT            lift a graph proof into the ordinary theory
+ graph_procedure.EVIDENCE        "any" / "stated"
+ graph_procedure.DEFAULT_SOURCES the candidate sources layer 2 enumerates
+ globals.ABSTRACTION_ROUTES      the order the three routes run in
+
+=== EXPERIMENTAL AND LEGACY ===
+
+None of the following is needed for ordinary use.  Each is described in
+docs/reference/experimental-options.md.
+
+the safe proof-shortening rewrites.  Two guarded, exactly reversible rewrites
+are ATTEMPTED BY DEFAULT on the ordinary canonical theory.  Each checks its own
+conditions per occurrence and, when one fails, leaves that source form
+unchanged.  Each keeps bidirectional adapters to the canonical neo-Davidsonian
+predicates, which remain the language of axioms_std.js and of any later
+knowledge base.  A compact atom may appear in the formal proof and is the basis
+of the English proof; a step that converts between the two spellings is
+labelled "representation conversion" and is not presented as knowledge.  The
+internal names are davidson2 and existfold2:
+ -nodavidson2   : reversible event compression off; the canonical
+                  neo-Davidsonian spine is restored.  davidson2 compresses
+                  {isa(activity,E), has type(E,V), has actor(E,A),
+                  has target(E,T)} to event(V,A,T,E), and only when expanding
+                  it back reproduces the group.  It never replaces a participant
+                  by its class, never invents a missing actor or target, and
+                  never puts a goal or topic in the object slot.
+ -noexistfold2  : repeated part-witness compression off.  existfold2 folds only
+                  the bare "exists Y. isa(C,Y) & has part(X,Y)" pattern, and
+                  only for a class with at least four occurrences, emitting
+                  three class-specific compatibility clauses.
+ -noproofshort2 : both off.  THIS IS THE COMMAND that reproduces the ordinary
+                  theory and answers as they stood before 2026-08-26.
+ -davidson2 / -existfold2 / -proofshort2 : request one or both from any
+                  position, including on top of an -abstract* preset (the event
+                  compression declines on a flat base and leaves it alone).
+ -event davidson2 : select the event compression as the base outright.
+ Naming a base or a preset asks for that base's own historical theory, so the
+ defaults stand aside for -event neodavidson / davidson / flat / flatroles, the
+ legacy -existfold, and every -abstract* preset.
+
+acceptance policy:
+ -accept NAME  : permissive | balanced | strict.  Also -accept=NAME.  Applies
+                 proof-local checks to a critic or graph answer.  Off unless
+                 given.  balanced and strict discarded more correct answers than
+                 wrong ones in measurement.
+
 alternative parsing shapes (replace the default two-stage English->logic parse):
- -s2split     : one Stage-2 LLM call per Stage-1 sentence package; outputs joined
-                into one logic (failed sentences skipped unless they hold the
-                question; locally-invented worlds renumbered to fresh indices).
-                Also applies the cross-sentence shape-unification repair
-                (predicate rename, shape bridges, compound composition,
-                broad-supertype isa) that reconciles the divergent per-sentence
-                parses
- -combined-instr FILE     : single-stage parsing -- one LLM call, English -> logic,
-                            no Stage-1 JSON (enables single-stage mode)
+ -s2split     : one Stage-2 LLM call per Stage-1 sentence package; outputs
+                joined (failed sentences skipped unless they hold the question;
+                locally-invented worlds renumbered).  Also applies the
+                cross-sentence shape-unification repair.
+ -combined-instr FILE     : single-stage parsing -- one LLM call, English ->
+                            logic, no Stage-1 JSON
  -combined-examples FILE  : combined examples prompt file (optional)
  -combined-checklist FILE : combined checklist prompt file (optional)
  -directanswer FILE       : answer the question directly with one LLM call (no
-                            logic, no prover); test-set agnostic
+                            logic, no prover)
+ -prenorm      : pre-Stage-1 LLM wording normalisation (composable)
+ -noprenorm    : force prenorm off after a preset
+ -nocrossstage : disable the cross-stage guard-retry
 
-logic conversion / representation (transform the Stage-2 logic before the prover):
- event-encoding base -- one selector, default neodavidson:
-  -event MODE   neodavidson : reified neo-Davidsonian events (default)
-                davidson    : compact event(V,A,O,E), keep handle + adjuncts
-                davidson2   : the exact spine compression (see -davidson2)
-                flat        : flat relational is_rel2(V,subj,obj)
-                flatroles   : flat relational, eventprop-tagged object
- additive abstraction primitives (compose with any -event base):
-  -entitymerge   : proper-noun entity canonicalization + set-label coreference
-  -typeenrich[=GATES] : taxonomy/isa enrichment; bare = all six sub-gates, or a
+event-encoding bases -- one selector, default neodavidson:
+ -event MODE   neodavidson : reified neo-Davidsonian events (default)
+               davidson    : compact event(V,A,O,E), keep handle + adjuncts
+               davidson2   : the exact spine compression (see above)
+               flat        : flat relational is_rel2(V,subj,obj)
+               flatroles   : flat relational, eventprop-tagged object
+
+additive abstraction primitives (compose with any -event base):
+ -entitymerge   : proper-noun entity canonicalization + set-label coreference
+ -typeenrich[=GATES] : taxonomy/isa enrichment; bare = all six sub-gates, or a
                   comma list of super,gender,nametype,compound,plural,gnoun (use
                   -name to exclude, `all` for all; e.g. -typeenrich=all,-plural)
-  -guarddrop     : drop redundant antecedent isa type guards (needs a fold base)
-  -bridges       : frame/bridge axioms: rel2<->event, occasion-location,
-                   in-haspart, reflexive-property (needs -event flat/flatroles)
-  -dropdefinites : skip $theof1 definite reification; leave definites as relations
-  -localantonyms : restrict antonym folding to the problem + axiom vocabulary
-  -existfold     : (L2) fold "exists Y. isa(C,Y) & has_part/have(X,Y)" into
-                   has_property([$has_part/$have,C], X) + named-witness bridge
- the safe proof shorteners -- ATTEMPTED BY DEFAULT on the ordinary canonical
- theory.  Each is a guarded, exactly reversible rewrite that refuses locally
- whenever its own conditions fail, leaving that source form unchanged, and each
- keeps bidirectional adapters to the canonical neo-Davidsonian predicates, which
- remain the language of axioms_std.js and of any later knowledge base.  A compact
- atom is an internal proof-search form, but it may appear in the formal proof and
- is the basis of the English proof; a step that converts between the two
- spellings is labelled "representation conversion" and is not presented as
- knowledge:
-  davidson2      : compress the event spine {isa(activity,E), has type(E,V),
-                   has actor(E,A), has target(E,T)} to event(V,A,T,E), and only
-                   when expanding it back reproduces the group.  Never replaces a
-                   participant by its class, never invents a missing actor or
-                   target, never puts a goal or topic in the object slot.
-  existfold2     : fold only the bare "exists Y. isa(C,Y) & has part(X,Y)"
-                   pattern, and only for a class with at least four occurrences,
-                   emitting three class-specific compatibility clauses.  No
-                   `have`, no schema quantified over the class.
- turning them off, each winning from any position on the command line:
-  -nodavidson2   : davidson2 off; the canonical neo-Davidsonian spine is restored
-  -noexistfold2  : existfold2 off
-  -noproofshort2 : both off.  THIS IS THE COMMAND that reproduces the ordinary
-                   theory and answers as they stood before 2026-08-26.
- asking for them where they are not the default:
-  -davidson2 / -existfold2 / -proofshort2 : request one or both from any
-                   position, including on top of an -abstract* preset (davidson2
-                   declines on a flat base and leaves it alone).
-  -event davidson2 : select davidson2 as the base outright.
- Naming a base or a preset asks for that base's own historical theory, so the
- defaults stand aside for `-event neodavidson`, `-event davidson`, `-event flat`,
- `-event flatroles`, the legacy `-existfold`, and every `-abstract*` preset.
-  -propclass     : property<->class canonicalization: bridge isa(W,X)<->has_property(W,X)
-                   for a concept the flat fold left in both shapes (safe isa->has_property;
-                   promote has_property->isa only for a nominal compound). (in -abstract-max)
-  -numtype       : numeric-literal typing: parse numeral strings ("34") to int/float and
-                   materialize isa(number/integer/...,N) when -isa(...,N) is demanded. (in -abstract-max)
-  -compasym      : comparative asymmetry: for a strict-scalar adjective R used as
-                   is_rel2(R,X,Y), emit is_rel2(R,X,Y)->-is_rel2(R,Y,X). (in -abstract-max)
- simplification:
-  -simple        : no context, no exceptions, simple properties (the three below)
-  -nocontext     : no context (time, situation) information in logic
-  -noexceptions  : no exception (blocker) information in logic
-  -simpleprops   : simplified properties without strength/type parameters
- abstraction presets (pure expansions into the primitives above):
-  -abstract       : -event flat + entitymerge + guarddrop + bridges + dropdefinites
-                    + typeenrich + localantonyms + simpleprops
-  -abstract-roles : as -abstract but -event flatroles (eventprop-tagged objects)
-  -abstract-max   : as -abstract-roles + prenorm + propclass + numtype + compasym
-                    + nominalretry + negretry, plus the open-world repair stack
-                    (all six stages below). prenorm, nominalretry and negretry can
-                    make live LLM calls, and so does every stage but the two
-                    fallbacks.
- -prenorm       : pre-Stage-1 LLM wording normalisation (composable; FOLIO base)
- -noprenorm     : force prenorm off after a preset
- -nocrossstage  : disable the cross-stage guard-retry
+ -guarddrop     : drop redundant antecedent isa type guards (needs a fold base)
+ -bridges       : frame/bridge axioms: rel2<->event, occasion-location,
+                  in-haspart, reflexive-property (needs -event flat/flatroles)
+ -dropdefinites : skip $theof1 definite reification; leave definites as relations
+ -localantonyms : restrict antonym folding to the problem + axiom vocabulary
+ -existfold     : (legacy) fold "exists Y. isa(C,Y) & has_part/have(X,Y)" into
+                  has_property([$has_part/$have,C], X) + named-witness bridge
+ -propclass     : property<->class canonicalization: bridge
+                  isa(W,X)<->has_property(W,X) for a concept the flat fold left
+                  in both shapes
+ -numtype       : numeric-literal typing: parse numeral strings ("34") to
+                  int/float and materialize isa(number/integer/...,N) on demand
+ -compasym      : comparative asymmetry: for a strict-scalar adjective R used as
+                  is_rel2(R,X,Y), emit is_rel2(R,X,Y)->-is_rel2(R,Y,X)
 
-the repair stack: six stages, run in this order when the front door leaves the
-question unresolved, each stopping the rest once it answers definitely --
- fallback_norm, fallback_hyp, critic, graphtrans, litbridge, graphbridge.
-`-summary` prints stages_enabled, and every case JSON carries it.
+simplification:
+ -simple        : no context, no exceptions, simple properties (the three below)
+ -nocontext     : no context (time, situation) information in logic
+ -noexceptions  : no exception (blocker) information in logic
+ -simpleprops   : simplified properties without strength/type parameters
 
- flag sets (each assigns all six stage keys, so it replaces an earlier set):
-  -stack         : fallbacks + critic + graphtrans + graphbridge, no literal
-                   bridge. Material of unknown origin: the general default.
-  -stack-closed  : fallbacks + critic + graphtrans. Known closed-world material
-                   (core-like, FOLIO-like), where neither bridge pays.
-  -stack-open    : all six. Known open-world material (EntailmentBank-like).
- resolution order:
-  1. presets and flag sets, left to right; a later one overwrites an earlier one
-  2. an explicit stage switch turns its stage on from any position on the line
-  3. a cancel wins over both, wherever it stands
+abstraction presets (pure expansions into the primitives above):
+ -abstract       : -event flat + entitymerge + guarddrop + bridges
+                   + dropdefinites + typeenrich + localantonyms + simpleprops
+ -abstract-roles : as -abstract but -event flatroles
+ -abstract-max   : as -abstract-roles + prenorm + propclass + numtype + compasym
+                   + nominalretry + negretry, plus all six retry stages.
+                   prenorm, nominalretry and negretry can make live LLM calls,
+                   and so does every stage but the two fallbacks.
 
- the stages:
-  -fallback_norm : ON BY DEFAULT. When the front door ends unresolved, convert the
-                   same parse again with the token and shape normalizations on,
-                   plus the question rewrites the text licenses, and call gk once
-                   more. No LLM call, at most two gk calls (DOCUMENTATION.md 16).
-  -fallback_hyp  : ON BY DEFAULT. When the question is a conditional and both the
-                   front door and fallback_norm ended unresolved, assume the
-                   antecedent in an isolated theory and ask the consequent. Nothing
-                   is inserted into the ordinary premise set. No LLM call, one gk
-                   call (DOCUMENTATION.md 16).
-  -critic        : one LLM call audits the translation the front door produced; a
-                   blocking finding on its own chain makes Stage 2 run once more
-                   with the findings appended. One critique, one rerun
-                   (DOCUMENTATION.md 15).
-  -graphtrans    : translate the case a second time into open triples, compile it
-                   and call gk once. No judge, no bridge (DOCUMENTATION.md 14).
-  -litbridge     : propose implication rules over the case's own displayed atoms,
-                   compile them beside the stored theory and resubmit to gk. Two
-                   rounds (DOCUMENTATION.md 13). Net-harmful on closed-world
-                   material, so only -stack-open and -abstract-max turn it on.
-  -graphbridge   : invent implications between the open names and search layer 1's
-                   theory with them. Turns -graphtrans on as well, since layer 2
-                   searches layer 1's theory (DOCUMENTATION.md 14).
- the cancels, each winning from any position:
-  -nofallback_norm  -nofallback_hyp  -nofallback (both)
-  -nocritic  -nographtrans (cancels graphbridge too)  -nolitbridge  -nographbridge
+older spellings, kept so existing scripts keep working:
+ -stack         : same as -pipeline high-recall
+ -stack-closed  : same as -pipeline balanced
+ -stack-open    : all six stages, literal bridge included
+ -geminicache   : accepted and ignored; Gemini context caching is the default
 
- settings that are module constants, not flags:
-  litbridge_procedure.EXTRAS         the two code-built litbridge channels
-  litbridge_grader.MODE              None / "stated" / "any"
-  graph_procedure.LIFT               lift a graph proof into the ordinary theory
-  graph_procedure.EVIDENCE           "any" / "stated"
-  graph_procedure.DEFAULT_SOURCES    the candidate sources layer 2 enumerates
-  globals.ABSTRACTION_ROUTES         the order the three routes run in
-
-LLM reasoning:
- -think       : enable medium reasoning/thinking mode (GPT: reasoning_effort=medium;
-                Claude: extended thinking; Gemini: requires 2.5+ model;
-                DeepSeek: switches to deepseek-reasoner)
-
-controlling the prover:
- -seconds N    : give N seconds for proof search (default 2)
- -prover       : show prover params (also included in -debug)
- -axioms file1.js ... fileN.js : use these files as axioms instead of axioms_std.js
- -strategy file.js : use the given JSON strategy file instead of the default
- -printlevel N : use N>10 to see more of the search process (10 is default, try 12)
+resolution order for every stage selection:
+ 1. named configurations, presets and flag sets, left to right; a later one
+    overwrites an earlier one
+ 2. an explicit stage switch turns its stage on from any position
+ 3. a cancel wins over both, wherever it stands
 """
 
 

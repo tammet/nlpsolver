@@ -1,6 +1,6 @@
 """The normalization fallback (`-fallback_norm`).
 
-When the front door leaves the question unresolved, the same Stage-1/Stage-2
+When the initial attempt leaves the question unresolved, the same Stage-1/Stage-2
 parse is converted a second time with a set of token and shape normalizations
 switched on, and gk is called once more.  No LLM call is made.  A definite
 answer here stops every later route and names itself `fallback_norm` in
@@ -37,7 +37,7 @@ import globals as _g
 
 # --------------------------------------------------------------------------
 # Configuration.  These are module-level booleans, not CLI flags: a flag would
-# invite switching a normalization on in the front door, whose behaviour under
+# invite switching a normalization on in the initial attempt, whose behaviour under
 # always-on normalizations was never measured.  An experiment that wants one
 # off edits this block for one arm.
 # --------------------------------------------------------------------------
@@ -55,7 +55,7 @@ INCLUSIVE_SECOND = True  # after an Unknown, retry an uncued xor question inclus
 
 # The internal option key each configuration boolean switches on for the
 # fallback conversion, and nothing else.  `run` saves and restores every key
-# here, so the front door's own conversion is never affected.
+# here, so the initial attempt's own conversion is never affected.
 _KEYS = {
     "QUNIV": "quniv_flag",
     "DASHNORM": "dashnorm_flag",
@@ -335,7 +335,7 @@ def apply_question_transforms(logic, fixes=None, s1_json=None, notes=None):
   rewritten question a hypothesis package ["@id", SID+"h", ["holds", "W0",
   H]] is appended (H = the conjunction of collected hypothesis formulas).
   With both option keys off the function returns its input unchanged, so the
-  front door never enters it.
+  initial attempt never enters it.
   """
   opts = _g.options
   if not (opts.get("qor_flag", False) or opts.get("qpresup_flag", False)):
@@ -450,7 +450,7 @@ def run(s1_json, s2_json, text, base_logic, options):
 
   -> {"answered", "answer", "logic", "proof", "record"}.  The record names the
   normalizations that were on, every submission with its clauses, its diff
-  against the front door's clause set, its raw gk result and its answer, so a
+  against the initial attempt's clause set, its raw gk result and its answer, so a
   recovery can be read back without re-running anything.
   """
   import solve

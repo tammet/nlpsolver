@@ -1507,7 +1507,7 @@ def _stage_tag(stage_nr):
   """The label a stage call carries.
 
   A route that retranslates (the graph layer 1) runs its own Stage 2 through
-  this same runner.  Its calls belong to the route, not to the front door, so
+  this same runner.  Its calls belong to the route, not to the initial attempt, so
   a route tag already in force is kept and the stage goes into a field.
   """
   import globals as _g

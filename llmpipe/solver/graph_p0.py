@@ -1,6 +1,7 @@
 """Layer 1 of the graph mechanism: the retranslation, and one gk call.
 
-`-graphtrans`.  When the front door leaves the question unresolved, the case
+`-graphtrans`.  When the initial attempt leaves the question unresolved, the
+case
 is translated a second time into open triples, compiled under the frozen graph
 configuration and given to gk once.  No judge, no grader, no invented bridge:
 whatever this layer answers, it answers from the case's own words read a
@@ -39,6 +40,34 @@ VARIANT_CONFIDENCE = 0.9
 
 NO_QUESTION = "no question package"
 TRANSLATION_FAILED = "the graph translation failed"
+
+# A malformed logical structure must never reach the compiler: it once let a
+# conditional conclusion compile as an unconditional clause (gpt/ebn-0016).
+# The single corrective retry may repair it; if it does not, layer 1 stops
+# before compilation and before GK.
+STRUCTURALLY_INVALID = "graph_translation_structurally_invalid"
+
+
+def arity_issues(s2):
+  """The `logical_operator_arity` issues of a graph Stage 2, if any."""
+  if s2 is None:
+    return []
+  try:
+    import graph_stage2 as GS
+    return [i for i in GS.check_operator_arity(s2)
+            if (i["kind"] if isinstance(i, dict) else i.kind)
+            == "logical_operator_arity"]
+  except Exception:                                              # noqa: BLE001
+    return []
+
+
+def _as_dicts(issues):
+  out = []
+  for i in issues or []:
+    out.append(i if isinstance(i, dict)
+               else {"kind": i.kind, "location": i.location,
+                     "description": i.description, "evidence": i.evidence})
+  return out
 
 # a marked form whose base form also occurs is bridged one way only; nothing
 # is written for a future or prospective auxiliary, where the tense is meaning
@@ -239,6 +268,22 @@ def run_graph_p0(text, s1_json, llm=None, version=None, max_tokens=None,
   out["probably"] = bool(got.get("confidence") is not None
                          and got.get("confidence") < 1.0
                          and got.get("answer") is not None)
+  # An unconditional proof-validity check, independent of the optional -accept
+  # policies: a definite answer whose proof rests on the question translation
+  # alone is not evidence, so layer 1 reports unresolved and the pipeline may
+  # continue to any later enabled stage.  The raw result is kept for audit.
+  if out["answer"] is not None:
+    refusal = question_only_proof(out.get("proof"), s1_json)
+    if refusal:
+      out["refused"] = refusal
+      out["refused_answer"] = out["answer"]
+      out["refused_answer_string"] = out["answer_string"]
+      out["refused_confidence"] = out["confidence"]
+      out["stopped_at"] = QUESTION_ONLY
+      out["answer"] = None
+      out["answer_string"] = None
+      out["confidence"] = None
+      out["probably"] = False
   out["seconds"] = round(time.time() - t0, 2)
   return out
 
@@ -260,9 +305,11 @@ def _translate_with_retry(case_id, s1_json, llm, version, max_tokens, out,
                              None, 1, text)
   out["llm_calls"] += 1
   out["issues_before"] = _kinds(record.get("issues"))
+  first_arity = arity_issues(s2)
+  record["arity_issues_first"] = _as_dicts(first_arity)
   if s2 is None:
     return None, record
-  if not record.get("issues"):
+  if not record.get("issues") and not first_arity:
     out["issues_after"] = {}
     return s2, record
   correction = _correction_text(record["issues"])
@@ -273,13 +320,31 @@ def _translate_with_retry(case_id, s1_json, llm, version, max_tokens, out,
   out["retries"] = 1
   record["retry_correction"] = correction
   if s2b is None:
-    # the retry lost the translation: keep the first, with its issues
+    # the retry lost the translation.  Keeping the first response is only safe
+    # when it is structurally sound; a malformed one must not reach compile.
     out["issues_after"] = out["issues_before"]
     record["retry_failed"] = record_b.get("stopped_at") or TRANSLATION_FAILED
+    if first_arity:
+      record["stopped_at"] = STRUCTURALLY_INVALID
+      record["structurally_invalid"] = {
+        "where": "first response kept after the retry failed",
+        "arity_issues": _as_dicts(first_arity)}
+      return None, record
     return s2, record
   out["issues_after"] = _kinds(record_b.get("issues"))
   record_b["retry_correction"] = correction
   record_b["issues_before_retry"] = record.get("issue_kinds")
+  record_b["arity_issues_first"] = _as_dicts(first_arity)
+  retry_arity = arity_issues(s2b)
+  record_b["arity_issues_retry"] = _as_dicts(retry_arity)
+  if retry_arity:
+    # the retry was told about it and still returned a malformed formula
+    record_b["stopped_at"] = STRUCTURALLY_INVALID
+    record_b["structurally_invalid"] = {
+      "where": "corrective retry still malformed",
+      "arity_issues": _as_dicts(retry_arity)}
+    record_b["first_response_stage2"] = s2
+    return None, record_b
   return s2b, record_b
 
 
@@ -302,6 +367,82 @@ def _correction_text(issues):
             else issue.description)
     lines.append("- [%s] %s: %s" % (kind, where, what))
   return "\n".join(lines)
+
+
+# Sources that carry no evidence of their own and must not count when asking
+# whether a proof rests on anything but the question.
+BOOKKEEPING_SOURCES = ("$auto_negated_question", "assumption", "goal",
+                       "question", "$ans", "negated_question")
+
+QUESTION_ONLY = "question_only_graph_proof"
+
+
+def proof_sources(proof):
+  """Clause names a gk proof actually cites, from its `["in", NAME, ...]` steps.
+
+  Read from the proof itself rather than from `@sourcetype`, because some
+  generated question clauses lose that annotation.
+  """
+  names = []
+  steps = proof if isinstance(proof, list) else []
+  if isinstance(proof, dict):
+    for ans in proof.get("answers") or []:
+      for k in ("proof", "positive proof", "negative proof"):
+        if isinstance(ans.get(k), list):
+          steps = ans[k]
+          break
+      break
+  for step in steps:
+    if not isinstance(step, list) or len(step) < 2:
+      continue
+    why = step[1]
+    if (isinstance(why, list) and len(why) > 1 and why[0] == "in"
+        and isinstance(why[1], str)):
+      names.append(why[1])
+  seen, out = set(), []
+  for n in names:
+    if n not in seen:
+      seen.add(n)
+      out.append(n)
+  return out
+
+
+def _is_bookkeeping(name):
+  low = str(name).strip().lower()
+  if low in BOOKKEEPING_SOURCES:
+    return True
+  # representation-conversion definitions carry no case evidence
+  return low.startswith("frm_") or low.startswith("$")
+
+
+def question_clause_names(s1_json):
+  """Graph clause names of the Stage-1 question units, normally `sent_Sx`."""
+  import graph_stage2 as GS
+  out = set()
+  for uid in GS.question_unit_ids(s1_json) or []:
+    out.add("sent_%s" % uid)
+    out.add(str(uid))
+  return out
+
+
+def question_only_proof(proof, s1_json):
+  """-> the refusal record when the proof rests on the question alone.
+
+  Refused only when at least one substantive source remains after the
+  bookkeeping ones are set aside, AND every one of those is a Stage-1 question
+  unit.  A proof citing any passage unit, background clause or substantive
+  axiom is never refused.
+  """
+  qnames = question_clause_names(s1_json)
+  cited = proof_sources(proof)
+  substantive = [n for n in cited if not _is_bookkeeping(n)]
+  if not substantive:
+    return None
+  if not all(n in qnames for n in substantive):
+    return None
+  return {"reason": QUESTION_ONLY,
+          "question_units": sorted(qnames & set(substantive)),
+          "proof_sources": cited}
 
 
 def _call_gk(clauses, s1_json, s2_graph, text, opts, seconds, gk=None):

@@ -12,7 +12,7 @@ The design follows what earlier experiments ruled out:
   * the grader sees the passage and one rule, never the answer and never the
     question's polarity, so it cannot grade backwards from a conclusion;
   * a FAIL on any cited rule withdraws that proof, and a case whose proof is
-    withdrawn keeps the front door's answer.  No new rule search and no extra
+    withdrawn keeps the initial attempt's answer.  No new rule search and no extra
     gk round follow a withdrawal.
 
 Two evidence modes, mirroring `graph_procedure.EVIDENCE`:

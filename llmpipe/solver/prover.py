@@ -192,11 +192,11 @@ Example logic argument:
 #
 # Attribution used to be read off the LLM call label, which was wrong twice
 # over: the two fallbacks make no LLM call at all, so their gk calls fell to
-# the front door, and the critic's rerun re-enters the whole pipeline, so its
+# the initial attempt, and the critic's rerun re-enters the whole pipeline, so its
 # gk call was labelled by whatever ran inside the rerun.
 #
 # The stage is now declared explicitly around each stage's body.  The stack's
-# OUTER entry owns the call -- a critic rerun's inner front door still belongs
+# OUTER entry owns the call -- a critic rerun's inner initial attempt still belongs
 # to the critic -- and the inner entry is kept alongside it for reading.
 # ---------------------------------------------------------------------------
 

@@ -192,7 +192,7 @@ cd mkdata && python3 build_solver_data.py
 ```
 
 The generated files are loaded at import time by `semnormalize.py` and
-`lc_postprocess.py`. See DOCUMENTATION.md section 9 for integration details.
+`lc_postprocess.py`. See ../docs/development/generated-data.md for integration details.
 
 ---
 

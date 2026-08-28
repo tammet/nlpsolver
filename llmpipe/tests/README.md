@@ -103,4 +103,4 @@ python3 runtests.py tests/tests_core.py -llms claude,gpt -redo-errors
 ```
 
 It resumes by skipping cases whose JSON already exists (`-redo` / `-redo-errors`
-override).  See DOCUMENTATION.md §10 "Running tests" for the full flag list.
+override).  See ../docs/reference/command-line.md for the full flag list.

@@ -1,6 +1,6 @@
-"""The critique pass: one LLM call that audits the front door's translation.
+"""The critique pass: one LLM call that audits the initial attempt's translation.
 
-`-critic`.  When the front door ends Unknown after its own retries, one call
+`-critic`.  When the initial attempt ends Unknown after its own retries, one call
 reads the English, the compacted Stage 1 and the Stage-2 logic, and reports
 what is wrong with the translation.  On `RETRANSLATE` the pipeline runs Stage 2
 (or Stage 1 and 2) once more with the findings appended as a corrective.  One

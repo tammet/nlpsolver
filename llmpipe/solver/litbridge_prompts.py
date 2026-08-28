@@ -729,7 +729,7 @@ def example_sha256():
 def _content_part(literal, n):
   """The predicate and the first `n` arguments: what the passage supplied.
 
-  Conversion appends context arguments on the right (ENCODINGS.md §6), and a
+  Conversion appends context arguments on the right (docs/encodings/gk-clauses.md), and a
   rule generalises them where an isolated fact conversion leaves them
   concrete.  Only the content part is compared.
   """

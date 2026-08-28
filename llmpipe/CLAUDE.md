@@ -1,11 +1,11 @@
 # CLAUDE.md
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
-Detailed reference lives in DOCUMENTATION.md; this file stays concise.
+Detailed reference lives in docs/README.md; this file stays concise.
 
 ## Overview
 
-`llmpipe` is an experimental pipeline for semantic parsing of natural language into first-order predicate logic using LLMs (OpenAI GPT, Anthropic Claude, Google Gemini, DeepSeek). It is part of the larger `nlpsolver` repository. Parsed logic is passed to the `gk` binary theorem prover which returns answers.
+`llmpipe` is an experimental pipeline for semantic parsing of natural language into extended first-order predicate logic using LLMs (OpenAI GPT, Anthropic Claude, Google Gemini, DeepSeek). The logic includes defeasible formulas and probabilistic confidence annotations. It is part of the larger `nlpsolver` repository. Parsed logic is passed to the `gk` binary theorem prover, which returns answers.
 
 ## Repository layout
 
@@ -43,18 +43,17 @@ Output level (hierarchy — each includes previous levels):
 -logic           + simplified text, sentences-to-clauses, logic in proof steps
 -details         + stage-1/2 JSON, prover input/output JSON
 -debug           + raw LLM responses, prover params, full trace
-Every block appears for the stage that ANSWERED, not only for the front door,
-and under the SAME headers — a stage after the front door parses, converts and
+Every block appears for the stage that ANSWERED, not only for the initial attempt,
+and under the SAME headers — a stage after the initial attempt parses, converts and
 calls gk again, so `=== prover input (JSON) ===` and the rest appear twice.
 What says whose they are is one line, `--- stage: graphtrans ---`, printed
 before the stage runs, plus the `=== stages ===` block at the end (which stages
 ran, and which produced the answer).  No header carries a route name.
 -explain shows the answer and its proof and nothing else, whichever stage found
 it.  The case JSON's `answer`, `nl_proof`, `proof`, `gk_command` and
-`final_clauses` describe the answering stage's gk call; the front door's own
+`final_clauses` describe the answering stage's gk call; the initial attempt's own
 call is kept as `front_door_proof` / `front_door_gk_command`, and `stages` is a
-separate information block with the normal keys unchanged (DOCUMENTATION.md
-§10, §14.8).
+separate information block with the normal keys unchanged (docs/reference/runtime-records.md, docs/architecture/graph-representation.md).
 
 Output format:
 -json            Show logic as raw JSON instead of traditional syntax
@@ -62,7 +61,7 @@ Output format:
 -gkin FILE       Save GK prover input to FILE (with GK command as comment)
 
 Logic conversion / representation (transform Stage-2 logic before the prover;
-ENCODINGS.md §6, DOCUMENTATION.md §11). All resolved by one source of truth,
+docs/reference/experimental-options.md, docs/architecture/abstraction.md). All resolved by one source of truth,
 `lc_encoding.EncodingConfig`; the pipeline reads only that config, never a preset.
 
 -event MODE      Event-encoding base (one mutually-exclusive selector; default
@@ -97,7 +96,7 @@ Additive abstraction primitives (compose with any -event base):
 -localantonyms   Restrict antonym folding to problem + axiom vocabulary
 -existfold       Existential-attribute collapse: ∃Y.isa(C,Y)∧has_part(X,Y) →
                  has_property([$has_part,C],X) + named-witness ($typed_partof) bridge
-Simplification (ENCODINGS.md §5):
+Simplification (docs/reference/experimental-options.md):
 -nocontext       Context → constant "$c" (no worlds/tense)
 -noexceptions    Strip $block from defeasible rules
 -simpleprops     Degree predicates → simple (+ -noexceptions)
@@ -107,13 +106,13 @@ Abstraction presets (pure CLI expansions into the primitives above):
                  + typeenrich + localantonyms + simpleprops
 -abstract-roles  As -abstract but -event flatroles (eventprop-tagged objects)
 -abstract-max    As -abstract-roles + prenorm + propclass + numtype + compasym
-                 + nominalretry + negretry, PLUS the open-world repair stack
-                 (all six stages below).  Strongest; FOLIO ladder base.  It
+                 + nominalretry + negretry, PLUS the open-world retry stages
+                 (all six stages below).  The strongest preset; the base of the FOLIO experiments.  It
                  makes LLM calls on every unresolved case.
 -prenorm         Pre-Stage-1 LLM wording normalisation (composable)
 -nocrossstage    Disable the cross-stage guard retry
 
-The repair stack (DOCUMENTATION.md §12.0b): six stages after the front door,
+The retry-stage sequence (docs/reference/configuration.md): six stages after the initial attempt,
 in this order, the first definite answer stopping the rest —
   fallback_norm, fallback_hyp, critic, graphtrans, litbridge, graphbridge.
 `solve.PIPELINE_ORDER` is the one declaration of that order; execution, the
@@ -141,7 +140,7 @@ wrong ones (MEMO_2026_08_27_canonical_stack_census_closed.md).  Wider
 evaluation follows the audit of this implementation.
 
 `-pipeline conservative` is the lower-cost retry sequence: the two
-deterministic fallbacks, no LLM call after the front door.
+deterministic fallbacks, no LLM call after the initial attempt.
 
 Flag sets, each assigning all six stage keys.  `-stack-closed` resolves
 identically to `-pipeline balanced` and `-stack` to `-pipeline high-recall`:
@@ -189,7 +188,7 @@ failure before a valid gk question existed.
                  literal bridges are never judged by it.
 
 The stages:
--fallback_norm   ON BY DEFAULT (DOCUMENTATION.md §16).  When the front door ends
+-fallback_norm   ON BY DEFAULT (docs/architecture/retries.md).  When the initial attempt ends
                  unresolved, convert the SAME parse again with the token and
                  shape normalizations on (quniv, dashnorm, casenorm, compnorm,
                  listprep, singrole) plus the question rewrites the text
@@ -197,12 +196,12 @@ The stages:
                  once more.  No LLM call.  The exclusive reading is submitted
                  before the inclusive one.  At most two gk calls.
 -fallback_hyp    ON BY DEFAULT.  When the question is a conditional and both the
-                 front door and fallback_norm ended unresolved, assume the
+                 initial attempt and fallback_norm ended unresolved, assume the
                  antecedent in an isolated theory (`hyp_<sid>`) and ask the
                  consequent.  Nothing is inserted into the ordinary premise set.
                  Runs with fallback_norm's normalizations on.  No LLM call, one
                  gk call.
--critic          One LLM call audits the translation the front door produced —
+-critic          One LLM call audits the translation the initial attempt produced —
                  the English, the compacted Stage 1 and the Stage-2 logic — and
                  reports findings.  On a blocking finding that lies on its own
                  chain, Stage 2 (or Stage 1 and 2) runs once more with the
@@ -228,14 +227,14 @@ The cancels, each winning from any position:
 
 Settings that are module constants, not flags:
 litbridge_procedure.EXTRAS         the two code-built litbridge channels
-litbridge_grader.MODE              None / "stated" / "any" (DOCUMENTATION.md §13.8)
+litbridge_grader.MODE              None / "stated" / "any" (docs/architecture/literal-bridges.md)
 graph_procedure.LIFT               lift a graph proof into the ordinary theory
 graph_procedure.EVIDENCE           "any" / "stated"
 graph_procedure.DEFAULT_SOURCES    layer 2's candidate sources
 globals.ABSTRACTION_ROUTES         the order the three routes run in
 Each fallback's own configuration is module-level booleans in
 solver/fallback_norm.py and solver/fallback_hyp.py; none of them is a CLI flag,
-and the front door runs with every one of them off.
+and the initial attempt runs with every one of them off.
 
 Alternative parsing shapes (replace the default two-stage parse):
 -s2split         One Stage-2 LLM call per Stage-1 sentence; outputs joined
@@ -250,7 +249,7 @@ Reporting:
 -summary         One block at the end, whatever the output level: the answer,
                  which stage produced it (front_door / fallback_norm /
                  fallback_hyp / critic / graphtrans / litbridge / graphbridge),
-                 the front door's own answer, stages_enabled, the abstraction
+                 the answer the initial attempt reached, stages_enabled, the abstraction
                  order, and the LLM calls per stage (total / live / retries).
                  `runtests.py` writes the same fields into every case JSON
                  (`answered_by`, `front_door_answer`, `stages_enabled`,
@@ -283,24 +282,24 @@ English text
 
 ### Solver Modules (`solver/`)
 
-Grouped by role; **see DOCUMENTATION.md §5 for the full per-module reference** and
-ENCODINGS.md for the representations they produce. Many concerns are split across
-small cohesive files (façade re-exports keep importers stable), so reach for §5
+Grouped by role; **see docs/code/source-map.md for the full per-module reference** and
+docs/encodings/README.md for the representations they produce. Many concerns are split across
+small cohesive files (façade re-exports keep importers stable), so reach for the source map
 rather than guessing from a name.
 
 - **Entry / parsing** — `solve.py` (CLI + `english_to_answer`), `llmparse.py` (two-stage parser, entity-ID normalization, corrective-retry loop), `llmcall.py` (LLM API + SQLite cache), `stage_sanity.py` (Stage-1/2 sanity checks; façade over `stage_sanity_{core,s1,s2,guards}.py`), `directanswer.py`.
 - **Logic conversion** (`logconvert.rawlogic_convert` orchestrates) — `lc_encoding.py` (the `EncodingConfig` gate resolver — single source of truth), `lc_packages.py` (per-`@id`), `lc_rewrites.py` (pre-clausification rewrites), `lc_repairs.py` (structural repairs), `lc_clausify.py` (FOL→CNF), `lc_ctxt.py` (`$ctxt`/time), `lc_questions.py` + `lc_query_guards.py` (questions, guard/what-population), `lc_sets.py` (sets/counting), `lc_coarse.py` + `lc_existfold.py` (event folds), `lc_entity_isa.py` (taxonomy `isa`), `lc_finalize.py` (strict/abstract finaliser).
-- **Post-clausification passes** — `lc_post_normalize.py`, `lc_post_have.py`, `lc_post_reify.py`, `lc_post_inject.py` (+ `lc_inject_synonyms.py`, `lc_inject_scan.py`), `lc_post_population.py`, `lc_post_una.py`, `semnormalize.py`, `axiom_vocab.py`; shared traversal in `treewalk.py`. See "Semantic Normalization" below and DOCUMENTATION.md §7.7.
-- **Proving + proofs** — `prover.py` (gk subprocess), `procproofs.py` → `proof_answer_select.py` / `proof_answer_format.py` / `proof_explain.py`; rendering via `proof_render.py` façade over `proof_utils.py` / `proof_english.py` / `proof_terms.py` / `proof_logic.py`, plus `entity_map.py` and `linguistics.py`. See DOCUMENTATION.md §5.9 and PROOF_RENDERING.md.
-- **Abstention fallbacks** (`-fallback_norm` / `-fallback_hyp`, DOCUMENTATION.md §16) — `fallback_norm.py` (the normalizations, the `casenorm` pass, the text-licensed question rewrites, the exclusive-before-inclusive runner) and `fallback_hyp.py` (the conditional trigger, the refutation pre-check, the isolated theory).  Neither makes an LLM call.
-- **Literal-bridge abstraction** (`-litbridge`, DOCUMENTATION.md §13) — seven `litbridge_*` modules used as one stack: `litbridge_atoms/rules/compile/chain/prompts/procedure/converter.py`.
-- **Critique pass** (`-critic`, DOCUMENTATION.md §15) — `critic_pass.py` (the call, the parser, the decision, the corrective) and `critic_render.py` (what the critic reads); prompt `prompts/critic/critic_system.txt`.
-- **Graph abstraction** (`-graphtrans` / `-graphbridge`, DOCUMENTATION.md §14) — `graph_p0.py` is layer 1 (retranslate, compile, one gk call) and the eight `graph_*` modules are layer 2: `graph_stage2.py` (the second, open-triple Stage 2), `graph_compile.py` (its frozen converter configuration), `graph_inventory.py`, `graph_pairs.py`, `graph_judge.py`, `graph_search.py`, `graph_lift.py`, `graph_procedure.py`. Prompts in `prompts/graph/`; harness `tools/run_graph_bridge.py` + `score_graph_bridge.py` + `report_graph_bridge.py`; fixtures `tools/test_graph_*.py`.
+- **Post-clausification passes** — `lc_post_normalize.py`, `lc_post_have.py`, `lc_post_reify.py`, `lc_post_inject.py` (+ `lc_inject_synonyms.py`, `lc_inject_scan.py`), `lc_post_population.py`, `lc_post_una.py`, `semnormalize.py`, `axiom_vocab.py`; shared traversal in `treewalk.py`. See "Semantic Normalization" below and docs/architecture/logic-compilation.md.
+- **Proving + proofs** — `prover.py` (gk subprocess), `procproofs.py` → `proof_answer_select.py` / `proof_answer_format.py` / `proof_explain.py`; rendering via `proof_render.py` façade over `proof_utils.py` / `proof_english.py` / `proof_terms.py` / `proof_logic.py`, plus `entity_map.py` and `linguistics.py`. See docs/code/source-map.md and docs/reference/proof-output.md.
+- **Abstention fallbacks** (`-fallback_norm` / `-fallback_hyp`, docs/architecture/retries.md) — `fallback_norm.py` (the normalizations, the `casenorm` pass, the text-licensed question rewrites, the exclusive-before-inclusive runner) and `fallback_hyp.py` (the conditional trigger, the refutation pre-check, the isolated theory).  Neither makes an LLM call.
+- **Literal-bridge abstraction** (`-litbridge`, docs/architecture/literal-bridges.md) — seven `litbridge_*` modules used as one stack: `litbridge_atoms/rules/compile/chain/prompts/procedure/converter.py`.
+- **Critique pass** (`-critic`, docs/architecture/retries.md) — `critic_pass.py` (the call, the parser, the decision, the corrective) and `critic_render.py` (what the critic reads); prompt `prompts/critic/critic_system.txt`.
+- **Graph abstraction** (`-graphtrans` / `-graphbridge`, docs/architecture/graph-representation.md) — `graph_p0.py` is layer 1 (retranslate, compile, one gk call) and the eight `graph_*` modules are layer 2: `graph_stage2.py` (the second, open-triple Stage 2), `graph_compile.py` (its frozen converter configuration), `graph_inventory.py`, `graph_pairs.py`, `graph_judge.py`, `graph_search.py`, `graph_lift.py`, `graph_procedure.py`. Prompts in `prompts/graph/`; harness `tools/run_graph_bridge.py` + `score_graph_bridge.py` + `report_graph_bridge.py`; fixtures `tools/test_graph_*.py`.
 - **Infra / data** — `globals.py` (options dict), `cache.py` (SQLite), `pretty.py`, `utils.py`; generated `data_{canonicals,antonyms,synonyms,exclusions,names}.py` from `mkdata/*.txt`.
 
 ### Semantic Normalization Pipeline
 
-Applied after clausification, before the prover (`-nosemnormal` disables). Full reference: DOCUMENTATION.md §7.7 (injection table), §9.5 (preposition subsumption).
+Applied after clausification, before the prover (`-nosemnormal` disables). Full reference: docs/architecture/logic-compilation.md (injection table), docs/development/generated-data.md (preposition subsumption).
 
 ```
 rawlogic_convert() produces clause list
@@ -312,13 +311,13 @@ rawlogic_convert() produces clause list
 
 Soft-synonym and exclusion axioms are injected earlier, inside `rawlogic_convert()`, appended after all `sent_*` clauses.
 
-**Injectors** — emit dynamic axioms gated on input ∪ axiom-vocab presence, all
+**Injectors** — emit dynamic axioms applies only when input ∪ axiom-vocab presence, all
 traversing the clause list via `treewalk.walk_result_atoms`. The KB-driven
 synonym / exclusion / mutex injectors live in `lc_inject_synonyms.py` (shared
 scan helpers in `lc_inject_scan.py`); the bridge / verb / world injectors (carrier
 lift, verb-result-state, acquire→have, positional / containment / attribute
 bridges, stable-adjective persistence, world geometry) live in `lc_post_inject.py`,
-which re-exports the synonym injectors. **Full per-injector table: DOCUMENTATION.md §7.7.**
+which re-exports the synonym injectors. **Full per-injector table: docs/architecture/logic-compilation.md.**
 
 Static counterparts and curated data:
 - `MANUAL_ANTONYMS` / `MANUAL_GRADABLE_ANTONYMS` (`mkdata/build_solver_data.py`) → synthetic `MANUAL_ADJ_*` exclusion groups; gradable pairs flow through exclusion path only (case 55). Chain-rejected antonyms → synthetic `ANT_*` groups.
@@ -355,7 +354,7 @@ Modality is encoded by **arity-1 classifier predicates on Davidsonian event vari
 
 Eight Stage-2 classifiers map 1:1 with the Stage-1 `mode` enum: `typical`, `capability`, `necessity`, `obligation`, `volition`, `intention`, `expectation`, `speech_act`. The four mental/speech modes use **two-event reification**: outer event E1 with the classifier, nested inner event E2 linked by `["has content","E1","E2"]`.
 
-A ninth classifier, `actuality(E)`, marks real events and is **injected by the pipeline** (`lc_rewrites.inject_actuality`) — not by Stage 2. Every `and`-block introducing `isa(activity, E)` gets `["actuality", E]` unless (a) one of the eight classifiers already applies to E (checked tree-wide) or (b) E is the inner content event of a two-event reification. `actuality` is hidden from English rendering. A defeasible bridge in axioms_std.js §5.1 derives `capability(E)` from `actuality(E)`, gated by a `$block` for `¬capability(E)` overrides.
+A ninth classifier, `actuality(E)`, marks real events and is **injected by the pipeline** (`lc_rewrites.inject_actuality`) — not by Stage 2. Every `and`-block introducing `isa(activity, E)` gets `["actuality", E]` unless (a) one of the eight classifiers already applies to E (checked tree-wide) or (b) E is the inner content event of a two-event reification. `actuality` is hidden from English rendering. A defeasible bridge in axioms_std.js §5.1 derives `capability(E)` from `actuality(E)`, emitted only when a `$block` for `¬capability(E)` overrides.
 
 Grammatical tense on Davidsonian events lives on the event via `["has time", E, "past"|"present"|"future", "in"]`. Non-Davidsonian atoms get tense via `$ctxt.Time` or `@time` wrappers.
 
@@ -444,7 +443,7 @@ When the user says **"Register fix for case N"** (analysis done, fix implemented
 
 ### Other Top-Level Scripts
 
-- `runtests.py` — batch runner: every `[id,input,expected]` case × N LLMs in parallel, one JSON per (case, llm) under `testresults/<name>/<llm>/case_NNNN.json`, with a live `summary.json`. Resumes by skipping existing files; `-redo`/`-redo-errors` override; `-sequential` runs serially. See DOCUMENTATION.md §10.
+- `runtests.py` — batch runner: every `[id,input,expected]` case × N LLMs in parallel, one JSON per (case, llm) under `testresults/<name>/<llm>/case_NNNN.json`, with a live `summary.json`. Resumes by skipping existing files; `-redo`/`-redo-errors` override; `-sequential` runs serially. See docs/reference/runtime-records.md.
 - `examine.py` — write per-LLM `-debug -explain -logic` logs for a case id to `debug/eN_{gemini,claude,gpt,deepseek}.txt` (used by the Debug Case Workflow).
 - `compare_runtests_json.py` — diff two `runtests.py` result trees.
 - Collection / comparison / prompt-check helpers (`collectmultillmconv.py`, `comparellmconv.py`, `checkprompt.py`, …) now live in `tools/`.

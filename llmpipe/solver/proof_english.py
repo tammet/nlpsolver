@@ -694,7 +694,7 @@ def _intro(arg, role_hint=None):
 # (`premiered`, `music_piece`, `sells_greater_than_copies`), not the ordinary
 # controlled vocabulary.  Under `open_names_flag` the renderer folds the
 # underscores and otherwise leaves the word exactly as the translator wrote
-# it: no conjugation, no "is ... of" fallback.  See DOCUMENTATION.md §14.8.
+# it: no conjugation, no "is ... of" fallback.  See docs/architecture/graph-representation.md.
 
 # The nine fixed event roles of `graph_stage2.ROLES`, kept here as a literal
 # so the renderer does not import the graph translator.  The fixture checks

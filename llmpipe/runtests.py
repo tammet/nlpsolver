@@ -745,133 +745,141 @@ def make_parser():
   Split out of `main` so the option resolution can be exercised without running
   a batch.  It defines exactly the same flags `main` always defined.
   """
-  ap = argparse.ArgumentParser(description="Batch test runner for nlpsolver.")
-  ap.add_argument("testfile", nargs="?", default=DEFAULT_TESTFILE,
+  ap = argparse.ArgumentParser(
+    description="Batch test runner for nlpsolver.",
+    epilog="Any key this runner does not define is forwarded to solve.py's "
+           "own parser, so -pipeline, the single stage switches and their "
+           "cancels work here too. Reference: docs/reference/command-line.md "
+           "and docs/reference/experimental-options.md.",
+    formatter_class=argparse.RawDescriptionHelpFormatter)
+  common = ap.add_argument_group("common")
+  advanced = ap.add_argument_group("advanced")
+  experimental = ap.add_argument_group("experimental and legacy")
+  common.add_argument("testfile", nargs="?", default=DEFAULT_TESTFILE,
                   help=f"Test file (default: {DEFAULT_TESTFILE})")
-  ap.add_argument("-llms", default=",".join(DEFAULT_LLMS),
+  common.add_argument("-llms", default=",".join(DEFAULT_LLMS),
                   help=f"Comma-separated LLMs to run (default: {','.join(DEFAULT_LLMS)})")
-  ap.add_argument("-out", default=DEFAULT_OUTROOT,
+  common.add_argument("-out", default=DEFAULT_OUTROOT,
                   help=f"Output root directory (default: {DEFAULT_OUTROOT})")
-  ap.add_argument("-ids", default=None,
+  common.add_argument("-ids", default=None,
                   help="Run only these case ids (comma-separated)")
-  ap.add_argument("-limit", type=int, default=0,
+  common.add_argument("-limit", type=int, default=0,
                   help="Run at most N cases (0=all)")
-  ap.add_argument("-filter", default=None,
+  common.add_argument("-filter", default=None,
                   help="Only run cases whose input contains this substring")
-  ap.add_argument("-redo-errors", action="store_true", dest="redo_errors",
+  common.add_argument("-redo-errors", action="store_true", dest="redo_errors",
                   help="Re-run cases whose existing JSON has an 'error' key")
-  ap.add_argument("-redo", action="store_true",
+  common.add_argument("-redo", action="store_true",
                   help="Re-run all cases (overwrite existing JSON files)")
-  ap.add_argument("-geminicache", action="store_true",
-                  help="Accepted and ignored: Gemini context caching is on by "
-                       "default. Kept so older command lines keep working.")
-  ap.add_argument("-nogeminicache", action="store_true",
+  common.add_argument("-sequential", action="store_true",
+                  help="Run the requested LLMs SEQUENTIALLY in-process (no "
+                       "parallel Pool). Best for cache-served reruns where the "
+                       "LLM calls hit the local SQLite cache.")
+  common.add_argument("-version", dest="version", default=None,
+                  help="Override the model version for the chosen LLM "
+                       "(e.g. claude-opus-4-8). Applies to all -llms in the run.")
+  common.add_argument("-tag", dest="tag", default=None,
+                  help="General output-dir suffix: results go to testresults/<set>_<tag>/. "
+                       "Use to keep a variant (directanswer, ultracoarse, ...) separate.")
+  advanced.add_argument("-nogeminicache", action="store_true",
                   help="Disable Gemini context caching (on by default)")
-  ap.add_argument("-llm-call-timeout", dest="llm_call_timeout", type=float,
+  advanced.add_argument("-llm-call-timeout", dest="llm_call_timeout", type=float,
                   default=None,
                   help="Per-LLM-call deadline in seconds, covering attempts, "
                        "retries and backoff sleeps, for the initial parse and "
                        "every later stage. 0 disables.")
-  ap.add_argument("-llm-call-limit", dest="llm_call_limit", type=int,
+  advanced.add_argument("-llm-call-limit", dest="llm_call_limit", type=int,
                   default=None,
                   help="Total logical LLM calls allowed for one case, counting "
                        "every role and local cache hits. 0 (default) is "
                        "unlimited.")
-  ap.add_argument("-accept", metavar="POLICY", default=None,
-                  help="EXPERIMENTAL: proof-local acceptance checks on critic "
-                       "and graph answers (permissive|balanced|strict). Off "
-                       "unless named; permissive reproduces current behaviour.")
-  ap.add_argument("-sequential", action="store_true",
-                  help="Run the requested LLMs SEQUENTIALLY in-process (no "
-                       "parallel Pool). Best for cache-served reruns where the "
-                       "LLM calls hit the local SQLite cache.")
-  ap.add_argument("-combined-instr", dest="combined_instr", default=None,
-                  help="Combined single-stage instructions prompt file (enables "
-                       "one-call English->logic parsing; results go to a "
-                       "<set>_<tag> output dir so they don't clash with two-stage runs)")
-  ap.add_argument("-combined-examples", dest="combined_examples", default=None,
-                  help="Combined examples prompt file (optional)")
-  ap.add_argument("-combined-checklist", dest="combined_checklist", default=None,
-                  help="Combined checklist prompt file (optional)")
-  ap.add_argument("-combined-tag", dest="combined_tag", default=None,
-                  help="Label for the combined output dir suffix; if omitted, "
-                       "derived from the prompt filenames")
-  ap.add_argument("-directanswer", dest="directanswer", default=None,
-                  help="Direct-answer prompt file: answer each case with ONE LLM "
-                       "call (no logic, no prover). Output goes to a <set>_<tag> dir.")
-  ap.add_argument("-prenorm", action="store_true",
-                  help="Enable the pre-Stage-1 normalization LLM phase")
-  ap.add_argument("-s2split", action="store_true",
-                  help="Run Stage 2 sentence-by-sentence: one Stage-2 LLM call "
-                       "per Stage-1 sentence package, outputs joined. Output "
-                       "goes to a <set>_s2split dir unless -tag is given.")
-  ap.add_argument("-event",
-                  choices=["neodavidson", "davidson", "davidson2", "flat", "flatroles"],
-                  default="neodavidson",
-                  help="event-encoding base: neodavidson (default) | davidson "
-                       "(compact event(V,A,O,E)) | davidson2 (the exact spine "
-                       "compression) | flat (is_rel2) | flatroles "
-                       "(is_rel2 with eventprop-tagged object)")
-  ap.add_argument("-abstract", action="store_true",
-                  help="preset: -event flat + all abstraction buckets + simpleprops + localantonyms")
-  ap.add_argument("-abstract-roles", dest="abstract_roles", action="store_true",
-                  help="preset: as -abstract but -event flatroles")
-  ap.add_argument("-abstract-max", dest="abstract_max", action="store_true",
-                  help="preset: as -abstract-roles + -prenorm (strongest abstraction)")
-  ap.add_argument("-existfold", action="store_true",
-                  help="(L2) fold exists Y.isa(C,Y)&has_part/have(X,Y) into has_property([$has_part/$have,C],X); named-witness bridge")
-  # The versioned proof shorteners are attempted by default on the unnamed
-  # canonical base.  These flags request or cancel them explicitly.
-  ap.add_argument("-davidson2", action="store_true",
-                  help="exact event-spine compression: fold only a reversible "
-                       "group, never invent a participant, decline on a flat base")
-  ap.add_argument("-existfold2", action="store_true",
-                  help="fold only the bare has-part pattern, only for a class "
-                       "with at least four occurrences, class-specific clauses")
-  ap.add_argument("-proofshort2", action="store_true",
-                  help="-davidson2 and -existfold2 together")
-  ap.add_argument("-nodavidson2", action="store_true",
-                  help="disable davidson2, restoring the canonical neo-Davidsonian spine")
-  ap.add_argument("-noexistfold2", action="store_true",
-                  help="disable existfold2")
-  ap.add_argument("-noproofshort2", action="store_true",
-                  help="disable both; reproduces the pre-2026-08-26 ordinary theory")
-  ap.add_argument("-noprenorm", dest="noprenorm", action="store_true",
-                  help="override: force prenorm OFF even under -abstract-max (prenorm ablation experiment)")
-  # Additive abstraction primitives (compose with any -event base).
-  ap.add_argument("-entitymerge", action="store_true", help="proper-noun entity canonicalization + set coreference")
-  ap.add_argument("-typeenrich", action="store_true", help="taxonomy/isa enrichment (all six sub-gates)")
-  ap.add_argument("-typeenrich-gates", dest="typeenrich_gates", default=None,
-                  help="restrict typeenrich to a comma list of sub-gates "
-                       "(super,gender,nametype,compound,plural,gnoun; -name excludes; all)")
-  ap.add_argument("-guarddrop", action="store_true", help="drop redundant antecedent type guards (needs a fold base)")
-  ap.add_argument("-bridges", action="store_true", help="frame/bridge axioms (needs -event flat/flatroles)")
-  ap.add_argument("-dropdefinites", action="store_true", help="skip $theof1 definite reification (leave as relations)")
-  ap.add_argument("-localantonyms", action="store_true", help="restrict antonym folding to the problem + axiom vocabulary")
-  ap.add_argument("-nocrossstage", action="store_true",
-                  help="Disable the ultracoarse cross-stage unsatisfiable-guard "
-                       "retry (avoids live corrective LLM calls)")
-  ap.add_argument("-api-timeout", dest="api_timeout", type=int, default=120,
+  advanced.add_argument("-api-timeout", dest="api_timeout", type=int, default=120,
                   help="Hard wall-clock cap (seconds) on the LLM-parse + clause-"
                        "conversion phase of each case; disarmed before the prover "
                        "(gk) and proof post-processing run, so it never clips those. "
                        "A case exceeding it is recorded as an Error and the run "
                        "continues (default 120; 0 disables). Guards against wedged "
                        "LLM calls retrying through their timeouts.")
-  ap.add_argument("-version", dest="version", default=None,
-                  help="Override the model version for the chosen LLM "
-                       "(e.g. claude-opus-4-8). Applies to all -llms in the run.")
-  ap.add_argument("-think", dest="think", type=int, default=None,
+  advanced.add_argument("-think", dest="think", type=int, default=None,
                   help="Enable extended thinking with this token budget "
                        "(Claude budget_tokens / Gemini thinkingBudget). "
                        "Must be below -maxtokens.")
-  ap.add_argument("-maxtokens", dest="maxtokens", type=int, default=None,
+  advanced.add_argument("-maxtokens", dest="maxtokens", type=int, default=None,
                   help="Override max output tokens (must exceed the -think budget).")
-  ap.add_argument("-tag", dest="tag", default=None,
-                  help="General output-dir suffix: results go to testresults/<set>_<tag>/. "
-                       "Use to keep a variant (directanswer, ultracoarse, ...) separate.")
+  experimental.add_argument("-geminicache", action="store_true",
+                  help="Accepted and ignored: Gemini context caching is on by "
+                       "default. Kept so older command lines keep working.")
+  experimental.add_argument("-accept", metavar="POLICY", default=None,
+                  help="EXPERIMENTAL: proof-local acceptance checks on critic "
+                       "and graph answers (permissive|balanced|strict). Off "
+                       "unless named; permissive reproduces current behaviour.")
+  experimental.add_argument("-combined-instr", dest="combined_instr", default=None,
+                  help="Combined single-stage instructions prompt file (enables "
+                       "one-call English->logic parsing; results go to a "
+                       "<set>_<tag> output dir so they don't clash with two-stage runs)")
+  experimental.add_argument("-combined-examples", dest="combined_examples", default=None,
+                  help="Combined examples prompt file (optional)")
+  experimental.add_argument("-combined-checklist", dest="combined_checklist", default=None,
+                  help="Combined checklist prompt file (optional)")
+  experimental.add_argument("-combined-tag", dest="combined_tag", default=None,
+                  help="Label for the combined output dir suffix; if omitted, "
+                       "derived from the prompt filenames")
+  experimental.add_argument("-directanswer", dest="directanswer", default=None,
+                  help="Direct-answer prompt file: answer each case with ONE LLM "
+                       "call (no logic, no prover). Output goes to a <set>_<tag> dir.")
+  experimental.add_argument("-prenorm", action="store_true",
+                  help="Enable the pre-Stage-1 normalization LLM phase")
+  experimental.add_argument("-s2split", action="store_true",
+                  help="Run Stage 2 sentence-by-sentence: one Stage-2 LLM call "
+                       "per Stage-1 sentence package, outputs joined. Output "
+                       "goes to a <set>_s2split dir unless -tag is given.")
+  experimental.add_argument("-event",
+                  choices=["neodavidson", "davidson", "davidson2", "flat", "flatroles"],
+                  default="neodavidson",
+                  help="event-encoding base: neodavidson (default) | davidson "
+                       "(compact event(V,A,O,E)) | davidson2 (the exact spine "
+                       "compression) | flat (is_rel2) | flatroles "
+                       "(is_rel2 with eventprop-tagged object)")
+  experimental.add_argument("-abstract", action="store_true",
+                  help="preset: -event flat + all abstraction buckets + simpleprops + localantonyms")
+  experimental.add_argument("-abstract-roles", dest="abstract_roles", action="store_true",
+                  help="preset: as -abstract but -event flatroles")
+  experimental.add_argument("-abstract-max", dest="abstract_max", action="store_true",
+                  help="preset: as -abstract-roles + -prenorm (strongest abstraction)")
+  experimental.add_argument("-existfold", action="store_true",
+                  help="(L2) fold exists Y.isa(C,Y)&has_part/have(X,Y) into has_property([$has_part/$have,C],X); named-witness bridge")
+  # The versioned proof shorteners are attempted by default on the unnamed
+  # canonical base.  These flags request or cancel them explicitly.
+  experimental.add_argument("-davidson2", action="store_true",
+                  help="exact event-spine compression: fold only a reversible "
+                       "group, never invent a participant, decline on a flat base")
+  experimental.add_argument("-existfold2", action="store_true",
+                  help="fold only the bare has-part pattern, only for a class "
+                       "with at least four occurrences, class-specific clauses")
+  experimental.add_argument("-proofshort2", action="store_true",
+                  help="-davidson2 and -existfold2 together")
+  experimental.add_argument("-nodavidson2", action="store_true",
+                  help="disable davidson2, restoring the canonical neo-Davidsonian spine")
+  experimental.add_argument("-noexistfold2", action="store_true",
+                  help="disable existfold2")
+  experimental.add_argument("-noproofshort2", action="store_true",
+                  help="disable both; reproduces the pre-2026-08-26 ordinary theory")
+  experimental.add_argument("-noprenorm", dest="noprenorm", action="store_true",
+                  help="override: force prenorm OFF even under -abstract-max (prenorm ablation experiment)")
+  # Additive abstraction primitives (compose with any -event base).
+  experimental.add_argument("-entitymerge", action="store_true", help="proper-noun entity canonicalization + set coreference")
+  experimental.add_argument("-typeenrich", action="store_true", help="taxonomy/isa enrichment (all six sub-gates)")
+  experimental.add_argument("-typeenrich-gates", dest="typeenrich_gates", default=None,
+                  help="restrict typeenrich to a comma list of sub-gates "
+                       "(super,gender,nametype,compound,plural,gnoun; -name excludes; all)")
+  experimental.add_argument("-guarddrop", action="store_true", help="drop redundant antecedent type guards (needs a fold base)")
+  experimental.add_argument("-bridges", action="store_true", help="frame/bridge axioms (needs -event flat/flatroles)")
+  experimental.add_argument("-dropdefinites", action="store_true", help="skip $theof1 definite reification (leave as relations)")
+  experimental.add_argument("-localantonyms", action="store_true", help="restrict antonym folding to the problem + axiom vocabulary")
+  experimental.add_argument("-nocrossstage", action="store_true",
+                  help="Disable the ultracoarse cross-stage unsatisfiable-guard "
+                       "retry (avoids live corrective LLM calls)")
   return ap
-
 
 def parse_args(argv=None):
   """Parse `argv` (default sys.argv[1:]) into (args, extra solve.py options)."""
@@ -1065,7 +1073,7 @@ def build_run_options(args, extra_opts):
   # doors agree on a line that names two sets.
   if extra_opts:
     run_opts.update(extra_opts)
-  # Both front doors derive the recorded configuration name the same way, from
+  # Both entry points derive the recorded configuration name the same way, from
   # the final resolved stage vector (WP3).
   import solve
   run_opts.pop("_pipeline_named", None)

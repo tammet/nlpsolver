@@ -476,7 +476,7 @@ def rawlogic_convert(logic, s1_json=None, fixes=None):
   logic = _lower_normally_through_forall(logic)
 
   # The text-licensed question rewrites.  Both option keys are off in the
-  # front door, so this returns its input unchanged there; only
+  # initial attempt, so this returns its input unchanged there; only
   # `fallback_norm.run` switches them on, and only for its own conversion.
   import fallback_norm as _fallback_norm
   logic = _fallback_norm.apply_question_transforms(logic, fixes=fixes,
@@ -1002,7 +1002,7 @@ def rawlogic_convert(logic, s1_json=None, fixes=None):
   # (casenorm, `fallback_norm`) fold letter-case variants of one token inside
   # one predicate position, when the case carries both spellings: "Estonian
   # city" and "estonian city" as isa classes both become "estonian city".
-  # Off in the front door; only the fallback conversion switches it on.
+  # Off in the initial attempt; only the fallback conversion switches it on.
   _fallback_norm.apply_casenorm(result)
 
   # Emit a minimal `next` chain over the concrete worlds actually present.

@@ -402,7 +402,7 @@ def _process_assertion(formula, name, confidence):
 
   The chain product over the anchor set equals e exactly, so the prover's
   chain multiplication reports the intended confidence rather than
-  decaying by e per clause.  See DOCUMENTATION.md §7.8 companion notes.
+  decaying by e per clause.  See docs/architecture/translation.md.
   """
   # Safety net for LLMs that double-encode negation.  Some LLMs render
   # "It is false that X" as BOTH an explicit `["not", F]` in the formula

@@ -35,7 +35,7 @@ _root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # This is the single source.  `solve.py` re-exports these names, `runtests.py`
 # resolves through the same functions, and the six stage defaults below are
 # filled from `PIPELINES[DEFAULT_PIPELINE]` rather than written out a second
-# time -- two independent sets of defaults are exactly how the two front doors
+# time -- two independent sets of defaults are exactly how the two entry points
 # would drift apart.
 # ---------------------------------------------------------------------------
 
@@ -112,7 +112,7 @@ options={
   "numtype_flag":False,      # numeric-literal typing (P3): parse pure-numeral string args ("34") to int/float, and materialize a ground isa(TYPE,N) (TYPE in number/integer/float/...) when -isa(TYPE,N) is demanded but never supplied. See analysis/P3_TIER_A_PLAN.md
   "compasym_flag":False,     # comparative asymmetry (P3): for a relation R that occurs as binary is_rel2(R,X,Y) and is a strict-scalar dimensional adjective (solver/comparable_adjectives.txt), emit asymmetry is_rel2(R,X,Y)->-is_rel2(R,Y,X) (+ flat property bridge). Restores the §3.1 comparative-order axioms the flat/simpleprops fold drops. See analysis/P3_TIER_A_PLAN.md
   # --- Internal switches for the two abstention fallbacks (solver/fallback_norm.py,
-  # solver/fallback_hyp.py).  None of these has a CLI flag: the front door runs with
+  # solver/fallback_hyp.py).  None of these has a CLI flag: the initial attempt runs with
   # every one of them False, and only `fallback_norm.run` / `fallback_hyp.run` turn
   # them on, for their own conversion, restoring them afterwards. ---
   "qor_flag":False,        # rewrite xor->or inside question bodies (inclusive either-or reading)
@@ -125,8 +125,8 @@ options={
   "compnorm_flag":False,     # normalize comparative relation names (taller/shorter/higher than) to the base gradable adjective outside -s2split too
   # --- The two abstention fallbacks themselves (CLI: -fallback_norm / -fallback_hyp,
   # -nofallback_norm / -nofallback_hyp / -nofallback; both on under -abstract-max) ---
-  "fallback_norm_flag":PIPELINES[DEFAULT_PIPELINE]["fallback_norm"],    # from PIPELINES[DEFAULT_PIPELINE]. When the front door ends unresolved, convert the same parse again with the normalizations on and call gk once more (no LLM call). -nofallback_norm / -nofallback turn it off. See solver/fallback_norm.py
-  "fallback_hyp_flag":PIPELINES[DEFAULT_PIPELINE]["fallback_hyp"],     # from PIPELINES[DEFAULT_PIPELINE]. When the front door and fallback_norm end unresolved and the question is a conditional, ask the consequent in an isolated theory that assumes the antecedent (no LLM call). -nofallback_hyp / -nofallback turn it off. See solver/fallback_hyp.py
+  "fallback_norm_flag":PIPELINES[DEFAULT_PIPELINE]["fallback_norm"],    # from PIPELINES[DEFAULT_PIPELINE]. When the initial attempt ends unresolved, convert the same parse again with the normalizations on and call gk once more (no LLM call). -nofallback_norm / -nofallback turn it off. See solver/fallback_norm.py
+  "fallback_hyp_flag":PIPELINES[DEFAULT_PIPELINE]["fallback_hyp"],     # from PIPELINES[DEFAULT_PIPELINE]. When the initial attempt and fallback_norm end unresolved and the question is a conditional, ask the consequent in an isolated theory that assumes the antecedent (no LLM call). -nofallback_hyp / -nofallback turn it off. See solver/fallback_hyp.py
   "nofallback_norm_flag":False, # -nofallback_norm: forces fallback_norm_flag False after the whole command line is read, so it beats the default and every preset whatever their order
   "nofallback_hyp_flag":False,  # -nofallback_hyp: the same for fallback_hyp_flag
   # Per-LLM-call deadline (seconds), covering provider attempts, retries and
@@ -145,11 +145,11 @@ options={
   "nominalretry_flag":False,  # (experimental) if True, a Stage-2 sanity check flags a Stage-1 copular "ENT is a NOUN" predication whose NOUN is dropped from ENT in Stage-2 (but used elsewhere), triggering a corrective Stage-2 retry. See analysis/P3_TIER_A_PLAN.md (case 126)
   "negretry_flag":False,      # (experimental) prenorm-negation-fallback: if True and prenorm dropped a sentential negation from the conclusion question ("X is not a Y?" rewritten to the positive "Is X a Y?"), re-parse from the original (pre-prenorm) text so the negation survives. General correctness fix (not encoding-specific); currently gated so it can later be promoted to default. See analysis/FOLIO_GPT_FAILURES.md G2 (cases 80/127/189/200)
   "litbridge_flag":PIPELINES[DEFAULT_PIPELINE]["litbridge"],     # from PIPELINES[DEFAULT_PIPELINE]; explicit only. literal-bridge abstraction: when the ordinary pipeline leaves the question unresolved, propose implication rules over the case's own displayed atoms, compile them beside the stored theory and resubmit to gk. Off by default because it costs extra LLM calls per unresolved case and is net-harmful on closed-world material; -litbridge, -stack-open and -abstract-max turn it on, -nolitbridge forces it off. See solver/litbridge_procedure.py and memos/MEMO_2026_08_15_litbridge_merge.md
-  "graphbridge_flag":PIPELINES[DEFAULT_PIPELINE]["graphbridge"],    # from PIPELINES[DEFAULT_PIPELINE]; outside the ordinary default. open-relation graph abstraction: when the ordinary pipeline (and the literal bridge, if on) leaves the question unresolved, translate the case a second time into three-item open triples, invent implications between the open names, and search that theory separately. Off by default; -graphbridge, -stack, -stack-open and -abstract-max turn it on, -nographbridge forces it off. See solver/graph_procedure.py and DOCUMENTATION.md §14
+  "graphbridge_flag":PIPELINES[DEFAULT_PIPELINE]["graphbridge"],    # from PIPELINES[DEFAULT_PIPELINE]; outside the ordinary default. open-relation graph abstraction: when the ordinary pipeline (and the literal bridge, if on) leaves the question unresolved, translate the case a second time into three-item open triples, invent implications between the open names, and search that theory separately. Off by default; -graphbridge, -stack, -stack-open and -abstract-max turn it on, -nographbridge forces it off. See solver/graph_procedure.py and docs/architecture/graph-representation.md
   "nographbridge_flag":False,  # if True, graphbridge_flag is forced False after the whole command line is read, so -nographbridge beats -graphbridge whatever their order
   "summary_flag":False,    # -summary: one block at the end saying which stage answered and what the run cost in LLM calls
   "summary_json_flag":False, # -summary-json: the same block as one JSON line, for scripts
-  "critic_flag":PIPELINES[DEFAULT_PIPELINE]["critic"],     # from PIPELINES[DEFAULT_PIPELINE] (ON in balanced). -critic: one LLM call audits the front door's translation when it ends Unknown, and may ask for one retranslation. -critic, every -stack* set and -abstract-max turn it on; -nocritic forces it off
+  "critic_flag":PIPELINES[DEFAULT_PIPELINE]["critic"],     # from PIPELINES[DEFAULT_PIPELINE] (ON in balanced). -critic: one LLM call audits the initial attempt's translation when it ends Unknown, and may ask for one retranslation. -critic, every -stack* set and -abstract-max turn it on; -nocritic forces it off
   "nocritic_flag":False,   # -nocritic: forces critic_flag False after the whole command line is read
   # EXPERIMENTAL (Task 2B, off by default): proof-local acceptance checks on the
   # critic and graph retranslations.  None or "" disables them entirely;
@@ -193,7 +193,7 @@ options={
   "nosemnormal_flag": False,
   "noclassnumbernorm_flag": False,  # if True, do not singularize the class argument of isa atoms in the final clause list. Off everywhere except the open-relation graph theory (solver/graph_compile.py), where two names differing by a trailing "s" must stay two names
   "noopennamerewrite_flag": False,  # if True, do not rewrite or canonicalize the relation name of an is-rel2 atom (ownership -> have, located-in -> in, preposition canonicalisation, perspective verbs -> Davidsonian events). Off everywhere except the open-relation graph theory, where each relation name is the translator's own and only a named clause may connect two of them
-  "open_names_flag":False,   # the proof being rendered is the graph theory's: class and relation names are the case's own words, so the English renderer folds underscores to spaces and renders a relation verbatim instead of conjugating it. Set only by the graph route, for its own rendering. See DOCUMENTATION.md §14.8
+  "open_names_flag":False,   # the proof being rendered is the graph theory's: class and relation names are the case's own words, so the English renderer folds underscores to spaces and renders a relation verbatim instead of conjugating it. Set only by the graph route, for its own rendering. See docs/architecture/graph-representation.md
   "nopopulate_flag": False,     # if True, emit no population witnesses ($some_C / $some_not_C) at all. Off everywhere except the open-relation graph theory, where a witness the theory minted for a quantified class can ground an invented bridge's own body and prove a question the passage never settles (MEMO_2026_08_17 C1)
   "noentitycat_flag": False,    # if True, emit no Stage-1 entity-category isa clauses (entity_S*) and no base-word entity isa. Off everywhere except the open-relation graph theory, where a name the translator never wrote must not enter supply (MEMO_2026_08_17 C2)
   # Per-fix kill switches for the 2026-08 programmatic repairs

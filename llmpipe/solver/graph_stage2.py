@@ -345,6 +345,72 @@ def _event_variables(atom_rows):
   return out
 
 
+# Exact arity of every logical operator that has one.  `and`, `or` and `@id`
+# are deliberately absent: the representation uses `and`/`or` as variable-size
+# conjunctions and `@id` as an annotated package wrapper.
+OPERATOR_ARITY = {
+  "not": (2, '["not", A]'),
+  "implies": (3, '["implies", A, B]'),
+  "forall": (3, '["forall", X, A]'),
+  "exists": (3, '["exists", X, A]'),
+  "normally": (2, '["normally", A]'),
+  "question": (2, '["question", A]'),
+  "ask": (3, '["ask", X, A]'),
+  "holds": (3, '["holds", W, A]'),
+  "=": (3, '["=", A, B]'),
+  "@p": (3, '["@p", UNIT_ID, CONFIDENCE]'),
+}
+
+
+def walk_operators(node, path="", out=None):
+  """-> [(operator, observed length, path)] for every structural operator.
+
+  Recurses through the whole formula, including inside malformed nodes, so a
+  bad operator nested under another one is still reported with its own path.
+  """
+  out = [] if out is None else out
+  if not isinstance(node, list) or not node:
+    return out
+  head = node[0]
+  if not isinstance(head, str):
+    for i, child in enumerate(node):
+      walk_operators(child, "%s/%d" % (path, i), out)
+    return out
+  if head in STRUCTURAL:
+    out.append((head, len(node), path))
+    here = "%s/%s" % (path, head)
+    for i, child in enumerate(node[1:], start=1):
+      walk_operators(child, "%s:%d" % (here, i), out)
+    return out
+  # a content atom: its arguments may still carry nested formulas
+  for i, child in enumerate(node[1:], start=1):
+    walk_operators(child, "%s/%s:%d" % (path, head, i), out)
+  return out
+
+
+def check_operator_arity(s2, s1_json=None):
+  """Every logical operator must have the exact number of items its form needs.
+
+  The atom checks look at content atoms only, so a malformed logical structure
+  such as `["forall", "X", ["implies", ANTECEDENT], CONSEQUENT]` or a bare
+  `["implies", ANTECEDENT]` passed straight through to the compiler, which then
+  read a conditional conclusion as an unconditional clause (gpt/ebn-0016).
+  """
+  issues = []
+  for pid, body in packages(s2):
+    for op, n, path in walk_operators(body, "@id:%s" % pid):
+      want = OPERATOR_ARITY.get(op)
+      if want is None or n == want[0]:
+        continue
+      issues.append(_issue(
+        "logical_operator_arity", path or ("@id:%s" % pid),
+        "%r has %d item%s; the required form is %s"
+        % (op, n, "" if n == 1 else "s", want[1]),
+        {"operator": op, "observed_items": n, "required_items": want[0],
+         "required_form": want[1], "package": pid, "path": path}))
+  return issues
+
+
 def _issue(kind, location, description, evidence):
   return Issue(kind=kind, location=location, description=description,
                evidence=evidence if isinstance(evidence, str)
@@ -961,7 +1027,10 @@ def check_graph(s2, s1_json=None):
   and a reserved name written with a space are both invisible once the name
   has been lowercased and underscored.
   """
-  issues = list(check_atoms(s2, s1_json))
+  # arity first: a malformed logical structure must be seen before anything
+  # normalizes it or the compiler reads it
+  issues = list(check_operator_arity(s2, s1_json))
+  issues.extend(check_atoms(s2, s1_json))
   normalize_in_place(s2)
   issues.extend(check_packages(s2, s1_json))
   issues.extend(check_free_variables(s2))
@@ -986,7 +1055,8 @@ def check_english(s2, s1_json=None, with_inventory=False):
   Their unit ids are the model's own, so no package check reads Stage 1; the
   entity ids are checked only when the arm was given the inventory.
   """
-  issues = list(check_atoms(s2, s1_json if with_inventory else None))
+  issues = list(check_operator_arity(s2, s1_json))
+  issues.extend(check_atoms(s2, s1_json if with_inventory else None))
   normalize_in_place(s2)
   issues.extend(check_packages(s2, None))
   issues.extend(check_free_variables(s2))

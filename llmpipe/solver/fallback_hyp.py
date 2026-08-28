@@ -8,7 +8,7 @@ settles A.  This fallback offers the other reading: assume A, ask B.
 The assumption goes into an isolated theory — a copy of the premise packages
 plus `hyp_<sid>` holding A in W0, with B as the question and the original
 question package dropped.  Nothing is inserted into the ordinary premise set,
-so the material reading the front door already produced is not disturbed and
+so the material reading the initial attempt already produced is not disturbed and
 no later route inherits the assumption.
 
 The reading disagrees with FOLIO's vacuous-truth convention on a conditional
@@ -32,10 +32,10 @@ import globals as _g
 REFUTATION_CHECK = False  # ask first whether the premises refute the antecedent
 # Off (decided 2026-08-25).  The check returned False on 0 of 121 calls across
 # FOLIO, MLE-100 and the held-out set; a refutable antecedent already makes
-# the front door's material reading answer `True.`, so the fallback is not
+# the initial attempt's material reading answer `True.`, so the fallback is not
 # reached; and with it off MLE-100 gave identical answers at half the gk
 # calls.  On, it costs one gk call per conditional question and guards one
-# unobserved case: a refutation the front door missed under its time limit.
+# unobserved case: a refutation the initial attempt missed under its time limit.
 
 
 def _strip_normally(frm):
