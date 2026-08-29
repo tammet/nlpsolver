@@ -8,6 +8,12 @@ English text and `expected` is the expected answer.  Run with
 `python3 test.py <file>` (single LLM) or `python3 runtests.py <file>`
 (all LLMs in parallel) from the parent directory.
 
+**Not every set here is ours.** FOLIO, Multi-LogiEval, HANS and EntailmentBank
+are third-party benchmarks redistributed under their own licenses, which the
+root Apache-2.0 `LICENSE` does not replace. Attribution, provenance and what we
+changed are in [`THIRD_PARTY.md`](THIRD_PARTY.md); the license texts are in
+[`licenses/`](licenses/); the short form is in the repository root `NOTICE`.
+
 These test sets and their recorded multi-LLM results are also published, with
 analysis, in the [nlformtasks](https://github.com/tammet/nlformtasks) repository.
 The files are **renamed there** (same content, flipped naming convention —
@@ -33,6 +39,9 @@ renamed them for publication only.
 - **`tests_core_100.py`** — a 100-case representative subset of
   `tests_core.py`, for fast smoke runs across all LLMs.
 
+- **`tests_core_abstregress.py`** — 314 core cases that the abstraction
+  encodings regressed; used to test converter changes.
+
 - **`tests_core_challenging.py`** — the 341 hardest core cases (≥2 total
   errors across the 4 core experiments × 4 LLMs; the union of the medium
   and hard difficulty tiers). Auto-generated from `tests_core.py` via
@@ -43,22 +52,33 @@ renamed them for publication only.
 - **`tests_folio_v2.py`** — the FOLIO v2 validation split, all 203 items,
   original gold labels. The canonical FOLIO set.
 
-- **`tests_folio_v2_refined.py`** — identical inputs to `tests_folio_v2.py`,
-  but with 3 prover-verified corrected labels (cases 980, 981, 754). A
-  re-score variant, not a separate run.
-
-- **`FOLIO_yale/`** — upstream FOLIO source data (`folio_v2_{train,validation}.jsonl`
-  + a readable dump) the two FOLIO sets are built from.
+- **`FOLIO_yale/`** — the upstream FOLIO validation split
+  (`folio_v2_validation.jsonl` plus a readable dump) that `tests_folio_v2.py`
+  is built from, with its attribution.
 
 ### Other benchmarks
 
+All of these are third-party data; see [`THIRD_PARTY.md`](THIRD_PARTY.md).
+
+- **`tests_multilogieval.py`** — the full Multi-LogiEval import (1651 cases:
+  propositional, first-order and non-monotonic logic, depths 1–5). Per-case
+  depth and logic metadata in `tests_multilogieval_meta.json`, keyed by id.
+- **`tests_multilogieval_sample.py`** — a 20-case sample of the above, with
+  `tests_multilogieval_sample_meta.json`.
+- **`tests_multilogieval_100.py`**, **`tests_multilogieval_heldout100.py`** —
+  two disjoint 100-case seeded samples, used for the mixed-benchmark runs.
+- **`tests_eb_100.py`**, **`tests_eb2_100.py`** — 100-case seeded samples of
+  the EntailmentBank task-1 sets.
+- **`tests_eb_negatives_2026_08.py`**, **`tests_arc_negatives_2026_08.py`** —
+  negative controls built from EntailmentBank passages, giving the family its
+  `False.` and `Unknown.` answers.
+- **`tests_cohort165_eb.py`**, **`tests_cohort165_eb2.py`**,
+  **`tests_cohort165_mle2.py`** — the per-family slices of the 165-case cohort.
 - **`tests_hans.py`** — a HANS benchmark selection (subject/object-swap
   entailment templates); each case carries its HANS template-pattern label.
 
-### Notes
-
-- **`HARD_CASES_MEMO.md`** — running notes on hard/unsolved cases and proposed
-  encodings.
+The sample files are generated, not hand-edited; each header records the tool
+and the seed that produced it.
 
 ## Running
 

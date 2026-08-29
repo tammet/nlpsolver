@@ -108,3 +108,16 @@ new_stage2_examples.txt
 /llmpipe/prompts/critic/v2_of_08_19/
 /llmpipe/prompts/graph/v_of_08_20/
 /llmpipe/prompts/dynamic_alignment/v1_of_08_23/
+
+# test material kept locally but not published (2026-08-29)
+# bridge_unit: fixtures whose only reader (tools/bridge_unit_check.py) is not
+#   committed, and whose README cites a plan memo and a tests/bridge_bench/
+#   directory that this repository does not contain
+# folio_v2_train.jsonl: the FOLIO train split; no result here uses it
+# HARD_CASES_MEMO.md: design notes, not documentation
+# tests_folio_v2_refined.py: same 203 inputs as tests_folio_v2.py with three
+#   changed labels; nothing published scores against it
+/llmpipe/tests/bridge_unit/
+/llmpipe/tests/FOLIO_yale/folio_v2_train.jsonl
+/llmpipe/tests/HARD_CASES_MEMO.md
+/llmpipe/tests/tests_folio_v2_refined.py

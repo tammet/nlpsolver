@@ -1,0 +1,25 @@
+nlpsolver
+Copyright 2026 Tanel Tammet
+
+This product includes software developed at
+https://github.com/tammet/nlpsolver and is licensed under the Apache
+License, Version 2.0 (see LICENSE).
+
+------------------------------------------------------------------------
+Third-party data
+------------------------------------------------------------------------
+
+Some test sets under llmpipe/tests/ are established benchmarks that are not
+our data.  They are redistributed under their own licenses, which the root
+Apache-2.0 LICENSE does not replace:
+
+  FOLIO             MIT          llmpipe/tests/licenses/FOLIO-MIT.txt
+  Multi-LogiEval    MIT          llmpipe/tests/licenses/MULTILOGIEVAL-MIT.txt
+  HANS              MIT          llmpipe/tests/licenses/HANS-MIT.txt
+  EntailmentBank    Apache-2.0   llmpipe/tests/licenses/ENTAILMENTBANK-APACHE-2.0.txt
+
+Authorship, the introducing publication, the upstream source, and what we
+changed are recorded per dataset in llmpipe/tests/THIRD_PARTY.md.
+
+The gk reasoner binary and its data files under gk/ have their own
+distribution: https://github.com/tammet/gkreasoner
