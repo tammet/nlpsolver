@@ -35,6 +35,10 @@ DEFAULT_LLMS = ["gpt", "claude", "gemini", "deepseek"]
 DEFAULT_OUTROOT = "testresults"
 
 
+class RunConfigurationError(ValueError):
+  """The requested provider set cannot be run as configured."""
+
+
 # ======== test-file loader ========
 
 def load_tests(path):
@@ -725,6 +729,24 @@ def _provider_versions(llms, override=None):
           for name in llms}
 
 
+def validate_run_providers(llms, override=None):
+  """Validate every requested provider before creating any run artifact."""
+  here = os.path.dirname(os.path.abspath(__file__))
+  solver_dir = os.path.join(here, "solver")
+  if solver_dir not in sys.path:
+    sys.path.insert(0, solver_dir)
+  import llmcall
+  resolved = {}
+  for provider in llms:
+    try:
+      item = llmcall.validate_provider_configuration(provider, override)
+    except (llmcall.InvalidProviderError,
+            llmcall.MissingApiKeyError) as exc:
+      raise RunConfigurationError(str(exc))
+    resolved[provider] = item["version"]
+  return resolved
+
+
 def _manifest_identity(testfile, testname, run_opts, scoring_policy,
                        sequential=False):
   """Fields that must not be mixed in one result directory."""
@@ -977,7 +999,8 @@ def make_parser():
     description=("Research evaluation and record-generation runner for nlpsolver. "
                  "Running with no arguments prints this help; name a test file "
                  "explicitly to start a potentially paid run."),
-    epilog="Each result directory gets a run_manifest.json; incompatible test, "
+    epilog="Provider names and non-empty key files are validated before any "
+           "result is written. Each result directory gets a run_manifest.json; incompatible test, "
            "code, option, scoring, or model-version reuse is refused. A combined "
            "cross-provider summary is written at its top level. Any key this "
            "runner does not define is forwarded to solve.py's "
@@ -1128,14 +1151,22 @@ def main():
   global _pipeline_git
   if len(sys.argv) == 1:
     print(make_parser().format_help())
-    return
+    return 0
   _pipeline_git = pipeline_git_state()
   args, extra_opts = parse_args()
 
   llms = [s.strip() for s in args.llms.split(",") if s.strip()]
   if not llms:
     print("No LLMs requested.")
-    sys.exit(1)
+    return 2
+  # A bad provider or missing key is a command configuration error, not 1,600
+  # failed logical cases.  Check every provider before loading cases, creating
+  # a manifest, or starting worker processes.
+  try:
+    versions = validate_run_providers(llms, args.version)
+  except RunConfigurationError as exc:
+    print("Error: " + str(exc))
+    return 2
 
   tests = load_tests(args.testfile)
   testname = testname_from_path(args.testfile)
@@ -1180,7 +1211,6 @@ def main():
   # never mix test content, source state, pipeline options, scoring policies or
   # two versions of the same provider.
   outroot = os.path.join(args.out, testname)
-  versions = _provider_versions(llms, args.version)
   identity = _manifest_identity(args.testfile, testname, run_opts,
                                 scoring_policy, sequential=args.sequential)
   invocation = {
@@ -1400,6 +1430,13 @@ def _run_batch(args, llms, tests, testname, outroot, run_opts, matcher,
       # spaces gemini's calls, so no throttle is applied.
       if llms == ["gemini"]:
         time.sleep(3.0)
+  except KeyboardInterrupt:
+    if pool is not None:
+      pool.terminate()
+      pool.join()
+      pool = None
+    print("\nInterrupted; the result set is incomplete.")
+    return 130
   finally:
     if pool is not None:
       pool.close()
@@ -1411,10 +1448,11 @@ def _run_batch(args, llms, tests, testname, outroot, run_opts, matcher,
                           (manifest or {}).get("providers", {}) or llms)
   print(f"Done. {total_done} task(s) run, {total_skipped} skipped, {elapsed:.1f}s.")
   print(f"Combined summary: {os.path.join(outroot, 'summary.json')}")
+  return 0
 
 
 if __name__ == "__main__":
-  main()
+  sys.exit(main())
 
 
 # =========== the end ==========

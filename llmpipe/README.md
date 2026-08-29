@@ -21,14 +21,16 @@ Requirements:
 - Linux on x86-64 with the bundled GK binary, or macOS on Apple Silicon with
   the ARM64 binary from the [gkreasoner repository](https://github.com/tammet/gkreasoner)
   substituted for it; the pipeline itself is currently tested on Linux
-- an API key for Gemini, OpenAI, Anthropic, or DeepSeek
+- an API key for Gemini, OpenAI, Anthropic, or DeepSeek; Gemini is the default
 
 ```bash
 git clone https://github.com/tammet/nlpsolver.git
 cd nlpsolver
 
-# Choose one provider. Secret files are ignored by Git.
-echo "YOUR_API_KEY" > secrets/gemini_secrets.txt
+# Gemini is the default. Create its private key file and put the raw key in it
+# with an editor, without placing the key in shell history.
+install -m 600 /dev/null secrets/gemini_secrets.txt
+${EDITOR:-nano} secrets/gemini_secrets.txt
 
 # Check Python, imports, GK, a sample proof, and API-key presence.
 # This does not make an LLM request.
@@ -49,6 +51,9 @@ python3 solver/solve.py -llm gemini -explain \
 LLM responses are cached in `cache.db`, so an identical later request normally
 does not call the provider again. Use `-nollmcache` when a fresh response is
 required.
+
+To use another provider, create the corresponding key file described in
+[`secrets/README.md`](../secrets/README.md) and name that provider with `-llm`.
 
 See [Getting started](docs/getting-started.md) for model selection, output
 levels, test commands, and further installation details.

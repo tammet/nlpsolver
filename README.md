@@ -5,8 +5,9 @@ Nlpsolver is an experimental system for automated reasoning in natural language,
 capable of performing both natural language inference (NLI) and question answering.
 It contains two independent pipelines:
 
-* **llmpipe** — the newer LLM-based pipeline (GPT, Claude, Gemini) that replaces the Stanza
-  parser with a two-stage LLM semantic parser. See the `llmpipe/` folder and its README.
+* **[llmpipe](llmpipe/README.md)** — the newer LLM-based pipeline (GPT,
+  Claude, Gemini, or DeepSeek) that replaces the Stanza parser with a
+  two-stage LLM semantic parser. This is the current pipeline.
   Test cases, recorded multi-LLM results, and analysis for this pipeline are published
   separately in [nlformtasks](https://github.com/tammet/nlformtasks).
 
@@ -53,7 +54,7 @@ Installation
   use the extracted `gk` binary in place of `gk/gk`.  Note that the
   `llmpipe` and `udppipe` pipelines have only been tested on Linux —
   running them on macOS has not been verified and may need small tweaks.
-* Python 3.8 or later (tested up to 3.12). No `pip` packages are required at
+* Python 3.10 or later (tested up to 3.12). No `pip` packages are required at
   runtime — the pipeline uses only the Python standard library.
 * For `udppipe`: the [Stanford Stanza](https://stanfordnlp.github.io/stanza/)
   NLP package. The Stanza install does require `pip` packages; see
@@ -67,10 +68,10 @@ Installation
 git clone https://github.com/tammet/nlpsolver.git
 cd nlpsolver
 
-# Put your API key in a plain-text file. Pick any one provider:
-#   secrets/gemini_secrets.txt    secrets/gpt_secrets.txt
-#   secrets/claude_secrets.txt    secrets/deepseek_secrets.txt
-echo "YOUR_API_KEY" > secrets/gemini_secrets.txt
+# Gemini is the default. Create its private key file, then use an editor to
+# place the raw key in it. This avoids putting the key in shell history.
+install -m 600 /dev/null secrets/gemini_secrets.txt
+${EDITOR:-nano} secrets/gemini_secrets.txt
 
 # Optional: a venv keeps everything self-contained (no system packages
 # needed since the runtime uses only the Python stdlib).
@@ -82,9 +83,14 @@ python3 smoketest.py
 
 # Run a real query (uses your API key):
 cd llmpipe
-python3 solver/solve.py "Elephants are animals. John is an elephant. Is John an animal?"
+python3 solver/solve.py -llm gemini \
+  "Elephants are animals. John is an elephant. Is John an animal?"
 # -> True.
 ```
+
+To use GPT, Claude, or DeepSeek instead, create the corresponding file named
+in [`secrets/README.md`](secrets/README.md) and give the same provider to
+`-llm`.
 
 Note: first calls make live LLM round-trips (~10–60 s); reruns are cache-served and
 near-instant. Parses vary slightly by LLM, so a cold call may occasionally differ
@@ -113,7 +119,6 @@ cd udppipe
 The installation and use of both pipelines is described in the corresponding
 separate READMEs: [`llmpipe/README.md`](llmpipe/README.md) and
 [`udppipe/README.md`](udppipe/README.md).
-
 
 
 

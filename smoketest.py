@@ -2,11 +2,14 @@
 """Smoke-test the nlpsolver install without spending any LLM credits.
 
 Checks, in order:
-  1. Python version (>= 3.8).
+  1. Python version (>= 3.10).
   2. llmpipe imports (so missing stdlib modules / syntax errors surface).
   3. The bundled gk reasoner binary runs.
   4. gk produces a proof on the bundled birdspenguins.js example.
-  5. At least one provider key file is present (warning, not a failure).
+  5. At least one non-empty provider key file is present (readiness status,
+     not a hard failure).
+
+The older Stanza pipeline is checked only with --check-udppipe.
 
 Exits 0 on success, non-zero on the first hard failure.
 
@@ -19,6 +22,7 @@ import subprocess
 import sys
 
 REPO_ROOT = os.path.dirname(os.path.abspath(__file__))
+TOTAL_STEPS = 5
 
 
 def step(msg):
@@ -39,14 +43,14 @@ def warn(msg):
 
 
 def check_python():
-  print("[1/6] Python version")
-  if sys.version_info < (3, 8):
-    fail("Python 3.8+ required, got " + sys.version.split()[0])
+  print("[1/%d] Python version" % TOTAL_STEPS)
+  if sys.version_info < (3, 10):
+    fail("Python 3.10+ required, got " + sys.version.split()[0])
   ok("Python " + sys.version.split()[0])
 
 
 def check_imports():
-  print("[2/6] llmpipe imports (no pip packages needed)")
+  print("[2/%d] llmpipe imports (no pip packages needed)" % TOTAL_STEPS)
   solver = os.path.join(REPO_ROOT, "llmpipe", "solver")
   if not os.path.isdir(solver):
     fail("llmpipe/solver/ not found at " + solver)
@@ -61,7 +65,7 @@ def check_imports():
 
 
 def check_gk_runs():
-  print("[3/6] gk binary executes")
+  print("[3/%d] gk binary executes" % TOTAL_STEPS)
   gk = os.path.join(REPO_ROOT, "gk", "gk")
   if not os.path.isfile(gk):
     fail("gk binary not found at " + gk)
@@ -78,7 +82,7 @@ def check_gk_runs():
 
 
 def check_gk_proof():
-  print("[4/6] gk solves the bundled birdspenguins.js example")
+  print("[4/%d] gk solves the bundled birdspenguins.js example" % TOTAL_STEPS)
   gk = os.path.join(REPO_ROOT, "gk", "gk")
   ex = os.path.join(REPO_ROOT, "gk", "birdspenguins.js")
   if not os.path.isfile(ex):
@@ -95,16 +99,35 @@ def check_gk_proof():
 
 
 def check_secrets():
-  print("[5/6] llmpipe API key presence (optional)")
+  print("[5/%d] llmpipe live-query readiness" % TOTAL_STEPS)
   secrets = os.path.join(REPO_ROOT, "secrets")
-  files = ["gpt_secrets.txt", "claude_secrets.txt",
-           "gemini_secrets.txt", "deepseek_secrets.txt"]
-  found = [f for f in files if os.path.isfile(os.path.join(secrets, f))]
+  files = [("gemini", "gemini_secrets.txt"),
+           ("gpt", "gpt_secrets.txt"),
+           ("claude", "claude_secrets.txt"),
+           ("deepseek", "deepseek_secrets.txt")]
+  found = []
+  empty = []
+  for provider, filename in files:
+    path = os.path.join(secrets, filename)
+    if not os.path.isfile(path):
+      continue
+    try:
+      with open(path, "r") as key_file:
+        usable = bool(key_file.read().strip())
+    except OSError:
+      usable = False
+    if usable:
+      found.append((provider, filename))
+    else:
+      empty.append(filename)
   if not found:
     warn("no API key files in " + secrets + "/")
-    warn("the gk reasoner works, but solve.py needs an LLM key — see secrets/README.txt")
+    if empty:
+      warn("empty or unreadable key file(s): " + ", ".join(empty))
+    warn("offline checks work, but a live query needs one key — see secrets/README.md")
   else:
-    ok("found key file(s): " + ", ".join(found))
+    ok("live-query key file(s): " + ", ".join(f for _p, f in found))
+  return found
 
 
 def _discover_python_interpreters(udppipe):
@@ -143,7 +166,7 @@ def _discover_python_interpreters(udppipe):
 
 
 def check_udppipe():
-  print("[6/6] udppipe stanza availability (optional)")
+  print("[6/%d] udppipe stanza availability (requested)" % TOTAL_STEPS)
   udppipe = os.path.join(REPO_ROOT, "udppipe")
   if not os.path.isdir(udppipe):
     warn("udppipe/ not found — skipping")
@@ -170,19 +193,39 @@ def check_udppipe():
        os.path.join(udppipe, "README.md") + " (Installation section).")
 
 
-def main():
+def main(argv=None):
+  global TOTAL_STEPS
+  argv = list(sys.argv[1:] if argv is None else argv)
+  unknown = [arg for arg in argv if arg != "--check-udppipe"]
+  if unknown:
+    print("Unknown option: " + unknown[0])
+    print("Usage: python3 smoketest.py [--check-udppipe]")
+    return 2
+  check_udp = "--check-udppipe" in argv
+  TOTAL_STEPS = 6 if check_udp else 5
   print("nlpsolver smoke-test (repo at " + REPO_ROOT + ")")
   check_python()
   check_imports()
   check_gk_runs()
   check_gk_proof()
-  check_secrets()
-  check_udppipe()
+  providers = check_secrets()
+  if check_udp:
+    check_udppipe()
   print()
-  print("All smoke-test checks passed.")
-  print("Next step: cd " + os.path.join(REPO_ROOT, "llmpipe") +
-        " && python3 solver/solve.py \"YOUR QUESTION\"")
+  print("Offline installation checks passed.")
+  if providers:
+    provider = providers[0][0]
+    print("Live llmpipe queries are configured for: " +
+          ", ".join(p for p, _f in providers) + ".")
+    print("Next step: cd " + os.path.join(REPO_ROOT, "llmpipe") +
+          " && python3 solver/solve.py -llm " + provider +
+          " \"YOUR QUESTION\"")
+  else:
+    print("llmpipe is not yet configured for live queries.")
+    print("Add one provider key as described in " +
+          os.path.join(REPO_ROOT, "secrets", "README.md") + ".")
+  return 0
 
 
 if __name__ == "__main__":
-  main()
+  sys.exit(main())

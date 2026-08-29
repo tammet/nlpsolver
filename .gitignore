@@ -75,6 +75,7 @@ bak*
 cc.en.300.bin*
 bridging_notes.txt
 test*output.txt
+*.resume.jsonl
 claudesession.txt
 gk_relatedwords.txt
 gk_similarity.txt.gz

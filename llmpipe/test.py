@@ -47,6 +47,7 @@ import os
 sys.path.insert(0, './solver')
 from solve import english_to_answer
 import solve as _solve_mod
+import llmcall as _llmcall
 
 
 def _print(*args, **kwargs):
@@ -113,6 +114,8 @@ _resume_records = {}
 
 # When True, delete the log file and start fresh (set by -restart flag).
 restart = False
+_run_interrupted = False
+_infrastructure_error = False
 
 
 # ======== helptext ========
@@ -153,10 +156,11 @@ flow control:
                        without this flag, an adjacent .resume.jsonl file reuses
                        only exact matches for the test source, case, provider,
                        version, pipeline source, solver configuration and
-                       scoring policy
+                       scoring policy; execution errors are retried, not reused
 
 solver options:
  -llm NAME             LLM provider: gpt, claude, gemini, or deepseek
+                       (default: gemini)
  -version VER          model version string, e.g. gemini-2.0-flash
  -logfile PATH         write log to PATH instead of test_output.txt
 
@@ -173,6 +177,9 @@ cache / matching options:
                        spatial preposition on one side but not the other is ignored)
 
  -help                 show this help text
+
+Exit status is 0 when every selected case passes, 1 when any case fails,
+2 for a command/configuration error, and 130 when interrupted.
 """
 
 
@@ -286,7 +293,7 @@ def _resume_path(log_path):
 
 
 def _load_resume_records(path):
-  """Read exact-key JSONL resume records; malformed lines are ignored."""
+  """Read completed-case JSONL records; malformed and error rows are ignored."""
   records = {}
   if not path:
     return records
@@ -299,7 +306,8 @@ def _load_resume_records(path):
           continue
         if (isinstance(row, dict)
             and row.get("schema_version") == RESUME_SCHEMA_VERSION
-            and isinstance(row.get("resume_key"), str)):
+            and isinstance(row.get("resume_key"), str)
+            and not _error_result(row.get("received"))):
           records[row["resume_key"]] = row
   except OSError:
     pass
@@ -322,6 +330,11 @@ def _case_resume_key(test_path, test_file_sha256, test, configuration):
 def _record_resume(resume_key, test_path, test_file_sha256, test,
                    configuration, received, ok):
   global _resume_records
+  # Configuration and pipeline failures are not completed logical cases.  A
+  # user who repairs the environment must be able to rerun without discovering
+  # and deleting a stale resume record first.
+  if _error_result(received):
+    return
   row = {
     "schema_version": RESUME_SCHEMA_VERSION,
     "resume_key": resume_key,
@@ -341,14 +354,28 @@ def _record_resume(resume_key, test_path, test_file_sha256, test,
     _resume_fh.flush()
 
 
+def _error_result(received):
+  """Whether a result is an execution failure rather than a logical answer."""
+  head = str(received or "").split("\n", 1)[0].strip().lower()
+  return head.startswith("error:") or head.startswith("software error:")
+
+
 # ======== main ========
 
 def main():
   global _log_fh, _resume_fh, _resume_records
   if len(sys.argv) == 1:
     print(helptext)
-    return
+    return 0
   test_files, solver_opts = _parse_cmd_line()
+
+  try:
+    _llmcall.validate_provider_configuration(
+      _solve_mod.llm, _solve_mod.llm_version)
+  except (_llmcall.InvalidProviderError,
+          _llmcall.MissingApiKeyError) as exc:
+    print("Error: " + str(exc))
+    return 2
 
   if log_file_path:
     resume_path = _resume_path(log_file_path)
@@ -404,20 +431,28 @@ def main():
   elif not all_errors and not show_verbose:
     # Single file, no failures — print_summary was already called inside run_file
     pass
+  if _run_interrupted:
+    return 130
+  if _infrastructure_error:
+    return 2
+  return 1 if all_failed else 0
 
 
 # ======== per-file runner ========
 
 def run_file(path, solver_opts):
   """Load a test file, run every test through the solver, return stats."""
+  global _run_interrupted, _infrastructure_error
   tests = _load_test_file(path)
   if tests is None:
+    _infrastructure_error = True
     return (0, 0, 0, [])
 
   try:
     test_file_sha256 = _file_sha256(path)
   except OSError as e:
     _print(f"Error: could not hash test file {path}: {e}")
+    _infrastructure_error = True
     return (0, 0, 0, [])
   configuration = _run_configuration(solver_opts)
 
@@ -488,6 +523,7 @@ def run_file(path, solver_opts):
       received = english_to_answer(inp, dict(solver_opts))
     except KeyboardInterrupt:
       _print("\nInterrupted.")
+      _run_interrupted = True
       break
     except Exception as e:
       received = "Software error: " + str(e)
@@ -1135,33 +1171,38 @@ def _parse_cmd_line():
       solver_opts["use_cache_flag"] = True
     elif el in ["-limit", "--limit"]:
       if elpos + 1 >= len(params):
-        print("-limit requires an integer argument"); sys.exit(0)
+        print("-limit requires an integer argument"); sys.exit(2)
       try:
         limit = int(params[elpos + 1])
       except ValueError:
-        print("-limit requires an integer argument"); sys.exit(0)
+        print("-limit requires an integer argument"); sys.exit(2)
       skippos = 1
     elif el in ["-skip", "--skip"]:
       if elpos + 1 >= len(params):
-        print("-skip requires an integer argument"); sys.exit(0)
+        print("-skip requires an integer argument"); sys.exit(2)
       try:
         skip = int(params[elpos + 1])
       except ValueError:
-        print("-skip requires an integer argument"); sys.exit(0)
+        print("-skip requires an integer argument"); sys.exit(2)
       skippos = 1
     elif el in ["-filter", "--filter"]:
       if elpos + 1 >= len(params):
-        print("-filter requires a pattern argument"); sys.exit(0)
+        print("-filter requires a pattern argument"); sys.exit(2)
       filter_pattern = params[elpos + 1]
       skippos = 1
     elif el in ["-llm", "--llm"]:
       if elpos + 1 >= len(params):
-        print("-llm requires a provider name"); sys.exit(0)
+        print("-llm requires a provider name"); sys.exit(2)
       _solve_mod.llm = params[elpos + 1]
+      if _solve_mod.llm not in _llmcall.SUPPORTED_PROVIDERS:
+        print("Unknown LLM provider %r; expected one of %s"
+              % (_solve_mod.llm,
+                 ", ".join(_llmcall.SUPPORTED_PROVIDERS)))
+        sys.exit(2)
       skippos = 1
     elif el in ["-version", "--version"]:
       if elpos + 1 >= len(params):
-        print("-version requires a version string"); sys.exit(0)
+        print("-version requires a version string"); sys.exit(2)
       _solve_mod.llm_version = params[elpos + 1]
       skippos = 1
     elif el in ["-think", "--think"]:
@@ -1176,13 +1217,13 @@ def _parse_cmd_line():
         solver_opts["think_flag"] = True
     elif el in ["-logfile", "--logfile"]:
       if elpos + 1 >= len(params):
-        print("-logfile requires a file path"); sys.exit(0)
+        print("-logfile requires a file path"); sys.exit(2)
       log_file_path = params[elpos + 1]
       skippos = 1
     elif el in ["help", "-help", "--help"]:
       print(helptext); sys.exit(0)
     elif el and el.startswith("-"):
-      print(f"Unknown option: {el}"); print(helptext); sys.exit(0)
+      print(f"Unknown option: {el}"); print(helptext); sys.exit(2)
     else:
       test_files.append(el)
 
@@ -1201,7 +1242,7 @@ def _parse_cmd_line():
 # ======== entry point ========
 
 if __name__ == "__main__":
-  main()
+  sys.exit(main())
 
 
 # =========== the end ==========

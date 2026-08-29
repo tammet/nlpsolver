@@ -40,6 +40,12 @@ a configuration manifest and refuses to mix incompatible runs in one result
 directory; it also writes per-provider summaries and a combined cross-provider
 summary.
 
+Both runners validate the requested provider names and non-empty key files
+before doing work. `test.py` does not reuse an execution error as a completed
+case and exits nonzero when a selected test fails. `runtests.py` treats a
+provider or credential problem as a command error rather than recording it as
+many failed benchmark cases.
+
 The answer matcher is permissive by design. It normalizes presentation details
 including case, punctuation, coordinated-answer order, confidence wording,
 selected prepositions, and equivalent units. Every batch case record includes

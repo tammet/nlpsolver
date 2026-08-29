@@ -131,14 +131,20 @@ def main():
     counts = cache.clear_all_caches()
     print("Cache cleared: {:d} LLM, {:d} proof, {:d} parse entries removed.".format(
       counts["llm"], counts["proof"], counts["parse"]))
-    sys.exit(0)
+    return 0
   if not text:
     print("No text given.\n" + helptext)
-    sys.exit(0)
+    return 2
+  try:
+    llmcall.validate_provider_configuration(llm, llm_version)
+  except (llmcall.InvalidProviderError, llmcall.MissingApiKeyError) as exc:
+    print("Error: " + str(exc))
+    return 2
   result = english_to_answer(text, opts)
   if opts.get("show_logic_flag"):
     print("\n=== result ===\n")
   print(result)
+  return 1 if _is_error(result) else 0
 
 
 class _ApiTimeout(BaseException):
@@ -1957,12 +1963,12 @@ def _parse_cmd_line():
       if elpos + 1 >= len(params):
         print("Error: -event requires a mode "
               "(neodavidson|davidson|davidson2|flat|flatroles)")
-        sys.exit(0)
+        sys.exit(2)
       mode = params[elpos + 1]
       if mode not in ("neodavidson", "davidson", "davidson2", "flat", "flatroles"):
         print("Error: unknown -event mode:", mode,
               "(expected neodavidson|davidson|davidson2|flat|flatroles)")
-        sys.exit(0)
+        sys.exit(2)
       opts["event_base"] = mode
       # Naming a base asks for that base's own historical theory, so the v2
       # defaults stand aside (lc_encoding.EncodingConfig).
@@ -2021,7 +2027,7 @@ def _parse_cmd_line():
       # `-accept POLICY`, like `-llm NAME`: the value is the next argument.
       if elpos + 1 >= len(params):
         print("-accept requires a policy: permissive, balanced, or strict")
-        sys.exit(0)
+        sys.exit(2)
       opts["accept_policy"] = params[elpos + 1]
       skippos = 1
     elif el in ["-critic", "--critic"]:
@@ -2041,31 +2047,31 @@ def _parse_cmd_line():
     elif el in ["-llm-call-limit", "--llm-call-limit"]:
       if elpos + 1 >= len(params):
         print("-llm-call-limit requires a number of calls (0 = unlimited)")
-        sys.exit(0)
+        sys.exit(2)
       opts["llm_call_limit"] = int(params[elpos + 1])
       skippos = 1
     elif el in ["-llm-call-timeout", "--llm-call-timeout"]:
       if elpos + 1 >= len(params):
         print("-llm-call-timeout requires a number of seconds")
-        sys.exit(0)
+        sys.exit(2)
       opts["llm_call_timeout"] = float(params[elpos + 1])
       skippos = 1
     elif el in ["-pipeline", "--pipeline"]:
       if elpos + 1 >= len(params):
         print("-pipeline requires a name: %s" % ", ".join(sorted(PIPELINES)))
-        sys.exit(0)
+        sys.exit(2)
       try:
         apply_pipeline(opts, params[elpos + 1])
       except ValueError as exc:
         print("Error: %s" % exc)
-        sys.exit(0)
+        sys.exit(2)
       skippos = 1
     elif el.startswith(("-pipeline=", "--pipeline=")):
       try:
         apply_pipeline(opts, el.split("=", 1)[1])
       except ValueError as exc:
         print("Error: %s" % exc)
-        sys.exit(0)
+        sys.exit(2)
     elif el in ["-stack", "--stack", "-stack-closed", "--stack-closed",
                 "-stack-open", "--stack-open"]:
       # A flag set assigns all six stage keys, so it fully replaces whatever
@@ -2122,80 +2128,84 @@ def _parse_cmd_line():
     elif el in ["-llm", "--llm"]:
       if elpos + 1 >= len(params):
         print("-llm requires a provider name: gpt, claude, gemini, or deepseek")
-        sys.exit(0)
+        sys.exit(2)
       llm = params[elpos + 1]
+      if llm not in llmcall.SUPPORTED_PROVIDERS:
+        print("Error: unknown LLM provider %r; expected one of %s"
+              % (llm, ", ".join(llmcall.SUPPORTED_PROVIDERS)))
+        sys.exit(2)
       skippos = 1
     elif el in ["-version", "--version"]:
       if elpos + 1 >= len(params):
         print("-version requires a model version string")
-        sys.exit(0)
+        sys.exit(2)
       llm_version = params[elpos + 1]
       skippos = 1
     elif el in ["-combined-instr", "--combined-instr"]:
       if elpos + 1 >= len(params):
         print("-combined-instr requires a path to a combined instructions prompt file")
-        sys.exit(0)
+        sys.exit(2)
       opts["combined_instr_file"] = params[elpos + 1]
       opts["combined_flag"] = True   # presence of -combined-instr turns single-stage mode on
       skippos = 1
     elif el in ["-combined-examples", "--combined-examples"]:
       if elpos + 1 >= len(params):
         print("-combined-examples requires a path to a combined examples prompt file")
-        sys.exit(0)
+        sys.exit(2)
       opts["combined_examples_file"] = params[elpos + 1]
       skippos = 1
     elif el in ["-combined-checklist", "--combined-checklist"]:
       if elpos + 1 >= len(params):
         print("-combined-checklist requires a path to a combined checklist prompt file")
-        sys.exit(0)
+        sys.exit(2)
       opts["combined_checklist_file"] = params[elpos + 1]
       skippos = 1
     elif el in ["-directanswer", "--directanswer"]:
       if elpos + 1 >= len(params):
         print("-directanswer requires a path to a direct-answer prompt file")
-        sys.exit(0)
+        sys.exit(2)
       opts["directanswer_file"] = params[elpos + 1]
       opts["directanswer_flag"] = True   # answer with one LLM call, no pipeline
       skippos = 1
     elif el in ["-seconds", "--seconds"]:
       if elpos + 1 >= len(params):
         print("-seconds takes an integer parameter")
-        sys.exit(0)
+        sys.exit(2)
       try:
         n = int(params[elpos + 1])
       except:
         print("-seconds takes an integer parameter")
-        sys.exit(0)
+        sys.exit(2)
       if n < 1:
         print("-seconds takes an integer parameter 1 or more")
-        sys.exit(0)
+        sys.exit(2)
       opts["prover_seconds"] = n
       opts["prover_seconds_cli"] = True
       skippos = 1
     elif el in ["-printlevel", "--printlevel"]:
       if elpos + 1 >= len(params):
         print("-printlevel takes an integer parameter")
-        sys.exit(0)
+        sys.exit(2)
       try:
         n = int(params[elpos + 1])
       except:
         print("-printlevel takes an integer parameter")
-        sys.exit(0)
+        sys.exit(2)
       if n < 10:
         print("-printlevel takes an integer parameter 10 or more")
-        sys.exit(0)
+        sys.exit(2)
       opts["prover_print"] = n
       skippos = 1
     elif el in ["-gkin", "--gkin"]:
       if elpos + 1 >= len(params):
         print("-gkin takes a file name as a parameter")
-        sys.exit(0)
+        sys.exit(2)
       opts["gkin_file"] = params[elpos + 1]
       skippos = 1
     elif el in ["-strategy", "--strategy"]:
       if elpos + 1 >= len(params):
         print("-strategy takes a file name as a parameter")
-        sys.exit(0)
+        sys.exit(2)
       opts["prover_strategy"] = params[elpos + 1]
       skippos = 1
     elif el in ["-axioms", "--axioms"]:
@@ -2214,7 +2224,7 @@ def _parse_cmd_line():
     elif el and el[0] == "-":
       print("Key " + el + " is not recognized.")
       print(helptext)
-      sys.exit(0)
+      sys.exit(2)
     elif (len(el) < 50 and
           len(el.split(".")) == 2 and
           len(el.split(".")[1]) > 1 and
@@ -2226,7 +2236,7 @@ def _parse_cmd_line():
         f.close()
       except:
         print("Could not read from the file " + el)
-        sys.exit(0)
+        sys.exit(2)
     else:
       # normal text
       textpart = el
@@ -2278,7 +2288,7 @@ everything under EXPERIMENTAL AND LEGACY below.
 === COMMON ===
 
 model:
- -llm NAME    : provider: gpt, claude, gemini or deepseek (default: llmcall.py)
+ -llm NAME    : provider: gpt, claude, gemini or deepseek (default: gemini)
  -version VER : model version string, e.g. claude-sonnet-4-6, gpt-5.1
 
 retry configuration (which stages run when the initial attempt answers Unknown):
@@ -2481,7 +2491,7 @@ resolution order for every stage selection:
 # ========= main caller =========
 
 if __name__ == "__main__":
-  main()
+  sys.exit(main())
 
 
 # =========== the end ==========

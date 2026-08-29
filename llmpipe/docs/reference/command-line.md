@@ -15,8 +15,9 @@ Every single-dash key is also accepted with two dashes.
 `-help` prints the option list for `solve.py` and for `test.py`. Both also
 accept the bare word `help`. `runtests.py` uses `-h` or `--help`.
 
-An unrecognised key is an error: `solve.py` and `test.py` print their help and
-stop, rather than reading the key as input.
+An unrecognised key or provider is an error: the command stops rather than
+reading it as input or silently selecting another provider. Command-line and
+configuration errors exit with a nonzero status.
 
 ## Input
 
@@ -24,7 +25,7 @@ stop, rather than reading the key as input.
 space.
 
 ```bash
-python3 solver/solve.py "Elephants are animals. John is an elephant. Is John an animal?"
+python3 solver/solve.py -llm gemini "Elephants are animals. John is an elephant. Is John an animal?"
 ```
 
 An argument that looks like a file name is read as a file. It qualifies when
@@ -41,8 +42,8 @@ option is treated as input.
 
 ## Provider and model
 
-- `-llm NAME` — provider: `gpt`, `claude`, `gemini` or `deepseek`. Without it,
-  the default in `solver/llmcall.py` applies.
+- `-llm NAME` — provider: `gpt`, `claude`, `gemini` or `deepseek`. The default
+  is `gemini`.
 - `-version VER` — model version string, for example `claude-sonnet-4-6` or
   `gpt-5.1`. It must match the provider.
 - `-think` — ask for reasoning mode. The number is optional: `-think N` sets
@@ -189,7 +190,9 @@ Flow and logging:
   to the readable log and consults an adjacent `.resume.jsonl` file. A result
   is reused only when the test source, pipeline source state, case, provider,
   version, solver options, and scoring policy agree. With `-restart`, both
-  files are truncated and every selected case runs again.
+  files are truncated and every selected case runs again. Execution errors
+  are not reused as completed cases, so a case runs again after a missing key
+  or other environmental problem is repaired.
 
 Answer comparison:
 
@@ -213,7 +216,10 @@ number), `-cache` and `-nollmcache`, all as for `solve.py`.
 ## Running a batch
 
 `runtests.py` records one test file against one or more providers. With no
-arguments it prints help. It writes one JSON per case and provider to
+arguments it prints help. Before creating a manifest or running a case, it
+validates every provider name and non-empty key file. Configuration errors
+exit nonzero and do not become failed benchmark cases. It writes one JSON per
+case and provider to
 
 ```text
 <out>/<set name>[_<tag>]/<provider>/case_NNNN.json

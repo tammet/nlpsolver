@@ -4,7 +4,7 @@ This page covers installation, model configuration, and the first commands.
 
 ## Requirements
 
-Python 3, and the `gk` prover binary with its data files:
+Python 3.10 or later, and the `gk` prover binary with its data files:
 
 ```text
 llmpipe/axioms_std.js
@@ -13,8 +13,9 @@ llmpipe/axioms_std.js
 ../gk/gk_taxonomy_packed.txt
 ```
 
-The prover distribution is at <https://github.com/tammet/gkreasoner>. The
-solver data archive is at <http://logictools.org/data/nlpsolver_data.tar.gz>.
+An ordinary clone already contains the Linux x86-64 GK executable and these
+data files. The prover's separate source repository is
+<https://github.com/tammet/gkreasoner>.
 
 ## API keys
 
@@ -27,9 +28,14 @@ Keys are read from plain files, one key per file:
 ../secrets/deepseek_secrets.txt
 ```
 
+Gemini is the default provider. You need only the file for the provider you
+intend to use. Each file contains the raw key only. See
+[`secrets/README.md`](../../secrets/README.md) for secure setup instructions.
+
 ## Selecting a model
 
-`solver/llmcall.py` holds the defaults. Override per run:
+`solver/llmcall.py` holds the default versions. The provider default is Gemini;
+these examples select their provider explicitly:
 
 ```bash
 python3 solver/solve.py -llm claude "Elephants are animals. John is an elephant. Is John an animal?"
@@ -41,10 +47,10 @@ Responses are cached in `cache.db`. A repeated run answers from the cache.
 ## First commands
 
 ```bash
-python3 solver/solve.py "Elephants are animals. John is an elephant. Is John an animal?"
-python3 solver/solve.py -explain "Elephants are animals. John is an elephant. Is John an animal?"
-python3 solver/solve.py -logic "Elephants are animals. John is an elephant. Is John an animal?"
-python3 solver/solve.py -summary "Elephants are animals. John is an elephant. Is John an animal?"
+python3 solver/solve.py -llm gemini "Elephants are animals. John is an elephant. Is John an animal?"
+python3 solver/solve.py -llm gemini -explain "Elephants are animals. John is an elephant. Is John an animal?"
+python3 solver/solve.py -llm gemini -logic "Elephants are animals. John is an elephant. Is John an animal?"
+python3 solver/solve.py -llm gemini -summary "Elephants are animals. John is an elephant. Is John an animal?"
 ```
 
 `-explain` adds the English proof. `-logic` adds the simplified text and the
@@ -59,7 +65,7 @@ stages, and the model calls made by each stage.
 ## Running a small test
 
 ```bash
-python3 test.py tests/tests_core.py -limit 5
+python3 test.py tests/tests_core.py -llm gemini -limit 5
 python3 runtests.py tests/tests_core.py -llms deepseek -limit 5
 ```
 
@@ -70,10 +76,10 @@ python3 runtests.py tests/tests_core.py -llms deepseek -limit 5
 
 ```bash
 # Show every intermediate representation
-python3 solver/solve.py -debug -logic -prover -explain "Elephants are animals. John is an elephant. Is John an animal?"
+python3 solver/solve.py -llm gemini -debug -logic -prover -explain "Elephants are animals. John is an elephant. Is John an animal?"
 
 # Parse to logic only, do not call the prover
-python3 solver/solve.py -nosolve "Elephants are animals. John is an elephant. Is John an animal?"
+python3 solver/solve.py -llm gemini -nosolve "Elephants are animals. John is an elephant. Is John an animal?"
 ```
 
 ## Selecting a pipeline
@@ -82,8 +88,8 @@ Most users should keep the default `balanced` pipeline. For a deliberately
 narrower or higher-recall run:
 
 ```bash
-python3 solver/solve.py -pipeline conservative "Elephants are animals. John is an elephant. Is John an animal?"
-python3 solver/solve.py -pipeline high-recall "Elephants are animals. John is an elephant. Is John an animal?"
+python3 solver/solve.py -llm gemini -pipeline conservative "Elephants are animals. John is an elephant. Is John an animal?"
+python3 solver/solve.py -llm gemini -pipeline high-recall "Elephants are animals. John is an elephant. Is John an animal?"
 ```
 
 See [configuration](reference/configuration.md) for what each pipeline enables.

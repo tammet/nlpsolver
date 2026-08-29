@@ -94,16 +94,18 @@ Best for iterating on one LLM and eyeballing failures.
 python3 test.py tests/tests_core.py -llm claude
 
 # subset
-python3 test.py tests/tests_core_100.py -limit 20
-python3 test.py tests/tests_core.py -filter "penguin"
+python3 test.py tests/tests_core_100.py -llm gemini -limit 20
+python3 test.py tests/tests_core.py -llm gemini -filter "penguin"
 ```
 
 `test.py` writes readable output to `test_output.txt` and exact resume records
 to `test_output.txt.resume.jsonl`. A result is reused only when the test-file
 content, case, provider, model version, solver configuration, and scoring
 policy match; the pipeline commit and tracked working-tree changes must also
-match. `-restart` truncates both files. See `python3 test.py -help` for all
-flags.
+match. Execution errors are not reused, so repairing a missing key or another
+environmental problem reruns the affected case. `-restart` truncates both
+files. The command exits nonzero if a selected case fails or errors. See
+`python3 test.py -help` for all flags.
 
 ### `runtests.py` — research evaluation and record generation
 
@@ -130,3 +132,7 @@ It resumes by skipping cases whose JSON already exists (`-redo` / `-redo-errors`
 override), after the manifest has been checked. Every case record names the
 answer-matching policy used to calculate `correctness`. See
 ../docs/reference/command-line.md for the full flag list.
+
+Before starting a batch, the runner validates every provider name and key
+file. A missing key or invalid provider stops the command before it writes a
+manifest or case record.

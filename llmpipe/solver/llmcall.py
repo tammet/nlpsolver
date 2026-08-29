@@ -42,8 +42,10 @@ import utils
 
 # ======== configuration ========
 
-# Which LLM to use: "gpt", "claude", "gemini", or "deepseek"
-use_llm = "claude"
+# Which LLM to use: "gpt", "claude", "gemini", or "deepseek".
+# Keep the default in one assignment: command help and introductory
+# documentation identify Gemini explicitly.
+SUPPORTED_PROVIDERS = ("gpt", "claude", "gemini", "deepseek")
 use_llm = "gemini"
 
 # Model versions
@@ -405,6 +407,10 @@ def call_llm(sysprompt, input_text, llm=None, version=None, max_tokens=None, thi
   True) and can be disabled per-run via -nollmcache in solve.py.
   """
   llm = llm or use_llm
+  if llm not in SUPPORTED_PROVIDERS:
+    return llm_error(
+      "unknown provider %r; expected one of %s"
+      % (llm, ", ".join(SUPPORTED_PROVIDERS)))
   max_tokens = max_tokens or default_max_tokens
 
   # Resolve the actual version here so the cache key is fully deterministic.
@@ -414,7 +420,7 @@ def call_llm(sysprompt, input_text, llm=None, version=None, max_tokens=None, thi
     ver = version or geminiversion
   elif llm == "deepseek":
     ver = version or deepseekversion
-  else:
+  elif llm == "gpt":
     ver = version or gptversion
 
   _check_model(llm, ver)
@@ -571,6 +577,42 @@ class MissingApiKeyError(Exception):
   pass
 
 
+class InvalidProviderError(ValueError):
+  """A command or caller named an LLM provider the pipeline does not have."""
+
+
+def provider_version(provider=None, version=None):
+  """Resolve a supported provider and its effective model version."""
+  provider = provider or use_llm
+  if provider not in SUPPORTED_PROVIDERS:
+    raise InvalidProviderError(
+      "unknown LLM provider %r; expected one of %s"
+      % (provider, ", ".join(SUPPORTED_PROVIDERS)))
+  return provider, version or globals()[provider + "version"]
+
+
+def provider_key_file(provider=None):
+  """Return the configured key-file path for a supported provider."""
+  provider, _version = provider_version(provider)
+  return globals()[provider + "_secrets_file"]
+
+
+def validate_provider_configuration(provider=None, version=None,
+                                    require_key=True):
+  """Validate one command's provider, model version, and API-key file.
+
+  This is the shared preflight used by the public command-line entry points.
+  It performs no network request and never returns the key itself.
+  """
+  provider, version = provider_version(provider, version)
+  key_file = provider_key_file(provider)
+  if require_key:
+    display = {"gpt": "GPT", "claude": "Claude", "gemini": "Gemini",
+               "deepseek": "DeepSeek"}[provider]
+    _read_api_key(key_file, display)
+  return {"provider": provider, "version": version, "key_file": key_file}
+
+
 def _read_api_key(filepath, provider):
   """Read an API key from a plain-text file.
   Raises MissingApiKeyError if the file is missing, unreadable, or empty.
@@ -581,7 +623,7 @@ def _read_api_key(filepath, provider):
   except FileNotFoundError:
     raise MissingApiKeyError(
       provider + " API key file not found: " + str(filepath) +
-      "\n  Create it with your provider key. See ../secrets/README.txt for details."
+      "\n  Create it with your provider key. See ../secrets/README.md for details."
     )
   except OSError as e:
     raise MissingApiKeyError(
