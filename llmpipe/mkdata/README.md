@@ -317,7 +317,7 @@ Always prefix commands with `venv/bin/python`.
 
 ```
 mkdata/
-├── README.md, CLAUDE.md               # this file, LLM coding instructions
+├── README.md, CLAUDE.md, AGENTS.md    # overview and coding-agent instructions
 │
 ├── Cluster databases (authoritative)
 │   ├── syn_a_10.txt                   # 587 adjective clusters (post-harvest, post-drops)
