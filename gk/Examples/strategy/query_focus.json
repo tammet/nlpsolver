@@ -1,0 +1,6 @@
+{
+  "max_seconds": 10,
+  "strategy": ["query_focus"],
+  "query_preference": 1,
+  "max_distinct_answers": 10
+}

@@ -1,375 +1,190 @@
-GK Examples
-===========
-
-This folder contains examples organized by category. All examples
-use JSON-LD-LOGIC format and work with gk directly.
-
-Run any example with:
-
-    ./gk Examples/core/grandfather.js
-
-For the input format reference, see `../Doc/input_languages.md`.
-A tutorial based on the current example set is in the
-[gkreasoner repository](https://github.com/tammet/gkreasoner/tree/master/Examples).
-
-
-Core Examples
--------------
-
-Basic classical logic: facts, rules, queries, and answer predicates.
-No confidence values or default rules.
-
-    core/grandfather.js
-        Rules and inference. A grandfather rule derives grandfather(john,mark)
-        from father(john,pete) and father(pete,mark). Shows rule application
-        with confidence propagation (min of premises).
-
-        ./gk Examples/core/grandfather.js
-
-    core/grandfather_equality.js
-        Same as grandfather but using equality (father(john)=pete) instead of
-        a binary predicate. Demonstrates paramodulation.
-
-    core/grandfather_arc.js
-        Grandfather reasoning using JSON-LD $arc triples:
-        $arc(X, father, Y) instead of father(X,Y).
-
-    core/grandfather_jsonld.js
-        Grandfather using full JSON-LD object notation:
-        {"@id":"pete", "father":"john"} style input.
-
-    core/algebra.js
-        Abstract algebra: proves m(e,X)=X from algebraic axioms
-        using equality reasoning (paramodulation).
-
-    core/algebra_confidence.js
-        Same algebra problem with a low-confidence rule, demonstrating
-        that equality reasoning works with confidence values.
-
-    core/equality.js
-        Basic equality and function reasoning.
-
-    core/lists.js
-        List operations: counting elements with $list, $first, $rest,
-        and computing sums.
-
-    core/negation.js
-        Negation in queries: finding what is NOT true.
-
-    core/negation_conflict.js
-        Conflicting facts: positive and negative evidence for the same
-        predicate, showing how gk handles contradictions.
-
-    core/logic_chain.js
-        A chain of logical implications, testing multi-step derivation.
-
-    core/jsonld_context.js
-        JSON-LD @context and @base for URI expansion. Demonstrates
-        semantic web compatibility.
-
-    core/named_graphs.js
-        JSON-LD named graphs with @graph key.
-
-    core/multiple_graphs.js
-        Multiple named graphs with $narc (named arc) triples.
-
-
-Confidence Examples
--------------------
-
-Problems using @confidence values for uncertain reasoning. GK computes
-positive and negative evidence and cumulates confidence from multiple
-independent proofs.
-
-### Basic confidence
-
-    confidences/conf1.js
-        Multiple facts about the same predicate with different confidences
-        (positive: 0.6, 0.5; negative: 0.9, 0.2). Shows cumulation
-        of evidence and positive-minus-negative calculation.
-
-        ./gk Examples/confidences/conf1.js
-
-    confidences/conf2.js
-        Named axioms with confidences. Similar to conf1 but with
-        @name annotations.
-
-    confidences/conf3.js
-        Conflicting facts with five confidence values, testing
-        how multiple sources of evidence interact.
-
-    confidences/conf4.js
-        Two probabilistic facts (coin tosses at 50% and 60%).
-
-### Probabilistic reasoning (coin/alarm problems)
-
-    confidences/coin1.js
-        Single coin flip with confidence propagation.
-
-    confidences/coin2.js
-        Two independent coin flips.
-
-    confidences/coin3.js
-        Existential generalization with probabilistic rules.
-
-    confidences/coin4.js
-        Multiple coins with confidence propagation chains.
-
-    confidences/coin4_err.js, coin4_err1.js, coin4_err2.js
-        Edge cases in probability handling.
-
-    confidences/alarm.js
-        Bayesian-style burglary/earthquake alarm problem.
-        Inspired by the classic Pearl example.
-
-        ./gk Examples/confidences/alarm.js
-
-    confidences/alarm_v1.js, alarm_v2.js
-        Alarm problem variants with different confidence configurations.
-
-### Rules with confidence
-
-    confidences/rules1.js - rules5.js
-        Progressive examples of rules with different confidence values:
-        conflicting rules (rules1), multiple rules for same predicate
-        (rules2), simple inference (rules3), nested inference (rules4),
-        recursive predicates (rules5).
-
-    confidences/equality1.js - equality3.js
-        Equality reasoning combined with confidence values.
-
-### Smoking/social examples
-
-    confidences/smokes.js
-        Probabilistic smoking: stress causes smoking with 80% confidence,
-        influences propagation.
-
-        ./gk Examples/confidences/smokes.js
-
-    confidences/smokes2.js
-        Variant with different confidence values.
-
-    confidences/smokes_alchemy.js
-        Smoking example in Alchemy/Markov Logic Network style.
-
-    confidences/socialsmoking.js
-        Social network smoking propagation with confidences.
-
-    confidences/socialsmoking2.js
-        Extended social smoking example.
-
-### Cumulation and evidence
-
-    confidences/cumulate.js
-        Multiple proofs of the same fact from independent sources.
-        Demonstrates confidence cumulation formula.
-
-        ./gk Examples/confidences/cumulate.js
-
-    confidences/rulemult.js
-        Basic confidence multiplication through rules. Two facts
-        with confidences 0.5 and 0.6 combined via a rule give 0.3.
-        (From the "Confidences for commonsense reasoning" paper, CADE 2021.)
-
-    confidences/n1.js - n3.js
-        Various patterns of positive and negative evidence interaction.
-
-    confidences/n2a.js, n2c.js, n2plus.js
-        Extended evidence interaction patterns.
-
-### Transitive chains
-
-    confidences/near.js
-        Confidence decay through a transitive chain of 10 objects.
-        Each transitivity step multiplies confidence by 0.9.
-
-        ./gk Examples/confidences/near.js
-
-    confidences/near2.js
-        Same as near.js but using nested function symbols
-        (["f", ...]) instead of named constants.
-
-### Comparison studies (vs ProbLog, Alchemy)
-
-23 comparison studies against ProbLog2 and Alchemy 2 form the experimental
-basis for the "Confidences for commonsense reasoning" paper (CADE 2021).
-They are described and downloadable at https://logictools.org/confer/.
-
-
-Exception Examples
-------------------
-
-Default rules with $block mechanism for defeasible reasoning.
-Rules can be overridden by more specific exceptions.
-
-### Basic defaults
-
-    exceptions/trivial.js
-        Simplest possible default rule example.
-
-        ./gk Examples/exceptions/trivial.js
-
-    exceptions/bird_default.js
-        "Birds fly" as a default rule with $block.
-
-    exceptions/bird_exception.js
-        "Birds fly, but this specific bird doesn't" — a single exception
-        to a default rule.
-
-    exceptions/bird_penguin.js
-        The classic example: birds fly (strength 1), penguins don't fly
-        (strength 2). The penguin exception overrides the bird default.
-
-        ./gk Examples/exceptions/bird_penguin.js
-
-    exceptions/bird_hierarchy.js
-        Three-level hierarchy: objects, birds, penguins, with cascading
-        defaults at different strengths.
-
-    exceptions/hierarchy.js
-        Object/bird/penguin hierarchy with integer-based strengths
-        and multiple properties.
-
-### Classification
-
-    exceptions/classify.js
-        Classification with default rules. Demonstrates how $block
-        is used to classify entities into categories.
-        Uses taxonomy-based priorities (see the taxonomy section below).
-
-        ./gk Examples/exceptions/classify.js -taxonomy -datafolder Examples/exceptions
-
-    exceptions/kingqueen.js
-        Simple type rules (king/queen classification).
-
-### Competing defaults (Nixon diamond)
-
-    exceptions/nixon.js
-        The Nixon diamond: "Quakers are pacifists" vs "Republicans are
-        not pacifists" with equal strength. Neither default wins: GK
-        reports the opposition with a zero margin.
-        Expected result: "evidence below limit" at confidence 0.
-
-        ./gk Examples/exceptions/nixon.js
-
-    exceptions/nixon_taxonomy.js
-        Nixon diamond using taxonomy-based strengths. Both defaults
-        are incomparable in the taxonomy, so neither wins.
-        Expected result: "evidence below limit" at confidence 0.
-        Uses taxonomy-based priorities (see the taxonomy section below).
-
-### Penguin variants
-
-    exceptions/penguin.js
-        Full penguin/bird example with confidence values and blocking.
-
-    exceptions/penguin2.js
-        Deep taxonomy: flyingpenguin > penguin > bird > organism,
-        each with different flying defaults at integer priorities.
-
-    exceptions/penguin3.js
-        Same as penguin2 but using taxonomy-based $block priorities
-        like ["$","penguin",3].
-        Uses taxonomy-based priorities (see the taxonomy section below).
-
-    exceptions/penguin4.js
-        Whether a grandfather of a penguin can fly. Uses nested function
-        symbols (father(father(p))) and biconditional rules.
-        Uses taxonomy-based priorities (see the taxonomy section below).
-
-### Situation calculus (frame problem)
-
-    exceptions/people_room.js
-        Story encoding: "A man entered a room containing a table.
-        He wore a black suit. Then the man left the room."
-        Models situations, events, and default persistence (frame axioms).
-        Question: in which situations is there NOT a man in the room?
-        Uses taxonomy-based priorities (see the taxonomy section below).
-
-        ./gk Examples/exceptions/people_room.js -taxonomy -datafolder Examples/exceptions
-
-### Part-capability reasoning
-
-These examples explore how to encode "if a class has a component used
-for some capability, then an instance without that component lacks
-that capability" (e.g., birds without wings cannot fly).
-(From the "GK: implementing full first order default logic" paper, IJCAR 2022.)
-partcapability1 and partcapability2 use taxonomy-based priorities and
-require the taxonomy flags (see the taxonomy section below).
-
-    exceptions/partcapability1.js
-        Same priority for "birds have wings" and "birds can fly" leads
-        to unstable results. Demonstrates a problem case.
-
-    exceptions/partcapability2.js
-        Fix via priority differentiation: wings get sub-priority 20,
-        flying gets sub-priority 10. Yields stable results.
-
-    exceptions/partcapability3.js
-        Alternative fix: split rules into class-level (no exception)
-        and instance-level (exception allowed via $block).
-
-### ASP comparison examples
-
-These demonstrate gk's advantages over Answer Set Programming systems
-(clingo, dlv, s(CASP)): gk handles function symbols and scales to
-large constant sets. See https://logictools.org/gk/ for timing comparisons.
-(From the "GK: implementing full first order default logic" paper, IJCAR 2022.)
-
-    exceptions/gbirds.js
-        Baseline birds-fly/penguins-don't.
-
-    exceptions/gbirds_funsymbs.js
-        Same with function symbols added. ASP systems cannot handle this.
-
-### Taxonomy-dependent examples
-
-Examples using taxonomy-based $block strengths (["$","bird"] instead of
-integer strengths) require the `-taxonomy` flag (`-defaults` is an
-accepted synonym) with the taxonomy data files:
-
-    ./gk Examples/exceptions/taxonomy.js -taxonomy -datafolder Examples/exceptions
-
-Running such an example without the flag is an error.  The examples in
-this folder that need it: classify.js, nixon_taxonomy.js, penguin3.js,
-penguin4.js, people_room.js, partcapability1.js, partcapability2.js,
-taxonomy.js.
-
-    exceptions/taxonomy.js
-        Bird/penguin/object hierarchy with taxonomy-based default comparison.
-
-    exceptions/nixon_taxonomy.js
-        Nixon diamond with taxonomy-based strengths.
-
-The taxonomy data files (`gk_name_number.txt` and `gk_taxonomy_packed.txt`)
-are included in this folder.
-
-
-Strategy Examples
------------------
-
-Strategy files control proof search. Pass them with `-strategy`:
-
-    ./gk Examples/core/grandfather.js -strategy Examples/strategy/runs.txt
-
-See also: `../Doc/strategy_reference.md`.
-
-    strategy/runs.txt
-        Comprehensive multi-run strategy with 63 sequential runs combining
-        different strategies (negative_pref, unit, query_focus, positive_pref,
-        double, triple), query preferences (0-3), and depth limits (1-4).
-
-    strategy/query_focus.txt
-        Single-strategy: query_focus with query_preference 1.
-
-    strategy/negative_pref.txt
-        Single-strategy: negative_pref with query_preference 0.
-
-    strategy/basic.txt
-        Basic negative_pref strategy.
-
-    strategy/strat_small.js, strat_large.js
-        Strategy configurations in JSON-LD-LOGIC format for small
-        and large knowledge bases.
-
-
+# Tutorial
+
+Commands in this document are run from the repository root. On Linux, `gk`
+below is `./bin/gk`.
+
+Most introductory problems are supplied in GKP (`.gkp`) and native
+JSON-LD-LOGIC (`.js`) forms. The logic is the same; only the surface notation
+and output format differ.
+
+## 1. Defaults and answer substitutions
+
+[`exceptions/penguin.gkp`](exceptions/penguin.gkp) asks which objects fly:
+
+```prolog
+bird(b).
+penguin(p).
+bird(X)   :- penguin(X).
+object(X) :- bird(X).
+-flies(X) :- penguin(X).
+flies(X)  :- bird(X),   unless(-flies(X), 3).
+-flies(X) :- object(X), unless(flies(X), 2).
+query(flies(X)).
+```
+
+```sh
+./bin/gk Examples/exceptions/penguin.gkp
+```
+
+The ordinary bird default has priority 3 and the opposing object default has
+priority 2. The strict penguin rule supplies the exception:
+
+```text
+answer: b
+confidence: 1
+
+rejected answer: p
+confidence against: 1
+```
+
+[`core/logic_chain.js`](core/logic_chain.js) shows a longer implication chain.
+[`core/algebra.js`](core/algebra.js) introduces equality reasoning.
+
+## 2. Several proofs for one answer
+
+[`confidences/cumulate.gkp`](confidences/cumulate.gkp) states the same fact
+from two distinct uncertain sources:
+
+```prolog
+0.5::bird(a).
+0.6::bird(a).
+query(bird(a)).
+```
+
+```text
+confidence: 0.8
+```
+
+The two statements are separate activation events, and GK combines the
+proofs' activation-event sets. For disjoint sets the combination is
+noisy-or: `1 - (1 - 0.5)(1 - 0.6) = 0.8`. When proofs share activation
+events, GK counts the shared events once.
+The overlap cases are in [`confidences/overlap1.js`](confidences/overlap1.js)
+and [`confidences/overlap3.js`](confidences/overlap3.js).
+
+## 3. Evidence on both sides
+
+[`confidences/net_direct.gkp`](confidences/net_direct.gkp) contains direct
+evidence for and against one atom:
+
+```prolog
+0.7::flies(a).
+0.4::-flies(a).
+query(flies(a)).
+```
+
+```sh
+./bin/gk Examples/confidences/net_direct.gkp -detail
+```
+
+The result has confidence `0.3`. The detailed report splits the total of 1
+as follows:
+
+```text
+support: 0.3 for, 0 against
+conflict: 0.4   ignorance: 0.3
+```
+
+The signed confidence is positive support minus negative support. GK places
+the result in the accepted or rejected list according to the sign and prints
+its magnitude as the verdict confidence.
+
+Conflict records the part supported in both polarities. Ignorance records the
+part supported in neither polarity. This direct-opposition case has a
+completed shared-threshold report: with `-detail`, its `calculation` field
+is `canonical_atom`. Reports from the direct retained-proof calculation or
+from a fallback carry the same four fields as proof-pool decompositions;
+the `calculation` field identifies which calculation produced the report
+(see [`../Doc/how_gk_works.md`](https://github.com/tammet/gkreasoner/blob/master/Doc/how_gk_works.md)).
+[`confidences/net_premise.js`](confidences/net_premise.js)
+shows how a contested premise affects a downstream conclusion.
+
+## 4. Defaults and exceptions
+
+[`exceptions/bird_default.gkp`](exceptions/bird_default.gkp) defines a rule
+that applies unless its exception can be established:
+
+```prolog
+bird(a).
+bird(b).
+flies(X) :- bird(X), unless(-flies(X), 2).
+query(flies(X)).
+```
+
+With no evidence for either exception, both answers have confidence 1 and
+record their blocker. [`exceptions/bird_exception.gkp`](exceptions/bird_exception.gkp)
+adds `0.9::-flies(a).`; `flies(a)` has 0.1 positive support and 0.9 negative
+support, so it is rejected with confidence 0.8, while `flies(b)` remains at 1.
+
+[`exceptions/nixon.gkp`](exceptions/nixon.gkp) is the Nixon diamond. The
+equal-priority defaults block each other, so neither polarity keeps usable
+support and the report is ignorance; the downstream candidate is reported
+with a zero margin and a `CONTESTED` flag.
+[`exceptions/penguin.gkp`](exceptions/penguin.gkp) adds priorities and a strict
+exception. [`exceptions/classify.gkp`](exceptions/classify.gkp) uses taxonomy
+priorities:
+
+```sh
+./bin/gk Examples/exceptions/classify.gkp \
+  -taxonomy -datafolder data
+```
+
+## 5. Search strategies
+
+GK constructs a strategy automatically when none is supplied. An explicit
+strategy is useful for reproducing a search or changing clause selection:
+
+```sh
+./bin/gk Examples/exceptions/penguin.gkp \
+  -strategy Examples/strategy/query_focus.json
+```
+
+A strategy may also contain a sequence of runs. GK tries the runs in order
+until one produces an answer or the total time limit is reached:
+
+```sh
+./bin/gk Examples/exceptions/penguin.gkp \
+  -strategy Examples/strategy/runs.json
+```
+
+See [`../Doc/strategy_reference.md`](https://github.com/tammet/gkreasoner/blob/master/Doc/strategy_reference.md) for the
+selection methods and limits.
+
+## 6. Arithmetic instantiation
+
+Ground arithmetic is evaluated during proof search. Finding a value for a
+variable inside an arithmetic condition requires bounded instantiation.
+[`arithmetic/apples_answer.gkp`](arithmetic/apples_answer.gkp) asks for `X` in
+`X + 2 = 10`:
+
+```sh
+./bin/gk Examples/arithmetic/apples_answer.gkp -seconds 5 \
+  -strategytext '{"strategy":["unit"],"query_preference":0,"arith_instantiation":1}'
+```
+
+The answer is `8` with confidence `0.8`. Mode `1` instantiates one
+arithmetic unknown from a bounded candidate range; mode `2` also considers
+selected two-variable cases. The mode is bounded enumeration; it does not
+solve general equations.
+
+## Categories
+
+| Directory | Contents |
+|---|---|
+| [`core/`](core/README.md) | Resolution, substitutions, equality, and negation |
+| [`confidences/`](confidences/README.md) | Proof products, pooling, overlap, negative support, conflict, and ignorance |
+| [`exceptions/`](exceptions/README.md) | Defaults, blockers, priorities, taxonomies, and persistence |
+| [`strategy/`](strategy/README.md) | Strategy files used with `-strategy` |
+| [`arithmetic/`](arithmetic/README.md) | Ground evaluation and bounded numeric instantiation |
+| [`language/`](language/README.md) | GK encodings of English reasoning problems, run against a shared knowledge base |
+| [`asp_comparison/`](asp_comparison/README.md) | Bird-default inputs for gk, [clingo](https://potassco.org/clingo/), [DLV](https://dlv.demacs.unical.it/), [I-DLV](https://github.com/DeMaCS-UNICAL/I-DLV), and [s(CASP)](https://gitlab.software.imdea.org/ciao-lang/sCASP), with a scaling workload |
+| [`fol_comparison/`](fol_comparison/README.md) | Non-Horn first-order clause problems with equality and function terms, with runs of other reasoners on the same inputs |
+| [`system_comparison/`](system_comparison/README.md) | Executable semantic comparisons with [TweetyProject](https://tweetyproject.org/), [PASTA](https://github.com/damianoazzolini/pasta), and I-DLV |
+
+The comparison cases, with captured outputs from the external systems, are
+in [`../comparisons/`](https://github.com/tammet/gkreasoner/blob/master/comparisons/README.md); their per-case
+descriptions are in [`../comparisons/CASES.md`](https://github.com/tammet/gkreasoner/blob/master/comparisons/CASES.md).
+
+Input notation is covered in [`../Doc/input_languages.md`](https://github.com/tammet/gkreasoner/blob/master/Doc/input_languages.md).
+The algorithms behind the examples are described in
+[`../Doc/how_gk_works.md`](https://github.com/tammet/gkreasoner/blob/master/Doc/how_gk_works.md).

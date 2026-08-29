@@ -1,0 +1,10 @@
+% Two independent uncertain facts feed one certain rule; the derived
+% conclusion multiplies their confidences (0.5 * 0.6 = 0.3).
+% GKP form of coin1.js. See Doc/input_languages.md.
+
+0.5::p(heads1).
+0.6::p(heads2).
+
+r(c) :- p(heads1), p(heads2).
+
+query(r(X)).

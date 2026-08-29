@@ -1,0 +1,10 @@
+% Grandfather: a two-step rule with confidences.
+% GKP form of grandfather.js. Both files convert to the same internal logic.
+% See Doc/input_languages.md.
+
+0.9::father(john, pete).
+0.8::father(pete, mark).
+
+0.95::grandfather(X, Z) :- father(X, Y), father(Y, Z).
+
+query(grandfather(john, X)).

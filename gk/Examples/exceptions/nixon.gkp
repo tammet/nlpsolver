@@ -1,0 +1,12 @@
+% Equal-strength defaults support opposite conclusions. The query asks for a
+% consequence of pacifism, matching nixon.js.
+
+quaker(n).
+republican(n).
+
+pacifist(X)  :- quaker(X),     unless(-pacifist(X), 2).
+-pacifist(X) :- republican(X), unless(pacifist(X), 2).
+
+dislikeswar(X) :- pacifist(X).
+
+query(dislikeswar(X)).

@@ -1,0 +1,11 @@
+% Same default, but now there is 90%-believed evidence that a does not fly.
+% That negative evidence nets against a's flight (1 - 0.9 = 0.1), while b is
+% untouched. GKP form of bird_exception.js. See Doc/input_languages.md.
+
+bird(a).
+bird(b).
+0.9::-flies(a).
+
+flies(X) :- bird(X), unless(-flies(X), 2).
+
+query(flies(X)).      % b flies (1.0); a flies only weakly (0.1)

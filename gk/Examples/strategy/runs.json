@@ -1,0 +1,21 @@
+{
+  "total_seconds": 20,
+  "runs": [
+    {
+      "max_seconds": 1,
+      "strategy": ["unit"],
+      "query_preference": 0
+    },
+    {
+      "max_seconds": 4,
+      "strategy": ["negative_pref"],
+      "query_preference": 1
+    },
+    {
+      "max_seconds": 15,
+      "strategy": ["query_focus"],
+      "query_preference": 1,
+      "sine": 1
+    }
+  ]
+}

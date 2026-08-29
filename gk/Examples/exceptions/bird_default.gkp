@@ -1,0 +1,10 @@
+% The simplest default: birds fly, unless there is an argument they do not.
+% With nothing to block it, the rule fires for every bird.
+% GKP form of bird_default.js. See Doc/input_languages.md.
+
+bird(a).
+bird(b).
+
+flies(X) :- bird(X), unless(-flies(X), 2).
+
+query(flies(X)).      % both a and b fly, confidence 1

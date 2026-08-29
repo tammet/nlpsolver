@@ -434,3 +434,12 @@ Common result strings are:
 The command-line options are listed in [`cli_reference.md`](cli_reference.md).
 Input examples are in [`input_languages.md`](input_languages.md), and runnable
 algorithm examples are indexed by [`../Examples/README.md`](https://github.com/tammet/gkreasoner/blob/master/Examples/README.md).
+
+The methods of this document are described in the papers
+[Structure-Preserving Uncertainty Propagation in First-Order Proof Search](https://arxiv.org/abs/2608.09190)
+(confidences, support calculation, and reports),
+[GK: Implementing Full First Order Default Logic for Commonsense Reasoning (System Description)](https://doi.org/10.1007/978-3-031-10769-6_18)
+(defaults and blockers), and
+[Confidences for Commonsense Reasoning](https://doi.org/10.1007/978-3-030-79876-5_29)
+(the earlier confidence calculus). The base prover is described in
+[GKC: A Reasoning System for Large Knowledge Bases](https://doi.org/10.1007/978-3-030-29436-6_32).

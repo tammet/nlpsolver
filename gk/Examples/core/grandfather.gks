@@ -1,0 +1,7 @@
+% Grandfather example in the premise-to-consequence GKS notation.
+
+0.9 :: father(john, pete).
+0.8 :: father(pete, mark).
+0.95 :: father(X, Y) & father(Y, Z) => grandfather(X, Z).
+
+query(grandfather(john, X)).

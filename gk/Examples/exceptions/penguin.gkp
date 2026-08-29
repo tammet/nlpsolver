@@ -1,0 +1,18 @@
+% Birds fly by default (strength 3), but objects generally do not (strength 2);
+% penguins are birds that do not fly. The stronger, more specific default wins.
+% GKP form of penguin.js. See Doc/input_languages.md.
+
+bird(b).
+penguin(p).
+object(o).
+
+bird(X)   :- penguin(X).
+object(X) :- bird(X).
+-flies(X) :- penguin(X).
+
+% birds fly unless the contrary is provable by a strength-3 argument
+flies(X)  :- bird(X),   unless(-flies(X), 3).
+% objects do not fly unless flight is provable by a strength-2 argument
+-flies(X) :- object(X), unless(flies(X), 2).
+
+query(flies(X)).      % who flies?

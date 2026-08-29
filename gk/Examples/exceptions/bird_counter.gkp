@@ -1,0 +1,13 @@
+% Evidence against an exception, derived by a rule.
+% The exception injured(a) has positive support 0.6; the vet rule derives
+% evidence against it with confidence 0.58. gk subtracts the opposing
+% support on the exception atom before the exception can block the
+% default, so the default is blocked with strength 0.6 - 0.58 = 0.02 and
+% flies(a) is reported with confidence 0.98 -- the same value the fact
+% 0.58::-injured(a) would give.
+bird(a).
+0.6::injured(a).
+vet(a).
+0.58::-injured(X) :- vet(X).
+flies(X) :- bird(X), unless(injured(X), 2).
+query(flies(a)).

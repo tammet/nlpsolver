@@ -1,0 +1,14 @@
+% The same evidence against the exception, but with the 0.58 on the
+% PREMISE of a certain rule instead of on the rule. A rule confidence
+% lowers the strength of what the rule derives. A premise confidence means
+% that the premise instance is active in that fraction of activation
+% worlds: with 0.58 the rule derives a certain -injured(a) and the
+% exception is cancelled completely; with 0.42 the rule does not apply and
+% the exception keeps its full 0.6. flies(a) is reported with
+% 0.58*1 + 0.42*(1-0.6) = 0.748; bird_counter.gkp gives 0.98.
+bird(a).
+0.6::injured(a).
+0.58::vet(a).
+-injured(X) :- vet(X).
+flies(X) :- bird(X), unless(injured(X), 2).
+query(flies(a)).

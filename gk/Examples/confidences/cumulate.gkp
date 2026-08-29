@@ -1,0 +1,8 @@
+% Two independent pieces of evidence for the same fact are pooled
+% (0.5 and 0.6 combine to 0.8 by noisy-or: 1-(1-0.5)(1-0.6)).
+% GKP form of cumulate.js. See Doc/input_languages.md.
+
+0.5::bird(a).
+0.6::bird(a).
+
+query(bird(a)).

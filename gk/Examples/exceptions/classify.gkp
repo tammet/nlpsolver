@@ -1,0 +1,31 @@
+% Classify three objects: h1 (likely human), b1 (likely bird),
+% a1 (likely airplane). Question: which objects are organisms?
+%
+% This is a 1:1 translation of classify.js into GKP, the Prolog/ProbLog-style
+% surface language: gk converts it to the same JSON-LD-LOGIC before proving.
+% See Doc/input_languages.md.
+
+has_part(h1, leg).
+has_part(b1, leg).      has_part(b1, wing).     has_part(b1, feathers).
+has_part(a1, engine).   has_part(a1, wing).
+
+% Default classification rules with confidences; each applies unless the
+% opposite classification is provable, taxonomy-strength blockers.
+0.3::isa(X, human) :-
+    has_part(X, leg),      unless(-isa(X, human), tax(human)).
+0.2::isa(X, bird) :-
+    has_part(X, leg),      unless(-isa(X, bird), tax(bird)).
+0.6::isa(X, bird) :-
+    has_part(X, wing),     unless(-isa(X, bird), tax(bird)).
+0.8::isa(X, bird) :-
+    has_part(X, feathers), unless(-isa(X, bird), tax(bird)).
+0.4::isa(X, airplane) :-
+    has_part(X, wing),     unless(-isa(X, airplane), tax(airplane)).
+
+% Strict rules and the taxonomy.
+-isa(X, organism) :- has_part(X, engine).
+isa(X, organism)  :- isa(X, human).
+isa(X, organism)  :- isa(X, bird).
+-isa(X, organism) :- isa(X, airplane).
+
+query(isa(X, organism)).

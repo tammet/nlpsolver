@@ -1,0 +1,15 @@
+% Social smoking: uncertain facts and rules chain together, and gk tracks
+% the confidence of the derived answer. GKP form of smokes.js.
+% (From Buchman & Poole, "Negation Without Negation in Probabilistic Logic
+% Programming".) See Doc/input_languages.md.
+
+0.3::smokes(X).
+0.1::friends(X, Y).
+0.9::friends(Y, X) :- friends(X, Y).
+0.6::susceptible(X).
+0.2::smokes(X) :- susceptible(X), friends(X, Y), smokes(Y).
+
+friends(chris, sam).
+smokes(chris).
+
+query(smokes(sam)).
