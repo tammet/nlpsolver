@@ -169,7 +169,7 @@ wins (reasoning models often write a chain of thought ending in the verdict),
 normalised to `"True." / "False." / "Unknown."`; otherwise the stripped reply is the
 answer (phrase-style prompts).  `collect` gets `answer` and a `directanswer` metadata
 field.  Used for the FOLIO direct-answer reference runs
-(`prompts/folio_directanswer_instructions[_noworld].txt`).
+(`prompts/folio_directanswer_instructions.txt`).
 
 ### Split Stage 2 (`-s2split`)
 

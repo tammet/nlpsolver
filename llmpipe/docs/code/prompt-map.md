@@ -40,31 +40,25 @@ finding.
 | `prompts/graph/graph_lift_system.txt` | `graph_lift` | `-graphbridge` with lifting |
 | `prompts/graph/graph_retranslate_suffix.txt` | `graph_lift` | `-graphbridge` |
 | `prompts/dynamic_alignment/unifier_rules_v6_1_signed_system.txt` | `litbridge_prompts` | `-litbridge` |
-| `prompts/combined_v3_instructions_full.txt` | `llmparse` | `-combined-instr` |
-| `prompts/combined_v3_checklist_full.txt` | `llmparse` | `-combined-checklist` |
 | `prompts/combined_v2_instructions_full.txt` | `llmparse` | `-combined-instr` |
 | `prompts/combined_minimal_instructions_full.txt` | `llmparse` | `-combined-instr` |
-| `prompts/combined_answerfirst_instructions_full.txt` | `llmparse` | `-combined-instr` |
 | `prompts/combined_examples_pure.txt` | `llmparse` | `-combined-examples` |
-| `prompts/combined_empty_examples.txt` | `llmparse` | `-combined-examples` |
-| `prompts/combined_empty_checklist.txt` | `llmparse` | `-combined-checklist` |
 | `prompts/folio_directanswer_instructions.txt` | `directanswer` | `-directanswer` |
-| `prompts/folio_directanswer_instructions_noworld.txt` | `directanswer` | `-directanswer` |
 
 ## Experimental or development only
 
 `prompts/critic/critic_system_v2.txt` is an alternative critic prompt. It was
 measured and not adopted.
 
-## Historical
+## Not committed
 
-`prompts/graph/v1/` holds a pinned earlier version of the graph prompt set.
-`graph_stage2.PROMPT_DIR` points at `prompts/graph`, so the `v1` copies are not
-loaded. The remaining `prompts/dynamic_alignment/` files belong to earlier
-experiments and are kept for comparison.
+The working copy also holds superseded drafts and pinned snapshots that this
+repository does not track: `prompts/graph/v1/`, the 62
+`prompts/dynamic_alignment/` files no module names, and the combined and
+direct-answer variants no published run used. `.gitignore` lists them, and
+`prompts/README.md` says which prompts remain and why.
 
-`prompts/README.md` and `prompts/COMBINED_PROMPT_MEMO.md` are notes, not
-prompts.
+`prompts/README.md` is a note, not a prompt.
 
 All four prompt files live in `prompts/`.  They are concatenated into system prompts by
 `llmparse._compose_prompt`:
@@ -86,7 +80,7 @@ Examples:
 | `stage2_checklist_full.txt` | Short procedural checklist appended to the Stage-2 system prompt |
 | `prenorm_full.txt` | Pre-Stage-1 wording-normalisation prompt (`-prenorm`, [translation](../architecture/translation.md)) |
 | `combined_*_instructions_full.txt`, `combined_examples_*.txt`, `combined_*_checklist_full.txt` | Combined single-stage constructions (`-combined-*`, [translation](../architecture/translation.md)); per-file descriptions in `prompts/README.md` |
-| `folio_directanswer_instructions[_noworld].txt` | Direct-answer prompts (`-directanswer`, [translation](../architecture/translation.md)) |
+| `folio_directanswer_instructions.txt` | Direct-answer prompts (`-directanswer`, [translation](../architecture/translation.md)) |
 | `stage2_examples.txt` | ~40 worked input→output examples for Stage 2; one per `----` separator |
 
 **Editing the prompts** is the primary way to improve Stage-1 and Stage-2 accuracy.  Both

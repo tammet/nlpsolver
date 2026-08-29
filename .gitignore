@@ -109,6 +109,28 @@ new_stage2_examples.txt
 /llmpipe/prompts/graph/v_of_08_20/
 /llmpipe/prompts/dynamic_alignment/v1_of_08_23/
 
+# prompts kept locally but not published (2026-08-29).  What stays on the
+# branch is exactly: prompts loaded by the pipeline or a CLI switch, and the
+# four prompts the nesy_2026 / lpar_2026 runs named.  Everything else is a
+# superseded draft or a snapshot; the versions the papers cite live in the
+# nlpsolver tags and in the nlformtasks release, neither of which this affects.
+/llmpipe/prompts/COMBINED_PROMPT_MEMO.md
+/llmpipe/prompts/combined_answerfirst_instructions_full.txt
+/llmpipe/prompts/combined_empty_checklist.txt
+/llmpipe/prompts/combined_empty_examples.txt
+/llmpipe/prompts/combined_v3_checklist_full.txt
+/llmpipe/prompts/combined_v3_instructions_full.txt
+/llmpipe/prompts/folio_directanswer_instructions_noworld.txt
+/llmpipe/prompts/graph/v1/
+
+# the litbridge prompt drafts: only the five files the code names are kept
+/llmpipe/prompts/dynamic_alignment/*
+!/llmpipe/prompts/dynamic_alignment/litbridge_grader_v1_system.txt
+!/llmpipe/prompts/dynamic_alignment/negative_relation_v6_1_system.txt
+!/llmpipe/prompts/dynamic_alignment/unifier_distinctness_v5_3_system.txt
+!/llmpipe/prompts/dynamic_alignment/unifier_rules_v6_1_signed_system.txt
+!/llmpipe/prompts/dynamic_alignment/unifier_rules_v6_signed_system.txt
+
 # test material kept locally but not published (2026-08-29)
 # bridge_unit: fixtures whose only reader (tools/bridge_unit_check.py) is not
 #   committed, and whose README cites a plan memo and a tests/bridge_bench/

@@ -1,9 +1,0 @@
-GK found at least one proof using some proposed rules. Propose other
-independently reasonable representation connections that may support a
-different proof. Do not repeat the existing rules. Do not infer the answer or
-invent facts.
-
-The notation and the limits are the same as before: ["isa", CLASS, THING],
-every ? variable is universally quantified, one to three premises and exactly
-one consequence, only displayed atoms and displayed nested shapes. Write at
-most eight RULE: lines, each on one physical line.

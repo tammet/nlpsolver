@@ -53,6 +53,10 @@ attempt never replaces an earlier definite answer. See
 [Pipeline architecture](architecture/pipeline.md) for the exact stage order,
 stopping rules, and available configurations.
 
+Some pages cite a harness under `tools/` or a memo under `memos/`. Both are
+local working directories that this repository does not track; those citations
+say where a result came from, and every page stands without them.
+
 ## Where to go next
 
 - To install and run the system, see [Getting started](getting-started.md).

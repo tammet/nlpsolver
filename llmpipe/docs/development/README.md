@@ -8,6 +8,10 @@ know what the pipeline does; if not, start with the
 [architecture](../architecture/README.md) pages, and use the
 [code guide](../code/README.md) to find the module you need.
 
+The fixture suites this repository is developed against live in `tools/`, which
+is not tracked here. The published runners are `test.py` and `runtests.py`, and
+[testing](testing.md) says what can be checked with them.
+
 Two conventions matter before any change. Conversion output depends on the hash
 seed, so a test that compares clause lists runs with `PYTHONHASHSEED=0`. And the
 local model-response cache is on by default: a repeated run answers from it and
@@ -19,8 +23,9 @@ reproducible.
 - [Extending the pipeline](extending.md) — where to add a predicate, an axiom,
   a converter pass or a retry stage, and which record fields a new stage must
   fill.
-- [Testing](testing.md) — the kinds of test suite, how to run them, the caches,
-  call accounting in a test, and safe practice for an experiment.
+- [Testing](testing.md) — the hash-seed and cache conventions, running the test
+  sets, checking a converter change, call accounting, and safe practice for an
+  experiment.
 - [Generated data](generated-data.md) — the five `data_*.py` modules, the
   `mkdata/` sources they are built from, and how to rebuild them.
 

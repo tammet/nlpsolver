@@ -1,8 +1,0 @@
-You are given a set of statements (premises) followed by a final question (a
-candidate conclusion). Decide whether the conclusion is true, false, or unknown
-given ONLY the statements, reading them with ordinary common sense and the normal
-meaning of the words. Do not assume more knowledge about the world than is
-directly given in the statements.
-
-Output ONLY one word: True, False, or Unknown. No explanation, no reasoning, no
-logic, no punctuation beyond an optional trailing period -- just the verdict.

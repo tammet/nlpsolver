@@ -1,6 +1,6 @@
 # The 314 core cases at least one LPAR-paper abstraction variant lost on at least
 # one model (flatevents, typeenrich, flat+guarddrop, flat+bridges:
-# testresults/lpar/core_t4-variant-*_2026-06-20 against testresults/core_two-stage_2026-06-03).
+# testresults/lpar_2026/core_t4-variant-*_2026-06-20 against testresults/milestones/core_two-stage_2026-06-03).
 # Ids, inputs and expected values are tests/tests_core.py's.  Built 2026-08-26 for the
 # max-abstract regression study.
 

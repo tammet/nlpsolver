@@ -76,10 +76,9 @@ under the root `LICENSE`, like the rest of the repository.
 - **Authors:** Bhavana Dalvi, Peter Jansen, Oyvind Tafjord, Zhengnan Xie,
   Hannah Smith, Leighanna Pipatanangkura, Peter Clark.
 - **Obtained from:** https://github.com/allenai/entailment_bank
-  (`entailment_trees_emnlp2021_data_v2`, task 1), under Apache-2.0. The pinned
-  commit and file URLs are in `external_data/DOWNLOAD_LOCK.json`. The upstream
-  repository ships no `NOTICE` file, so Apache-2.0 section 4(d) adds nothing to
-  propagate.
+  (`entailment_trees_emnlp2021_data_v2`, task 1), under Apache-2.0, retrieved
+  against a pinned commit. The upstream repository ships no `NOTICE` file, so
+  Apache-2.0 section 4(d) adds nothing to propagate.
 - **What we changed:** each record's supporting sentences are joined into a
   passage and its hypothesis is phrased as a question. The `_100` files are
   uniform-random samples, seeded and recorded in each file's header. The
@@ -106,7 +105,9 @@ under the root `LICENSE`, like the rest of the repository.
 
 ## Datasets held back
 
-`external_data/` and `tests/tests_external_*.py` are not committed. They hold
-raw corpora and converted cases from further sources, recorded with their
-license and a pinned URL in `external_data/DOWNLOAD_LOCK.json`. One of them,
-MALLS, derives from CC BY-NC 4.0 material and is not redistributable here.
+Further corpora and their converted cases are held locally and not committed:
+raw downloads, annotation queues and the converted `tests_external_*` files. A
+local lock file records each source with its license and a pinned URL. One of
+those sources, MALLS, derives from CC BY-NC 4.0 material and is not
+redistributable here; the others are MIT or Apache-2.0, and none of their text
+appears in the files this repository does track.

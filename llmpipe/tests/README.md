@@ -6,7 +6,8 @@ case number (required, and stable across runs) used by `test.py`,
 `runtests.py`, and the result folders.  `input` is the
 English text and `expected` is the expected answer.  Run with
 `python3 test.py <file>` (single LLM) or `python3 runtests.py <file>`
-(all LLMs in parallel) from the parent directory.
+(one or more LLMs) from the parent directory. Both commands print help rather
+than starting a potentially paid full-suite run when called with no arguments.
 
 **Not every set here is ours.** FOLIO, Multi-LogiEval, HANS and EntailmentBank
 are third-party benchmarks redistributed under their own licenses, which the
@@ -34,7 +35,7 @@ renamed them for publication only.
 ### Core
 
 - **`tests_core.py`** — the current main test suite (~1600 cases).
-  This is what `python3 test.py` runs by default.
+  Name it explicitly when a full run is intended.
 
 - **`tests_core_100.py`** — a 100-case representative subset of
   `tests_core.py`, for fast smoke runs across all LLMs.
@@ -89,9 +90,6 @@ Two runners drive these files, both from the parent (`llmpipe/`) directory.
 Best for iterating on one LLM and eyeballing failures.
 
 ```bash
-# default — tests_core.py
-python3 test.py
-
 # explicit file + LLM
 python3 test.py tests/tests_core.py -llm claude
 
@@ -100,16 +98,22 @@ python3 test.py tests/tests_core_100.py -limit 20
 python3 test.py tests/tests_core.py -filter "penguin"
 ```
 
-`test.py` auto-resumes from `test_output.txt` — re-running re-uses previous
-results unless `-restart` is passed.  See `python3 test.py -help` for all flags.
+`test.py` writes readable output to `test_output.txt` and exact resume records
+to `test_output.txt.resume.jsonl`. A result is reused only when the test-file
+content, case, provider, model version, solver configuration, and scoring
+policy match; the pipeline commit and tracked working-tree changes must also
+match. `-restart` truncates both files. See `python3 test.py -help` for all
+flags.
 
-### `runtests.py` — full multi-LLM batch runs (recommended)
+### `runtests.py` — research evaluation and record generation
 
 The batch runner: every case × the requested LLMs, writing one JSON file per
 case+LLM under `testresults/<name>/<llm>/case_NNNN.json` (with stage-1/2 JSON,
 clauses, prover command and proof) plus a live `summary.json`.  This is how the
 recorded results published in [nlformtasks](https://github.com/tammet/nlformtasks)
-are produced, and the right tool for a complete pass across all four LLMs.
+are produced. A top-level `run_manifest.json` prevents results from incompatible
+test files, source states, pipeline options, scoring policies, or model versions
+from being mixed. A second top-level `summary.json` compares the providers.
 
 ```bash
 # all four LLMs (claude, gpt, gemini, deepseek), full suite
@@ -123,4 +127,6 @@ python3 runtests.py tests/tests_core.py -llms claude,gpt -redo-errors
 ```
 
 It resumes by skipping cases whose JSON already exists (`-redo` / `-redo-errors`
-override).  See ../docs/reference/command-line.md for the full flag list.
+override), after the manifest has been checked. Every case record names the
+answer-matching policy used to calculate `correctness`. See
+../docs/reference/command-line.md for the full flag list.

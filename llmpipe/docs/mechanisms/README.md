@@ -23,12 +23,11 @@ ordinary converter feature. A small fix appears only when an experiment showed
 that it affected a meaningful class of cases.
 
 The implementation-status statements refer to the repository state on
-2026-08-28: commit `6b266d0c935d8bca2716051ffbec7f99cbac04d0`
-(`Adopt safe proof shorteners and balanced retry pipeline`) plus the two graph
-structural-safety repairs of 2026-08-28, which are described under
-[default mechanisms](default.md) and are not yet committed. Later code may
-change a mechanism's availability without changing the historical result
-recorded here.
+2026-08-28, at commit `4f09043` (`Clean up pipeline internals and harden
+caches`). That state carries the safe proof shorteners, the balanced retry
+configuration, and the two graph structural-safety repairs described under
+[default mechanisms](default.md). Later code may change a mechanism's
+availability without changing the historical result recorded here.
 
 ## Pages
 
