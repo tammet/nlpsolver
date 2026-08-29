@@ -26,6 +26,7 @@ import json
 import time
 import argparse
 import datetime
+import hashlib
 from multiprocessing import Pool, get_context
 
 # ---- defaults ----
@@ -224,6 +225,15 @@ def _import_matcher():
   return _test_mod._result_matches
 
 
+def _import_scoring_policy():
+  """Return the machine-readable policy paired with the shared matcher."""
+  here = os.path.dirname(os.path.abspath(__file__))
+  if here not in sys.path:
+    sys.path.insert(0, here)
+  import test as _test_mod
+  return _test_mod.answer_matching_policy(False)
+
+
 # ======== solve.py's own flags ========
 
 def _solve_options(extra):
@@ -301,6 +311,7 @@ def build_case_json(testname, case_id, input_text, expected, llm, collect, match
     "expected_answer": expected,
     "llm_name": llm,
     "llm_version": collect.get("_llm_version"),
+    "scoring_policy": _import_scoring_policy(),
   }
   if collect.get("_llm_calls"):
     out["llm_calls"] = collect["_llm_calls"]
@@ -669,15 +680,141 @@ def pipeline_git_state():
   commit = run(["rev-parse", "HEAD"])
   if not commit:
     return None
+  diff = run(["diff", "--binary", "HEAD"])
   return {
     "commit": commit,
-    "dirty": bool(run(["status", "--porcelain", "--untracked-files=no"])),
+    "dirty": bool(diff),
+    "tracked_diff_sha256": (hashlib.sha256(diff.encode("utf-8")).hexdigest()
+                             if diff else None),
     "tags": run(["tag", "--points-at", "HEAD"]).split(),
   }
 
 
 # Computed once in main(); embedded in every summary.json the run writes.
 _pipeline_git = None
+
+RUN_MANIFEST_SCHEMA_VERSION = 1
+
+
+def _jsonable(value):
+  """Convert resolved option values to stable JSON-compatible data."""
+  if isinstance(value, dict):
+    return {str(k): _jsonable(v) for k, v in sorted(value.items(), key=lambda kv: str(kv[0]))}
+  if isinstance(value, (set, frozenset)):
+    return sorted((_jsonable(v) for v in value), key=lambda v: repr(v))
+  if isinstance(value, (list, tuple)):
+    return [_jsonable(v) for v in value]
+  if value is None or isinstance(value, (str, int, float, bool)):
+    return value
+  return repr(value)
+
+
+def _file_sha256(path):
+  with open(path, "rb") as f:
+    return hashlib.sha256(f.read()).hexdigest()
+
+
+def _provider_versions(llms, override=None):
+  """Resolve the model version recorded for each requested provider."""
+  here = os.path.dirname(os.path.abspath(__file__))
+  solver_dir = os.path.join(here, "solver")
+  if solver_dir not in sys.path:
+    sys.path.insert(0, solver_dir)
+  import llmcall
+  return {name: (override or getattr(llmcall, name + "version", None))
+          for name in llms}
+
+
+def _manifest_identity(testfile, testname, run_opts, scoring_policy,
+                       sequential=False):
+  """Fields that must not be mixed in one result directory."""
+  options = dict(run_opts)
+  options.pop("_version_override", None)
+  git_identity = None
+  if _pipeline_git:
+    git_identity = {k: _pipeline_git.get(k) for k in
+                    ("commit", "dirty", "tracked_diff_sha256")}
+  return {
+    "test_name": testname,
+    "test_file": os.path.realpath(testfile),
+    "test_file_sha256": _file_sha256(testfile),
+    "pipeline_git": _jsonable(git_identity),
+    "resolved_options": _jsonable(options),
+    "scoring_policy": _jsonable(scoring_policy),
+    "execution_mode": "sequential" if sequential else "parallel_by_provider",
+  }
+
+
+def _manifest_path(outroot):
+  return os.path.join(outroot, "run_manifest.json")
+
+
+def _write_json_atomic(path, payload):
+  os.makedirs(os.path.dirname(path), exist_ok=True)
+  tmp = path + ".tmp"
+  with open(tmp, "w") as f:
+    json.dump(payload, f, indent=2, ensure_ascii=False, sort_keys=True)
+    f.write("\n")
+  os.replace(tmp, path)
+
+
+def _has_case_records(outroot):
+  if not os.path.isdir(outroot):
+    return False
+  for _root, _dirs, files in os.walk(outroot):
+    if any(fn.startswith("case_") and fn.endswith(".json") for fn in files):
+      return True
+  return False
+
+
+def prepare_run_manifest(outroot, identity, providers, invocation):
+  """Create/update the manifest, refusing incompatible result reuse.
+
+  Subsets may be added in later invocations. The test source, code state,
+  resolved pipeline options, scoring policy and each provider's version may
+  not change inside one result directory.
+  """
+  path = _manifest_path(outroot)
+  existing = None
+  if os.path.exists(path):
+    try:
+      with open(path) as f:
+        existing = json.load(f)
+    except Exception as e:
+      raise SystemExit(f"runtests: cannot read existing manifest {path}: {e}")
+  elif _has_case_records(outroot):
+    raise SystemExit(
+      "runtests: result directory already contains case files but no "
+      f"run_manifest.json: {outroot}\nUse -tag or -out to select a new "
+      "directory; refusing to mix an unidentified earlier configuration.")
+
+  if existing is None:
+    manifest = {
+      "schema_version": RUN_MANIFEST_SCHEMA_VERSION,
+      "identity": _jsonable(identity),
+      "providers": _jsonable(providers),
+      "invocations": [],
+    }
+  else:
+    if existing.get("schema_version") != RUN_MANIFEST_SCHEMA_VERSION:
+      raise SystemExit(f"runtests: unsupported manifest schema in {path}")
+    if existing.get("identity") != _jsonable(identity):
+      raise SystemExit(
+        "runtests: result directory belongs to a different test, code state, "
+        f"pipeline configuration, or scoring policy: {outroot}\n"
+        "Use -tag or -out to select a new directory.")
+    manifest = existing
+    known = manifest.setdefault("providers", {})
+    for provider, version in providers.items():
+      if provider in known and known[provider] != version:
+        raise SystemExit(
+          f"runtests: {outroot} records {provider} version {known[provider]!r}, "
+          f"not {version!r}. Use -tag or -out to select a new directory.")
+      known[provider] = version
+
+  manifest.setdefault("invocations", []).append(_jsonable(invocation))
+  _write_json_atomic(path, manifest)
+  return manifest
 
 
 def update_summary(outdir, llm):
@@ -689,6 +826,8 @@ def update_summary(outdir, llm):
   answered_by = {}
   calls = {}
   calls_total = calls_live = 0
+  model_versions = set()
+  scoring_policies = []
   for fn in sorted(os.listdir(outdir)):
     if not fn.startswith("case_") or not fn.endswith(".json"):
       continue
@@ -698,6 +837,11 @@ def update_summary(outdir, llm):
     except Exception:
       continue
     cid = d.get("case_id")
+    if d.get("llm_version") is not None:
+      model_versions.add(d.get("llm_version"))
+    policy = d.get("scoring_policy")
+    if policy is not None and policy not in scoring_policies:
+      scoring_policies.append(policy)
     # who answered, and what the case cost in LLM calls, per stage
     who = d.get("answered_by")
     if who:
@@ -729,12 +873,96 @@ def update_summary(outdir, llm):
     "llm_call_counts": calls,
     "llm_calls_total": calls_total,
     "llm_calls_live": calls_live,
+    "model_versions": sorted(model_versions),
+    "scoring_policies": scoring_policies,
     "updated": datetime.datetime.now(datetime.timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
   }
   if _pipeline_git:
     summary["pipeline_git"] = _pipeline_git
   with open(os.path.join(outdir, "summary.json"), "w") as f:
     json.dump(summary, f, indent=2, ensure_ascii=False)
+
+
+def update_combined_summary(outroot, testname, providers):
+  """Write one cross-provider summary beside the provider directories."""
+  rows = []
+  case_status = {}
+  for provider in sorted(providers):
+    summary_path = os.path.join(outroot, provider, "summary.json")
+    try:
+      with open(summary_path) as f:
+        summary = json.load(f)
+    except Exception:
+      continue
+    total = int(summary.get("total") or 0)
+    passed = int(summary.get("passed") or 0)
+    failed = int(summary.get("failed") or 0)
+    errored = int(summary.get("errored") or 0)
+    rows.append({
+      "provider": provider,
+      "model_versions": summary.get("model_versions") or [],
+      "total": total,
+      "passed": passed,
+      "failed": failed,
+      "errored": errored,
+      "accuracy": (round(passed / total, 6) if total else None),
+      "answered_by": summary.get("answered_by") or {},
+      "llm_calls_total": int(summary.get("llm_calls_total") or 0),
+      "llm_calls_live": int(summary.get("llm_calls_live") or 0),
+    })
+    provider_dir = os.path.join(outroot, provider)
+    for fn in (os.listdir(provider_dir) if os.path.isdir(provider_dir) else []):
+      if not (fn.startswith("case_") and fn.endswith(".json")):
+        continue
+      try:
+        with open(os.path.join(provider_dir, fn)) as f:
+          case = json.load(f)
+      except Exception:
+        continue
+      cid = str(case.get("case_id"))
+      status = ("error" if "error" in case else
+                "correct" if case.get("correctness") is True else "wrong")
+      case_status.setdefault(cid, {})[provider] = status
+
+  requested = sorted(providers)
+  complete = {cid: statuses for cid, statuses in case_status.items()
+              if all(p in statuses for p in requested)}
+  correct_count_distribution = {}
+  all_correct = any_correct = none_correct = mixed = 0
+  for statuses in complete.values():
+    n = sum(1 for p in requested if statuses[p] == "correct")
+    correct_count_distribution[str(n)] = correct_count_distribution.get(str(n), 0) + 1
+    if n == len(requested):
+      all_correct += 1
+    if n:
+      any_correct += 1
+    else:
+      none_correct += 1
+    if 0 < n < len(requested):
+      mixed += 1
+
+  combined = {
+    "schema_version": 1,
+    "test_name": testname,
+    "providers_requested": requested,
+    "providers_with_results": [row["provider"] for row in rows],
+    "provider_results": rows,
+    "cross_provider_cases": {
+      "cases_seen": len(case_status),
+      "complete_for_all_requested_providers": len(complete),
+      "all_providers_correct": all_correct,
+      "at_least_one_provider_correct": any_correct,
+      "no_provider_correct": none_correct,
+      "mixed_correctness": mixed,
+      "by_number_of_correct_providers": correct_count_distribution,
+    },
+    "scoring_policy": _import_scoring_policy(),
+    "pipeline_git": _pipeline_git,
+    "updated": datetime.datetime.now(datetime.timezone.utc).replace(
+      microsecond=0).isoformat().replace("+00:00", "Z"),
+  }
+  _write_json_atomic(os.path.join(outroot, "summary.json"), combined)
+  return combined
 
 
 # ======== main loop ========
@@ -746,8 +974,13 @@ def make_parser():
   a batch.  It defines exactly the same flags `main` always defined.
   """
   ap = argparse.ArgumentParser(
-    description="Batch test runner for nlpsolver.",
-    epilog="Any key this runner does not define is forwarded to solve.py's "
+    description=("Research evaluation and record-generation runner for nlpsolver. "
+                 "Running with no arguments prints this help; name a test file "
+                 "explicitly to start a potentially paid run."),
+    epilog="Each result directory gets a run_manifest.json; incompatible test, "
+           "code, option, scoring, or model-version reuse is refused. A combined "
+           "cross-provider summary is written at its top level. Any key this "
+           "runner does not define is forwarded to solve.py's "
            "own parser, so -pipeline, the single stage switches and their "
            "cancels work here too. Reference: docs/reference/command-line.md "
            "and docs/reference/experimental-options.md.",
@@ -893,6 +1126,9 @@ def parse_args(argv=None):
 
 def main():
   global _pipeline_git
+  if len(sys.argv) == 1:
+    print(make_parser().format_help())
+    return
   _pipeline_git = pipeline_git_state()
   args, extra_opts = parse_args()
 
@@ -936,17 +1172,36 @@ def main():
 
   matcher = _import_matcher()
 
-  # Prepare outdirs
-  outroot = os.path.join(args.out, testname)
-  os.makedirs(outroot, exist_ok=True)
-  for llm in llms:
-    os.makedirs(os.path.join(outroot, llm), exist_ok=True)
-
   # Solver options — keep cache on per project rules.
   run_opts = build_run_options(args, extra_opts)
+  scoring_policy = _import_scoring_policy()
+
+  # One output directory may hold several subsets and providers, but it may
+  # never mix test content, source state, pipeline options, scoring policies or
+  # two versions of the same provider.
+  outroot = os.path.join(args.out, testname)
+  versions = _provider_versions(llms, args.version)
+  identity = _manifest_identity(args.testfile, testname, run_opts,
+                                scoring_policy, sequential=args.sequential)
+  invocation = {
+    "timestamp": datetime.datetime.now(datetime.timezone.utc).replace(
+      microsecond=0).isoformat().replace("+00:00", "Z"),
+    "argv": list(sys.argv[1:]),
+    "case_ids": [t[0] for t in tests],
+    "case_count": len(tests),
+    "providers": llms,
+    "sequential": bool(args.sequential),
+    "redo": bool(args.redo),
+    "redo_errors": bool(args.redo_errors),
+  }
+  manifest = prepare_run_manifest(outroot, identity, versions, invocation)
+  for llm in llms:
+    os.makedirs(os.path.join(outroot, llm), exist_ok=True)
+  print(f"Manifest: {_manifest_path(outroot)}")
 
   # Per-case parallel: one worker per (case, llm).  Pool size = len(llms).
-  return _run_batch(args, llms, tests, testname, outroot, run_opts, matcher)
+  return _run_batch(args, llms, tests, testname, outroot, run_opts, matcher,
+                    manifest)
 
 
 def build_run_options(args, extra_opts):
@@ -1087,7 +1342,8 @@ def run_options_for(argv):
   return build_run_options(args, extra_opts)
 
 
-def _run_batch(args, llms, tests, testname, outroot, run_opts, matcher):
+def _run_batch(args, llms, tests, testname, outroot, run_opts, matcher,
+               manifest=None):
   """The batch itself, unchanged; split out so option resolution is testable."""
   # Per-case parallel: one worker per (case, llm).  Pool size = len(llms).
   ctx = get_context("fork")
@@ -1135,6 +1391,8 @@ def _run_batch(args, llms, tests, testname, outroot, run_opts, matcher):
       # Update per-LLM summary.json after each case so it's live.
       for llm in llms:
         update_summary(os.path.join(outroot, llm), llm)
+      update_combined_summary(outroot, testname,
+                              (manifest or {}).get("providers", {}) or llms)
 
       # Throttle solo gemini runs: free-tier RPM is tight, and back-to-back
       # Stage-1 + Stage-2 calls + no parallelism across LLMs make 429s easy
@@ -1149,7 +1407,10 @@ def _run_batch(args, llms, tests, testname, outroot, run_opts, matcher):
 
   elapsed = time.time() - start
   print()
+  update_combined_summary(outroot, testname,
+                          (manifest or {}).get("providers", {}) or llms)
   print(f"Done. {total_done} task(s) run, {total_skipped} skipped, {elapsed:.1f}s.")
+  print(f"Combined summary: {os.path.join(outroot, 'summary.json')}")
 
 
 if __name__ == "__main__":

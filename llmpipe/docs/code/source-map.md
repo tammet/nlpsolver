@@ -9,8 +9,8 @@ modules themselves by `tools/source_map.py`.
 | file | what it does |
 |---|---|
 | `solve.py` | one passage to an answer; the library and command-line entry |
-| `test.py` | one test file against one provider |
-| `runtests.py` | one test file against several providers in parallel |
+| `test.py` | small readable contributor checks with one provider |
+| `runtests.py` | research evaluation and structured result records |
 | `examine.py` | per-provider debug logs for one case id |
 
 ## Runtime modules
@@ -22,10 +22,11 @@ Described in [orchestration](orchestration.md).
 | module | what it does |
 |---|---|
 | `solver/solve.py` | The pipeline: option resolution, stage scheduling, stopping and accounting |
+| `solver/solve_display.py` | Terminal presentation of pipeline stages, summaries, logic and proofs |
 | `solver/globals.py` | Configuration and other globals for the nlpsolver |
 | `solver/utils.py` | Small utilities for the nlpsolver |
 | `solver/pretty.py` | Pretty-printing for stage-1 ASU JSON, stage-2 logic JSON, and GK clause lists |
-| `solver/cache.py` | The cache machine of nlpsolver ----------------------------------------------------------------- Copyright 2022 Tanel Tammet (tanel.tammet@gmail.com) Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License |
+| `solver/cache.py` | The cache machine of nlpsolver |
 | `solver/clause_trace.py` | Provenance for the clause list actually handed to the prover |
 
 ### Model calls, parsing and validation

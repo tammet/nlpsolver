@@ -118,6 +118,20 @@ plain ASCII (NFKD decompose, drop combining marks — "Náutico" → "Nautico").
 subprocess output is decoded as ASCII, so a non-ASCII constant would otherwise crash
 proof reading (answer `None`).  This runs on every path, including the default one.
 
+### Dataset runners
+
+The top-level `test.py` calls `english_to_answer` for small single-provider
+checks and keeps exact-key resume records beside its readable log. The key
+includes the test and pipeline source states, case, provider and version,
+resolved solver configuration, and scoring policy.
+
+The top-level `runtests.py` is the research record generator. It captures the
+pipeline's `collect` data as one JSON file per case and provider. A manifest
+prevents incompatible configurations from sharing a result directory, each
+provider gets a summary, and the result directory gets a combined
+cross-provider summary. Both commands print help instead of running when no
+arguments are given.
+
 ### globals.py
 
 **Role:** Global configuration, file paths, and the `options` dict.

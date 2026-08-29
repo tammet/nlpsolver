@@ -8,6 +8,7 @@ JSON file per case and model under `testresults/`.
 | field | meaning |
 |---|---|
 | `input_text`, `expected_answer` | the case as given to the runner |
+| `scoring_policy` | the named and versioned answer-matching policy used for `correctness` |
 | `stage1`, `stage2` | the two translation outputs |
 | `clauses`, `final_clauses` | the canonical clause list, and the list the answering stage submitted |
 | `gk_command`, `proof`, `nl_proof` | the answering stage's prover call |
@@ -19,6 +20,18 @@ JSON file per case and model under `testresults/`.
 | `llm_accounting`, `llm_accounting_stages` | whole case, and final attempt |
 | `gk_calls` | one entry per prover call, with its stage |
 | `acceptance` | present only when `-accept` was named |
+
+## Run manifest and summaries
+
+At the top of each result directory, `run_manifest.json` records the test-file
+hash, source state, resolved solver options, scoring policy, provider versions,
+and each invocation's selected case ids. The runner refuses to add records when
+the existing manifest identifies an incompatible test, source state,
+configuration, scoring policy, or provider version.
+
+Each provider directory has a `summary.json`. The result directory also has a
+combined `summary.json` with one row per provider and case-level counts for all,
+some, or no providers answering correctly.
 
 ## Stage rows
 

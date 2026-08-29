@@ -12,11 +12,12 @@
 # (search for "======== helptext ========"); the same text is printed by
 # `python3 test.py -help`.
 #
-# Auto-resume: by default, results are appended to test_output.txt and
-# re-parsed on the next run, so tests already in the log are skipped and
-# only new ones execute. Pass -restart to wipe the log and rerun
-# everything; pass -logfile PATH to use a different log; or delete
-# test_output.txt manually.
+# Auto-resume: human-readable output is appended to test_output.txt. Exact
+# machine-readable keys live beside it in test_output.txt.resume.jsonl; a case
+# is reused only when the test source, pipeline source state, case content,
+# provider, version, solver configuration and scoring policy all match. Pass
+# -restart to wipe both files
+# and rerun everything; pass -logfile PATH to use a different pair of files.
 #
 #-----------------------------------------------------------------
 # Copyright 2026 Tanel Tammet (tanel.tammet@gmail.com)
@@ -39,6 +40,9 @@ import sys
 import time
 import unicodedata
 import urllib.parse
+import hashlib
+import json
+import os
 
 sys.path.insert(0, './solver')
 from solve import english_to_answer
@@ -104,6 +108,8 @@ strict_prepositions = False
 # completed, so the run can resume automatically.  Use -restart to start fresh.
 log_file_path = "test_output.txt"
 _log_fh = None   # opened in main()
+_resume_fh = None
+_resume_records = {}
 
 # When True, delete the log file and start fresh (set by -restart flag).
 restart = False
@@ -111,7 +117,7 @@ restart = False
 
 # ======== helptext ========
 
-helptext = """test.py — run nlpsolver tests from a test file.
+helptext = """test.py — quick single-provider checks for contributors.
 
 Usage:
   python test.py [options] [testfile ...]
@@ -129,6 +135,9 @@ ANY element of the list.
 
 If no test file is given, tests/tests_core.py is used.
 
+For safety, running test.py with no arguments prints this help instead of
+starting the full default suite. Name a test file explicitly to run cases.
+
 output control:
  -v  / -verbose        print Input / Expected / Received for every test (default)
  -c  / -compact        print one character per test: . (pass) or F (fail)
@@ -141,7 +150,10 @@ flow control:
  -skip N               skip the first N tests in each file
  -filter PATTERN       only run tests whose input contains PATTERN (case-sensitive)
  -restart              start fresh (ignore any previous progress in the log file);
-                       without this flag, the run auto-resumes from where it left off
+                       without this flag, an adjacent .resume.jsonl file reuses
+                       only exact matches for the test source, case, provider,
+                       version, pipeline source, solver configuration and
+                       scoring policy
 
 solver options:
  -llm NAME             LLM provider: gpt, claude, gemini, or deepseek
@@ -164,66 +176,182 @@ cache / matching options:
 """
 
 
-# ======== auto-resume from log file ========
+# ======== exact-key resume records ========
 
-def _load_progress(log_path):
-  """Parse a test_output.txt log file to recover completed test results.
+RESUME_SCHEMA_VERSION = 1
+ANSWER_MATCH_POLICY_VERSION = 1
 
-  Returns (completed_count, passed, failed, errors) where errors is a list
-  of (test_stub, received) pairs suitable for the summary printer.
-  """
-  completed = 0
-  passed = 0
-  failed = 0
-  errors = []
+
+def answer_matching_policy(single_stage=False):
+  """Machine-readable description of the comparator used for correctness."""
+  return {
+    "name": "llmpipe_answer_match",
+    "version": ANSWER_MATCH_POLICY_VERSION,
+    "strict_confidences": bool(strict_confidences),
+    "strict_prepositions": bool(strict_prepositions),
+    "single_stage_rendering_tolerance": bool(single_stage),
+    "multiple_expected_answers": "any alternative may match",
+    "unknown_expected": "first output line begins with Unknown",
+    "normalizations": [
+      "python_boolean_to_true_false",
+      "first_output_line_only",
+      "case_and_punctuation",
+      "word_order",
+      "coordinated_phrase_order",
+      "articles",
+      "confidence_qualifiers",
+      "leading_spatial_preposition_unless_strict",
+      "equivalent_length_and_mass_units",
+      "input_licensed_answer_adjective",
+    ] + ([
+      "single_stage_entity_rendering",
+      "single_stage_temporal_preposition",
+      "single_stage_url_and_diacritic",
+      "single_stage_plural_coordination",
+    ] if single_stage else []),
+  }
+
+
+def _jsonable(value):
+  """Convert option values to a stable JSON-compatible structure."""
+  if isinstance(value, dict):
+    return {str(k): _jsonable(v) for k, v in sorted(value.items(), key=lambda kv: str(kv[0]))}
+  if isinstance(value, (set, frozenset)):
+    return sorted((_jsonable(v) for v in value), key=lambda v: repr(v))
+  if isinstance(value, (list, tuple)):
+    return [_jsonable(v) for v in value]
+  if value is None or isinstance(value, (str, int, float, bool)):
+    return value
+  return repr(value)
+
+
+def _sha256_text(text):
+  return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def _file_sha256(path):
+  with open(path, "rb") as f:
+    return hashlib.sha256(f.read()).hexdigest()
+
+
+def _effective_model():
+  """Return the provider and version the single-provider runner will use."""
+  import llmcall
+  provider = _solve_mod.llm or llmcall.use_llm
+  version = _solve_mod.llm_version or getattr(llmcall, provider + "version", None)
+  return provider, version
+
+
+def _pipeline_source_state():
+  """Commit plus tracked working-tree changes, for safe regression resume."""
+  import subprocess
+  root = os.path.dirname(os.path.abspath(__file__))
   try:
-    with open(log_path, "r") as f:
-      lines = f.readlines()
+    commit = subprocess.run(
+      ["git", "rev-parse", "HEAD"], cwd=root, capture_output=True,
+      text=True, timeout=10).stdout.strip()
+    diff = subprocess.run(
+      ["git", "diff", "--binary", "HEAD"], cwd=root, capture_output=True,
+      text=True, timeout=10).stdout
+  except Exception:
+    return None
+  if not commit:
+    return None
+  return {
+    "commit": commit,
+    "dirty": bool(diff),
+    "tracked_diff_sha256": (hashlib.sha256(diff.encode("utf-8")).hexdigest()
+                             if diff else None),
+  }
+
+
+def _run_configuration(solver_opts):
+  """The fields that must agree before a stored result may be resumed."""
+  import globals as solver_globals
+  effective = dict(solver_globals.options)
+  effective.update(solver_opts)
+  effective["pipeline_name"] = _solve_mod.finalize_pipeline_name(effective)
+  provider, version = _effective_model()
+  return {
+    "provider": provider,
+    "version": version,
+    "solver_options": _jsonable(effective),
+    "scoring_policy": answer_matching_policy(False),
+    "pipeline_source": _pipeline_source_state(),
+  }
+
+
+def _resume_path(log_path):
+  return log_path + ".resume.jsonl" if log_path else None
+
+
+def _load_resume_records(path):
+  """Read exact-key JSONL resume records; malformed lines are ignored."""
+  records = {}
+  if not path:
+    return records
+  try:
+    with open(path, "r") as f:
+      for line in f:
+        try:
+          row = json.loads(line)
+        except (TypeError, ValueError):
+          continue
+        if (isinstance(row, dict)
+            and row.get("schema_version") == RESUME_SCHEMA_VERSION
+            and isinstance(row.get("resume_key"), str)):
+          records[row["resume_key"]] = row
   except OSError:
-    return (0, 0, 0, [])
+    pass
+  return records
 
-  i = 0
-  cur_case = None
-  cur_input = None
-  cur_expected = None
-  while i < len(lines):
-    line = lines[i].rstrip("\n")
-    if line.startswith("Case:     "):
-      cur_case = line[len("Case:     "):]
-    elif line.startswith("Input:    "):
-      cur_input = line[len("Input:    "):]
-    elif line.startswith("Expected: "):
-      cur_expected = line[len("Expected: "):]
-    elif line.startswith("Result:   "):
-      result = line[len("Result:   "):].strip()
-      completed += 1
-      if result == "OK":
-        passed += 1
-      else:
-        failed += 1
-        # Scan back for the Received: line
-        received = ""
-        for j in range(max(0, i - 3), i):
-          rline = lines[j].rstrip("\n")
-          if rline.startswith("Received: "):
-            received = rline[len("Received: "):]
-            break
-        errors.append(([cur_case, cur_input, cur_expected], received))
-      cur_case = None
-      cur_input = None
-      cur_expected = None
-    i += 1
 
-  return (completed, passed, failed, errors)
+def _case_resume_key(test_path, test_file_sha256, test, configuration):
+  payload = {
+    "test_path": os.path.realpath(test_path),
+    "test_file_sha256": test_file_sha256,
+    "case_id": test[0],
+    "input_text": test[1],
+    "expected_answer": test[2],
+    "configuration": configuration,
+  }
+  return _sha256_text(json.dumps(_jsonable(payload), sort_keys=True,
+                                 separators=(",", ":"), ensure_ascii=False))
+
+
+def _record_resume(resume_key, test_path, test_file_sha256, test,
+                   configuration, received, ok):
+  global _resume_records
+  row = {
+    "schema_version": RESUME_SCHEMA_VERSION,
+    "resume_key": resume_key,
+    "test_path": os.path.realpath(test_path),
+    "test_file_sha256": test_file_sha256,
+    "case_id": test[0],
+    "input_text": test[1],
+    "expected_answer": test[2],
+    "configuration": configuration,
+    "received": received,
+    "passed": bool(ok),
+  }
+  _resume_records[resume_key] = row
+  if _resume_fh is not None:
+    _resume_fh.write(json.dumps(_jsonable(row), ensure_ascii=False,
+                                sort_keys=True) + "\n")
+    _resume_fh.flush()
 
 
 # ======== main ========
 
 def main():
-  global _log_fh
+  global _log_fh, _resume_fh, _resume_records
+  if len(sys.argv) == 1:
+    print(helptext)
+    return
   test_files, solver_opts = _parse_cmd_line()
 
   if log_file_path:
+    resume_path = _resume_path(log_file_path)
     if restart:
       # Start fresh: truncate the log file
       try:
@@ -236,6 +364,15 @@ def main():
         _log_fh = open(log_file_path, "a", buffering=1)
       except OSError as e:
         print("Warning: cannot open log file", log_file_path, ":", e)
+    try:
+      if restart:
+        _resume_records = {}
+        _resume_fh = open(resume_path, "w", buffering=1)
+      else:
+        _resume_records = _load_resume_records(resume_path)
+        _resume_fh = open(resume_path, "a", buffering=1)
+    except OSError as e:
+      print("Warning: cannot open resume file", resume_path, ":", e)
 
   all_passed = 0
   all_failed = 0
@@ -255,6 +392,8 @@ def main():
 
   if _log_fh:
     _log_fh.close()
+  if _resume_fh:
+    _resume_fh.close()
 
   if len(test_files) > 1:
     _print()
@@ -275,49 +414,68 @@ def run_file(path, solver_opts):
   if tests is None:
     return (0, 0, 0, [])
 
-  # --- auto-resume from log file ---
-  resume_count = 0
-  resumed_passed = 0
-  resumed_failed = 0
-  resumed_errors = []
+  try:
+    test_file_sha256 = _file_sha256(path)
+  except OSError as e:
+    _print(f"Error: could not hash test file {path}: {e}")
+    return (0, 0, 0, [])
+  configuration = _run_configuration(solver_opts)
+
+  # Apply selection before resume. A stored result can skip only the exact
+  # file content, case and model/configuration that produced it.
+  selected = []
+  for i, test in enumerate(tests):
+    if i < skip:
+      continue
+    if filter_pattern and filter_pattern not in test[1]:
+      continue
+    selected.append(test)
+    if limit and len(selected) >= limit:
+      break
+
+  resumable = {}
   if not restart and log_file_path:
-    resume_count, resumed_passed, resumed_failed, resumed_errors = _load_progress(log_file_path)
+    for test in selected:
+      key = _case_resume_key(path, test_file_sha256, test, configuration)
+      row = _resume_records.get(key)
+      if row is not None:
+        resumable[key] = row
 
   _print()
   _print("=" * 50)
   _print("Test file:", path)
   _print("=" * 50)
-  if resume_count > 0:
-    _print(f"Resuming: skipping {resume_count} already completed tests "
+  if resumable:
+    resumed_passed = sum(1 for row in resumable.values() if row.get("passed"))
+    resumed_failed = len(resumable) - resumed_passed
+    _print(f"Resuming: reusing {len(resumable)} exact matching case records "
            f"({resumed_passed} passed, {resumed_failed} failed)")
-    if resume_count >= len(tests):
+    if len(resumable) >= len(selected):
       _print()
-      _print(f"All {len(tests)} tests in {path} are already recorded in "
-             f"{log_file_path}. Nothing new to run.")
+      _print(f"All {len(selected)} selected tests are already recorded in "
+             f"{_resume_path(log_file_path)}. Nothing new to run.")
       _print("Use -restart to wipe the log and rerun from scratch, "
              "or -help for other options.")
   if show_verbose:
     _print()
 
-  passed  = resumed_passed
-  failed  = resumed_failed
-  ran     = resume_count
-  errors  = resumed_errors  # (test, received) pairs
-  skipped = 0
+  passed = 0
+  failed = 0
+  ran = 0
+  errors = []
 
   start = time.time()
 
-  for i, test in enumerate(tests):
-    # --- skip already-resumed tests ---
-    if i < resume_count:
-      continue
-    # --- skip / limit / filter ---
-    if skipped < skip:
-      skipped += 1
-      continue
-    if limit and (ran - resume_count) >= limit:
-      break
-    if filter_pattern and filter_pattern not in test[1]:
+  for test in selected:
+    resume_key = _case_resume_key(path, test_file_sha256, test, configuration)
+    resumed = resumable.get(resume_key)
+    if resumed is not None:
+      ran += 1
+      if resumed.get("passed"):
+        passed += 1
+      else:
+        failed += 1
+        errors.append((test, resumed.get("received", "")))
       continue
 
     ran += 1
@@ -336,6 +494,8 @@ def run_file(path, solver_opts):
 
     # --- compare ---
     ok = _result_matches(expected, received, inp)
+    _record_resume(resume_key, path, test_file_sha256, test,
+                   configuration, received, ok)
 
     # --- output ---
     if show_compact:

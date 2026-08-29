@@ -157,11 +157,11 @@ parameters and input.
 ## Running a test file
 
 `test.py` runs one or more test files against one provider. Any argument that
-is not an option is taken as a test file. With none, it uses
-`tests/tests_core.py`.
+is not an option is taken as a test file. With no arguments it prints help,
+rather than starting a potentially paid full-suite run. If options are given
+without a file, the file defaults to `tests/tests_core.py`.
 
 ```bash
-python3 test.py                                   # tests/tests_core.py
 python3 test.py tests/tests_core.py -llm claude -limit 5
 ```
 
@@ -186,9 +186,10 @@ Flow and logging:
 - `-stopfail` — stop after the first failure.
 - `-logfile PATH` — write the log to `PATH` instead of `test_output.txt`.
 - `-restart` — start fresh. It takes no argument. Without it the run appends
-  to the log file and reads it to find the cases already recorded, then skips
-  those and continues. With it the log file is truncated and every case runs
-  again.
+  to the readable log and consults an adjacent `.resume.jsonl` file. A result
+  is reused only when the test source, pipeline source state, case, provider,
+  version, solver options, and scoring policy agree. With `-restart`, both
+  files are truncated and every selected case runs again.
 
 Answer comparison:
 
@@ -199,13 +200,20 @@ Answer comparison:
   are different answers. Without it a leading spatial preposition on one side
   only is ignored.
 
+The default matcher is intentionally not an exact string comparison. It also
+normalizes case, punctuation, articles, coordinated-answer order, confidence
+qualifiers, and equivalent length or mass units. A narrowly input-licensed
+adjective difference may also be accepted. One-stage translation experiments
+enable several additional entity-rendering tolerances. `runtests.py` stores the
+complete named policy in every case record and in its summaries.
+
 Model and cache: `-llm NAME`, `-version VER`, `-think` (with an optional
 number), `-cache` and `-nollmcache`, all as for `solve.py`.
 
 ## Running a batch
 
-`runtests.py` runs one test file against several providers in parallel. It
-writes one JSON per case and provider to
+`runtests.py` records one test file against one or more providers. With no
+arguments it prints help. It writes one JSON per case and provider to
 
 ```text
 <out>/<set name>[_<tag>]/<provider>/case_NNNN.json
@@ -246,6 +254,13 @@ Resuming:
   error, including an answer beginning `Error`.
 - `-sequential` — run the providers one at a time in this process, instead of
   one worker process per provider.
+
+Before any case runs, `run_manifest.json` identifies the test-file hash, source
+state, resolved pipeline options, scoring policy, and provider versions. If an
+existing result directory has a different identity, the runner stops and asks
+for a new `-tag` or `-out` instead of mixing the records. The top-level
+`summary.json` compares all providers currently recorded in that directory;
+each provider directory retains its own `summary.json`.
 
 Bounds:
 
