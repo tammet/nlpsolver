@@ -1,0 +1,584 @@
+{
+ "library": "axioms_action.js",
+ "version": "2.0.1",
+ "role": "applicability_template",
+ "placeholder": [
+  "$source",
+  "ACTION",
+  "C"
+ ],
+ "note": "compiler data, never a GK input: the compiler replaces the -$source literal of a template by the conditions of a source availability unit (A2.3, Revision 4)",
+ "templates": [
+  {
+   "name": "tpl_move_public",
+   "role": "applicability_template",
+   "constructor": "move",
+   "note": "a movement over a stated public route; also every movement rule whose endpoints or means the unit does not identify",
+   "clause": {
+    "@logic": [
+     [
+      "-$source",
+      [
+       "move",
+       "?:A",
+       "?:F",
+       "?:T",
+       "?:M"
+      ],
+      [
+       "$ctxt",
+       "present",
+       "?:S",
+       "?:Ls",
+       "$obj"
+      ]
+     ],
+     [
+      "-is rel2",
+      "located_at",
+      "?:A",
+      "?:F",
+      [
+       "$ctxt",
+       "present",
+       "?:S",
+       "?:L1",
+       "$obj"
+      ]
+     ],
+     [
+      "-connected",
+      "?:F",
+      "?:T",
+      "?:M"
+     ],
+     [
+      "-differ",
+      "?:F",
+      "?:T"
+     ],
+     [
+      "-ok_move",
+      [
+       "move",
+       "?:A",
+       "?:F",
+       "?:T",
+       "?:M"
+      ],
+      [
+       "$ctxt",
+       "present",
+       "?:S",
+       "?:L2",
+       "$obj"
+      ]
+     ],
+     [
+      "poss",
+      [
+       "move",
+       "?:A",
+       "?:F",
+       "?:T",
+       "?:M"
+      ],
+      [
+       "$ctxt",
+       "present",
+       "?:S",
+       "?:L3",
+       "$obj"
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "name": "tpl_move_stated",
+   "role": "applicability_template",
+   "constructor": "move",
+   "note": "a movement rule whose origin, destination and means the unit identifies (constants, or variables a supported positive condition of the unit binds) and whose actor is not an unconditioned universal: no connected literal, for the rule's actor only",
+   "clause": {
+    "@logic": [
+     [
+      "-$source",
+      [
+       "move",
+       "?:A",
+       "?:F",
+       "?:T",
+       "?:M"
+      ],
+      [
+       "$ctxt",
+       "present",
+       "?:S",
+       "?:Ls",
+       "$obj"
+      ]
+     ],
+     [
+      "-is rel2",
+      "located_at",
+      "?:A",
+      "?:F",
+      [
+       "$ctxt",
+       "present",
+       "?:S",
+       "?:L1",
+       "$obj"
+      ]
+     ],
+     [
+      "-differ",
+      "?:F",
+      "?:T"
+     ],
+     [
+      "-ok_move",
+      [
+       "move",
+       "?:A",
+       "?:F",
+       "?:T",
+       "?:M"
+      ],
+      [
+       "$ctxt",
+       "present",
+       "?:S",
+       "?:L2",
+       "$obj"
+      ]
+     ],
+     [
+      "poss",
+      [
+       "move",
+       "?:A",
+       "?:F",
+       "?:T",
+       "?:M"
+      ],
+      [
+       "$ctxt",
+       "present",
+       "?:S",
+       "?:L3",
+       "$obj"
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "name": "tpl_take",
+   "role": "applicability_template",
+   "constructor": "take",
+   "note": "the blocks fragment: a block on a support, clear on top, and an empty taker",
+   "clause": {
+    "@logic": [
+     [
+      "-$source",
+      [
+       "take",
+       "?:H",
+       "?:X"
+      ],
+      [
+       "$ctxt",
+       "present",
+       "?:S",
+       "?:Ls",
+       "$obj"
+      ]
+     ],
+     [
+      "-isa",
+      "block",
+      "?:X"
+     ],
+     [
+      "-has property",
+      "empty",
+      "?:H",
+      [
+       "$ctxt",
+       "present",
+       "?:S",
+       "?:L1",
+       "$obj"
+      ]
+     ],
+     [
+      "-has property",
+      "clear_top",
+      "?:X",
+      [
+       "$ctxt",
+       "present",
+       "?:S",
+       "?:L2",
+       "$obj"
+      ]
+     ],
+     [
+      "-is rel2",
+      "on",
+      "?:X",
+      "?:Y",
+      [
+       "$ctxt",
+       "present",
+       "?:S",
+       "?:L3",
+       "$obj"
+      ]
+     ],
+     [
+      "-ok_take",
+      [
+       "take",
+       "?:H",
+       "?:X"
+      ],
+      [
+       "$ctxt",
+       "present",
+       "?:S",
+       "?:L4",
+       "$obj"
+      ]
+     ],
+     [
+      "poss",
+      [
+       "take",
+       "?:H",
+       "?:X"
+      ],
+      [
+       "$ctxt",
+       "present",
+       "?:S",
+       "?:L5",
+       "$obj"
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "name": "tpl_put_on_block",
+   "role": "applicability_template",
+   "constructor": "put_on",
+   "note": "onto a block with a clear top",
+   "clause": {
+    "@logic": [
+     [
+      "-$source",
+      [
+       "put_on",
+       "?:H",
+       "?:X",
+       "?:Y"
+      ],
+      [
+       "$ctxt",
+       "present",
+       "?:S",
+       "?:Ls",
+       "$obj"
+      ]
+     ],
+     [
+      "-is rel2",
+      "holding",
+      "?:H",
+      "?:X",
+      [
+       "$ctxt",
+       "present",
+       "?:S",
+       "?:L1",
+       "$obj"
+      ]
+     ],
+     [
+      "-isa",
+      "block",
+      "?:Y"
+     ],
+     [
+      "-has property",
+      "clear_top",
+      "?:Y",
+      [
+       "$ctxt",
+       "present",
+       "?:S",
+       "?:L2",
+       "$obj"
+      ]
+     ],
+     [
+      "-differ",
+      "?:X",
+      "?:Y"
+     ],
+     [
+      "-ok_put_on",
+      [
+       "put_on",
+       "?:H",
+       "?:X",
+       "?:Y"
+      ],
+      [
+       "$ctxt",
+       "present",
+       "?:S",
+       "?:L3",
+       "$obj"
+      ]
+     ],
+     [
+      "poss",
+      [
+       "put_on",
+       "?:H",
+       "?:X",
+       "?:Y"
+      ],
+      [
+       "$ctxt",
+       "present",
+       "?:S",
+       "?:L4",
+       "$obj"
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "name": "tpl_put_on_surface",
+   "role": "applicability_template",
+   "constructor": "put_on",
+   "note": "onto a surface (a table, floor, shelf or counter)",
+   "clause": {
+    "@logic": [
+     [
+      "-$source",
+      [
+       "put_on",
+       "?:H",
+       "?:X",
+       "?:Y"
+      ],
+      [
+       "$ctxt",
+       "present",
+       "?:S",
+       "?:Ls",
+       "$obj"
+      ]
+     ],
+     [
+      "-is rel2",
+      "holding",
+      "?:H",
+      "?:X",
+      [
+       "$ctxt",
+       "present",
+       "?:S",
+       "?:L1",
+       "$obj"
+      ]
+     ],
+     [
+      "-surface",
+      "?:Y"
+     ],
+     [
+      "-differ",
+      "?:X",
+      "?:Y"
+     ],
+     [
+      "-ok_put_on",
+      [
+       "put_on",
+       "?:H",
+       "?:X",
+       "?:Y"
+      ],
+      [
+       "$ctxt",
+       "present",
+       "?:S",
+       "?:L2",
+       "$obj"
+      ]
+     ],
+     [
+      "poss",
+      [
+       "put_on",
+       "?:H",
+       "?:X",
+       "?:Y"
+      ],
+      [
+       "$ctxt",
+       "present",
+       "?:S",
+       "?:L3",
+       "$obj"
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "name": "tpl_put_in",
+   "role": "applicability_template",
+   "constructor": "put_in",
+   "note": "into a distinct container",
+   "clause": {
+    "@logic": [
+     [
+      "-$source",
+      [
+       "put_in",
+       "?:H",
+       "?:X",
+       "?:B"
+      ],
+      [
+       "$ctxt",
+       "present",
+       "?:S",
+       "?:Ls",
+       "$obj"
+      ]
+     ],
+     [
+      "-is rel2",
+      "holding",
+      "?:H",
+      "?:X",
+      [
+       "$ctxt",
+       "present",
+       "?:S",
+       "?:L1",
+       "$obj"
+      ]
+     ],
+     [
+      "-differ",
+      "?:X",
+      "?:B"
+     ],
+     [
+      "-ok_put_in",
+      [
+       "put_in",
+       "?:H",
+       "?:X",
+       "?:B"
+      ],
+      [
+       "$ctxt",
+       "present",
+       "?:S",
+       "?:L2",
+       "$obj"
+      ]
+     ],
+     [
+      "poss",
+      [
+       "put_in",
+       "?:H",
+       "?:X",
+       "?:B"
+      ],
+      [
+       "$ctxt",
+       "present",
+       "?:S",
+       "?:L3",
+       "$obj"
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "name": "tpl_change",
+   "role": "applicability_template",
+   "constructor": "change",
+   "note": "the text's rule states every condition; the template adds only the hook",
+   "clause": {
+    "@logic": [
+     [
+      "-$source",
+      [
+       "change",
+       "?:A",
+       "?:X",
+       "?:V",
+       "?:T"
+      ],
+      [
+       "$ctxt",
+       "present",
+       "?:S",
+       "?:Ls",
+       "$obj"
+      ]
+     ],
+     [
+      "-ok_change",
+      [
+       "change",
+       "?:A",
+       "?:X",
+       "?:V",
+       "?:T"
+      ],
+      [
+       "$ctxt",
+       "present",
+       "?:S",
+       "?:L1",
+       "$obj"
+      ]
+     ],
+     [
+      "poss",
+      [
+       "change",
+       "?:A",
+       "?:X",
+       "?:V",
+       "?:T"
+      ],
+      [
+       "$ctxt",
+       "present",
+       "?:S",
+       "?:L2",
+       "$obj"
+      ]
+     ]
+    ]
+   }
+  }
+ ]
+}
