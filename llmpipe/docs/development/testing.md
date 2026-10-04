@@ -77,58 +77,16 @@ rows. Two identities hold in both: `allowed == cached + live` and
 
 ## The action route
 
-The experimental action route has its own offline checks:
+A planning test file has rows `[id, text, expected answer, expected actions]`:
+the expected answer text, and the expected plan of that text as action terms
+with names, `[]` for the empty plan, or `None` when the text has no plan.
+`runtests.py` grades such a file with `solver/planning_check.py`, by the
+answer text, the plan, or both (`-answer-check text|actions|both`).
+`planning_check.py` lists the comparison rules.
 
 ```bash
-python3 tests/action_route/run_checks.py            # every check
-python3 tests/action_route/run_checks.py -k prompts # the checks whose file name contains "prompts"
-python3 tests/action_route/make_planning_tests.py --check
-python3 tests/action_route/make_examples.py --check
-```
-
-The checks make no provider request: a provider request fails
-(`tests/action_route/cache_guard.py`). The runner counts the GK launches;
-the current checks make none. They test the controller with authored and saved model responses,
-the compiler and the replay against the gold fixtures, the adapter on saved
-GK outputs, and the answer policy with a fake prover.
-
-**The test material:**
-
-| path | content |
-|---|---|
-| `tests/action_route/fixtures/` | the reviewed gold fixtures: formal sources and queries with their expected outcomes, and the review ledger that records every gold change |
-| `prompts/actions/examples.json`, `routing_cases.json` | the authored examples that the prompts show |
-| `tests/action_route/unseen/` | the authored examples and routing contrasts that no prompt shows, in the same format |
-| `tests/action_route/examples/` | formal records for `solve.py -actions -formal`, written from the fixtures by `make_examples.py` |
-| `tests/action_route/regression/` | saved model responses of earlier runs, which the controller checks replay |
-| `tests/action_route/gk_output/` | saved GK outputs, which the adapter check reads |
-
-`tests/action_route/prompt_examples.py` compiles every authored example in
-both locations through the real controller, with the record's own Stage 1
-and Stage 2 as the model responses. It also checks that the four example files
-are in the layout of `json_layout.py` and that `prompts/actions/manifest.json`
-is current. After an edit of an example file, run
-`python3 tests/action_route/json_layout.py`, then write the manifest again
-(`prompts/actions/README.md`).
-
-**The planning test set.** Four files hold English problems about actions and
-plans, from simple to complex:
-
-| file | rows | use |
-|---|---|---|
-| `tests/tests_planning_basic.py` | `[id, text, expected answer, expected actions]` | the test that `runtests.py` grades with `solver/planning_check.py` |
-| `tests/tests_planning.py` | `[id, text, expected answer, reference]` with the gold translation | the detailed file, graded by `solver/action_check.py` with a replay of other plans |
-| `tests/tests_planning_dev.py` | the texts that are prompt examples | development only, never a headline number |
-| `tests/tests_planning_contrasts.py` | the contrast texts of the current prompt revision | development material |
-
-`tests/action_route/make_planning_tests.py` generates the four files. Edit the
-golds through the ledger, never the files by hand.
-`tests/tests_planning_README.md` describes the expected-answer forms and the
-grading rules.
-
-```bash
-python3 runtests.py tests/tests_planning_basic.py -actions -llms gemini -limit 5
-python3 runtests.py tests/tests_planning_basic.py -actions -answer-check both -llms gemini -limit 5
+python3 runtests.py PLANNING_FILE -actions -llms gemini -limit 5
+python3 runtests.py PLANNING_FILE -actions -answer-check both -llms gemini -limit 5
 ```
 
 With `-actions` every text goes to the action route, which measures the route
@@ -137,6 +95,10 @@ routing too. A larger batch uses `-run-ceiling` with `-sequential` and
 `-llm-call-limit` ([command-line reference](../reference/command-line.md)),
 so it stops before it passes its ceiling of logical calls and outbound
 requests.
+
+A `-formal` record runs the whole route with no model call
+([experimental options](../reference/experimental-options.md#the-action-route)):
+a quick check that the compiler, the library, GK and the replay work.
 
 ## Safe practice for an experiment
 

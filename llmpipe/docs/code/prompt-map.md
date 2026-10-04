@@ -43,9 +43,7 @@ records.
 | `prompts/actions/routing_cases.json` | `action_prompt.render_examples` | Stage 1 | none | part of the system prompt |
 
 `prompts/actions/manifest.json` holds the hashes of these files and of the
-assembled prompts. `tests/action_route/prompt_examples.py` compares the
-manifest with the current files. The authored translations that no prompt shows
-are in `tests/action_route/unseen/`.
+assembled prompts.
 
 ## Used by an explicit optional mode
 

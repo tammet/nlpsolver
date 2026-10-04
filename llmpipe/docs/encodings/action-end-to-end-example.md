@@ -19,7 +19,7 @@ route:
 ```text
 === pipeline ===
 
-  action route (chosen automatically: how_question, route_fact)
+  action route (chosen automatically: a question "How can ...?"; a route or service between places)
 ```
 
 ## Stage 1
@@ -172,7 +172,7 @@ With `-summary`, the run reports one block:
 
 ```text
 answer: Plan: Ann goes from Haapsalu to Tallinn by bus.
-pipeline: action route (chosen automatically: how_question, route_fact)
+pipeline: action route (chosen automatically: a question "How can ...?"; a route or service between places)
 outcome: plan_found   replay: valid   confidence: 1.0
 llm calls: stage1 1 (live 0); stage2 1 (live 0); total 2, live 0
 gk launches: 1 (discovery:positive 1); 0.31 s

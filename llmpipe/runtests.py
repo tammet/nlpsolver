@@ -267,8 +267,8 @@ class PlanningGrader(object):
       errors = planning_check.check_row(row)
       if errors:
         raise RunConfigurationError(
-          "%s, case %r: %s.  The planning checker reads [id, text, expected, actions] rows, as in "
-          "tests/tests_planning_basic.py" % (testfile, r[0], "; ".join(errors)))
+          "%s, case %r: %s.  The planning checker reads [id, text, expected, actions] rows"
+          % (testfile, r[0], "; ".join(errors)))
       self.rows[r[0]] = row
 
   def grade(self, case_id, expected, answer, collect):
@@ -1298,6 +1298,9 @@ def main():
     print("Error: " + str(exc))
     return 2
 
+  if not os.path.isfile(args.testfile):
+    print("Error: could not read test file: %s" % args.testfile)
+    return 2
   tests = load_tests(args.testfile)
   testname = testname_from_path(args.testfile)
   # Variant modes suffix the set name so results live beside (not on top of) the

@@ -337,7 +337,7 @@ the retranslation is what made the answer reachable — and `-summary` names the
 stage that closed it:
 
 ```
-answered_by: critic (rerun answered by fallback_norm)   (front door: Unknown.)
+answered_by: critic (rerun answered by fallback_norm)   (the initial attempt answered: Unknown.)
 ```
 
 `solve_stages.summary_record` carries the same value as `rerun_answered_by`, `None` when

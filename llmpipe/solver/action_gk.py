@@ -11,13 +11,15 @@ answer and every rejected entry of every launch, separately, with the proofs,
 the final confidences and the result strings.  Yes, No, Unknown, contested and
 the plan outcomes are the policy's decisions.
 
-Backend.  A backend is a registered GK build: a path, the binary's SHA-256, the
-strategy, the command parameters and the capabilities validated for it.  A
-caller names a build of `BACKENDS`; the registry is the trust boundary, and
-the adapter runs no other binary.  A missing binary, one with another hash,
-one without execute permission, or a missing data folder gives the typed
-outcome `backend_unavailable` before any launch; a launch that cannot start
-gives it too (`launch_failed`).  A launch whose output says that the build
+Backend.  A backend is a registered GK build: a path, the strategy, the
+command parameters and the capabilities validated for it.  A caller names a
+build of `BACKENDS`; the registry is the trust boundary, and the adapter runs
+no other binary.  Like the ordinary pipeline, the adapter does not check which
+build is at the path: it records the SHA-256 of the binary it runs, and a
+capability counts only for the binary that its validation record names.  A
+missing binary, one without execute permission, or a missing data folder gives
+the typed outcome `backend_unavailable` before any launch; a launch that cannot
+start gives it too (`launch_failed`).  A launch whose output says that the build
 ignored a strategy setting gives `backend_incompatible`: the build did not
 run the registered strategy.  The command is built from the profile only: the
 ordinary pipeline's options, strategy estimation, axiom files and proof cache
@@ -132,7 +134,6 @@ BACKENDS = {
   "gk": {
     "name": "gk",
     "path": os.path.join(DATAFOLDER, "gk"),
-    "sha256": "da753b3a35c5ee4fd64214ae7daaaf1ce2085caaff95f453de3c7749c4630587",
     "status": "installed",
     "strategy": PLANNING_STRATEGY,
     "params": PIPELINE_PARAMS,
@@ -174,19 +175,27 @@ def strategy_sha256(strategy):
   return sha256_text(json.dumps(strategy, sort_keys=True, separators=(",", ":")))
 
 
+def binary_sha256(path):
+  """The SHA-256 of the binary at `path`, or None when there is no file."""
+  return sha256_file(path) if os.path.isfile(path) else None
+
+
 def backend_profile(backend=None):
-  """A copy of a registered profile, by name.  Only a name of `BACKENDS` is accepted: the registry is the trust
-  boundary.  Code that adds an entry to it (the tests do, for fake executables) is trusted like this module."""
+  """A copy of a registered profile, by name, with `sha256` the hash of the binary now at its path.  Only a name of
+  `BACKENDS` is accepted: the registry is the trust boundary.  Code that adds an entry to it (the tests do, for fake
+  executables) is trusted like this module."""
   if backend is None:
     backend = DEFAULT_BACKEND
   if not isinstance(backend, str) or backend not in BACKENDS:
     raise AdapterError("backend is the name of a registered build, got %r; registered: %s"
                        % (backend if isinstance(backend, str) else type(backend).__name__, ", ".join(sorted(BACKENDS))))
   p = BACKENDS[backend]
-  missing = [k for k in ("name", "path", "sha256", "strategy", "params", "datafolder", "validated", "unmet") if k not in p]
+  missing = [k for k in ("name", "path", "strategy", "params", "datafolder", "validated", "unmet") if k not in p]
   if missing:
     raise AdapterError("the registered backend %r lacks %s" % (backend, missing))
-  return copy.deepcopy(p)
+  p = copy.deepcopy(p)
+  p["sha256"] = binary_sha256(p["path"])
+  return p
 
 
 def backend_identity(profile, library=None):
@@ -198,19 +207,15 @@ def backend_identity(profile, library=None):
 
 
 def availability(profile):
-  """None when the registered binary is present with its hash; else the `backend_unavailable` outcome."""
+  """None when the registered binary is present and executable and its data folder exists; else the
+  `backend_unavailable` outcome."""
   path = profile["path"]
   if not os.path.isfile(path):
     return {"outcome": "backend_unavailable", "reason": "binary_missing", "backend": profile["name"], "path": path,
             "detail": "the registered binary is not at its path; the adapter runs no other binary"}
-  actual = sha256_file(path)
-  if actual != profile["sha256"]:
-    return {"outcome": "backend_unavailable", "reason": "binary_hash_mismatch", "backend": profile["name"], "path": path,
-            "expected_sha256": profile["sha256"], "actual_sha256": actual,
-            "detail": "the binary at the registered path is another build"}
   if not os.access(path, os.X_OK):
     return {"outcome": "backend_unavailable", "reason": "binary_not_executable", "backend": profile["name"],
-            "path": path, "detail": "the registered binary has its hash but may not be executed"}
+            "path": path, "detail": "the registered binary may not be executed"}
   if not os.path.isdir(profile["datafolder"]):
     return {"outcome": "backend_unavailable", "reason": "datafolder_missing", "backend": profile["name"],
             "path": profile["datafolder"], "detail": "the build's data folder is not present"}

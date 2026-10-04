@@ -330,13 +330,12 @@ Grading a planning test file:
   (rows of four elements), the runner grades each answer with the planning checker
   (`solver/planning_check.py`) instead of the default matcher, and stores
   `grade` and `answer_check` in the case record. A test row is
-  `[id, input, expected, actions]`, as in `tests/tests_planning_basic.py`:
-  the expected answer text, and the expected plan of that text as action terms.
-  A file whose rows hold a gold translation instead (`tests/tests_planning.py`)
-  is refused.
+  `[id, input, expected, actions]`: the expected answer text, and the expected
+  plan of that text as action terms. A file whose rows hold a gold translation
+  in place of the action list is refused.
 - `-answer-check text|actions|both` — what the checker compares: the answer
   text (the default), the plan with the expected action list, or both.
-  `tests/tests_planning_README.md` lists the rules.
+  `solver/planning_check.py` lists the rules.
 - the summaries count the answers that are correct, the rows correctly not
   answered, the wrong rows and the errors. The
   answer forms of the route are on the

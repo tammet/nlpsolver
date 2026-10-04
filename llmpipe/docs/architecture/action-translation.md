@@ -166,8 +166,8 @@ reports the error position in the model's own JSON.
 
 ## Formal input
 
-With `-formal`, the input is a JSON record of units and queries in the field
-names of the gold fixtures ([experimental options](../reference/experimental-options.md#the-action-route)).
+With `-formal`, the input is a JSON record of units and queries
+([experimental options](../reference/experimental-options.md#the-action-route)).
 No model is called. The record goes directly to the compiler.
 
 ## Related pages

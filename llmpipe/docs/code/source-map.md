@@ -197,7 +197,6 @@ Described in [action route modules](action-route.md).
 | `solver/action_gk.py` | Action route: the adapter of the registered GK builds |
 | `solver/action_answer.py` | Action route: the answer policy, verification verdicts, English plans and scoring |
 | `solver/action_replay.py` | Action profile: an independent replay of a plan over the finite fragment |
-| `solver/action_check.py` | Action route: the detailed checker of the planning test set, by plan terms and a replay on the gold translation |
 | `solver/planning_check.py` | Action route: the answer checker of the planning test set, by the answer text, the action list or both |
 | `solver/route_classify.py` | Which pipeline a text goes to: a cheap classifier on the English, with no model call |
 | `solver/digests.py` | The SHA-256 digests and the canonical JSON that the action route's hashes read |

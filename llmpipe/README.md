@@ -32,8 +32,8 @@ cd nlpsolver
 install -m 600 /dev/null secrets/gemini_secrets.txt
 ${EDITOR:-nano} secrets/gemini_secrets.txt
 
-# Check Python, imports, GK, a sample proof, and API-key presence.
-# This does not make an LLM request.
+# Check Python, imports, GK, a sample proof, a plan question on the action
+# route, and API-key presence. This does not make an LLM request.
 python3 smoketest.py
 
 cd llmpipe
@@ -89,6 +89,27 @@ For the full workflow and the exact retry order, see
 [Pipeline architecture](docs/architecture/pipeline.md). For the logical forms,
 start with the [Encoding reference](docs/encodings/README.md).
 
+Texts about actions and plans
+-----------------------------
+
+Each call first chooses its pipeline. A text with a strong sign of actions or
+plans, such as a question "How can ...?" or a route between two places, goes to
+the experimental action route. Every other text takes the pipeline above.
+`-actions` and `-noactions` decide the choice explicitly.
+
+The action route has its own prompts (`prompts/actions/`), a compiler with
+situations, a library of physical laws (`axioms_action.js`), a GK search for
+plans, and an independent replay that checks every plan. Its answers have
+their own forms: `Plan: ...`, `No plan found.`, `Yes.`, `No.`, `Unknown.`, or
+`Cannot answer: ...` for a text that the route does not model.
+
+```bash
+python3 solver/solve.py "Ann is in Haapsalu. There is a bus route from Haapsalu to Tallinn. How can Ann get to Tallinn?"
+# -> Plan: Ann goes from Haapsalu to Tallinn by bus.
+```
+
+See [The action route](docs/architecture/action-route.md).
+
 Useful commands
 ---------------
 
@@ -129,7 +150,8 @@ evaluation or making model calls.
 # Quickly inspect five cases with one provider.
 python3 test.py tests/tests_core.py -llm gemini -limit 5
 
-# Record the same five cases for two providers as structured experiment data.
+# Record the same five cases for two providers as structured experiment data
+# (each provider needs its own key file).
 python3 runtests.py tests/tests_core.py -llms gemini,deepseek -limit 5
 ```
 
@@ -150,11 +172,13 @@ Repository guide
 ```text
 llmpipe/
 |-- solver/          translation, compilation, retry, prover, and output code
-|-- prompts/         Stage-1, Stage-2, critic, and graph prompts
+|-- prompts/         Stage-1, Stage-2, critic, graph, and action-route prompts
 |-- tests/           test cases and benchmark adapters
 |-- docs/            user, architecture, encoding, code, and development docs
 |-- mkdata/          builders for generated lexical and taxonomy data
 |-- axioms_std.js    default background knowledge for GK
+|-- axioms_action.js the physical laws of the action route, with its role
+|                    index and templates (axioms_action.*.json)
 |-- test.py          quick, readable single-provider regression runner
 |-- runtests.py      resumable multi-provider experiment and JSON-record runner
 |-- ask.py           direct LLM-call utility, without logic or GK
@@ -181,6 +205,8 @@ are:
 - [Encoding reference](docs/encodings/README.md) — Stage 1, Stage 2, compiled
   representations, graph format, and GK clauses
 - [Architecture](docs/architecture/README.md) — algorithms and processing order
+- [The action route](docs/architecture/action-route.md) — texts about actions
+  and plans
 - [Command-line reference](docs/reference/command-line.md) — supported options
 - [Reference documentation](docs/reference/README.md) — command-line,
   configuration, runtime-record, and proof-output references

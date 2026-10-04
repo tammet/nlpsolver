@@ -153,10 +153,12 @@ def _route_phrase(route):
   signals = route.get("signals") or []
   if signals == ["formal_input"]:
     return "%s (chosen automatically: a formal input)" % name
+  import route_classify
+  words = "; ".join(route_classify.SIGNAL_WORDS.get(x, x) for x in signals)
   if route.get("verdict") == "actions":
-    return "%s (chosen automatically: %s)" % (name, ", ".join(signals))
+    return "%s (chosen automatically: %s)" % (name, words)
   if route.get("verdict") == "unclear":
-    return "%s (chosen automatically: unclear, %s)" % (name, ", ".join(signals))
+    return "%s (chosen automatically: only a weak sign of actions: %s)" % (name, words)
   return "%s (chosen automatically: no sign of actions)" % name
 
 
@@ -214,8 +216,10 @@ def show_summary(rec):
   by = rec["answered_by"]
   if rec.get("rerun_answered_by") in ("fallback_norm", "fallback_hyp"):
     by = "%s (rerun answered by %s)" % (by, rec["rerun_answered_by"])
-  print("answered_by: %s   (front door: %s)"
-        % (by, rec["front_door_answer"]))
+  if rec["answered_by"] == "front_door":
+    print("answered_by: front_door (the initial attempt)")
+  else:
+    print("answered_by: %s   (the initial attempt answered: %s)" % (by, rec["front_door_answer"]))
   print("stages_enabled: %s" % (", ".join(rec["stages_enabled"]) or "none"))
   print("abstraction_order: %s" % rec["abstraction_order"])
   if rec.get("encoding_experiments"):
@@ -237,7 +241,7 @@ def show_summary(rec):
 
 def print_critic(record):
   """The `-explain` block of the critique pass."""
-  print("\n=== critic (one reading of the front door's translation) ===")
+  print("\n=== critic (one reading of the initial attempt's translation) ===")
   report = record.get("report")
   if not report:
     print("  no usable reply: %s" % (record.get("parse_failure") or "?"))

@@ -21,8 +21,7 @@ import digests
 import lc_action as la
 
 ROOT = Path(__file__).resolve().parents[1]
-# the action prompts: instructions, checklists, and the examples that the prompts show (the authored translations
-# that no prompt shows are test material, in tests/action_route/unseen/)
+# the action prompts: instructions, checklists, and the examples that the prompts show
 PROMPTS = ROOT / "prompts/actions"
 READINGS = {"availability", "restriction", "effect", "occurrence", "plan_question",
             "reachable_question", "executable_question", "verify_question"}

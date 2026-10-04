@@ -62,24 +62,13 @@ An example translation has these fields:
 | `stage2` | the Stage-2 response: the envelope |
 | `expect` | the outcome of the compiler: `source` (`supported` or `unsupported`) and `queries` (`ready` or the query outcome), and for some records `reason`, `forms`, `excluded`, `root` or `query_reason` |
 | `revision`, `rules`, `answer` | in the seven examples of revision I only: the revision, the labels of the rules that the example shows, and the answer on GK |
-| `provenance` | in the five worked examples only: the gold fixture that the example copies |
 
 A routing contrast has the fields `id`, `purpose`, `authorship`, `text`, `route`
 and `stage1`. Its `route` is `actions`, `ordinary` or `diagnostic`.
 
-## The examples that no prompt shows
-
-`tests/action_route/unseen/` holds 52 more example translations and 8 more
-routing contrasts, in the same two files and the same record format. No prompt
-shows them; the checks use them as test material. To add an example to the
-prompts, move its record from `unseen/` into the file here. To take an example
-out of the prompts, move its record back. Either move changes the assembled
-prompt and its hash in `manifest.json`.
-
 ## Editing
 
-The four JSON files follow the layout of `tests/action_route/json_layout.py`,
-which copies the layout of `prompts/stage1_examples.txt` and
+The two JSON files follow the layout of `prompts/stage1_examples.txt` and
 `prompts/stage2_examples.txt`:
 
 - A list or dict without a nested list or dict is on one line.
@@ -88,26 +77,9 @@ which copies the layout of `prompts/stage1_examples.txt` and
   broken list keeps its leading strings and numbers on its first line, as in
   `["@id", "S1",`.
 
-After an edit, run these commands from `llmpipe/`:
-
-```bash
-python3 tests/action_route/json_layout.py         # rewrite the four files in the layout
-python3 tests/action_route/prompt_examples.py --manifest > prompts/actions/manifest.json
-python3 tests/action_route/run_checks.py -k prompts
-```
-
-The last command runs `check_action_prompts.py`, which calls
-`prompt_examples.py`. That check does these things for every record in both
-locations:
-
-- It compiles the record and compares the result with `expect`.
-- It runs the translation controller with the record's own Stage 1 and Stage 2
-  as the model responses.
-
-The check also fails when a file is not in the layout or when `manifest.json`
-is out of date. It makes no model call and no GK launch.
-`prompt_examples.py --show stage1` and `--show stage2` print the assembled
-prompts.
+An edit of a file here changes the assembled prompt. `manifest.json` records
+the hashes of the files and of the assembled prompts; `action_prompt.assemble()`
+returns them.
 
 The prompts are revision I. The revision name is in the first line of both
 instructions files, in the bundle status that `action_prompt.assemble` returns

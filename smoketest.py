@@ -6,7 +6,9 @@ Checks, in order:
   2. llmpipe imports (so missing stdlib modules / syntax errors surface).
   3. The bundled gk reasoner binary runs.
   4. gk produces a proof on the bundled birdspenguins.js example.
-  5. At least one non-empty provider key file is present (readiness status,
+  5. The action route: its prompts assemble, and a formal plan question
+     (no model call) gets its plan through the compiler, gk and the replay.
+  6. At least one non-empty provider key file is present (readiness status,
      not a hard failure).
 
 The older Stanza pipeline is checked only with --check-udppipe.
@@ -17,12 +19,26 @@ Run from anywhere; resolves repo paths relative to this script's location:
     python3 smoketest.py
 """
 
+import json
 import os
 import subprocess
 import sys
+import tempfile
 
 REPO_ROOT = os.path.dirname(os.path.abspath(__file__))
-TOTAL_STEPS = 5
+TOTAL_STEPS = 6
+
+# a plan question as a formal record of the action route: the route compiles it and asks gk, with no model call
+PLAN_RECORD = {
+  "units": [
+    {"id": "S1", "text": "Ann is a person.", "stage2": ["@id", "S1", ["holds", "W0", ["isa", "person", "Ann 1"]]]},
+    {"id": "S2", "text": "Ann is in Haapsalu.",
+     "stage2": ["@id", "S2", ["holds", "W0", ["is rel2", "located_at", "Ann 1", "Haapsalu 2"]]]},
+    {"id": "S3", "text": "A bus goes from Haapsalu to Tallinn.",
+     "stage2": ["@id", "S3", ["holds", "W0", ["connected", "Haapsalu 2", "Tallinn 3", "bus"]]]}],
+  "queries": [{"text": "How can Ann get to Tallinn?",
+               "stage2": ["@id", "Q1", ["plan", ["is rel2", "located_at", "Ann 1", "Tallinn 3"]]]}]}
+PLAN_ANSWER = "Plan: Ann goes from Haapsalu to Tallinn by bus."
 
 
 def step(msg):
@@ -98,8 +114,32 @@ def check_gk_proof():
   ok("gk found an answer for birdspenguins.js")
 
 
+def check_action_route():
+  print("[5/%d] llmpipe action route: prompts and a formal plan question (no model call)" % TOTAL_STEPS)
+  try:
+    import action_prompt
+    action_prompt.assemble()
+  except Exception as e:
+    fail("the action prompts do not assemble: " + str(e))
+  llmpipe = os.path.join(REPO_ROOT, "llmpipe")
+  with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as f:
+    json.dump(PLAN_RECORD, f)
+  try:
+    out = subprocess.run([sys.executable, "solver/solve.py", "-formal", f.name], cwd=llmpipe,
+                         capture_output=True, timeout=120)
+  except Exception as e:
+    fail("running the action route failed: " + str(e))
+  finally:
+    os.unlink(f.name)
+  answer = out.stdout.decode("utf-8", "replace").strip()
+  if answer != PLAN_ANSWER:
+    fail("the action route did not find the expected plan\n  expected: " + PLAN_ANSWER + "\n  got:      "
+         + (answer or out.stderr.decode("utf-8", "replace").strip()).replace("\n", "\n  "))
+  ok("the prompts assemble; the formal plan question gets: " + PLAN_ANSWER)
+
+
 def check_secrets():
-  print("[5/%d] llmpipe live-query readiness" % TOTAL_STEPS)
+  print("[6/%d] llmpipe live-query readiness" % TOTAL_STEPS)
   secrets = os.path.join(REPO_ROOT, "secrets")
   files = [("gemini", "gemini_secrets.txt"),
            ("gpt", "gpt_secrets.txt"),
@@ -166,7 +206,7 @@ def _discover_python_interpreters(udppipe):
 
 
 def check_udppipe():
-  print("[6/%d] udppipe stanza availability (requested)" % TOTAL_STEPS)
+  print("[7/%d] udppipe stanza availability (requested)" % TOTAL_STEPS)
   udppipe = os.path.join(REPO_ROOT, "udppipe")
   if not os.path.isdir(udppipe):
     warn("udppipe/ not found — skipping")
@@ -202,12 +242,13 @@ def main(argv=None):
     print("Usage: python3 smoketest.py [--check-udppipe]")
     return 2
   check_udp = "--check-udppipe" in argv
-  TOTAL_STEPS = 6 if check_udp else 5
+  TOTAL_STEPS = 7 if check_udp else 6
   print("nlpsolver smoke-test (repo at " + REPO_ROOT + ")")
   check_python()
   check_imports()
   check_gk_runs()
   check_gk_proof()
+  check_action_route()
   providers = check_secrets()
   if check_udp:
     check_udppipe()

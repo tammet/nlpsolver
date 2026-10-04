@@ -17,8 +17,10 @@ replay. Three modules do this work:
 ### The backend
 
 The adapter runs only a registered GK build (`action_gk.BACKENDS`). The default
-build `gk` is the installed prover `../gk/gk` (GK 1.0.11) with its SHA-256,
-the planning strategy and the pipeline's parameters:
+build `gk` is the installed prover `../gk/gk` (GK 1.0.11), with the planning
+strategy and the pipeline's parameters. Like the ordinary pipeline, the adapter
+does not check which binary is at the path. It records the binary's SHA-256 in
+each evidence record:
 
 | item | value |
 |---|---|
@@ -37,12 +39,12 @@ one applies:
 | outcome | when |
 |---|---|
 | the query's own outcome | compilation decided it |
-| `backend_unavailable` | the binary is missing, has another hash or cannot be executed, or the data folder is missing |
+| `backend_unavailable` | the binary is missing or cannot be executed, or the data folder is missing |
 | `unsupported_backend_requirement` | a requirement is unmet and its policy is to refuse |
 | `call_limit` | the worst-case launch count exceeds the launch limit |
 
-A capability counts as validated only through a record that names the build's
-hash, the library identity and the strategy's hash. The caller's own
+A capability counts as validated only through a record that names the hash of
+the binary at the path, the library identity and the strategy's hash. The caller's own
 declaration does not count.
 
 ### Launches

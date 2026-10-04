@@ -97,7 +97,8 @@ def is_law(name):
 
 
 def sentences(view):
-  """{unit id: the input sentence it comes from}: the raw sentence of its Stage-1 package, else the unit's text."""
+  """{unit id: the input sentence it comes from}: the raw sentence of its Stage-1 package, else the unit's text, else
+  the `text` of a formal record's unit."""
   out = {}
   for p in view.get("stage1_packages") or []:
     if not isinstance(p, dict):
@@ -108,6 +109,8 @@ def sentences(view):
   for u in (view.get("source") or {}).get("units") or []:
     if u.get("text"):
       out.setdefault(u["id"], u["text"])
+  for uid, text in (view.get("unit_texts") or {}).items():
+    out.setdefault(uid, text)
   for qid, text in (view.get("query_texts") or {}).items():
     if text:
       out.setdefault(qid, text)

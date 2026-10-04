@@ -24,8 +24,8 @@ reproducible.
   a converter pass or a retry stage, which record fields a new stage must
   fill, and how to extend the action route.
 - [Testing](testing.md) — the hash-seed and cache conventions, running the test
-  sets, checking a converter change, call accounting, the checks and test sets
-  of the action route, and safe practice for an experiment.
+  sets, checking a converter change, call accounting, grading a planning test
+  file of the action route, and safe practice for an experiment.
 - [Generated data](generated-data.md) — the five `data_*.py` modules, the
   `mkdata/` sources they are built from, and how to rebuild them.
 

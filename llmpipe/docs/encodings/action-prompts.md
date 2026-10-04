@@ -4,10 +4,7 @@ Prompt revision I. This page specifies the English interface of the
 experimental action route (`-actions`) to the implemented encoding v2. The
 ordinary pipeline does not use it. The prompts and the examples that they show
 are in `prompts/actions/`, the default bundle `actions` of the route.
-`action_prompt.assemble` assembles them. The authored translations that no
-prompt shows are in `tests/action_route/unseen/`.
-`tests/action_route/prompt_examples.py` checks the formulas of both without a
-model or GK call.
+`action_prompt.assemble` assembles them.
 
 ## Decisions
 
@@ -185,9 +182,8 @@ does ([the action route](../architecture/action-route.md#when-it-runs)). The
 selector after Stage 1 records the route that the annotations ask for, but it
 does not dispatch to the ordinary pipeline. A recorded `ordinary` selection
 still proceeds through the action Stage 2 and compiler; an `action_issue`
-stops translation. The routing contrasts (`routing_cases.json` in
-`prompts/actions/` and in `tests/action_route/unseen/`) test the selector
-itself.
+stops translation. The routing contrasts in
+`prompts/actions/routing_cases.json` show the selector's decisions.
 
 ## Stage-2 output and precedence
 
@@ -408,9 +404,6 @@ above.
 | K16 | a strict-rule dependency between present states of W0 becomes a `state_law` | `action_repair.repair_packages` |
 
 The formulas, annotation checks and `query_contexts` handoff are implemented.
-The example checker runs both compiler checks and the production translation
-controller with authored responses, retaining raw sentence packages. This proves
-the handoff works, but is not evidence about model translation accuracy.
 
 ## What is implemented and checked
 

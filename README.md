@@ -7,7 +7,10 @@ It contains two independent pipelines:
 
 * **[llmpipe](llmpipe/README.md)** — the newer LLM-based pipeline (GPT,
   Claude, Gemini, or DeepSeek) that replaces the Stanza parser with a
-  two-stage LLM semantic parser. This is the current pipeline.
+  two-stage LLM semantic parser. This is the current pipeline. It also has an
+  experimental route for texts about actions and plans, which answers with a
+  plan or a verdict; a text with a strong sign of actions or plans takes it
+  automatically.
   Test cases, recorded multi-LLM results, and analysis for this pipeline are published
   separately in [nlformtasks](https://github.com/tammet/nlformtasks).
 
@@ -49,10 +52,10 @@ Installation
 **Requirements**
 
 * Linux on x86-64 (the bundled `gk/gk` reasoner binary is a statically-linked
-  Linux x86-64 ELF), **or** macOS on Apple Silicon (ARM64) — a macOS ARM64
-  build of the reasoner is bundled as `gk/gk-macos-ARM64.zip`; unzip it and
-  use the extracted `gk` binary in place of `gk/gk`.  Note that the
-  `llmpipe` and `udppipe` pipelines have only been tested on Linux —
+  Linux x86-64 ELF), **or** macOS on Apple Silicon (ARM64) — the
+  [gkreasoner repository](https://github.com/tammet/gkreasoner) has a macOS
+  ARM64 build as `bin/gk-macos-arm64`; put it in place of `gk/gk`.  Note that
+  the `llmpipe` and `udppipe` pipelines have only been tested on Linux —
   running them on macOS has not been verified and may need small tweaks.
 * Python 3.10 or later (tested up to 3.12). No `pip` packages are required at
   runtime — the pipeline uses only the Python standard library.

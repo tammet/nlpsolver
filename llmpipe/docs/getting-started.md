@@ -66,11 +66,12 @@ stages, and the model calls made by each stage.
 
 ```bash
 python3 test.py tests/tests_core.py -llm gemini -limit 5
-python3 runtests.py tests/tests_core.py -llms deepseek -limit 5
+python3 runtests.py tests/tests_core.py -llms gemini -limit 5
 ```
 
-`runtests.py` writes one JSON per case and model under `testresults/`. See
-[testing](development/testing.md).
+`runtests.py` writes one JSON per case and model under `testresults/`. It can
+run several providers at once (`-llms gemini,deepseek`); each provider needs
+its own key file. See [testing](development/testing.md).
 
 ## A few more commands
 
@@ -108,9 +109,8 @@ python3 solver/solve.py -explain -summary "Ann is in Haapsalu. There is a bus ro
 ```
 
 `-actions` sends any text to the action route, and `-noactions` keeps it on
-the ordinary pipeline. The route uses the same model keys and the installed
-`../gk/gk`. It checks the binary's SHA-256: another GK build gives the outcome
-`backend_unavailable`. See [the action route](architecture/action-route.md).
+the ordinary pipeline. The route uses the same model keys and the same
+`../gk/gk`. See [the action route](architecture/action-route.md).
 
 ## Calling a model without the logic pipeline
 

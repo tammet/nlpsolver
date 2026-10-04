@@ -208,20 +208,18 @@ The action route keeps its prompts, its compiler, its library and its replay
 apart from the ordinary pipeline. A change to one of them usually needs a
 matching change in another.
 
-**An example in the prompts.** Write the record in
-`tests/action_route/unseen/examples.json` first, with its `expect` outcome.
-`prompt_examples.py` compiles it through the controller. Move it to
-`prompts/actions/examples.json` when the prompts should show it. Then run
-`json_layout.py` and write the manifest again
-(`prompts/actions/README.md`). A moved example changes the assembled prompt,
-so later runs make new model calls.
+**An example in the prompts.** Add the record to
+`prompts/actions/examples.json`, with its `expect` outcome, in the layout of
+the other records ([`prompts/actions/README.md`](../../prompts/actions/README.md)).
+A new example changes the assembled prompt, so later runs make new model
+calls. Update the hashes in `prompts/actions/manifest.json`:
+`action_prompt.assemble()` returns them.
 
 **A prompt rule.** Edit `prompts/actions/stage1_instructions.txt` or
 `stage2_instructions.txt` and the checklist of the stage. Keep a rule short and
 show it in an example. A prompt change that a run will measure gets a new
-revision name in the first line of both instructions files, in the bundle
-status of `action_prompt.assemble`, and in `identity()` of
-`tests/action_route/prompt_examples.py`, which writes the manifest. Describe the rule in the
+revision name in the first line of both instructions files and in the bundle
+status of `action_prompt.assemble`. Describe the rule in the
 [action prompt interface](../encodings/action-prompts.md).
 
 **A repair of the controller.** A repair changes a model response only when
@@ -242,14 +240,6 @@ the physical laws. A change needs:
 Add a reason to `lc_action.REASONS`, detect it in the pass that can see it,
 and add one sentence to `action_english.REASON_SENTENCES`. The answer is then
 `Cannot answer: <sentence>.` with the reason code.
-
-**A gold expectation.** Every change to a gold fixture or to the expected
-answer of a planning test row is a row in the review ledger of
-`tests/action_route/fixtures/`, with the old value, the new value, the reason
-and who decided. The planning
-test files are generated (`make_planning_tests.py`); do not edit them by hand.
-
-Run `python3 tests/action_route/run_checks.py` after each change.
 
 ## Related documentation
 

@@ -54,7 +54,7 @@ operations as a library interface; the checks use them.
 | `axioms_action.js` | the action library, version 2.0.1 | `lc_action_library`, then GK |
 | `axioms_action.roles.json` | the role of each library clause and the library's hash | `lc_action_library.load` |
 | `axioms_action.templates.json` | the applicability templates | `lc_action_library.load_templates` |
-| `prompts/actions/` | the action instructions and checklists and the examples they show, read by `action_prompt.assemble` with the ordinary prompt files; `manifest.json`, read only by `tests/action_route/prompt_examples.py` | as named |
+| `prompts/actions/` | the action instructions and checklists and the examples they show; `manifest.json` records their hashes and those of the assembled prompts | `action_prompt.assemble`, with the ordinary prompt files |
 
 ## Constants that change behaviour
 
@@ -87,14 +87,11 @@ operations as a library interface; the checks use them.
 - **A new answer form:** `action_english.answer_text`, and the answer table of
   the [experimental options](../reference/experimental-options.md#the-action-route).
 
-## Test sets and checkers
+## The planning checker
 
-`planning_check` grades an answer of the planning test set by its text, its
-action list or both (`runtests.py -answer-check`). `action_check` grades the
-detailed planning test file against its gold translations, with a replay of a
-plan that differs from the listed one. The offline checks of the route are
-`python3 tests/action_route/run_checks.py`
-([testing](../development/testing.md#the-action-route)).
+`planning_check` grades an answer of a planning test file by its text, its
+action list or both (`runtests.py -answer-check`). Its docstring lists the
+comparison rules.
 
 ## Related pages
 

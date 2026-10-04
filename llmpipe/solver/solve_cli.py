@@ -773,8 +773,8 @@ experimental action route (reads action and planning texts):
                   registered GK build.  No ordinary retry stage runs; a stage
                   switch, a -pipeline preset or an ordinary representation
                   option given with it is an error.  English input uses the
-                  measured action prompts (prompts/actions).  The
-                  answer is one of the forms of tests/tests_planning_README.md.
+                  measured action prompts (prompts/actions).  The answer
+                  forms are in docs/reference/experimental-options.md.
  -noactions     : always run the ordinary pipeline; an action option given
                   with it is an error.
  -formal        : the input is a formal JSON record, or its file (Stage-2

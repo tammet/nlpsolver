@@ -1153,7 +1153,7 @@ NOT_SOLVED = {"outcome": "not_solved", "detail": "-nosolve: the query was compil
 
 def new_view(options=None):
   """What the output levels read and the run record does not keep: the artifacts and the raw text of each launch."""
-  return {"source": None, "queries": [], "launches": [], "stage1_packages": None, "query_texts": {},
+  return {"source": None, "queries": [], "launches": [], "stage1_packages": None, "query_texts": {}, "unit_texts": {},
           "nosolve": bool((options or {}).get("prover_nosolve_flag"))}
 
 
@@ -1217,6 +1217,7 @@ def _run_formal(text, prof, rec, ledger, view=None):
   rec["source"] = {"hashes": src["hashes"], "support": src["support"]}
   view["source"] = src
   queries = case.get("queries") or []
+  view["unit_texts"] = {u["id"]: u["text"] for u in units if u.get("text")}
   view["query_texts"] = {q["stage2"][1]: q.get("text") for q in queries
                          if isinstance(q.get("stage2"), list) and len(q["stage2"]) > 1}
   if not queries:

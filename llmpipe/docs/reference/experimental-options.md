@@ -245,13 +245,37 @@ part of the confidence does not count.
 with it is an error. Status: experimental.
 
 **`-formal`** — the input is a formal JSON record for the action route, or the
-path of a file holding one, compiled and solved with no model call. The record uses the field names of the gold
-fixtures:
-- `units`: each unit has an `id` and a Stage-2 package `stage2`;
-  `text`, `stage1` and `context` are optional;
-- `queries`: each query has a `stage2` package, and optional
+path of a file holding one, compiled and solved with no model call. `-formal`
+alone selects the action route. The record has these fields:
+- `units`: each unit has an `id` and a Stage-2 package `stage2`. Optional:
+  `text`, the unit's sentence, which the explanation shows (without it, the
+  explanation lists the unit id); `stage1`, the unit's Stage-1 projection; and
+  `context`, a context record of an initial description;
+- `queries`: each query has a `stage2` package. Optional: `text`,
   `planning_root`, `ambient`, `knower` and `limits`;
-- `entities`, `worlds` and `text` are optional.
+- optional: `worlds`, the worlds in narrative order (default `["W0"]`);
+  `text`, the whole passage; `entities`, a map from entity id to class, which
+  names the entities in the English output and states no fact; and `types`, a
+  list of type facts `{"entity": "Ann 1", "class": "person", "kind": "stated",
+  "unit": "S1"}`, where `unit` names a unit of the record.
+
+A formal record is taken exactly as written. The route derives no type from
+it: an English translation gets `isa(person, X)` from the Stage-1 category
+`person`, but a formal record gets only the classes that it states, as a unit
+or in `types`. A library default that needs a class needs that fact. Without
+`isa(person, Ann 1)`, for example, no default permits Ann to travel, and a plan
+question answers `No plan found.`:
+
+```json
+{"units": [
+   {"id": "S1", "text": "Ann is a person.", "stage2": ["@id", "S1", ["holds", "W0", ["isa", "person", "Ann 1"]]]},
+   {"id": "S2", "text": "Ann is in Haapsalu.", "stage2": ["@id", "S2", ["holds", "W0", ["is rel2", "located_at", "Ann 1", "Haapsalu 2"]]]},
+   {"id": "S3", "text": "A bus goes from Haapsalu to Tallinn.", "stage2": ["@id", "S3", ["holds", "W0", ["connected", "Haapsalu 2", "Tallinn 3", "bus"]]]}],
+ "queries": [{"text": "How can Ann get to Tallinn?", "stage2": ["@id", "Q1", ["plan", ["is rel2", "located_at", "Ann 1", "Tallinn 3"]]]}]}
+```
+
+`python3 solver/solve.py -formal record.json` answers
+`Plan: Ann goes from Haapsalu to Tallinn by bus.`
 
 **`-plan-depth N`** — on the action route: the search cap of a plan or reachable
 question. The default cap is four. A stated step bound in the question is

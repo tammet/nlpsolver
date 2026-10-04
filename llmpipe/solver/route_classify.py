@@ -65,6 +65,24 @@ WEAK = {
   "imperative": re.compile(r"^(%s)\b" % OPS, re.I),
 }
 
+# the reader's words for each signal, for the pipeline line of the output; the records keep the names
+SIGNAL_WORDS = {
+  "how_question": 'a question "How can ...?"',
+  "plan_request": "a request for a plan",
+  "after_question": 'a question "After ..., ...?"',
+  "eventually": 'the word "eventually"',
+  "block_world": "blocks named by a letter, with a hand or a stack",
+  "route_fact": "a route or service between places",
+  "travel_permission": "a permission to travel from one place to another by a means",
+  "tool_permission": "a permission for an operation with a tool",
+  "snapshot": "a named snapshot",
+  "operation_permission": '"can" before an operation verb',
+  "present_effect": "an effect sentence in the present tense",
+  "who_can": 'a question "Who can ...?"',
+  "can_question": 'a question "Can ...?" about an operation',
+  "imperative": "a sentence that starts with an operation verb",
+}
+
 
 def sentences(text):
   return [s.strip() for s in SENTENCE.split((text or "").strip()) if s.strip()]
