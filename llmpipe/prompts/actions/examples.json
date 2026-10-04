@@ -1,0 +1,2728 @@
+[
+  {
+    "id": "travel_goal",
+    "purpose": "A plan question alone selects planning; ordinary route facts remain premises; explicit at-most bound.",
+    "authorship": "authored development example; no model response",
+    "text": "Mira is a person. Mira is at Harbor. A bus service goes from Harbor to Hilltown. A ferry service goes from Hilltown to Island. Find a plan for Mira to be at Island within two actions.",
+    "stage1": [
+      {
+        "raw": "Mira is a person.",
+        "units": [
+          {
+            "unit_id": "S1",
+            "text": "Mira 1 is a person.",
+            "type": "real",
+            "entities": [
+              {"id": "Mira 1", "type": "concrete", "category": "person"},
+              {"id": "person", "type": "generic", "category": "person"}
+            ],
+            "pre_state": "W0"
+          }
+        ]
+      },
+      {
+        "raw": "Mira is at Harbor.",
+        "units": [
+          {
+            "unit_id": "S2",
+            "text": "Mira 1 is at Harbor 2.",
+            "type": "situation",
+            "entities": [
+              {"id": "Mira 1", "type": "concrete", "category": "person"},
+              {"id": "Harbor 2", "type": "concrete", "category": "place"}
+            ],
+            "pre_state": "W0"
+          }
+        ]
+      },
+      {
+        "raw": "A bus service goes from Harbor to Hilltown.",
+        "units": [
+          {
+            "unit_id": "S3",
+            "text": "A bus service goes from Harbor 2 to Hilltown 3.",
+            "type": "real",
+            "entities": [
+              {"id": "Harbor 2", "type": "concrete", "category": "place"},
+              {"id": "Hilltown 3", "type": "concrete", "category": "place"}
+            ],
+            "pre_state": "W0",
+            "confidence": 0.99
+          }
+        ]
+      },
+      {
+        "raw": "A ferry service goes from Hilltown to Island.",
+        "units": [
+          {
+            "unit_id": "S4",
+            "text": "A ferry service goes from Hilltown 3 to Island 4.",
+            "type": "real",
+            "entities": [
+              {"id": "Hilltown 3", "type": "concrete", "category": "place"},
+              {"id": "Island 4", "type": "concrete", "category": "place"}
+            ],
+            "pre_state": "W0",
+            "confidence": 0.99
+          }
+        ]
+      },
+      {
+        "raw": "Find a plan for Mira to be at Island within two actions.",
+        "units": [
+          {
+            "unit_id": "S5",
+            "text": "Find a plan for Mira 1 to be at Island 4 within two actions.",
+            "type": "query",
+            "entities": [
+              {"id": "Mira 1", "type": "concrete", "category": "person"},
+              {"id": "Island 4", "type": "concrete", "category": "place"}
+            ],
+            "action_reading": "plan_question",
+            "step_bound": {"comparison": "at_most", "count": 2}
+          }
+        ]
+      }
+    ],
+    "route": "actions",
+    "stage2": {
+      "worlds": ["W0"],
+      "contexts": {},
+      "query_contexts": {},
+      "logic": [
+        ["@id", "S1", ["holds", "W0", ["isa", "person", "Mira 1"]]],
+        ["@id", "S2", ["holds", "W0", ["is rel2", "located_at", "Mira 1", "Harbor 2"]]],
+        ["@id", "S3", ["holds", "W0", ["connected", "Harbor 2", "Hilltown 3", "bus"]]],
+        ["@id", "S4", ["holds", "W0", ["connected", "Hilltown 3", "Island 4", "ferry"]]],
+        ["@id", "S5",
+          ["plan", ["is rel2", "located_at", "Mira 1", "Island 4"], ["steps", "at_most", 2]]
+        ]
+      ]
+    },
+    "expect": {"source": "supported", "queries": "ready"}
+  },
+  {
+    "id": "blocks_verify",
+    "purpose": "Supplied order and conjunctive final goal; no source occurrence or invented permission.",
+    "authorship": "authored development example; no model response",
+    "text": "There is a hand. Block b is on the table. Block a is on the table. Every block is clear. The hand is empty. After the hand takes block b and then puts it on block a, is b on a and is the hand empty?",
+    "stage1": [
+      {
+        "raw": "There is a hand.",
+        "units": [
+          {
+            "unit_id": "S1",
+            "text": "There is a hand 1.",
+            "type": "real",
+            "entities": [
+              {"id": "hand 1", "type": "concrete", "category": "artifact"},
+              {"id": "hand", "type": "generic", "category": "artifact"}
+            ],
+            "pre_state": "W0",
+            "confidence": 0.99
+          }
+        ]
+      },
+      {
+        "raw": "Block b is on the table.",
+        "units": [
+          {
+            "unit_id": "S2",
+            "text": "The block 2 is on table 4.",
+            "type": "situation",
+            "entities": [
+              {"id": "block 2", "type": "concrete", "category": "artifact"},
+              {"id": "table 4", "type": "concrete", "category": "artifact"},
+              {"id": "block", "type": "generic", "category": "artifact"},
+              {"id": "table", "type": "generic", "category": "artifact"}
+            ],
+            "pre_state": "W0"
+          }
+        ]
+      },
+      {
+        "raw": "Block a is on the table.",
+        "units": [
+          {
+            "unit_id": "S3",
+            "text": "Block 3 is on table 4.",
+            "type": "situation",
+            "entities": [
+              {"id": "block 3", "type": "concrete", "category": "artifact"},
+              {"id": "table 4", "type": "concrete", "category": "artifact"},
+              {"id": "block", "type": "generic", "category": "artifact"}
+            ],
+            "pre_state": "W0"
+          }
+        ]
+      },
+      {
+        "raw": "Every block is clear.",
+        "units": [
+          {
+            "unit_id": "S4",
+            "text": "Every block is clear.",
+            "type": "situation",
+            "entities": [{"id": "block", "type": "generic", "category": "artifact"}],
+            "pre_state": "W0",
+            "adjectives": [["clear", "none", "entity"]]
+          }
+        ]
+      },
+      {
+        "raw": "The hand is empty.",
+        "units": [
+          {
+            "unit_id": "S5",
+            "text": "The hand 1 is empty.",
+            "type": "situation",
+            "entities": [{"id": "hand 1", "type": "concrete", "category": "artifact"}],
+            "pre_state": "W0",
+            "adjectives": [["empty", "none", "entity"]]
+          }
+        ]
+      },
+      {
+        "raw": "After the hand takes block b and then puts it on block a, is b on a and is the hand empty?",
+        "units": [
+          {
+            "unit_id": "S6",
+            "text": "After hand 1 takes block 2 and then puts block 2 on block 3, is block 2 on block 3 and is hand 1 empty?",
+            "type": "query",
+            "entities": [
+              {"id": "hand 1", "type": "concrete", "category": "artifact"},
+              {"id": "block 2", "type": "concrete", "category": "artifact"},
+              {"id": "block 3", "type": "concrete", "category": "artifact"}
+            ],
+            "action_reading": "verify_question",
+            "action_order": "sequence",
+            "actions": [
+              {"root": "take", "mode": "event", "roles": {"actor": "hand 1", "target": "block 2"}},
+              {
+                "root": "put",
+                "mode": "event",
+                "roles": {"actor": "hand 1", "target": "block 2", "location": "block 3", "location_prep": "on"}
+              }
+            ],
+            "adjectives": [["empty", "none", "entity"]]
+          }
+        ]
+      }
+    ],
+    "route": "actions",
+    "stage2": {
+      "worlds": ["W0"],
+      "contexts": {},
+      "query_contexts": {},
+      "logic": [
+        ["@id", "S1", ["holds", "W0", ["isa", "hand", "hand 1"]]],
+        ["@id", "S2",
+          ["holds", "W0",
+            ["and",
+              ["isa", "block", "block 2"],
+              ["isa", "table", "table 4"],
+              ["is rel2", "on", "block 2", "table 4"]
+            ]
+          ]
+        ],
+        ["@id", "S3",
+          ["holds", "W0",
+            ["and", ["isa", "block", "block 3"], ["is rel2", "on", "block 3", "table 4"]]
+          ]
+        ],
+        ["@id", "S4",
+          ["holds", "W0",
+            ["forall", "X", ["implies", ["isa", "block", "X"], ["has property", "clear_top", "X"]]]
+          ]
+        ],
+        ["@id", "S5", ["holds", "W0", ["has property", "empty", "hand 1"]]],
+        ["@id", "S6",
+          ["verify",
+            [["take", "hand 1", "block 2"], ["put_on", "hand 1", "block 2", "block 3"]],
+            ["and", ["is rel2", "on", "block 2", "block 3"], ["has property", "empty", "hand 1"]]
+          ]
+        ]
+      ]
+    },
+    "expect": {"source": "supported", "queries": "ready"}
+  },
+  {
+    "id": "if_only_if_denial",
+    "purpose": "Sufficient condition, necessary condition and explicit denial remain three different formulas.",
+    "authorship": "authored development example; no model response Revision G (2026-09-29, round 3): S2 states cloth at the first mention; types S3: coin for the referents its law sentence introduces.",
+    "text": "Robo is a robot. Robo has the cloth. If the coin is rough, Robo can polish it shiny with the cloth. Robo can polish the coin shiny with the cloth only if the cloth is clean. Robo cannot polish the coin shiny with the cloth. Can Robo polish the coin shiny with the cloth now?",
+    "stage1": [
+      {
+        "raw": "Robo is a robot.",
+        "units": [
+          {
+            "unit_id": "S1",
+            "text": "Robo 1 is a robot.",
+            "type": "real",
+            "entities": [
+              {"id": "Robo 1", "type": "concrete", "category": "artifact"},
+              {"id": "robot", "type": "generic", "category": "artifact"}
+            ],
+            "pre_state": "W0"
+          }
+        ]
+      },
+      {
+        "raw": "Robo has the cloth.",
+        "units": [
+          {
+            "unit_id": "S2",
+            "text": "Robo 1 has the cloth 3.",
+            "type": "situation",
+            "entities": [
+              {"id": "Robo 1", "type": "concrete", "category": "artifact"},
+              {"id": "cloth 3", "type": "concrete", "category": "artifact"}
+            ],
+            "pre_state": "W0"
+          }
+        ]
+      },
+      {
+        "raw": "If the coin is rough, Robo can polish it shiny with the cloth.",
+        "units": [
+          {
+            "unit_id": "S3",
+            "text": "If coin 2 is rough, Robo 1 can polish coin 2 shiny with cloth 3.",
+            "type": "strict_rule",
+            "entities": [
+              {"id": "Robo 1", "type": "concrete", "category": "artifact"},
+              {"id": "coin 2", "type": "concrete", "category": "artifact"},
+              {"id": "cloth 3", "type": "concrete", "category": "artifact"}
+            ],
+            "pre_state": "W0",
+            "action_reading": "availability",
+            "actions": [
+              {
+                "root": "polish",
+                "mode": "capability",
+                "roles": {"actor": "Robo 1", "target": "coin 2", "instrument": "cloth 3", "result": "shiny"}
+              }
+            ],
+            "adjectives": [["rough", "none", "entity"], ["shiny", "none", "entity"]]
+          }
+        ]
+      },
+      {
+        "raw": "Robo can polish the coin shiny with the cloth only if the cloth is clean.",
+        "units": [
+          {
+            "unit_id": "S4",
+            "text": "Robo 1 can polish the coin 2 shiny with the cloth 3 only if the cloth 3 is clean.",
+            "type": "strict_rule",
+            "entities": [
+              {"id": "Robo 1", "type": "concrete", "category": "artifact"},
+              {"id": "coin 2", "type": "concrete", "category": "artifact"},
+              {"id": "cloth 3", "type": "concrete", "category": "artifact"}
+            ],
+            "pre_state": "W0",
+            "action_reading": "restriction",
+            "actions": [
+              {
+                "root": "polish",
+                "mode": "capability",
+                "roles": {"actor": "Robo 1", "target": "coin 2", "instrument": "cloth 3", "result": "shiny"}
+              }
+            ],
+            "adjectives": [["clean", "none", "entity"]]
+          }
+        ]
+      },
+      {
+        "raw": "Robo cannot polish the coin shiny with the cloth.",
+        "units": [
+          {
+            "unit_id": "S5",
+            "text": "Robo 1 cannot polish the coin 2 shiny with the cloth 3.",
+            "type": "strict_rule",
+            "entities": [
+              {"id": "Robo 1", "type": "concrete", "category": "artifact"},
+              {"id": "coin 2", "type": "concrete", "category": "artifact"},
+              {"id": "cloth 3", "type": "concrete", "category": "artifact"}
+            ],
+            "pre_state": "W0",
+            "action_reading": "availability",
+            "actions": [
+              {
+                "root": "polish",
+                "mode": "capability",
+                "roles": {"actor": "Robo 1", "target": "coin 2", "instrument": "cloth 3", "result": "shiny"}
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "raw": "Can Robo polish the coin shiny with the cloth now?",
+        "units": [
+          {
+            "unit_id": "S6",
+            "text": "Can Robo 1 polish the coin 2 shiny with the cloth 3 now?",
+            "type": "query",
+            "entities": [
+              {"id": "Robo 1", "type": "concrete", "category": "artifact"},
+              {"id": "coin 2", "type": "concrete", "category": "artifact"},
+              {"id": "cloth 3", "type": "concrete", "category": "artifact"}
+            ],
+            "action_reading": "executable_question",
+            "actions": [
+              {
+                "root": "polish",
+                "mode": "capability",
+                "roles": {"actor": "Robo 1", "target": "coin 2", "instrument": "cloth 3", "result": "shiny"}
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "route": "actions",
+    "stage2": {
+      "worlds": ["W0"],
+      "contexts": {},
+      "query_contexts": {},
+      "types": {"S3": [["isa", "coin", "coin 2"]]},
+      "logic": [
+        ["@id", "S1", ["holds", "W0", ["isa", "robot", "Robo 1"]]],
+        ["@id", "S2",
+          ["holds", "W0", ["and", ["isa", "cloth", "cloth 3"], ["have", "Robo 1", "cloth 3"]]]
+        ],
+        ["@id", "S3",
+          ["holds", "W0",
+            ["implies",
+              ["and", ["has property", "rough", "coin 2"], ["have", "Robo 1", "cloth 3"]],
+              ["can", "Robo 1", ["change", "Robo 1", "coin 2", "shiny", "cloth 3"]]
+            ]
+          ]
+        ],
+        ["@id", "S4",
+          ["holds", "W0",
+            ["implies",
+              ["executable", ["change", "Robo 1", "coin 2", "shiny", "cloth 3"]],
+              ["has property", "clean", "cloth 3"]
+            ]
+          ]
+        ],
+        ["@id", "S5",
+          ["holds", "W0",
+            ["not", ["can", "Robo 1", ["change", "Robo 1", "coin 2", "shiny", "cloth 3"]]]
+          ]
+        ],
+        ["@id", "S6",
+          ["question", ["executable", ["change", "Robo 1", "coin 2", "shiny", "cloth 3"]]]
+        ]
+      ]
+    },
+    "expect": {"source": "supported", "queries": "ready"}
+  },
+  {
+    "id": "conditional_signed_effect",
+    "purpose": "An old-state condition qualifies a signed effect, and tool possession is a source permission condition.",
+    "authorship": "authored development example; no model response Revision G (2026-09-29, round 3): S2 states pan at the first mention; S3 states egg at the first mention.",
+    "text": "Nia is a cook. Nia has the pan. The egg is raw. If Nia has the pan, Nia can cook the egg with it. If the egg is raw, after Nia cooks it with the pan the egg is no longer raw. After Nia cooks the egg with the pan, is the egg cooked and not raw?",
+    "stage1": [
+      {
+        "raw": "Nia is a cook.",
+        "units": [
+          {
+            "unit_id": "S1",
+            "text": "Nia 1 is a cook.",
+            "type": "real",
+            "entities": [
+              {"id": "Nia 1", "type": "concrete", "category": "person"},
+              {"id": "cook", "type": "generic", "category": "person"}
+            ],
+            "pre_state": "W0"
+          }
+        ]
+      },
+      {
+        "raw": "Nia has the pan.",
+        "units": [
+          {
+            "unit_id": "S2",
+            "text": "Nia 1 has the pan 3.",
+            "type": "situation",
+            "entities": [
+              {"id": "Nia 1", "type": "concrete", "category": "person"},
+              {"id": "pan 3", "type": "concrete", "category": "artifact"}
+            ],
+            "pre_state": "W0"
+          }
+        ]
+      },
+      {
+        "raw": "The egg is raw.",
+        "units": [
+          {
+            "unit_id": "S3",
+            "text": "The egg 2 is raw.",
+            "type": "situation",
+            "entities": [{"id": "egg 2", "type": "concrete", "category": "substance"}],
+            "pre_state": "W0",
+            "adjectives": [["raw", "none", "entity"]]
+          }
+        ]
+      },
+      {
+        "raw": "If Nia has the pan, Nia can cook the egg with it.",
+        "units": [
+          {
+            "unit_id": "S4",
+            "text": "If Nia 1 has pan 3, Nia 1 can cook egg 2 with pan 3.",
+            "type": "strict_rule",
+            "entities": [
+              {"id": "Nia 1", "type": "concrete", "category": "person"},
+              {"id": "egg 2", "type": "concrete", "category": "substance"},
+              {"id": "pan 3", "type": "concrete", "category": "artifact"}
+            ],
+            "pre_state": "W0",
+            "action_reading": "availability",
+            "actions": [
+              {
+                "root": "cook",
+                "mode": "capability",
+                "roles": {"actor": "Nia 1", "target": "egg 2", "instrument": "pan 3", "result": "cooked"}
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "raw": "If the egg is raw, after Nia cooks it with the pan the egg is no longer raw.",
+        "units": [
+          {
+            "unit_id": "S5",
+            "text": "If egg 2 is raw, after Nia 1 cooks egg 2 with pan 3, egg 2 is no longer raw.",
+            "type": "strict_rule",
+            "entities": [
+              {"id": "Nia 1", "type": "concrete", "category": "person"},
+              {"id": "egg 2", "type": "concrete", "category": "substance"},
+              {"id": "pan 3", "type": "concrete", "category": "artifact"}
+            ],
+            "pre_state": "W0",
+            "action_reading": "effect",
+            "actions": [
+              {
+                "root": "cook",
+                "mode": "event",
+                "roles": {"actor": "Nia 1", "target": "egg 2", "instrument": "pan 3", "result": "cooked"}
+              }
+            ],
+            "adjectives": [["raw", "none", "entity"]]
+          }
+        ]
+      },
+      {
+        "raw": "After Nia cooks the egg with the pan, is the egg cooked and not raw?",
+        "units": [
+          {
+            "unit_id": "S6",
+            "text": "After Nia 1 cooks the egg 2 with the pan 3, is the egg 2 cooked and not raw?",
+            "type": "query",
+            "entities": [
+              {"id": "Nia 1", "type": "concrete", "category": "person"},
+              {"id": "egg 2", "type": "concrete", "category": "substance"},
+              {"id": "pan 3", "type": "concrete", "category": "artifact"}
+            ],
+            "action_reading": "verify_question",
+            "action_order": "sequence",
+            "actions": [
+              {
+                "root": "cook",
+                "mode": "event",
+                "roles": {"actor": "Nia 1", "target": "egg 2", "instrument": "pan 3", "result": "cooked"}
+              }
+            ],
+            "adjectives": [["cooked", "none", "entity"], ["raw", "none", "entity"]]
+          }
+        ]
+      }
+    ],
+    "route": "actions",
+    "stage2": {
+      "worlds": ["W0"],
+      "contexts": {},
+      "query_contexts": {},
+      "logic": [
+        ["@id", "S1", ["holds", "W0", ["isa", "cook", "Nia 1"]]],
+        ["@id", "S2", ["holds", "W0", ["and", ["isa", "pan", "pan 3"], ["have", "Nia 1", "pan 3"]]]],
+        ["@id", "S3",
+          ["holds", "W0", ["and", ["isa", "egg", "egg 2"], ["has property", "raw", "egg 2"]]]
+        ],
+        ["@id", "S4",
+          ["holds", "W0",
+            ["implies",
+              ["have", "Nia 1", "pan 3"],
+              ["can", "Nia 1", ["change", "Nia 1", "egg 2", "cooked", "pan 3"]]
+            ]
+          ]
+        ],
+        ["@id", "S5",
+          ["holds", "W0",
+            ["implies",
+              ["has property", "raw", "egg 2"],
+              ["after",
+                ["change", "Nia 1", "egg 2", "cooked", "pan 3"],
+                ["not", ["has property", "raw", "egg 2"]]
+              ]
+            ]
+          ]
+        ],
+        ["@id", "S6",
+          ["verify",
+            [["change", "Nia 1", "egg 2", "cooked", "pan 3"]],
+            ["and", ["has property", "cooked", "egg 2"], ["not", ["has property", "raw", "egg 2"]]]
+          ]
+        ]
+      ]
+    },
+    "expect": {"source": "supported", "queries": "ready"}
+  },
+  {
+    "id": "quantified_initial",
+    "purpose": "A conditional universal description stays at its world and does not become an enduring law.",
+    "authorship": "authored development example; no model response",
+    "text": "There is a hand. Block b is on the table. Every block on the table is red. The hand is empty. Block b is clear. After the hand takes block b, is b red?",
+    "stage1": [
+      {
+        "raw": "There is a hand.",
+        "units": [
+          {
+            "unit_id": "S1",
+            "text": "There is a hand 1.",
+            "type": "real",
+            "entities": [
+              {"id": "hand 1", "type": "concrete", "category": "artifact"},
+              {"id": "hand", "type": "generic", "category": "artifact"}
+            ],
+            "pre_state": "W0",
+            "confidence": 0.99
+          }
+        ]
+      },
+      {
+        "raw": "Block b is on the table.",
+        "units": [
+          {
+            "unit_id": "S2",
+            "text": "The block 2 is on table 4.",
+            "type": "situation",
+            "entities": [
+              {"id": "block 2", "type": "concrete", "category": "artifact"},
+              {"id": "table 4", "type": "concrete", "category": "artifact"},
+              {"id": "block", "type": "generic", "category": "artifact"},
+              {"id": "table", "type": "generic", "category": "artifact"}
+            ],
+            "pre_state": "W0"
+          }
+        ]
+      },
+      {
+        "raw": "Every block on the table is red.",
+        "units": [
+          {
+            "unit_id": "S3",
+            "text": "Every block on table 4 is red.",
+            "type": "situation",
+            "entities": [
+              {"id": "block", "type": "generic", "category": "artifact"},
+              {"id": "table 4", "type": "concrete", "category": "artifact"}
+            ],
+            "pre_state": "W0",
+            "adjectives": [["red", "none", "entity"]]
+          }
+        ]
+      },
+      {
+        "raw": "The hand is empty.",
+        "units": [
+          {
+            "unit_id": "S4",
+            "text": "The hand 1 is empty.",
+            "type": "situation",
+            "entities": [{"id": "hand 1", "type": "concrete", "category": "artifact"}],
+            "pre_state": "W0",
+            "adjectives": [["empty", "none", "entity"]]
+          }
+        ]
+      },
+      {
+        "raw": "Block b is clear.",
+        "units": [
+          {
+            "unit_id": "S5",
+            "text": "Block 2 is clear.",
+            "type": "situation",
+            "entities": [{"id": "block 2", "type": "concrete", "category": "artifact"}],
+            "pre_state": "W0",
+            "adjectives": [["clear", "none", "entity"]]
+          }
+        ]
+      },
+      {
+        "raw": "After the hand takes block b, is b red?",
+        "units": [
+          {
+            "unit_id": "S6",
+            "text": "After hand 1 takes block 2, is block 2 red?",
+            "type": "query",
+            "entities": [
+              {"id": "hand 1", "type": "concrete", "category": "artifact"},
+              {"id": "block 2", "type": "concrete", "category": "artifact"}
+            ],
+            "action_reading": "verify_question",
+            "action_order": "sequence",
+            "actions": [
+              {"root": "take", "mode": "event", "roles": {"actor": "hand 1", "target": "block 2"}}
+            ],
+            "adjectives": [["red", "none", "entity"]]
+          }
+        ]
+      }
+    ],
+    "route": "actions",
+    "stage2": {
+      "worlds": ["W0"],
+      "contexts": {},
+      "query_contexts": {},
+      "logic": [
+        ["@id", "S1", ["holds", "W0", ["isa", "hand", "hand 1"]]],
+        ["@id", "S2",
+          ["holds", "W0",
+            ["and",
+              ["isa", "block", "block 2"],
+              ["isa", "table", "table 4"],
+              ["is rel2", "on", "block 2", "table 4"]
+            ]
+          ]
+        ],
+        ["@id", "S3",
+          ["holds", "W0",
+            ["forall", "X",
+              ["implies",
+                ["and", ["isa", "block", "X"], ["is rel2", "on", "X", "table 4"]],
+                ["has property", "red", "X"]
+              ]
+            ]
+          ]
+        ],
+        ["@id", "S4", ["holds", "W0", ["has property", "empty", "hand 1"]]],
+        ["@id", "S5", ["holds", "W0", ["has property", "clear_top", "block 2"]]],
+        ["@id", "S6",
+          ["verify", [["take", "hand 1", "block 2"]], ["has property", "red", "block 2"]]
+        ]
+      ]
+    },
+    "expect": {"source": "supported", "queries": "ready", "forms": {"S3": "description_initial"}}
+  },
+  {
+    "id": "standing_computed",
+    "purpose": "An explicit enduring dependency is computed, not an initial stored property.",
+    "authorship": "authored development example; no model response",
+    "text": "Block b is red. At every state, a block is ready if it is red. Find a plan with block b ready.",
+    "stage1": [
+      {
+        "raw": "Block b is red.",
+        "units": [
+          {
+            "unit_id": "S1",
+            "text": "The b 2 is red.",
+            "type": "situation",
+            "entities": [
+              {"id": "b 2", "type": "concrete", "category": "artifact"},
+              {"id": "block", "type": "generic", "category": "artifact"}
+            ],
+            "pre_state": "W0",
+            "adjectives": [["red", "none", "entity"]]
+          }
+        ]
+      },
+      {
+        "raw": "At every state, a block is ready if it is red.",
+        "units": [
+          {
+            "unit_id": "S2",
+            "text": "At every state, a block is ready if that block is red.",
+            "type": "strict_rule",
+            "entities": [{"id": "block", "type": "generic", "category": "artifact"}],
+            "pre_state": "W0",
+            "adjectives": [["ready", "none", "entity"], ["red", "none", "entity"]]
+          }
+        ]
+      },
+      {
+        "raw": "Find a plan with block b ready.",
+        "units": [
+          {
+            "unit_id": "S3",
+            "text": "Find a plan with b 2 ready.",
+            "type": "query",
+            "entities": [{"id": "b 2", "type": "concrete", "category": "artifact"}],
+            "action_reading": "plan_question",
+            "adjectives": [["ready", "none", "entity"]]
+          }
+        ]
+      }
+    ],
+    "route": "actions",
+    "stage2": {
+      "worlds": ["W0"],
+      "contexts": {},
+      "query_contexts": {},
+      "logic": [
+        ["@id", "S1",
+          ["holds", "W0", ["and", ["isa", "block", "b 2"], ["has property", "red", "b 2"]]]
+        ],
+        ["@id", "S2",
+          ["holds", "W0",
+            ["state_law",
+              ["forall", "X",
+                ["implies",
+                  ["and", ["isa", "block", "X"], ["has property", "red", "X"]],
+                  ["has property", "ready", "X"]
+                ]
+              ]
+            ]
+          ]
+        ],
+        ["@id", "S3", ["plan", ["has property", "ready", "b 2"]]]
+      ]
+    },
+    "expect": {"source": "supported", "queries": "ready", "forms": {"S2": "state_law"}}
+  },
+  {
+    "id": "uncertain_source",
+    "purpose": "Copy probability, keep robot actor, add no public route; source evidence is compiler-owned.",
+    "authorship": "authored development example; no model response",
+    "text": "Robo is a robot. Robo is at Harbor. Robo can go from Harbor to Hilltown by bus with probability 0.8. Can Robo go from Harbor to Hilltown by bus now?",
+    "stage1": [
+      {
+        "raw": "Robo is a robot.",
+        "units": [
+          {
+            "unit_id": "S1",
+            "text": "Robo 1 is a robot.",
+            "type": "real",
+            "entities": [
+              {"id": "Robo 1", "type": "concrete", "category": "artifact"},
+              {"id": "robot", "type": "generic", "category": "artifact"}
+            ],
+            "pre_state": "W0"
+          }
+        ]
+      },
+      {
+        "raw": "Robo is at Harbor.",
+        "units": [
+          {
+            "unit_id": "S2",
+            "text": "Robo 1 is at Harbor 2.",
+            "type": "situation",
+            "entities": [
+              {"id": "Robo 1", "type": "concrete", "category": "artifact"},
+              {"id": "Harbor 2", "type": "concrete", "category": "place"}
+            ],
+            "pre_state": "W0"
+          }
+        ]
+      },
+      {
+        "raw": "Robo can go from Harbor to Hilltown by bus with probability 0.8.",
+        "units": [
+          {
+            "unit_id": "S3",
+            "text": "Robo 1 can go from Harbor 2 to Hilltown 3 by bus with probability 0.8.",
+            "type": "strict_rule",
+            "entities": [
+              {"id": "Robo 1", "type": "concrete", "category": "artifact"},
+              {"id": "Harbor 2", "type": "concrete", "category": "place"},
+              {"id": "Hilltown 3", "type": "concrete", "category": "place"}
+            ],
+            "pre_state": "W0",
+            "action_reading": "availability",
+            "confidence": 0.8,
+            "actions": [
+              {
+                "root": "go",
+                "mode": "capability",
+                "roles": {"actor": "Robo 1", "source": "Harbor 2", "destination": "Hilltown 3", "instrument": "bus"}
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "raw": "Can Robo go from Harbor to Hilltown by bus now?",
+        "units": [
+          {
+            "unit_id": "S4",
+            "text": "Can Robo 1 go from Harbor 2 to Hilltown 3 by bus now?",
+            "type": "query",
+            "entities": [
+              {"id": "Robo 1", "type": "concrete", "category": "artifact"},
+              {"id": "Harbor 2", "type": "concrete", "category": "place"},
+              {"id": "Hilltown 3", "type": "concrete", "category": "place"}
+            ],
+            "action_reading": "executable_question",
+            "actions": [
+              {
+                "root": "go",
+                "mode": "capability",
+                "roles": {"actor": "Robo 1", "source": "Harbor 2", "destination": "Hilltown 3", "instrument": "bus"}
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "route": "actions",
+    "stage2": {
+      "worlds": ["W0"],
+      "contexts": {},
+      "query_contexts": {},
+      "logic": [
+        ["@id", "S1", ["holds", "W0", ["isa", "robot", "Robo 1"]]],
+        ["@id", "S2", ["holds", "W0", ["is rel2", "located_at", "Robo 1", "Harbor 2"]]],
+        ["@id", "S3",
+          ["and",
+            ["holds", "W0", ["can", "Robo 1", ["move", "Robo 1", "Harbor 2", "Hilltown 3", "bus"]]],
+            ["@p", "S3", 0.8]
+          ]
+        ],
+        ["@id", "S4",
+          ["question", ["executable", ["move", "Robo 1", "Harbor 2", "Hilltown 3", "bus"]]]
+        ]
+      ]
+    },
+    "expect": {"source": "supported", "queries": "ready"}
+  },
+  {
+    "id": "only_by_restriction",
+    "purpose": "C5 worked form: only-by with an unstated origin binds the origin and the means with variables; the equality is on the means variable.",
+    "authorship": "prompt example written by Opus on 2026-09-28 for revision E; not a measured case",
+    "text": "Leo is at Westbrook. Leo can go to Northgate only by train. Find a plan for Leo to be at Northgate.",
+    "stage1": [
+      {
+        "raw": "Leo is at Westbrook.",
+        "units": [
+          {
+            "unit_id": "S1",
+            "text": "Leo 1 is at Westbrook 2.",
+            "type": "situation",
+            "entities": [
+              {"id": "Leo 1", "type": "concrete", "category": "person"},
+              {"id": "Westbrook 2", "type": "concrete", "category": "place"}
+            ],
+            "pre_state": "W0"
+          }
+        ]
+      },
+      {
+        "raw": "Leo can go to Northgate only by train.",
+        "units": [
+          {
+            "unit_id": "S2",
+            "text": "Leo 1 can go to Northgate 3 only by train.",
+            "type": "strict_rule",
+            "entities": [
+              {"id": "Leo 1", "type": "concrete", "category": "person"},
+              {"id": "Northgate 3", "type": "concrete", "category": "place"}
+            ],
+            "pre_state": "W0",
+            "action_reading": "restriction",
+            "actions": [
+              {
+                "root": "go",
+                "mode": "capability",
+                "roles": {"actor": "Leo 1", "destination": "Northgate 3", "instrument": "train"}
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "raw": "Find a plan for Leo to be at Northgate.",
+        "units": [
+          {
+            "unit_id": "S3",
+            "text": "Find a plan for Leo 1 to be at Northgate 3.",
+            "type": "query",
+            "entities": [
+              {"id": "Leo 1", "type": "concrete", "category": "person"},
+              {"id": "Northgate 3", "type": "concrete", "category": "place"}
+            ],
+            "action_reading": "plan_question"
+          }
+        ]
+      }
+    ],
+    "route": "actions",
+    "stage2": {
+      "worlds": ["W0"],
+      "contexts": {},
+      "query_contexts": {},
+      "logic": [
+        ["@id", "S1", ["holds", "W0", ["is rel2", "located_at", "Leo 1", "Westbrook 2"]]],
+        ["@id", "S2",
+          ["holds", "W0",
+            ["forall", "F",
+              ["forall", "M",
+                ["implies",
+                  ["executable", ["move", "Leo 1", "F", "Northgate 3", "M"]],
+                  ["=", "M", "train"]
+                ]
+              ]
+            ]
+          ]
+        ],
+        ["@id", "S3", ["plan", ["is rel2", "located_at", "Leo 1", "Northgate 3"]]]
+      ]
+    },
+    "expect": {"source": "unsupported", "queries": "unsupported_translation", "reason": "unsupported_restriction_scope"}
+  },
+  {
+    "id": "occurrence_not_permission",
+    "purpose": "An actual event in a planning passage is retained and rejected by the current fragment.",
+    "authorship": "authored development example; no model response Promoted to a prompt example in revision E (2026-09-28) after WP19; its WP19 model outputs were seen.",
+    "text": "Mira was at Harbor. Mira travelled from Harbor to Hilltown. Find a plan for Mira to be at Harbor.",
+    "stage1": [
+      {
+        "raw": "Mira was at Harbor.",
+        "units": [
+          {
+            "unit_id": "S1",
+            "text": "Mira 1 was at Harbor 2.",
+            "type": "situation",
+            "entities": [
+              {"id": "Mira 1", "type": "concrete", "category": "person"},
+              {"id": "Harbor 2", "type": "concrete", "category": "place"}
+            ],
+            "pre_state": "W0",
+            "time": "past"
+          }
+        ]
+      },
+      {
+        "raw": "Mira travelled from Harbor to Hilltown.",
+        "units": [
+          {
+            "unit_id": "S2",
+            "text": "Mira 1 travelled from Harbor 2 to Hilltown 3.",
+            "type": "situation",
+            "entities": [
+              {"id": "Mira 1", "type": "concrete", "category": "person"},
+              {"id": "Harbor 2", "type": "concrete", "category": "place"},
+              {"id": "Hilltown 3", "type": "concrete", "category": "place"}
+            ],
+            "pre_state": "W0",
+            "action_reading": "occurrence",
+            "actions": [
+              {
+                "root": "travel",
+                "mode": "event",
+                "roles": {"actor": "Mira 1", "source": "Harbor 2", "destination": "Hilltown 3"}
+              }
+            ],
+            "next_state": "W1",
+            "time": "past"
+          }
+        ]
+      },
+      {
+        "raw": "Find a plan for Mira to be at Harbor.",
+        "units": [
+          {
+            "unit_id": "S3",
+            "text": "Find a plan for Mira 1 to be at Harbor 2.",
+            "type": "query",
+            "entities": [
+              {"id": "Mira 1", "type": "concrete", "category": "person"},
+              {"id": "Harbor 2", "type": "concrete", "category": "place"}
+            ],
+            "action_reading": "plan_question",
+            "planning_root": "W1"
+          }
+        ]
+      }
+    ],
+    "route": "actions",
+    "stage2": {
+      "worlds": ["W0", "W1"],
+      "contexts": {"S1": {"tense": "past"}},
+      "query_contexts": {"S3": {"planning_root": "W1"}},
+      "logic": [
+        ["@id", "S1", ["holds", "W0", ["is rel2", "located_at", "Mira 1", "Harbor 2"]]],
+        ["@id", "S2",
+          ["holds", "W0",
+            ["exists", "E",
+              ["and",
+                ["has type", "E", "travel"],
+                ["has actor", "E", "Mira 1"],
+                ["has source", "E", "Harbor 2"],
+                ["has destination", "E", "Hilltown 3"],
+                ["has time", "E", "past"]
+              ]
+            ]
+          ]
+        ],
+        ["@id", "S3", ["plan", ["is rel2", "located_at", "Mira 1", "Harbor 2"]]]
+      ]
+    },
+    "expect": {"source": "unsupported", "queries": "unsupported_translation", "reason": "occurrence"}
+  },
+  {
+    "id": "world_selection",
+    "purpose": "Two explicit snapshots, query selects the earlier world; no action history is invented.",
+    "authorship": "authored development example; no model response Promoted to a prompt example in revision E (2026-09-28) after WP19; its WP19 model outputs were seen.",
+    "text": "In snapshot W0, Mira is at Harbor. In snapshot W1, Mira is at Hilltown. Starting from snapshot W0, can Mira eventually be at Harbor in exactly zero actions?",
+    "stage1": [
+      {
+        "raw": "In snapshot W0, Mira is at Harbor.",
+        "units": [
+          {
+            "unit_id": "S1",
+            "text": "In snapshot W0, Mira 1 is at Harbor 2.",
+            "type": "situation",
+            "entities": [
+              {"id": "Mira 1", "type": "concrete", "category": "person"},
+              {"id": "Harbor 2", "type": "concrete", "category": "place"}
+            ],
+            "pre_state": "W0"
+          }
+        ]
+      },
+      {
+        "raw": "In snapshot W1, Mira is at Hilltown.",
+        "units": [
+          {
+            "unit_id": "S2",
+            "text": "In snapshot W1, Mira 1 is at Hilltown 3.",
+            "type": "situation",
+            "entities": [
+              {"id": "Mira 1", "type": "concrete", "category": "person"},
+              {"id": "Hilltown 3", "type": "concrete", "category": "place"}
+            ],
+            "pre_state": "W1"
+          }
+        ]
+      },
+      {
+        "raw": "Starting from snapshot W0, can Mira eventually be at Harbor in exactly zero actions?",
+        "units": [
+          {
+            "unit_id": "S3",
+            "text": "Starting from snapshot W0, can Mira 1 eventually be at Harbor 2 in exactly zero actions?",
+            "type": "query",
+            "entities": [
+              {"id": "Mira 1", "type": "concrete", "category": "person"},
+              {"id": "Harbor 2", "type": "concrete", "category": "place"}
+            ],
+            "action_reading": "reachable_question",
+            "planning_root": "W0",
+            "step_bound": {"comparison": "exactly", "count": 0}
+          }
+        ]
+      }
+    ],
+    "route": "actions",
+    "stage2": {
+      "worlds": ["W0", "W1"],
+      "contexts": {},
+      "query_contexts": {"S3": {"planning_root": "W0"}},
+      "logic": [
+        ["@id", "S1", ["holds", "W0", ["is rel2", "located_at", "Mira 1", "Harbor 2"]]],
+        ["@id", "S2", ["holds", "W1", ["is rel2", "located_at", "Mira 1", "Hilltown 3"]]],
+        ["@id", "S3",
+          ["reachable", ["is rel2", "located_at", "Mira 1", "Harbor 2"], ["steps", "exactly", 0]]
+        ]
+      ]
+    },
+    "expect": {"source": "supported", "queries": "ready", "root": "W0"}
+  },
+  {
+    "id": "scope_and_knower",
+    "purpose": "Query selection passes through; context location scopes the assertion, not the object relation.",
+    "authorship": "authored development example; no model response Promoted to a prompt example in revision E (2026-09-28) after WP19; its WP19 model outputs were seen. Revision G (2026-09-29, round 3): S2 states lab at the first mention; S3 states token at the first mention.",
+    "text": "Lea is a person. The lab is a place. According to Lea, within the lab the token is red. According to Lea and within the lab, find a plan with the token red.",
+    "stage1": [
+      {
+        "raw": "Lea is a person.",
+        "units": [
+          {
+            "unit_id": "S1",
+            "text": "Lea 1 is a person.",
+            "type": "real",
+            "entities": [
+              {"id": "Lea 1", "type": "concrete", "category": "person"},
+              {"id": "person", "type": "generic", "category": "person"}
+            ],
+            "pre_state": "W0"
+          }
+        ]
+      },
+      {
+        "raw": "The lab is a place.",
+        "units": [
+          {
+            "unit_id": "S2",
+            "text": "The lab 2 is a place.",
+            "type": "real",
+            "entities": [
+              {"id": "lab 2", "type": "concrete", "category": "place"},
+              {"id": "place", "type": "generic", "category": "place"}
+            ],
+            "pre_state": "W0"
+          }
+        ]
+      },
+      {
+        "raw": "According to Lea, within the lab the token is red.",
+        "units": [
+          {
+            "unit_id": "S3",
+            "text": "According to Lea 1, within the lab 2 the token 3 is red.",
+            "type": "situation",
+            "entities": [
+              {"id": "Lea 1", "type": "concrete", "category": "person"},
+              {"id": "lab 2", "type": "concrete", "category": "place"},
+              {"id": "token 3", "type": "concrete", "category": "artifact"}
+            ],
+            "pre_state": "W0",
+            "context": {"location": "lab 2", "location_role": "scope", "knower": "Lea 1"},
+            "adjectives": [["red", "none", "entity"]]
+          }
+        ]
+      },
+      {
+        "raw": "According to Lea and within the lab, find a plan with the token red.",
+        "units": [
+          {
+            "unit_id": "S4",
+            "text": "According to Lea 1 and within the lab 2, find a plan with the token 3 red.",
+            "type": "query",
+            "entities": [
+              {"id": "Lea 1", "type": "concrete", "category": "person"},
+              {"id": "lab 2", "type": "concrete", "category": "place"},
+              {"id": "token 3", "type": "concrete", "category": "artifact"}
+            ],
+            "action_reading": "plan_question",
+            "ambient": "lab 2",
+            "knower": "Lea 1",
+            "adjectives": [["red", "none", "entity"]]
+          }
+        ]
+      }
+    ],
+    "route": "actions",
+    "stage2": {
+      "worlds": ["W0"],
+      "contexts": {"S3": {"location": "lab 2", "location_role": "scope", "knower": "Lea 1"}},
+      "query_contexts": {"S4": {"ambient": "lab 2", "knower": "Lea 1"}},
+      "logic": [
+        ["@id", "S1", ["holds", "W0", ["isa", "person", "Lea 1"]]],
+        ["@id", "S2", ["holds", "W0", ["and", ["isa", "lab", "lab 2"], ["isa", "place", "lab 2"]]]],
+        ["@id", "S3",
+          ["holds", "W0", ["and", ["isa", "token", "token 3"], ["has property", "red", "token 3"]]]
+        ],
+        ["@id", "S4", ["plan", ["has property", "red", "token 3"]]]
+      ]
+    },
+    "expect": {"source": "supported", "queries": "ready", "excluded": []}
+  },
+  {
+    "id": "open_values_unspecified_tool",
+    "purpose": "Unknown verbs retain their stated result, and an omitted tool is unspecified.",
+    "authorship": "authored development example; no model response Revision G (2026-09-29, round 3): types S2: gronk for the referents its law sentence introduces.",
+    "text": "Zed is a robot. Zed can zap the gronk so that it becomes luminous. Find a plan with the gronk luminous.",
+    "stage1": [
+      {
+        "raw": "Zed is a robot.",
+        "units": [
+          {
+            "unit_id": "S1",
+            "text": "Zed 1 is a robot.",
+            "type": "real",
+            "entities": [
+              {"id": "Zed 1", "type": "concrete", "category": "artifact"},
+              {"id": "robot", "type": "generic", "category": "artifact"}
+            ],
+            "pre_state": "W0"
+          }
+        ]
+      },
+      {
+        "raw": "Zed can zap the gronk so that it becomes luminous.",
+        "units": [
+          {
+            "unit_id": "S2",
+            "text": "Zed 1 can zap the gronk 2 so that it becomes luminous.",
+            "type": "strict_rule",
+            "entities": [
+              {"id": "Zed 1", "type": "concrete", "category": "artifact"},
+              {"id": "gronk 2", "type": "concrete", "category": "artifact"}
+            ],
+            "pre_state": "W0",
+            "action_reading": "availability",
+            "actions": [
+              {
+                "root": "zap",
+                "mode": "capability",
+                "roles": {"actor": "Zed 1", "target": "gronk 2", "result": "luminous"}
+              }
+            ],
+            "adjectives": [["luminous", "none", "entity"]]
+          }
+        ]
+      },
+      {
+        "raw": "Find a plan with the gronk luminous.",
+        "units": [
+          {
+            "unit_id": "S3",
+            "text": "Find a plan with the gronk 2 luminous.",
+            "type": "query",
+            "entities": [{"id": "gronk 2", "type": "concrete", "category": "artifact"}],
+            "action_reading": "plan_question",
+            "adjectives": [["luminous", "none", "entity"]]
+          }
+        ]
+      }
+    ],
+    "route": "actions",
+    "stage2": {
+      "worlds": ["W0"],
+      "contexts": {},
+      "query_contexts": {},
+      "types": {"S2": [["isa", "gronk", "gronk 2"]]},
+      "logic": [
+        ["@id", "S1", ["holds", "W0", ["isa", "robot", "Zed 1"]]],
+        ["@id", "S2",
+          ["holds", "W0",
+            ["can", "Zed 1", ["change", "Zed 1", "gronk 2", "luminous", "unspecified"]]
+          ]
+        ],
+        ["@id", "S3", ["plan", ["has property", "luminous", "gronk 2"]]]
+      ]
+    },
+    "expect": {"source": "supported", "queries": "ready"}
+  },
+  {
+    "id": "dated_descriptions",
+    "route": "actions",
+    "purpose": "Two dated descriptions: the date stays in the Stage-1 time field, the tense goes to the context record, and neither takes @time; the past fact leaves the current views, the present one stays.",
+    "authorship": "authored prompt example by Opus on 2026-09-29 for round 3 (prompt revision G); not a measured case",
+    "text": "On Tuesday the lamp was lit. Today the lamp is dark. Lea can light the lamp. Find a plan with the lamp lit.",
+    "stage1": [
+      {
+        "raw": "On Tuesday the lamp was lit.",
+        "units": [
+          {
+            "unit_id": "S1",
+            "text": "On Tuesday the lamp 1 was lit.",
+            "type": "situation",
+            "entities": [{"id": "lamp 1", "type": "concrete", "category": "artifact"}],
+            "pre_state": "W0",
+            "adjectives": [["lit", "none", "entity"]],
+            "time": "on Tuesday",
+            "state_tense": "past"
+          }
+        ]
+      },
+      {
+        "raw": "Today the lamp is dark.",
+        "units": [
+          {
+            "unit_id": "S2",
+            "text": "Today the lamp 1 is dark.",
+            "type": "situation",
+            "entities": [{"id": "lamp 1", "type": "concrete", "category": "artifact"}],
+            "pre_state": "W0",
+            "adjectives": [["dark", "none", "entity"]],
+            "time": "today",
+            "state_tense": "present"
+          }
+        ]
+      },
+      {
+        "raw": "Lea can light the lamp.",
+        "units": [
+          {
+            "unit_id": "S3",
+            "text": "Lea 2 can light the lamp 1.",
+            "type": "strict_rule",
+            "entities": [
+              {"id": "Lea 2", "type": "concrete", "category": "person"},
+              {"id": "lamp 1", "type": "concrete", "category": "artifact"}
+            ],
+            "pre_state": "W0",
+            "action_reading": "availability",
+            "actions": [
+              {
+                "root": "light",
+                "mode": "capability",
+                "roles": {"actor": "Lea 2", "target": "lamp 1"}
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "raw": "Find a plan with the lamp lit.",
+        "units": [
+          {
+            "unit_id": "S4",
+            "text": "Find a plan with the lamp 1 lit.",
+            "type": "query",
+            "entities": [{"id": "lamp 1", "type": "concrete", "category": "artifact"}],
+            "action_reading": "plan_question",
+            "adjectives": [["lit", "none", "entity"]]
+          }
+        ]
+      }
+    ],
+    "stage2": {
+      "worlds": ["W0"],
+      "contexts": {"S1": {"tense": "past"}, "S2": {"tense": "present"}},
+      "query_contexts": {},
+      "logic": [
+        ["@id", "S1",
+          ["holds", "W0", ["and", ["isa", "lamp", "lamp 1"], ["has property", "lit", "lamp 1"]]]
+        ],
+        ["@id", "S2", ["holds", "W0", ["has property", "dark", "lamp 1"]]],
+        ["@id", "S3",
+          ["holds", "W0", ["can", "Lea 2", ["change", "Lea 2", "lamp 1", "lit", "unspecified"]]]
+        ],
+        ["@id", "S4", ["plan", ["has property", "lit", "lamp 1"]]]
+      ]
+    },
+    "expect": {
+      "source": "supported",
+      "queries": "ready",
+      "excluded": [{"unit": "S1", "reason": "underspecified_temporal_root"}]
+    }
+  },
+  {
+    "id": "bounded_permission",
+    "route": "actions",
+    "purpose": "A permission with a stated validity phrase keeps it in @time inside holds and gets the temporal-scope diagnostic; the gate, first named in the permission, has its class in types.",
+    "authorship": "authored prompt example by Opus on 2026-09-29 for round 3 (prompt revision G); not a measured case",
+    "text": "Robo is a robot. Until Friday Robo can open the gate. Find a plan with the gate open.",
+    "stage1": [
+      {
+        "raw": "Robo is a robot.",
+        "units": [
+          {
+            "unit_id": "S1",
+            "text": "Robo 1 is a robot.",
+            "type": "real",
+            "entities": [
+              {"id": "Robo 1", "type": "concrete", "category": "artifact"},
+              {"id": "robot", "type": "generic", "category": "artifact"}
+            ],
+            "pre_state": "W0"
+          }
+        ]
+      },
+      {
+        "raw": "Until Friday Robo can open the gate.",
+        "units": [
+          {
+            "unit_id": "S2",
+            "text": "Until Friday Robo 1 can open the gate 2.",
+            "type": "strict_rule",
+            "entities": [
+              {"id": "Robo 1", "type": "concrete", "category": "artifact"},
+              {"id": "gate 2", "type": "concrete", "category": "artifact"}
+            ],
+            "pre_state": "W0",
+            "action_reading": "availability",
+            "time": "until Friday",
+            "actions": [
+              {
+                "root": "open",
+                "mode": "capability",
+                "roles": {"actor": "Robo 1", "target": "gate 2"}
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "raw": "Find a plan with the gate open.",
+        "units": [
+          {
+            "unit_id": "S3",
+            "text": "Find a plan with the gate 2 open.",
+            "type": "query",
+            "entities": [{"id": "gate 2", "type": "concrete", "category": "artifact"}],
+            "action_reading": "plan_question",
+            "adjectives": [["open", "none", "entity"]]
+          }
+        ]
+      }
+    ],
+    "stage2": {
+      "worlds": ["W0"],
+      "contexts": {},
+      "query_contexts": {},
+      "types": {"S2": [["isa", "gate", "gate 2"]]},
+      "logic": [
+        ["@id", "S1", ["holds", "W0", ["isa", "robot", "Robo 1"]]],
+        ["@id", "S2",
+          ["holds", "W0",
+            ["@time", "until Friday",
+              ["can", "Robo 1", ["change", "Robo 1", "gate 2", "open", "unspecified"]]
+            ]
+          ]
+        ],
+        ["@id", "S3", ["plan", ["has property", "open", "gate 2"]]]
+      ]
+    },
+    "expect": {"source": "unsupported", "queries": "unsupported_translation", "reason": "unexpressible_temporal_permission_scope"}
+  },
+  {
+    "id": "stated_guard",
+    "route": "actions",
+    "purpose": "A class condition that the rule's sentence states about a named individual stays in the antecedent; the class the first sentence states is a fact; no person class is written for Ivo.",
+    "authorship": "authored prompt example by Opus on 2026-09-29 for round 3 (prompt revision G); not a measured case",
+    "text": "Ivo is a pilot. Ivo is at Harbor. If Ivo is a pilot, Ivo can travel from Harbor to Hilltown by plane. Can Ivo eventually be at Hilltown?",
+    "stage1": [
+      {
+        "raw": "Ivo is a pilot.",
+        "units": [
+          {
+            "unit_id": "S1",
+            "text": "Ivo 1 is a pilot.",
+            "type": "real",
+            "entities": [
+              {"id": "Ivo 1", "type": "concrete", "category": "person"},
+              {"id": "pilot", "type": "generic", "category": "person"}
+            ],
+            "pre_state": "W0"
+          }
+        ]
+      },
+      {
+        "raw": "Ivo is at Harbor.",
+        "units": [
+          {
+            "unit_id": "S2",
+            "text": "Ivo 1 is at Harbor 2.",
+            "type": "situation",
+            "entities": [
+              {"id": "Ivo 1", "type": "concrete", "category": "person"},
+              {"id": "Harbor 2", "type": "concrete", "category": "place"}
+            ],
+            "pre_state": "W0"
+          }
+        ]
+      },
+      {
+        "raw": "If Ivo is a pilot, Ivo can travel from Harbor to Hilltown by plane.",
+        "units": [
+          {
+            "unit_id": "S3",
+            "text": "If Ivo 1 is a pilot, Ivo 1 can travel from Harbor 2 to Hilltown 3 by plane.",
+            "type": "strict_rule",
+            "entities": [
+              {"id": "Ivo 1", "type": "concrete", "category": "person"},
+              {"id": "pilot", "type": "generic", "category": "person"},
+              {"id": "Harbor 2", "type": "concrete", "category": "place"},
+              {"id": "Hilltown 3", "type": "concrete", "category": "place"}
+            ],
+            "pre_state": "W0",
+            "action_reading": "availability",
+            "actions": [
+              {
+                "root": "travel",
+                "mode": "capability",
+                "roles": {"actor": "Ivo 1", "source": "Harbor 2", "destination": "Hilltown 3", "instrument": "plane"}
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "raw": "Can Ivo eventually be at Hilltown?",
+        "units": [
+          {
+            "unit_id": "S4",
+            "text": "Can Ivo 1 eventually be at Hilltown 3?",
+            "type": "query",
+            "entities": [
+              {"id": "Ivo 1", "type": "concrete", "category": "person"},
+              {"id": "Hilltown 3", "type": "concrete", "category": "place"}
+            ],
+            "action_reading": "reachable_question"
+          }
+        ]
+      }
+    ],
+    "stage2": {
+      "worlds": ["W0"],
+      "contexts": {},
+      "query_contexts": {},
+      "logic": [
+        ["@id", "S1", ["holds", "W0", ["isa", "pilot", "Ivo 1"]]],
+        ["@id", "S2", ["holds", "W0", ["is rel2", "located_at", "Ivo 1", "Harbor 2"]]],
+        ["@id", "S3",
+          ["holds", "W0",
+            ["implies",
+              ["isa", "pilot", "Ivo 1"],
+              ["can", "Ivo 1", ["move", "Ivo 1", "Harbor 2", "Hilltown 3", "plane"]]
+            ]
+          ]
+        ],
+        ["@id", "S4", ["reachable", ["is rel2", "located_at", "Ivo 1", "Hilltown 3"]]]
+      ]
+    },
+    "expect": {"source": "supported", "queries": "ready"}
+  },
+  {
+    "id": "hand_in_permission",
+    "route": "actions",
+    "purpose": "A hand and a block first named in a permission: their classes go to the envelope field types, the permission holds its rule only; the table, first named in a description, is typed there.",
+    "authorship": "authored prompt example by Opus on 2026-09-29 for round 3 (prompt revision G); not a measured case",
+    "text": "The robot hand can take block a. Block a is on the table. Nothing is on top of block a. The robot hand is empty. Find a plan with the robot hand holding block a.",
+    "stage1": [
+      {
+        "raw": "The robot hand can take block a.",
+        "units": [
+          {
+            "unit_id": "S1",
+            "text": "The robot hand 1 can take block a 2.",
+            "type": "strict_rule",
+            "entities": [
+              {"id": "robot hand 1", "type": "concrete", "category": "artifact"},
+              {"id": "a 2", "type": "concrete", "category": "artifact"}
+            ],
+            "pre_state": "W0",
+            "action_reading": "availability",
+            "actions": [
+              {
+                "root": "take",
+                "mode": "capability",
+                "roles": {"actor": "robot hand 1", "target": "a 2"}
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "raw": "Block a is on the table.",
+        "units": [
+          {
+            "unit_id": "S2",
+            "text": "Block a 2 is on the table 3.",
+            "type": "situation",
+            "entities": [
+              {"id": "a 2", "type": "concrete", "category": "artifact"},
+              {"id": "table 3", "type": "concrete", "category": "artifact"}
+            ],
+            "pre_state": "W0"
+          }
+        ]
+      },
+      {
+        "raw": "Nothing is on top of block a.",
+        "units": [
+          {
+            "unit_id": "S3",
+            "text": "Nothing is on top of block a 2.",
+            "type": "situation",
+            "entities": [{"id": "a 2", "type": "concrete", "category": "artifact"}],
+            "pre_state": "W0"
+          }
+        ]
+      },
+      {
+        "raw": "The robot hand is empty.",
+        "units": [
+          {
+            "unit_id": "S4",
+            "text": "The robot hand 1 is empty.",
+            "type": "situation",
+            "entities": [{"id": "robot hand 1", "type": "concrete", "category": "artifact"}],
+            "pre_state": "W0",
+            "adjectives": [["empty", "none", "entity"]]
+          }
+        ]
+      },
+      {
+        "raw": "Find a plan with the robot hand holding block a.",
+        "units": [
+          {
+            "unit_id": "S5",
+            "text": "Find a plan with the robot hand 1 holding block a 2.",
+            "type": "query",
+            "entities": [
+              {"id": "robot hand 1", "type": "concrete", "category": "artifact"},
+              {"id": "a 2", "type": "concrete", "category": "artifact"}
+            ],
+            "action_reading": "plan_question"
+          }
+        ]
+      }
+    ],
+    "stage2": {
+      "worlds": ["W0"],
+      "contexts": {},
+      "query_contexts": {},
+      "types": {"S1": [["isa", "hand", "robot hand 1"], ["isa", "block", "a 2"]]},
+      "logic": [
+        ["@id", "S1", ["holds", "W0", ["can", "robot hand 1", ["take", "robot hand 1", "a 2"]]]],
+        ["@id", "S2",
+          ["holds", "W0", ["and", ["isa", "table", "table 3"], ["is rel2", "on", "a 2", "table 3"]]]
+        ],
+        ["@id", "S3", ["holds", "W0", ["has property", "clear_top", "a 2"]]],
+        ["@id", "S4", ["holds", "W0", ["has property", "empty", "robot hand 1"]]],
+        ["@id", "S5", ["plan", ["is rel2", "holding", "robot hand 1", "a 2"]]]
+      ]
+    },
+    "expect": {"source": "supported", "queries": "ready"}
+  },
+  {
+    "id": "normal_rule_and_denial",
+    "route": "actions",
+    "purpose": "A default permission has normally on its can head, inside the quantifier and the implication, and no @p for the convention confidence 0.98; a class denial is not(can(...)); the fence, first named in the default, has its class in types.",
+    "authorship": "authored prompt example by Opus on 2026-09-29 for round 3 (prompt revision G); not a measured case",
+    "text": "Normally a painter can paint the fence red. No trainee can paint the fence red. Lin is a painter. Can Lin paint the fence red now?",
+    "stage1": [
+      {
+        "raw": "Normally a painter can paint the fence red.",
+        "units": [
+          {
+            "unit_id": "S1",
+            "text": "Normally a painter can paint the fence 1 red.",
+            "type": "normal_rule",
+            "entities": [
+              {"id": "painter", "type": "generic", "category": "person"},
+              {"id": "fence 1", "type": "concrete", "category": "artifact"}
+            ],
+            "pre_state": "W0",
+            "action_reading": "availability",
+            "confidence": 0.98,
+            "adjectives": [["red", "none", "entity"]],
+            "actions": [
+              {
+                "root": "paint",
+                "mode": "capability",
+                "roles": {"actor": "painter", "target": "fence 1", "result": "red"}
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "raw": "No trainee can paint the fence red.",
+        "units": [
+          {
+            "unit_id": "S2",
+            "text": "No trainee can paint the fence 1 red.",
+            "type": "strict_rule",
+            "entities": [
+              {"id": "trainee", "type": "generic", "category": "person"},
+              {"id": "fence 1", "type": "concrete", "category": "artifact"}
+            ],
+            "pre_state": "W0",
+            "action_reading": "availability",
+            "adjectives": [["red", "none", "entity"]],
+            "actions": [
+              {
+                "root": "paint",
+                "mode": "capability",
+                "roles": {"actor": "trainee", "target": "fence 1", "result": "red"}
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "raw": "Lin is a painter.",
+        "units": [
+          {
+            "unit_id": "S3",
+            "text": "Lin 2 is a painter.",
+            "type": "real",
+            "entities": [
+              {"id": "Lin 2", "type": "concrete", "category": "person"},
+              {"id": "painter", "type": "generic", "category": "person"}
+            ],
+            "pre_state": "W0"
+          }
+        ]
+      },
+      {
+        "raw": "Can Lin paint the fence red now?",
+        "units": [
+          {
+            "unit_id": "S4",
+            "text": "Can Lin 2 paint the fence 1 red now?",
+            "type": "query",
+            "entities": [
+              {"id": "Lin 2", "type": "concrete", "category": "person"},
+              {"id": "fence 1", "type": "concrete", "category": "artifact"}
+            ],
+            "action_reading": "executable_question",
+            "actions": [
+              {
+                "root": "paint",
+                "mode": "capability",
+                "roles": {"actor": "Lin 2", "target": "fence 1", "result": "red"}
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "stage2": {
+      "worlds": ["W0"],
+      "contexts": {},
+      "query_contexts": {},
+      "types": {"S1": [["isa", "fence", "fence 1"]]},
+      "logic": [
+        ["@id", "S1",
+          ["holds", "W0",
+            ["forall", "X",
+              ["implies",
+                ["isa", "painter", "X"],
+                ["normally", ["can", "X", ["change", "X", "fence 1", "red", "unspecified"]]]
+              ]
+            ]
+          ]
+        ],
+        ["@id", "S2",
+          ["holds", "W0",
+            ["forall", "X",
+              ["implies",
+                ["isa", "trainee", "X"],
+                ["not", ["can", "X", ["change", "X", "fence 1", "red", "unspecified"]]]
+              ]
+            ]
+          ]
+        ],
+        ["@id", "S3", ["holds", "W0", ["isa", "painter", "Lin 2"]]],
+        ["@id", "S4",
+          ["question", ["executable", ["change", "Lin 2", "fence 1", "red", "unspecified"]]]
+        ]
+      ]
+    },
+    "expect": {"source": "supported", "queries": "ready"}
+  },
+  {
+    "id": "movement_rule_without_endpoints",
+    "route": "actions",
+    "purpose": "A class movement rule that states no origin or destination binds both with forall outside its condition; unspecified is no endpoint. The rule selects the public template, which reads the stated connection.",
+    "authorship": "authored prompt example by Opus on 2026-09-29 for round 4 (prompt revision H, P1); not a measured case",
+    "text": "Rex is a rover. Rex is at Northport. A taxi service goes from Northport to Southport. Every rover can travel by taxi. Can Rex eventually be at Southport?",
+    "stage1": [
+      {
+        "raw": "Rex is a rover.",
+        "units": [
+          {
+            "unit_id": "S1",
+            "text": "Rex 1 is a rover.",
+            "type": "real",
+            "entities": [
+              {"id": "Rex 1", "type": "concrete", "category": "artifact"},
+              {"id": "rover", "type": "generic", "category": "artifact"}
+            ],
+            "pre_state": "W0"
+          }
+        ]
+      },
+      {
+        "raw": "Rex is at Northport.",
+        "units": [
+          {
+            "unit_id": "S2",
+            "text": "Rex 1 is at Northport 2.",
+            "type": "situation",
+            "entities": [
+              {"id": "Rex 1", "type": "concrete", "category": "artifact"},
+              {"id": "Northport 2", "type": "concrete", "category": "place"}
+            ],
+            "pre_state": "W0"
+          }
+        ]
+      },
+      {
+        "raw": "A taxi service goes from Northport to Southport.",
+        "units": [
+          {
+            "unit_id": "S3",
+            "text": "A taxi service goes from Northport 2 to Southport 3.",
+            "type": "real",
+            "entities": [
+              {"id": "Northport 2", "type": "concrete", "category": "place"},
+              {"id": "Southport 3", "type": "concrete", "category": "place"}
+            ],
+            "pre_state": "W0",
+            "confidence": 0.99
+          }
+        ]
+      },
+      {
+        "raw": "Every rover can travel by taxi.",
+        "units": [
+          {
+            "unit_id": "S4",
+            "text": "Every rover can travel by taxi.",
+            "type": "strict_rule",
+            "entities": [{"id": "rover", "type": "generic", "category": "artifact"}],
+            "pre_state": "W0",
+            "action_reading": "availability",
+            "actions": [
+              {
+                "root": "travel",
+                "mode": "capability",
+                "roles": {"actor": "rover", "instrument": "taxi"}
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "raw": "Can Rex eventually be at Southport?",
+        "units": [
+          {
+            "unit_id": "S5",
+            "text": "Can Rex 1 eventually be at Southport 3?",
+            "type": "query",
+            "entities": [
+              {"id": "Rex 1", "type": "concrete", "category": "artifact"},
+              {"id": "Southport 3", "type": "concrete", "category": "place"}
+            ],
+            "action_reading": "reachable_question"
+          }
+        ]
+      }
+    ],
+    "stage2": {
+      "worlds": ["W0"],
+      "contexts": {},
+      "query_contexts": {},
+      "logic": [
+        ["@id", "S1", ["holds", "W0", ["isa", "rover", "Rex 1"]]],
+        ["@id", "S2", ["holds", "W0", ["is rel2", "located_at", "Rex 1", "Northport 2"]]],
+        ["@id", "S3", ["holds", "W0", ["connected", "Northport 2", "Southport 3", "taxi"]]],
+        ["@id", "S4",
+          ["holds", "W0",
+            ["forall", "A",
+              ["forall", "F",
+                ["forall", "T",
+                  ["implies", ["isa", "rover", "A"], ["can", "A", ["move", "A", "F", "T", "taxi"]]]
+                ]
+              ]
+            ]
+          ]
+        ],
+        ["@id", "S5", ["reachable", ["is rel2", "located_at", "Rex 1", "Southport 3"]]]
+      ]
+    },
+    "expect": {"source": "supported", "queries": "ready"}
+  },
+  {
+    "id": "denial_without_endpoints",
+    "purpose": "A plain cannot-sentence is a denial (availability); travel by a means is a move whatever the verb; the denial binds the unstated endpoints with forall.",
+    "authorship": "authored for prompt revision I (Opus, 2026-09-30); no model response",
+    "text": "Tova is a toddler. Tova is at Pinecrest. A ferry service goes from Pinecrest to Riverton. Toddlers cannot ride the ferry. Can Tova ride the ferry from Pinecrest to Riverton now?",
+    "stage1": [
+      {
+        "raw": "Tova is a toddler.",
+        "units": [
+          {
+            "unit_id": "S1",
+            "text": "Tova 1 is a toddler.",
+            "type": "real",
+            "entities": [
+              {"id": "Tova 1", "type": "concrete", "category": "person"},
+              {"id": "toddler", "type": "generic", "category": "person"}
+            ],
+            "pre_state": "W0"
+          }
+        ]
+      },
+      {
+        "raw": "Tova is at Pinecrest.",
+        "units": [
+          {
+            "unit_id": "S2",
+            "text": "Tova 1 is at Pinecrest 2.",
+            "type": "situation",
+            "entities": [
+              {"id": "Tova 1", "type": "concrete", "category": "person"},
+              {"id": "Pinecrest 2", "type": "concrete", "category": "place"}
+            ],
+            "pre_state": "W0"
+          }
+        ]
+      },
+      {
+        "raw": "A ferry service goes from Pinecrest to Riverton.",
+        "units": [
+          {
+            "unit_id": "S3",
+            "text": "A ferry service goes from Pinecrest 2 to Riverton 3.",
+            "type": "real",
+            "entities": [
+              {"id": "Pinecrest 2", "type": "concrete", "category": "place"},
+              {"id": "Riverton 3", "type": "concrete", "category": "place"}
+            ],
+            "pre_state": "W0",
+            "confidence": 0.99
+          }
+        ]
+      },
+      {
+        "raw": "Toddlers cannot ride the ferry.",
+        "units": [
+          {
+            "unit_id": "S4",
+            "text": "Toddlers cannot ride the ferry.",
+            "type": "strict_rule",
+            "entities": [{"id": "toddler", "type": "generic", "category": "person"}],
+            "pre_state": "W0",
+            "action_reading": "availability",
+            "actions": [
+              {
+                "root": "ride",
+                "mode": "capability",
+                "roles": {"actor": "toddler", "instrument": "ferry"}
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "raw": "Can Tova ride the ferry from Pinecrest to Riverton now?",
+        "units": [
+          {
+            "unit_id": "S5",
+            "text": "Can Tova 1 ride the ferry from Pinecrest 2 to Riverton 3 now?",
+            "type": "query",
+            "entities": [
+              {"id": "Tova 1", "type": "concrete", "category": "person"},
+              {"id": "Pinecrest 2", "type": "concrete", "category": "place"},
+              {"id": "Riverton 3", "type": "concrete", "category": "place"}
+            ],
+            "action_reading": "executable_question",
+            "actions": [
+              {
+                "root": "ride",
+                "mode": "capability",
+                "roles": {"actor": "Tova 1", "source": "Pinecrest 2", "destination": "Riverton 3", "instrument": "ferry"}
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "stage2": {
+      "worlds": ["W0"],
+      "contexts": {},
+      "query_contexts": {},
+      "logic": [
+        ["@id", "S1", ["holds", "W0", ["isa", "toddler", "Tova 1"]]],
+        ["@id", "S2", ["holds", "W0", ["is rel2", "located_at", "Tova 1", "Pinecrest 2"]]],
+        ["@id", "S3", ["holds", "W0", ["connected", "Pinecrest 2", "Riverton 3", "ferry"]]],
+        ["@id", "S4",
+          ["holds", "W0",
+            ["forall", "A",
+              ["forall", "F",
+                ["forall", "T",
+                  ["implies",
+                    ["isa", "toddler", "A"],
+                    ["not", ["can", "A", ["move", "A", "F", "T", "ferry"]]]
+                  ]
+                ]
+              ]
+            ]
+          ]
+        ],
+        ["@id", "S5",
+          ["question", ["executable", ["move", "Tova 1", "Pinecrest 2", "Riverton 3", "ferry"]]]
+        ]
+      ]
+    },
+    "route": "actions",
+    "expect": {"source": "supported", "queries": "ready", "forms": {"S4": "denial"}},
+    "revision": "I",
+    "rules": ["Q1", "Q2"],
+    "answer": "No."
+  },
+  {
+    "id": "conditional_denial",
+    "purpose": "A denial with a condition on who is still a denial (availability); cannot unless, only if and requires stay restrictions.",
+    "authorship": "authored for prompt revision I (Opus, 2026-09-30); no model response",
+    "text": "Esko is a sailor. Esko is at Lakeview. A ship service goes from Lakeview to Stonebridge. Esko is not certified. A sailor who is not certified cannot travel by ship. Can Esko travel from Lakeview to Stonebridge by ship now?",
+    "stage1": [
+      {
+        "raw": "Esko is a sailor.",
+        "units": [
+          {
+            "unit_id": "S1",
+            "text": "Esko 1 is a sailor.",
+            "type": "real",
+            "entities": [
+              {"id": "Esko 1", "type": "concrete", "category": "person"},
+              {"id": "sailor", "type": "generic", "category": "person"}
+            ],
+            "pre_state": "W0"
+          }
+        ]
+      },
+      {
+        "raw": "Esko is at Lakeview.",
+        "units": [
+          {
+            "unit_id": "S2",
+            "text": "Esko 1 is at Lakeview 2.",
+            "type": "situation",
+            "entities": [
+              {"id": "Esko 1", "type": "concrete", "category": "person"},
+              {"id": "Lakeview 2", "type": "concrete", "category": "place"}
+            ],
+            "pre_state": "W0"
+          }
+        ]
+      },
+      {
+        "raw": "A ship service goes from Lakeview to Stonebridge.",
+        "units": [
+          {
+            "unit_id": "S3",
+            "text": "A ship service goes from Lakeview 2 to Stonebridge 3.",
+            "type": "real",
+            "entities": [
+              {"id": "Lakeview 2", "type": "concrete", "category": "place"},
+              {"id": "Stonebridge 3", "type": "concrete", "category": "place"}
+            ],
+            "pre_state": "W0",
+            "confidence": 0.99
+          }
+        ]
+      },
+      {
+        "raw": "Esko is not certified.",
+        "units": [
+          {
+            "unit_id": "S4",
+            "text": "Esko 1 is not certified.",
+            "type": "situation",
+            "entities": [{"id": "Esko 1", "type": "concrete", "category": "person"}],
+            "pre_state": "W0"
+          }
+        ]
+      },
+      {
+        "raw": "A sailor who is not certified cannot travel by ship.",
+        "units": [
+          {
+            "unit_id": "S5",
+            "text": "A sailor who is not certified cannot travel by ship.",
+            "type": "strict_rule",
+            "entities": [{"id": "sailor", "type": "generic", "category": "person"}],
+            "pre_state": "W0",
+            "action_reading": "availability",
+            "actions": [
+              {
+                "root": "travel",
+                "mode": "capability",
+                "roles": {"actor": "sailor", "instrument": "ship"}
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "raw": "Can Esko travel from Lakeview to Stonebridge by ship now?",
+        "units": [
+          {
+            "unit_id": "S6",
+            "text": "Can Esko 1 travel from Lakeview 2 to Stonebridge 3 by ship now?",
+            "type": "query",
+            "entities": [
+              {"id": "Esko 1", "type": "concrete", "category": "person"},
+              {"id": "Lakeview 2", "type": "concrete", "category": "place"},
+              {"id": "Stonebridge 3", "type": "concrete", "category": "place"}
+            ],
+            "action_reading": "executable_question",
+            "actions": [
+              {
+                "root": "travel",
+                "mode": "capability",
+                "roles": {"actor": "Esko 1", "source": "Lakeview 2", "destination": "Stonebridge 3", "instrument": "ship"}
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "stage2": {
+      "worlds": ["W0"],
+      "contexts": {},
+      "query_contexts": {},
+      "logic": [
+        ["@id", "S1", ["holds", "W0", ["isa", "sailor", "Esko 1"]]],
+        ["@id", "S2", ["holds", "W0", ["is rel2", "located_at", "Esko 1", "Lakeview 2"]]],
+        ["@id", "S3", ["holds", "W0", ["connected", "Lakeview 2", "Stonebridge 3", "ship"]]],
+        ["@id", "S4", ["holds", "W0", ["not", ["has property", "certified", "Esko 1"]]]],
+        ["@id", "S5",
+          ["holds", "W0",
+            ["forall", "A",
+              ["forall", "F",
+                ["forall", "T",
+                  ["implies",
+                    ["and", ["isa", "sailor", "A"], ["not", ["has property", "certified", "A"]]],
+                    ["not", ["can", "A", ["move", "A", "F", "T", "ship"]]]
+                  ]
+                ]
+              ]
+            ]
+          ]
+        ],
+        ["@id", "S6",
+          ["question", ["executable", ["move", "Esko 1", "Lakeview 2", "Stonebridge 3", "ship"]]]
+        ]
+      ]
+    },
+    "route": "actions",
+    "expect": {"source": "supported", "queries": "ready", "forms": {"S5": "denial"}},
+    "revision": "I",
+    "rules": ["Q1", "Q2"],
+    "answer": "No."
+  },
+  {
+    "id": "state_rule_and_participle",
+    "purpose": "A rule between two states has no reading and no actions, and by the convention it is a standing rule (state_law); an unstated result is the verb's past participle (seal: sealed).",
+    "authorship": "authored for prompt revision I (Opus, 2026-09-30); no model response",
+    "text": "Lumi has a jar. Lumi can seal the jar. If the jar is sealed, the jar is airtight. How can Lumi get the jar airtight?",
+    "stage1": [
+      {
+        "raw": "Lumi has a jar.",
+        "units": [
+          {
+            "unit_id": "S1",
+            "text": "Lumi 1 has a jar 2.",
+            "type": "situation",
+            "entities": [
+              {"id": "Lumi 1", "type": "concrete", "category": "person"},
+              {"id": "jar 2", "type": "concrete", "category": "artifact"}
+            ],
+            "pre_state": "W0"
+          }
+        ]
+      },
+      {
+        "raw": "Lumi can seal the jar.",
+        "units": [
+          {
+            "unit_id": "S2",
+            "text": "Lumi 1 can seal the jar 2.",
+            "type": "strict_rule",
+            "entities": [
+              {"id": "Lumi 1", "type": "concrete", "category": "person"},
+              {"id": "jar 2", "type": "concrete", "category": "artifact"}
+            ],
+            "pre_state": "W0",
+            "action_reading": "availability",
+            "actions": [
+              {
+                "root": "seal",
+                "mode": "capability",
+                "roles": {"actor": "Lumi 1", "target": "jar 2"}
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "raw": "If the jar is sealed, the jar is airtight.",
+        "units": [
+          {
+            "unit_id": "S3",
+            "text": "If the jar 2 is sealed, the jar 2 is airtight.",
+            "type": "strict_rule",
+            "entities": [{"id": "jar 2", "type": "concrete", "category": "artifact"}],
+            "pre_state": "W0"
+          }
+        ]
+      },
+      {
+        "raw": "How can Lumi get the jar airtight?",
+        "units": [
+          {
+            "unit_id": "S4",
+            "text": "How can Lumi 1 get the jar 2 airtight?",
+            "type": "query",
+            "entities": [
+              {"id": "Lumi 1", "type": "concrete", "category": "person"},
+              {"id": "jar 2", "type": "concrete", "category": "artifact"}
+            ],
+            "action_reading": "plan_question"
+          }
+        ]
+      }
+    ],
+    "stage2": {
+      "worlds": ["W0"],
+      "contexts": {},
+      "query_contexts": {},
+      "logic": [
+        ["@id", "S1",
+          ["holds", "W0", ["and", ["isa", "jar", "jar 2"], ["have", "Lumi 1", "jar 2"]]]
+        ],
+        ["@id", "S2",
+          ["holds", "W0", ["can", "Lumi 1", ["change", "Lumi 1", "jar 2", "sealed", "unspecified"]]]
+        ],
+        ["@id", "S3",
+          ["holds", "W0",
+            ["state_law",
+              ["implies",
+                ["has property", "sealed", "jar 2"],
+                ["has property", "airtight", "jar 2"]
+              ]
+            ]
+          ]
+        ],
+        ["@id", "S4", ["plan", ["has property", "airtight", "jar 2"]]]
+      ]
+    },
+    "route": "actions",
+    "expect": {"source": "supported", "queries": "ready", "forms": {"S3": "state_law"}},
+    "revision": "I",
+    "rules": ["Q3", "Q4", "7.1"],
+    "answer": "Plan: Lumi seals the jar."
+  },
+  {
+    "id": "permission_then_result",
+    "purpose": "A sentence with a permission and then its result is two units; the permission's condition is its antecedent; a later mention of the action uses the permission's term, with its tool.",
+    "authorship": "authored for prompt revision I (Opus, 2026-09-30); no model response",
+    "text": "Kaja has a kettle. Kaja has the tea. If Kaja has the kettle, Kaja can brew the tea in the kettle; then the tea is strong. After Kaja brews the tea, is the tea strong?",
+    "stage1": [
+      {
+        "raw": "Kaja has a kettle.",
+        "units": [
+          {
+            "unit_id": "S1",
+            "text": "Kaja 1 has a kettle 2.",
+            "type": "situation",
+            "entities": [
+              {"id": "Kaja 1", "type": "concrete", "category": "person"},
+              {"id": "kettle 2", "type": "concrete", "category": "artifact"}
+            ],
+            "pre_state": "W0"
+          }
+        ]
+      },
+      {
+        "raw": "Kaja has the tea.",
+        "units": [
+          {
+            "unit_id": "S2",
+            "text": "Kaja 1 has the tea 3.",
+            "type": "situation",
+            "entities": [
+              {"id": "Kaja 1", "type": "concrete", "category": "person"},
+              {"id": "tea 3", "type": "concrete", "category": "substance"}
+            ],
+            "pre_state": "W0"
+          }
+        ]
+      },
+      {
+        "raw": "If Kaja has the kettle, Kaja can brew the tea in the kettle; then the tea is strong.",
+        "units": [
+          {
+            "unit_id": "S3",
+            "text": "If Kaja 1 has the kettle 2, Kaja 1 can brew the tea 3 in the kettle 2.",
+            "type": "strict_rule",
+            "entities": [
+              {"id": "Kaja 1", "type": "concrete", "category": "person"},
+              {"id": "kettle 2", "type": "concrete", "category": "artifact"},
+              {"id": "tea 3", "type": "concrete", "category": "substance"}
+            ],
+            "pre_state": "W0",
+            "action_reading": "availability",
+            "actions": [
+              {
+                "root": "brew",
+                "mode": "capability",
+                "roles": {"actor": "Kaja 1", "target": "tea 3", "location": "kettle 2"}
+              }
+            ]
+          },
+          {
+            "unit_id": "S4",
+            "text": "After Kaja 1 brews the tea 3 in the kettle 2, the tea 3 is strong.",
+            "type": "strict_rule",
+            "entities": [
+              {"id": "Kaja 1", "type": "concrete", "category": "person"},
+              {"id": "kettle 2", "type": "concrete", "category": "artifact"},
+              {"id": "tea 3", "type": "concrete", "category": "substance"}
+            ],
+            "pre_state": "W0",
+            "action_reading": "effect",
+            "actions": [
+              {
+                "root": "brew",
+                "mode": "event",
+                "roles": {"actor": "Kaja 1", "target": "tea 3", "location": "kettle 2"}
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "raw": "After Kaja brews the tea, is the tea strong?",
+        "units": [
+          {
+            "unit_id": "S5",
+            "text": "After Kaja 1 brews the tea 3, is the tea 3 strong?",
+            "type": "query",
+            "entities": [
+              {"id": "Kaja 1", "type": "concrete", "category": "person"},
+              {"id": "tea 3", "type": "concrete", "category": "substance"}
+            ],
+            "action_reading": "verify_question",
+            "action_order": "sequence",
+            "actions": [
+              {"root": "brew", "mode": "event", "roles": {"actor": "Kaja 1", "target": "tea 3"}}
+            ],
+            "adjectives": [["strong", "none", "entity"]]
+          }
+        ]
+      }
+    ],
+    "stage2": {
+      "worlds": ["W0"],
+      "contexts": {},
+      "query_contexts": {},
+      "logic": [
+        ["@id", "S1",
+          ["holds", "W0", ["and", ["isa", "kettle", "kettle 2"], ["have", "Kaja 1", "kettle 2"]]]
+        ],
+        ["@id", "S2",
+          ["holds", "W0", ["and", ["isa", "tea", "tea 3"], ["have", "Kaja 1", "tea 3"]]]
+        ],
+        ["@id", "S3",
+          ["holds", "W0",
+            ["implies",
+              ["have", "Kaja 1", "kettle 2"],
+              ["can", "Kaja 1", ["change", "Kaja 1", "tea 3", "brewed", "kettle 2"]]
+            ]
+          ]
+        ],
+        ["@id", "S4",
+          ["holds", "W0",
+            ["after",
+              ["change", "Kaja 1", "tea 3", "brewed", "kettle 2"],
+              ["has property", "strong", "tea 3"]
+            ]
+          ]
+        ],
+        ["@id", "S5",
+          ["verify",
+            [["change", "Kaja 1", "tea 3", "brewed", "kettle 2"]],
+            ["has property", "strong", "tea 3"]
+          ]
+        ]
+      ]
+    },
+    "route": "actions",
+    "expect": {
+      "source": "supported",
+      "queries": "ready",
+      "forms": {"S3": "availability", "S4": "effect"}
+    },
+    "revision": "I",
+    "rules": ["Q5", "Q6", "Q7"],
+    "answer": true
+  },
+  {
+    "id": "one_entity_one_id",
+    "purpose": "One entity keeps one ID: after \"There is a delivery van\", the later \"the van\" is delivery van 2.",
+    "authorship": "authored for prompt revision I (Opus, 2026-09-30); no model response",
+    "text": "There is a delivery van. The van is at the depot. Aino can load the van. How can the van get loaded?",
+    "stage1": [
+      {
+        "raw": "There is a delivery van.",
+        "units": [
+          {
+            "unit_id": "S1",
+            "text": "There is a delivery van 2.",
+            "type": "real",
+            "entities": [{"id": "delivery van 2", "type": "concrete", "category": "artifact"}],
+            "pre_state": "W0",
+            "confidence": 0.99
+          }
+        ]
+      },
+      {
+        "raw": "The van is at the depot.",
+        "units": [
+          {
+            "unit_id": "S2",
+            "text": "The delivery van 2 is at the depot 3.",
+            "type": "situation",
+            "entities": [
+              {"id": "delivery van 2", "type": "concrete", "category": "artifact"},
+              {"id": "depot 3", "type": "concrete", "category": "place"}
+            ],
+            "pre_state": "W0"
+          }
+        ]
+      },
+      {
+        "raw": "Aino can load the van.",
+        "units": [
+          {
+            "unit_id": "S3",
+            "text": "Aino 1 can load the delivery van 2.",
+            "type": "strict_rule",
+            "entities": [
+              {"id": "Aino 1", "type": "concrete", "category": "person"},
+              {"id": "delivery van 2", "type": "concrete", "category": "artifact"}
+            ],
+            "pre_state": "W0",
+            "action_reading": "availability",
+            "actions": [
+              {
+                "root": "load",
+                "mode": "capability",
+                "roles": {"actor": "Aino 1", "target": "delivery van 2"}
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "raw": "How can the van get loaded?",
+        "units": [
+          {
+            "unit_id": "S4",
+            "text": "How can the delivery van 2 get loaded?",
+            "type": "query",
+            "entities": [{"id": "delivery van 2", "type": "concrete", "category": "artifact"}],
+            "action_reading": "plan_question"
+          }
+        ]
+      }
+    ],
+    "stage2": {
+      "worlds": ["W0"],
+      "contexts": {},
+      "query_contexts": {},
+      "logic": [
+        ["@id", "S1", ["holds", "W0", ["isa", "van", "delivery van 2"]]],
+        ["@id", "S2",
+          ["holds", "W0",
+            ["and",
+              ["isa", "depot", "depot 3"],
+              ["is rel2", "located_at", "delivery van 2", "depot 3"]
+            ]
+          ]
+        ],
+        ["@id", "S3",
+          ["holds", "W0",
+            ["can", "Aino 1", ["change", "Aino 1", "delivery van 2", "loaded", "unspecified"]]
+          ]
+        ],
+        ["@id", "S4", ["plan", ["has property", "loaded", "delivery van 2"]]]
+      ]
+    },
+    "route": "actions",
+    "expect": {"source": "supported", "queries": "ready"},
+    "revision": "I",
+    "rules": ["Q9"],
+    "answer": "Plan: Aino loads the delivery van."
+  },
+  {
+    "id": "who_question_ask",
+    "purpose": "A who-question about an operation is ask over executable, with the variable in the actor slot.",
+    "authorship": "authored for prompt revision I (Opus, 2026-09-30); no model response",
+    "text": "Sini has the ladle. Oona has a spoon. If a person has the ladle, the person can stir the soup with the ladle. Who can stir the soup with the ladle now?",
+    "stage1": [
+      {
+        "raw": "Sini has the ladle.",
+        "units": [
+          {
+            "unit_id": "S1",
+            "text": "Sini 1 has the ladle 2.",
+            "type": "situation",
+            "entities": [
+              {"id": "Sini 1", "type": "concrete", "category": "person"},
+              {"id": "ladle 2", "type": "concrete", "category": "artifact"}
+            ],
+            "pre_state": "W0"
+          }
+        ]
+      },
+      {
+        "raw": "Oona has a spoon.",
+        "units": [
+          {
+            "unit_id": "S2",
+            "text": "Oona 3 has a spoon 4.",
+            "type": "situation",
+            "entities": [
+              {"id": "Oona 3", "type": "concrete", "category": "person"},
+              {"id": "spoon 4", "type": "concrete", "category": "artifact"}
+            ],
+            "pre_state": "W0"
+          }
+        ]
+      },
+      {
+        "raw": "If a person has the ladle, the person can stir the soup with the ladle.",
+        "units": [
+          {
+            "unit_id": "S3",
+            "text": "If a person has the ladle 2, the person can stir the soup 5 with the ladle 2.",
+            "type": "strict_rule",
+            "entities": [
+              {"id": "person", "type": "generic", "category": "person"},
+              {"id": "ladle 2", "type": "concrete", "category": "artifact"},
+              {"id": "soup 5", "type": "concrete", "category": "substance"}
+            ],
+            "pre_state": "W0",
+            "action_reading": "availability",
+            "actions": [
+              {
+                "root": "stir",
+                "mode": "capability",
+                "roles": {"actor": "person", "target": "soup 5", "instrument": "ladle 2"}
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "raw": "Who can stir the soup with the ladle now?",
+        "units": [
+          {
+            "unit_id": "S4",
+            "text": "Who can stir the soup 5 with the ladle 2 now?",
+            "type": "query",
+            "entities": [
+              {"id": "entity", "type": "generic", "wh_placeholder": true},
+              {"id": "soup 5", "type": "concrete", "category": "substance"},
+              {"id": "ladle 2", "type": "concrete", "category": "artifact"}
+            ],
+            "action_reading": "executable_question",
+            "actions": [
+              {
+                "root": "stir",
+                "mode": "capability",
+                "roles": {"actor": "entity", "target": "soup 5", "instrument": "ladle 2"}
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "stage2": {
+      "worlds": ["W0"],
+      "contexts": {},
+      "query_contexts": {},
+      "logic": [
+        ["@id", "S1",
+          ["holds", "W0", ["and", ["isa", "ladle", "ladle 2"], ["have", "Sini 1", "ladle 2"]]]
+        ],
+        ["@id", "S2",
+          ["holds", "W0", ["and", ["isa", "spoon", "spoon 4"], ["have", "Oona 3", "spoon 4"]]]
+        ],
+        ["@id", "S3",
+          ["holds", "W0",
+            ["forall", "X",
+              ["implies",
+                ["and", ["isa", "person", "X"], ["have", "X", "ladle 2"]],
+                ["can", "X", ["change", "X", "soup 5", "stirred", "ladle 2"]]
+              ]
+            ]
+          ]
+        ],
+        ["@id", "S4", ["ask", "X", ["executable", ["change", "X", "soup 5", "stirred", "ladle 2"]]]]
+      ],
+      "types": {"S3": [["isa", "soup", "soup 5"]]}
+    },
+    "route": "actions",
+    "expect": {"source": "supported", "queries": "ready"},
+    "revision": "I",
+    "rules": ["Q10"],
+    "answer": "Sini."
+  },
+  {
+    "id": "permission_without_actor",
+    "purpose": "A permission that names no actor is exists over can, never unspecified as an actor; the route reports it as unsupported.",
+    "authorship": "authored for prompt revision I (Opus, 2026-09-30); no model response",
+    "text": "The kite is torn. The kite can be mended. How can the kite get mended?",
+    "stage1": [
+      {
+        "raw": "The kite is torn.",
+        "units": [
+          {
+            "unit_id": "S1",
+            "text": "The kite 1 is torn.",
+            "type": "situation",
+            "entities": [{"id": "kite 1", "type": "concrete", "category": "artifact"}],
+            "pre_state": "W0"
+          }
+        ]
+      },
+      {
+        "raw": "The kite can be mended.",
+        "units": [
+          {
+            "unit_id": "S2",
+            "text": "The kite 1 can be mended.",
+            "type": "strict_rule",
+            "entities": [{"id": "kite 1", "type": "concrete", "category": "artifact"}],
+            "pre_state": "W0",
+            "action_reading": "availability",
+            "actions": [{"root": "mend", "mode": "capability", "roles": {"target": "kite 1"}}]
+          }
+        ]
+      },
+      {
+        "raw": "How can the kite get mended?",
+        "units": [
+          {
+            "unit_id": "S3",
+            "text": "How can the kite 1 get mended?",
+            "type": "query",
+            "entities": [{"id": "kite 1", "type": "concrete", "category": "artifact"}],
+            "action_reading": "plan_question"
+          }
+        ]
+      }
+    ],
+    "stage2": {
+      "worlds": ["W0"],
+      "contexts": {},
+      "query_contexts": {},
+      "logic": [
+        ["@id", "S1",
+          ["holds", "W0", ["and", ["isa", "kite", "kite 1"], ["has property", "torn", "kite 1"]]]
+        ],
+        ["@id", "S2",
+          ["holds", "W0",
+            ["exists", "A", ["can", "A", ["change", "A", "kite 1", "mended", "unspecified"]]]
+          ]
+        ],
+        ["@id", "S3", ["plan", ["has property", "mended", "kite 1"]]]
+      ]
+    },
+    "route": "actions",
+    "expect": {"source": "unsupported", "reason": "existential_availability_head", "queries": "unsupported_translation"},
+    "revision": "I",
+    "rules": ["Q10"],
+    "answer": "Cannot answer"
+  }
+]

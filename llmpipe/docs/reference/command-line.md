@@ -55,6 +55,21 @@ option is treated as input.
 python3 solver/solve.py -llm claude -version claude-sonnet-4-6 "..."
 ```
 
+## Choosing the pipeline
+
+Each call first chooses between the ordinary pipeline and the experimental
+action route for texts about actions and plans.
+
+- `-actions` — always run the action route.
+- `-noactions` — always run the ordinary pipeline.
+
+`-formal` alone also selects the action route. Without these keys, a
+classifier reads the text with no model call: a strong sign of actions or
+plans selects the action route, and every other text the ordinary pipeline. The route's own keys (`-formal`, `-plan-depth`,
+`-action-backend`) and its answer forms are on the
+[experimental options](experimental-options.md#the-action-route) page. The
+retry configuration below applies to the ordinary pipeline only.
+
 ## Choosing the retry configuration
 
 `-pipeline NAME` selects which retry stages run after the initial translation
@@ -93,8 +108,8 @@ The resolution rounds are in [configuration](configuration.md).
 The output levels form a hierarchy. Each includes the ones above it.
 
 - `-explain` — the answer and the English proof.
-- `-logic` — adds the simplified unit texts, the sentence-to-clause map and
-  the logic under each proof step.
+- `-logic` — adds the pipeline that answers and why, the simplified unit
+  texts, the sentence-to-clause map and the logic under each proof step.
 - `-details` — adds the Stage-1 and Stage-2 JSON and the prover input and
   output.
 - `-debug` — adds raw model responses, prover parameters and the full trace.
@@ -103,13 +118,20 @@ Each block appears for the stage that answered, under the same headers. A line
 such as `--- stage: graphtrans ---` says which stage produced the block that
 follows.
 
+From `-logic` up, the input comes first and a `=== pipeline ===` block follows
+it. The block names the pipeline that answers and says why: forced by
+`-actions` or `-noactions`, or chosen automatically with the classifier's
+signals. The action route follows the same levels with its own blocks; the
+[experimental options](experimental-options.md#output-of-the-action-route)
+page lists them.
+
 Format and summary:
 
 - `-json` — logic as raw JSON instead of `pred(arg,...)` syntax.
 - `-jsonlogic` — short for `-logic -json`.
-- `-summary` — one block at the end: the answer, the stage that produced it,
-  the answer the initial attempt reached on its own, the enabled stages and
-  the call counts.
+- `-summary` — one block at the end: the answer, the pipeline and why, the
+  stage that produced it, the answer the initial attempt reached on its own,
+  the enabled stages and the call counts.
 - `-summary-json` — the same block as one JSON line.
 - `-gkin FILE` — write the prover input to `FILE`, with the command as a
   comment.
@@ -257,7 +279,8 @@ Resuming:
 - without either switch the run skips a case that already has a result file.
 - `-redo` — recompute every case.
 - `-redo-errors` — recompute only the cases whose stored file records an
-  error, including an answer beginning `Error`.
+  error, including an answer beginning `Error`. An action-route answer
+  beginning `Cannot answer` is a result and is kept.
 - `-sequential` — run the providers one at a time in this process, instead of
   one worker process per provider.
 
@@ -277,10 +300,47 @@ Bounds:
 - `-llm-call-timeout N` and `-llm-call-limit N` — as for `solve.py`. They are
   a different bound from `-api-timeout`: one logical model call against the
   whole parse phase.
+- `-run-ceiling LOGICAL,REQUESTS` — hard ceilings of the whole run folder,
+  with `-sequential` and `-llm-call-limit`. A provider request is every
+  outbound request: each HTTP retry and each Gemini context-cache creation
+  counts. A case starts only when the logical model calls and provider
+  requests so far, plus `-llm-call-limit` for the case, stay within both;
+  otherwise the run stops before that case. `llmcall` refuses a logical call
+  or a request past a ceiling before it leaves; the run then stops and does
+  not write the interrupted case. The ledger `run_ceiling.json` in the run
+  folder records what each part used, so a resumed run with the same ceiling
+  continues with the remaining allowance. The runner writes the ledger after
+  each count, before the request leaves. A running part has `updated` (the
+  time of its last count) and `in_progress` (the case it runs); `ended` is
+  written when the part ends. A part without `ended` was killed, and its
+  counts include the requests of its case in progress. `-actions` runs
+  sequentially by itself; without it, the action route's GK launches stay
+  serial through a lock across the provider processes. A file named `STOP` in the run folder stops a run before its next
+  case (a sequential run: before its next provider of a case); a run does not
+  start while the file exists.
 - `-maxtokens N` — override the output-token limit.
 - `-think N` — a numeric budget. Unlike `solve.py` and `test.py`, the runner
   requires the number; a bare `-think` is rejected.
 - `-nogeminicache` — as for `solve.py`.
+
+Grading a planning test file:
+
+- each text's pipeline is chosen from the text alone, as in a one-example call
+  of `solve.py`. The file decides only the scorer: on a planning test file
+  (rows of four elements), the runner grades each answer with the planning checker
+  (`solver/planning_check.py`) instead of the default matcher, and stores
+  `grade` and `answer_check` in the case record. A test row is
+  `[id, input, expected, actions]`, as in `tests/tests_planning_basic.py`:
+  the expected answer text, and the expected plan of that text as action terms.
+  A file whose rows hold a gold translation instead (`tests/tests_planning.py`)
+  is refused.
+- `-answer-check text|actions|both` — what the checker compares: the answer
+  text (the default), the plan with the expected action list, or both.
+  `tests/tests_planning_README.md` lists the rules.
+- the summaries count the answers that are correct, the rows correctly not
+  answered, the wrong rows and the errors. The
+  answer forms of the route are on the
+  [experimental options](experimental-options.md#the-action-route) page.
 
 Any key `runtests.py` does not define itself is forwarded to `solve.py`'s
 parser, so `-pipeline`, the single stage switches and their cancels work here

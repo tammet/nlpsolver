@@ -430,9 +430,10 @@ def _submit(theory, logic, s1_json, text, options, reading, record):
   """One gk call on an already-converted theory; -> the processed answer."""
   import prover
   import solve
+  import solve_stages
   from procproofs import process_proof
   sub = {"reading": reading,
-         "clauses": solve._build_clauses_with_nl(logic, s1_json)}
+         "clauses": solve.build_clauses_with_nl(logic, s1_json)}
   record["submissions"].append(sub)
   proof = prover.call_prover(logic, s1_json=s1_json)
   sub["gk_result"] = proof
@@ -454,6 +455,7 @@ def run(s1_json, s2_json, text, base_logic, options):
   recovery can be read back without re-running anything.
   """
   import solve
+  import solve_stages
   record = {"fallback": "fallback_norm",
             "normalizations": enabled_names(),
             "submissions": [],
@@ -485,7 +487,7 @@ def run(s1_json, s2_json, text, base_logic, options):
     # Unknown.  The exclusive reading is the primary one; letting the
     # inclusive reading run first would override a `False.` that holds
     # because both disjuncts are true.
-    if (INCLUSIVE_SECOND and solve._unresolved(answer)
+    if (INCLUSIVE_SECOND and solve_stages.unresolved(answer)
         and has_question_xor(s2_json) and not has_inclusive_cue(s1_json)):
       theory = inclusive_theory(s2_json)
       inc_logic = _convert(theory, s1_json)
@@ -496,11 +498,11 @@ def run(s1_json, s2_json, text, base_logic, options):
       else:
         inc, inc_proof = _submit(theory, inc_logic, s1_json, text, options,
                                  "inclusive", record)
-        if not solve._unresolved(inc):
+        if not solve_stages.unresolved(inc):
           answer, logic, proof = inc, inc_logic, inc_proof
           record["answered_by_reading"] = "inclusive"
 
-    if solve._unresolved(answer):
+    if solve_stages.unresolved(answer):
       return out
     record["answered"] = True
     record.setdefault("answered_by_reading", "exclusive")

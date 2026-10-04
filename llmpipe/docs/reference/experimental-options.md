@@ -181,6 +181,119 @@ Status: research.
 unless an abstraction encoding is active, so this changes nothing on the
 ordinary path. Status: ablation.
 
+## The action route
+
+An experimental route for texts about actions and plans. Without `-actions`
+or `-noactions`, each text is routed by a cheap classifier
+(`solver/route_classify.py`, no model call), the same way in a one-example
+call of `solve.py` and in a test run:
+
+- a strong sign of actions or plans sends the text to the action route: a
+  question "How can ...?", a request for a plan, a question "After X does
+  ..., ...?" or with "eventually", blocks named by a letter with a hand, a
+  route or service between places, a permission to travel from one place to
+  another by a means, a permission for an operation with an instrument;
+- every other text goes to the ordinary pipeline. This includes an unclear
+  text, one with a weak sign that ordinary texts also show, such as "can"
+  before an operation verb or a question "Who can ...?".
+
+The choice is kept in the case record (`route_choice`: mode, route, verdict
+and signals). On the tracked ordinary test sets the classifier sends no text
+to the action route.
+
+**`-actions`** — always run the action route instead of the ordinary pipeline:
+- its own two-stage translation;
+- the action compiler;
+- the independent replay;
+- a registered GK build with the action library.
+
+No ordinary retry stage, critic, graph or literal bridge runs. A `-pipeline`
+preset, a stage switch or an ordinary representation option given with it is
+an error, never a mixed theory. The route leaves the ordinary option state as
+it found it: it sets the model-call keys for the length of its call and then
+restores them. Model-call bounds (`-llm-call-limit`, `-llm-call-timeout`) and
+the caches apply to its calls. English input uses the measured action prompts
+(`prompts/actions/`, assembled by `action_prompt.assemble`; see
+[the action prompt interface](../encodings/action-prompts.md)).
+Status: experimental.
+
+The answer text has one form per question kind and outcome:
+
+| question | answer text |
+|---|---|
+| a plan (`How can ...`, `Find a plan ...`) | `Plan: <steps>.`, `No action is needed.` or `No plan found.` |
+| a reachable goal (`Can X eventually ...`) | `Yes. Plan: <steps>.`, `Yes. No action is needed.` or `Unknown.` |
+| a yes-no, verify or executable question | `Yes.`, `No.`, `Unknown.` or `Contested.` |
+| a wh-question | the entity by name: `The key.`, `The key and the cup.` |
+| any, with conflicting facts in the starting state | `Inconsistent: <facts>.` |
+| any, when the replay validates no candidate plan | `Unknown: no candidate plan was validated.` |
+| any, for a text the route does not model | `Cannot answer: <sentence>. [<reason codes>; <units>]` |
+| any, after a failed run | `Error: <outcome>: <detail>` |
+
+The `Cannot answer` sentence says what the route read and why it gives no
+answer. `Error` marks a run that gave no answer: an invalid translation, a
+call limit, a model error, a timeout, a prover error, a missing or
+incompatible backend, or an insufficient search allowance. `runtests.py -redo-errors`
+repeats an `Error` case and keeps a `Cannot answer` case. When the confidence
+from the probabilities that the text states is below 0.95, the answer says
+`Probably`: `Probably yes.`, `Probably no.`, `Probably yes. Plan: ...` or
+`Probable plan: ...`. The threshold is a display convention, not a calibrated
+probability. The number stays in the result record, and the frame axioms'
+part of the confidence does not count.
+
+**`-noactions`** — always run the ordinary pipeline. An action option given
+with it is an error. Status: experimental.
+
+**`-formal`** — the input is a formal JSON record for the action route, or the
+path of a file holding one, compiled and solved with no model call. The record uses the field names of the gold
+fixtures:
+- `units`: each unit has an `id` and a Stage-2 package `stage2`;
+  `text`, `stage1` and `context` are optional;
+- `queries`: each query has a `stage2` package, and optional
+  `planning_root`, `ambient`, `knower` and `limits`;
+- `entities`, `worlds` and `text` are optional.
+
+**`-plan-depth N`** — on the action route: the search cap of a plan or reachable
+question. The default cap is four. A stated step bound in the question is
+kept apart from this cap.
+
+**`-action-backend NAME`** — on the action route: a registered GK build (default
+`gk`, the installed prover with the action route's planning strategy). `-seconds` sets its time per launch (default 30 on this
+route).
+
+### Output of the action route
+
+The route follows the output levels of the ordinary pipeline. Each level
+includes the ones above it.
+
+| level | what the action route prints |
+|---|---|
+| none | the answer |
+| `-explain` | the explanation after the answer: the sentences and the library laws that the deciding proof used, then the plan steps and the replay verdict, the checks of a supplied sequence, or the reason for no answer |
+| `-logic` | the input and the pipeline block, the Stage-1 unit texts, the source clauses of each sentence with their role, the query and its obligations, the stages block, the action term under each plan step and the GK proof steps |
+| `-details` | the accepted action Stage-1 and Stage-2 JSON, the controller's findings for each model response (errors, parse repairs, normalizations), and the input and result of each GK launch; the input names the library laws in one comment line |
+| `-debug` | each model request and its raw response as the route sends it, the library laws in full, the GK command of each launch and the termination relaunch |
+
+The other output options:
+
+- `-json` shows the clauses and the proof steps in JSON.
+- `-prover` shows the input, command and result of each GK launch at any
+  level.
+- `-summary` prints one block: the answer, the pipeline and why, the outcome,
+  the replay verdict, the confidence, the model calls per stage and the GK
+  launches. `-summary-json` prints the same record as one JSON line.
+- `-nosolve` translates the text and compiles the query, then stops before
+  GK. The answer is empty.
+- `-rawresult` answers with GK's raw output. With several launches, a comment
+  line names each launch.
+- `-gkin FILE` writes the GK input to `FILE`, with the command as the first
+  comment line. With several launches, each launch has its own file: the
+  launch label stands before the file extension.
+
+`-printlevel`, `-axioms` and `-strategy` change the prover run, so they are
+errors with `-actions`. A runner's case record keeps the explanation as
+`nl_proof`.
+
 ## Compatibility spellings
 
 | older key | resolves to |

@@ -1,6 +1,6 @@
 """Action profile: text effects, change markers, state policy, dependencies.
 
-The pass `effects_state_policy` of the action compiler (A2.5, A2.8, A4.4, A6.3).
+The pass `effects_state_policy` of the action compiler.
 
 Effects.  A strict text effect `P -> after(A, L1 and .. and Ln)` gives, for
 every head literal L,
@@ -23,7 +23,7 @@ library; it is kept in the signed-write metadata, because a backend with
 signed persistence must stop the opposite-sign frame there.  Text effects and
 library effects stay distinct clauses; nothing is deduplicated.  A text write
 whose opposite the library writes for a unifiable action is recorded as a
-possible conflict.  Both clauses stay (A2.7).
+possible conflict.  Both clauses stay.
 
 State policy.  A property value in the head of a standing law is
 
@@ -69,19 +69,15 @@ def effects(f, scope=(), conditions=()):
   if op == "implies":
     return effects(f[2], scope, conditions + (f[1],))
   if op == "after":
-    return [(scope, list(conditions), f[1], _flat(f[2]))]
+    return [(scope, list(conditions), f[1], la.conjuncts(f[2]))]
   return []
-
-
-def _flat(f):
-  return [y for x in f[1:] for y in _flat(x)] if f[0] == "and" else [f]
 
 
 def _atom(lit):
   return lit[1] if lit[0] == "not" else lit
 
 
-def _sign(lit):
+def literal_sign(lit):
   return "-" if lit[0] == "not" else "+"
 
 
@@ -92,10 +88,10 @@ def marker_atom(atom):
 def _situated_effect(scope, conditions, action, heads):
   """forall V.. (P(S) and poss(A, S) -> heads and markers at $do(A, S)), without the situation binder."""
   succ = [sit.DO, action, sit.SIT]
-  body = [sit._situate(c, sit.SIT) for c in conditions] + [["poss", action, sit.SIT]]
+  body = [sit.situate_in(c, sit.SIT) for c in conditions] + [["poss", action, sit.SIT]]
   out = []
   for h in heads:
-    out.append(sit._situate(h, succ))
+    out.append(sit.situate_in(h, succ))
     if h[0] == "not":
       out.append(marker_atom(h[1]) + [succ])
   f = ["implies", body[0] if len(body) == 1 else ["and"] + body, out[0] if len(out) == 1 else ["and"] + out]
@@ -135,7 +131,7 @@ def compile_unit(unit, namer, library=None):
         if rec not in records:
           records.append(rec)
       for h in heads:
-        w = {"unit": unit["id"], "action": copy.deepcopy(action), "literal": copy.deepcopy(_atom(h)), "sign": _sign(h),
+        w = {"unit": unit["id"], "action": copy.deepcopy(action), "literal": copy.deepcopy(_atom(h)), "sign": literal_sign(h),
              "conditional": bool(conditions), "marker": h[0] == "not",
              "stops_opposite_frame": True, "library_conflicts": _conflicts(action, h, library)}
         out["writes"].append(w)
@@ -165,7 +161,7 @@ def _walk(t, s):
   return t
 
 
-def _unify(a, b, s):
+def unify(a, b, s):
   a, b = _walk(a, s), _walk(b, s)
   if a == b:
     return s
@@ -175,17 +171,17 @@ def _unify(a, b, s):
     return dict(s, **{b: a})
   if isinstance(a, list) and isinstance(b, list) and len(a) == len(b):
     for x, y in zip(a, b):
-      s = _unify(x, y, s)
+      s = unify(x, y, s)
       if s is None:
         return None
     return s
   return None
 
 
-def _plain(t):
+def source_spelling(t):
   """A library term in source spelling: `#:id` is the id."""
   if isinstance(t, list):
-    return [_plain(x) for x in t]
+    return [source_spelling(x) for x in t]
   return t[2:] if isinstance(t, str) and t.startswith("#:") else t
 
 
@@ -201,22 +197,22 @@ def _conflicts(action, head, library):
     concl = [x for x in lits if lib.predicate(x) in la.FLUENTS and isinstance(sit.situation_of(x), list)]
     if not poss or not concl or lib.positive(concl[0]) != negative:
       continue
-    s = _unify(_plain(poss[0][1]), action, {})
-    if s is not None and _unify(_plain([lib.predicate(concl[0])] + concl[0][1:-1]), atom, s) is not None:
+    s = unify(source_spelling(poss[0][1]), action, {})
+    if s is not None and unify(source_spelling([lib.predicate(concl[0])] + concl[0][1:-1]), atom, s) is not None:
       out.append(c["name"])
   return out
 
 
-def _standardize(t, tag):
+def standardize_apart(t, tag):
   """Variables of two units are different variables."""
   if isinstance(t, list):
-    return [_standardize(x, tag) for x in t]
+    return [standardize_apart(x, tag) for x in t]
   return "?:%s_%s" % (tag, t) if _is_v(t) else t
 
 
-def _apply(t, s):
+def apply_bindings(t, s):
   t = _walk(t, s)
-  return [_apply(x, s) for x in t] if isinstance(t, list) else t
+  return [apply_bindings(x, s) for x in t] if isinstance(t, list) else t
 
 
 def library_writes(action, library):
@@ -228,9 +224,9 @@ def library_writes(action, library):
     lits = lib.literals(c["clause"])
     poss = [x for x in lits if x[0] == "-poss"]
     concl = [x for x in lits if lib.predicate(x) in la.FLUENTS and isinstance(sit.situation_of(x), list)]
-    s = _unify(_plain(poss[0][1]), action, {}) if poss and concl else None
+    s = unify(source_spelling(poss[0][1]), action, {}) if poss and concl else None
     if s is not None:
-      out.append({"literal": _apply(_plain([lib.predicate(concl[0])] + concl[0][1:-1]), s),
+      out.append({"literal": apply_bindings(source_spelling([lib.predicate(concl[0])] + concl[0][1:-1]), s),
                   "sign": "+" if lib.positive(concl[0]) else "-", "clause": c["name"], "conditional": len(lits) > 2})
   return out
 
@@ -309,7 +305,7 @@ def state_policy(units, policy):
         what = a[1] if a[0] != "have" else "have"
         diagnostics.append((u["id"], "unsupported_stored_state_law",
                             "a standing law that continuously asserts the stored physical state %s: it would compete "
-                            "with the action effects and the frames; no tested policy exists (A2.8)" % what, "stored_head"))
+                            "with the action effects and the frames; no tested policy exists" % what, "stored_head"))
         continue
       if a[0] != "has property":
         continue
@@ -378,17 +374,17 @@ def unit_dependencies(unit, library=None):
   f = sit._unit_formula(unit)
   reads, writes, defeater = [], [], False
   for conditions, head in _law_parts(f):
-    execs = [x for c in conditions for x in _flat(c) if x[0] == "executable"]
+    execs = [x for c in conditions for x in la.conjuncts(c) if x[0] == "executable"]
     for c in conditions:
-      for x in _flat(c):
+      for x in la.conjuncts(c):
         if x[0] != "executable":
           reads.extend(_literals(x, []))
     if unit["form"] == "restriction" and execs:
       reads.extend(_literals(head, []))
     elif head[0] == "after":
-      writes.extend((_atom(h), _sign(h)) for h in _flat(head[2]))
+      writes.extend((_atom(h), literal_sign(h)) for h in la.conjuncts(head[2]))
     elif unit["form"] == "state_law":
-      writes.extend((_atom(h), _sign(h)) for h in _law_heads(head))
+      writes.extend((_atom(h), literal_sign(h)) for h in _law_heads(head))
     elif unit["form"] == "denial":
       defeater = True
   show = lambda pairs: [{"literal": copy.deepcopy(a), "sign": s, "dynamic": a[0] in la.FLUENTS} for a, s in pairs]
@@ -398,20 +394,20 @@ def unit_dependencies(unit, library=None):
           "reads": show(reads), "writes": show(writes), "library_writes": by_library, "defeater": defeater}
 
 
-def _positive_facts(f, out, positive=True):
+def positive_facts(f, out, positive=True):
   """The positive atoms an initial description states.  The sign is kept: `not holding` is no holding."""
   op = f[0]
   if op == "not":
-    _positive_facts(f[1], out, not positive)
+    positive_facts(f[1], out, not positive)
   elif op == "and" and positive:
     for x in f[1:]:
-      _positive_facts(x, out, positive)
+      positive_facts(x, out, positive)
   elif op in la.QUANTIFIERS and positive:
-    _positive_facts(f[2], out, positive)
+    positive_facts(f[2], out, positive)
   elif op == "implies" and positive:
-    _positive_facts(f[2], out, positive)
+    positive_facts(f[2], out, positive)
   elif op == "normally":
-    _positive_facts(f[1], out, positive)
+    positive_facts(f[1], out, positive)
   elif positive and (op in la.FLUENTS or op in la.STATIC):
     out.append(f)
   return out
@@ -421,7 +417,7 @@ def _initial_facts(units, relation, root=None):
   """(unit id, X, Y) of every positive ground `relation` fact of a supported initial description.
 
   With `root` (a world name) only the facts of that world: a fact of another
-  world never reaches a view rooted there (migration step 1b.6).
+  world never reaches a view rooted there.
   """
   out = []
   for u in units:
@@ -429,20 +425,24 @@ def _initial_facts(units, relation, root=None):
       continue
     if root is not None and (u.get("world") or "W0") != root:
       continue
-    for a in _positive_facts(sit._unit_formula(u), []):
+    for a in positive_facts(sit._unit_formula(u), []):
       if a[0] == "is rel2" and a[1] == relation and la.is_concrete(a[2]) and la.is_concrete(a[3]):
         out.append((u["id"], a[2], a[3]))
   return out
 
 
-def _classes(units):
-  """{entity: [class]} from the positive ground isa facts of the supported descriptions."""
+def _classes(units, extra=()):
+  """{entity: [class]} from the positive ground isa facts of the supported descriptions, and the (entity, class)
+  pairs of the source's type records (`extra`, action_route.type_facts)."""
   out = {}
   for u in units:
     if u["status"] == "supported" and u["form"] in ("description_initial", "description_static"):
-      for a in _positive_facts(sit._unit_formula(u), []):
+      for a in positive_facts(sit._unit_formula(u), []):
         if a[0] == "isa" and la.is_concrete(a[2]):
           out.setdefault(a[2], []).append(a[1])
+  for entity, cls in extra:
+    if cls not in out.setdefault(entity, []):
+      out[entity].append(cls)
   return out
 
 
@@ -466,7 +466,7 @@ def _movers(units, holder, classes):
   return []
 
 
-def transport(units, root=None):
+def transport(units, root=None, extra=()):
   """Holdings that a holder's movement would carry: the library has no co-movement transition.
 
   After the holder moves, the frame keeps the object's old location, and no
@@ -487,7 +487,7 @@ def transport(units, root=None):
   those of that world only; the source-level inventory (no root) lists every
   world's.
   """
-  classes = _classes(units)
+  classes = _classes(units, extra)
   located = _initial_facts(units, "located_at", root)
   out = []
 
@@ -556,10 +556,10 @@ def carried_in_sequence(sequence, units, root=None):
     if act[0] in ("put_on", "put_in"):
       held = [p for p in held if p != (act[1], act[2])]
     for pattern, h in writes:
-      s = _unify(_standardize(pattern, "e"), act, {})
+      s = unify(standardize_apart(pattern, "e"), act, {})
       if s is None:
         continue
-      pair = tuple(_apply(_standardize(t, "e"), s) for t in _atom(h)[2:4])
+      pair = tuple(apply_bindings(standardize_apart(t, "e"), s) for t in _atom(h)[2:4])
       if h[0] == "not":
         held = [p for p in held if p != pair]
       elif pair not in held and all(la.is_concrete(t) for t in pair):
@@ -567,14 +567,14 @@ def carried_in_sequence(sequence, units, root=None):
   return out
 
 
-def query_transport(kind, goal, sequence, units, deps, root=None):
+def query_transport(kind, goal, sequence, units, deps, root=None, extra=()):
   """The transport dependency of one query at the planning root `root`, or None.
 
   question / ask   bound to the root: no transition, never affected
   verify           the supplied sequence is scanned from the root's holdings;
                    an empty sequence is the root
   plan / reachable the conservative inventory of `transport`, computed from
-                   the root's facts only (migration step 1b.6); without a root,
+                   the root's facts only; without a root,
                    the source-level inventory `deps["transport"]`
   """
   if kind in ("question", "ask") or not deps:
@@ -589,7 +589,7 @@ def query_transport(kind, goal, sequence, units, deps, root=None):
                    | {u for u, h, x in _initial_facts(units, "holding", root) if x in objects})
     return {"objects": sorted(objects), "units": where,
             "detail": "; ".join("step %d moves %s while it holds %s" % (n, h, x) for x, h, n in hits)}
-  inventory = transport(units, root) if root is not None else deps.get("transport", [])
+  inventory = transport(units, root, extra) if root is not None else deps.get("transport", [])
   entries = [t for t in inventory if _reads_location(goal, [t["object"]])]
   if not entries:
     return None
@@ -598,7 +598,7 @@ def query_transport(kind, goal, sequence, units, deps, root=None):
                                                                         ", ".join(t["holder_moves_by"])) for t in entries)}
 
 
-def dependencies(units, library=None):
+def dependencies(units, library=None, extra=()):
   """The source-level dependency record and the potential backend requirements."""
   per_unit = [unit_dependencies(u, library) for u in units
               if u["status"] == "supported" and u["form"] in ("availability", "denial", "restriction", "effect", "state_law")]
@@ -611,8 +611,8 @@ def dependencies(units, library=None):
     n["positive_writers_complete"] = False
     n["positive_writers"] = sorted({d["unit"] for d in per_unit
                                     for w in [x for x in d["writes"] if d["form"] == "effect"] + d["library_writes"]
-                                    if w["sign"] == "+" and _unify(_standardize(w["literal"], "w"), _standardize(n["literal"], "r"), {}) is not None})
-  deps = {"units": per_unit, "dynamic_negative_reads": negative, "transport": transport(units)}
+                                    if w["sign"] == "+" and unify(standardize_apart(w["literal"], "w"), standardize_apart(n["literal"], "r"), {}) is not None})
+  deps = {"units": per_unit, "dynamic_negative_reads": negative, "transport": transport(units, None, extra)}
   shared = sorted(u["id"] for u in units if "shared_source_confidence" in (u.get("requirements") or []))
   req = {}
   if negative:

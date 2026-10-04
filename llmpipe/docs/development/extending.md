@@ -5,7 +5,7 @@ a stage, a retry, a proof renderer or a benchmark.
 
 Adding a retry stage takes four steps. Add the stage name to
 `globals.PIPELINE_ORDER`. Add its flag to `globals.options`. Add an entry to
-each configuration in `globals.PIPELINES`. Call `solve.run_stage` with the
+each configuration in `globals.PIPELINES`. Call `solve_stages.run_stage` with the
 stage body.
 
 Adding a provider takes three steps. Add a `call_<name>` function in
@@ -150,7 +150,7 @@ which produced the result without any ordinary key changing shape.
 
 **A run that returned early** — a truncated Stage-1 reply whose Stage 2 comes back
 empty, or the api-timeout cap — never reaches the block that writes `answered_by`
-and the stage rows.  `solve._english_to_answer` records its `Error: …` message as
+and the stage rows.  `solve.ordinary_pipeline` records its `Error: …` message as
 the `answer` and writes `stages_enabled` anyway, and `runtests.py` gives it an
 `error` payload when the run has neither `answered_by` nor `stage2`, so it is
 counted rather than stored as a file indistinguishable from a case that ran.  A run
@@ -177,7 +177,7 @@ When nothing after the initial attempt answers, the top-level fields are the fro
 door's and the two `front_door_*` fields are absent.  This matters because every
 `prover.call_prover` writes `collect["gk_command"]`: without the snapshot a stage
 that RAN without answering would leave its own command at the top level.
-`solve._set_answering_call` is the one place that decides it.
+`solve_stages.set_answering_call` is the one place that decides it.
 
 **Provenance stamp:** every `summary.json` carries a `pipeline_git` object —
 `{"commit": ..., "dirty": ..., "tags": [...]}` — recorded at run start
@@ -201,6 +201,55 @@ python3 run_pretty_check.py > logconvert_check.txt
 ```
 
 ---
+
+## Extending the action route
+
+The action route keeps its prompts, its compiler, its library and its replay
+apart from the ordinary pipeline. A change to one of them usually needs a
+matching change in another.
+
+**An example in the prompts.** Write the record in
+`tests/action_route/unseen/examples.json` first, with its `expect` outcome.
+`prompt_examples.py` compiles it through the controller. Move it to
+`prompts/actions/examples.json` when the prompts should show it. Then run
+`json_layout.py` and write the manifest again
+(`prompts/actions/README.md`). A moved example changes the assembled prompt,
+so later runs make new model calls.
+
+**A prompt rule.** Edit `prompts/actions/stage1_instructions.txt` or
+`stage2_instructions.txt` and the checklist of the stage. Keep a rule short and
+show it in an example. A prompt change that a run will measure gets a new
+revision name in the first line of both instructions files, in the bundle
+status of `action_prompt.assemble`, and in `identity()` of
+`tests/action_route/prompt_examples.py`, which writes the manifest. Describe the rule in the
+[action prompt interface](../encodings/action-prompts.md).
+
+**A repair of the controller.** A repair changes a model response only when
+the text or Stage 1 decides the result. It records its kind, the unit, the
+text before and after, and the units it rests on. Add it to `action_repair` or
+`action_prompt`, give it the next label, and add a row to the repair table of
+the prompt interface.
+
+**A physical law.** The library file `axioms_action.js` is the only place of
+the physical laws. A change needs:
+
+- a new version and a new SHA-256 in `axioms_action.roles.json`, the same
+  version in `axioms_action.templates.json`, and a role for every new clause;
+- the same transition in `action_replay`, which must agree with the library;
+- the [action library](../encodings/action-library.md) page.
+
+**A form that the route does not model.** Report it, do not approximate it.
+Add a reason to `lc_action.REASONS`, detect it in the pass that can see it,
+and add one sentence to `action_english.REASON_SENTENCES`. The answer is then
+`Cannot answer: <sentence>.` with the reason code.
+
+**A gold expectation.** Every change to a gold fixture or to the expected
+answer of a planning test row is a row in the review ledger of
+`tests/action_route/fixtures/`, with the old value, the new value, the reason
+and who decided. The planning
+test files are generated (`make_planning_tests.py`); do not edit them by hand.
+
+Run `python3 tests/action_route/run_checks.py` after each change.
 
 ## Related documentation
 

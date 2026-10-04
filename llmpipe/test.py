@@ -47,6 +47,7 @@ import os
 sys.path.insert(0, './solver')
 from solve import english_to_answer
 import solve as _solve_mod
+import solve_cli
 import llmcall as _llmcall
 
 
@@ -277,7 +278,7 @@ def _run_configuration(solver_opts):
   import globals as solver_globals
   effective = dict(solver_globals.options)
   effective.update(solver_opts)
-  effective["pipeline_name"] = _solve_mod.finalize_pipeline_name(effective)
+  effective["pipeline_name"] = solve_cli.finalize_pipeline_name(effective)
   provider, version = _effective_model()
   return {
     "provider": provider,

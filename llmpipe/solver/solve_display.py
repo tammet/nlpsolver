@@ -10,19 +10,18 @@
 # nested run is in progress and releases it at the end, through `suppress()`
 # and `flush()`.
 #
-# `solve` imports this module and re-exports every name below, because local
-# fixtures call `solve._print_graphbridge` and `solve._print_graph_theory`
-# directly.
+# The pipeline (`solve.py`, `solve_retries.py`) and the action route call the
+# functions without an underscore; the others are used here only.
 #----------------------------------------------------------------
 # Copyright 2026 Tanel Tammet (tanel.tammet@gmail.com)
 # Licensed under the Apache License, Version 2.0.
 #----------------------------------------------------------------
 
 import json
+import os
 
 import globals
 import lc_encoding
-import pretty
 
 
 def _debug():
@@ -34,10 +33,12 @@ def _debug():
 # re-enters the pipeline, so the inner run must not print a block of its own.
 _last_summary = None
 _suppress_summary = False
+# the summary forms of a record held by `hold_summary`: (block, JSON line); None reads globals.options
+_last_forms = None
 
 # The stages that have already announced themselves in this case.  A stage
 # announces once per case, so the set is cleared when a case begins:
-# `_english_to_answer_body` calls `reset_announced()`.
+# `_attempt_body` calls `reset_announced()`.
 _announced = set()
 
 
@@ -48,17 +49,17 @@ def reset_announced():
 
 def suppress(value):
   """Hold the summary back (True) or allow it (False).  Resets the held one."""
-  global _suppress_summary, _last_summary
+  global _suppress_summary, _last_summary, _last_forms
   _suppress_summary = bool(value)
   if value:
-    _last_summary = None
+    _last_summary, _last_forms = None, None
 
 
 def flush():
   """Print the held summary, if there is one.  -> True when one was printed."""
   if _last_summary is None:
     return False
-  _show_summary(_last_summary)
+  show_summary(_last_summary)
   return True
 
 
@@ -70,13 +71,13 @@ def last_summary():
 
 # ---- helpers the printers share -------------------------------------
 
-def _loud_enough():
+def loud_enough():
   """True from `-logic` up: the level at which the pipeline shows its blocks."""
   return bool(globals.options.get("show_logic_flag")
               or globals.options.get("show_details_flag")
               or globals.options.get("debug_print_flag"))
 
-def _announce_stage(name, late=False):
+def announce_stage(name, late=False):
   """One line naming the stage whose blocks follow.
 
   A stage after the initial attempt parses, converts and calls gk again, and its
@@ -113,26 +114,103 @@ def _graph_atoms(node, out=None):
 
 # ---- the summary block ------------------------------------------------
 
-def _print_summary(answer, answered_by, front_door_answer, state=None,
-                   rerun_answered_by=None, stages=None):
+def print_summary(answer, answered_by, front_door_answer, state=None,
+                  rerun_answered_by=None, stages=None):
   """`-summary`: who answered and what it cost, whatever the output level."""
-  global _last_summary
-  import solve                  # deferred: solve.py imports this module
-  rec = solve._summary_record(answer, answered_by, front_door_answer, state,
-                        rerun_answered_by=rerun_answered_by, stages=stages)
-  _last_summary = rec
+  global _last_summary, _last_forms
+  import solve_stages
+  rec = solve_stages.summary_record(answer, answered_by, front_door_answer, state,
+                                    rerun_answered_by=rerun_answered_by, stages=stages)
+  _last_summary, _last_forms = rec, None
   if _suppress_summary:
     return
-  _show_summary(rec)
+  show_summary(rec)
 
 
-def _show_summary(rec):
-  if globals.options.get("summary_json_flag"):
+def hold_summary(rec, text=True, as_json=False):
+  """Hold a summary record built elsewhere (the action route's), with the forms it is printed in: the block
+  (`-summary`) and the JSON line (`-summary-json`).  Printed at once when nothing holds summaries back."""
+  global _last_summary, _last_forms
+  _last_summary, _last_forms = rec, (bool(text), bool(as_json))
+  if not _suppress_summary:
+    show_summary(rec)
+
+
+def set_route(route):
+  """Add the pipeline choice to the summary held back, if there is one."""
+  if _last_summary is not None and route and not route.get("error"):
+    _last_summary["route_choice"] = {k: v for k, v in route.items() if k != "options"}
+
+
+def _route_phrase(route):
+  """Which pipeline a call took and why, in one line."""
+  name = "action route" if route.get("route") == "actions" else "ordinary pipeline"
+  mode = route.get("mode")
+  if mode == "actions":
+    return "%s (forced by -actions)" % name
+  if mode == "noactions":
+    return "%s (forced by -noactions)" % name
+  signals = route.get("signals") or []
+  if signals == ["formal_input"]:
+    return "%s (chosen automatically: a formal input)" % name
+  if route.get("verdict") == "actions":
+    return "%s (chosen automatically: %s)" % (name, ", ".join(signals))
+  if route.get("verdict") == "unclear":
+    return "%s (chosen automatically: unclear, %s)" % (name, ", ".join(signals))
+  return "%s (chosen automatically: no sign of actions)" % name
+
+
+def print_input(text, formal=False):
+  """The input at the top of `-logic` and up.  A formal record shows its own text and its questions' texts."""
+  if not formal:
+    print(text)
+    return
+  record = text
+  try:
+    if not text.lstrip().startswith("{") and os.path.isfile(text.strip()):
+      with open(text.strip()) as f:
+        record = f.read()
+    record = json.loads(record)
+  except (OSError, ValueError):
+    record = None
+  if not isinstance(record, dict):
+    print(text[:300])
+    return
+  queries = record.get("queries") or []
+  print("[a formal record: %d units, %d questions]" % (len(record.get("units") or []), len(queries)))
+  words = [record.get("text")] + [q.get("text") for q in queries if isinstance(q, dict)]
+  if any(words):
+    print(" ".join(w for w in words if w))
+
+
+def print_route(route):
+  """The pipeline block, from `-logic` up: which pipeline answers the call, and why."""
+  print("\n=== pipeline ===\n")
+  print("  " + _route_phrase(route))
+
+
+def _forms():
+  """(block, JSON line): the summary forms asked for."""
+  if _last_forms is not None:
+    return _last_forms
+  return bool(globals.options.get("summary_flag")), bool(globals.options.get("summary_json_flag"))
+
+
+def show_summary(rec):
+  text, as_json = _forms()
+  if as_json:
     print(json.dumps(rec, default=str))
-    if not globals.options.get("summary_flag"):
+    if not text:
       return
   print("\n=== summary ===")
   print("answer: %s" % rec["answer"])
+  if rec.get("route_choice"):
+    print("pipeline: %s" % _route_phrase(rec["route_choice"]))
+  if rec.get("pipeline") == "actions":
+    import action_display
+    for line in action_display.summary_lines(rec):
+      print(line)
+    return
   by = rec["answered_by"]
   if rec.get("rerun_answered_by") in ("fallback_norm", "fallback_hyp"):
     by = "%s (rerun answered by %s)" % (by, rec["rerun_answered_by"])
@@ -157,7 +235,7 @@ def _show_summary(rec):
            rec["llm_calls_live"]))
   print("routes run: %s" % "; ".join(rec["routes"]))
 
-def _print_critic(record):
+def print_critic(record):
   """The `-explain` block of the critique pass."""
   print("\n=== critic (one reading of the front door's translation) ===")
   report = record.get("report")
@@ -189,9 +267,9 @@ def _print_critic(record):
               if record.get("unasked_units") else ""),
              str(record.get("answer_after") or "").split("\n")[0]))
 
-def _print_stages(rows):
+def print_stages(rows):
   """The stages block: which stages ran, and which one produced the answer."""
-  if not (rows and _loud_enough()):
+  if not (rows and loud_enough()):
     return
   print("\n=== stages ===\n")
   for row in rows:
@@ -202,7 +280,7 @@ def _print_stages(rows):
     print("  %-14s ran   %s%s"
           % (row["stage"], row.get("answer") or "no answer", mark))
 
-def _print_graph_theory(got, s1_json=None, llm=None):
+def print_graph_theory(got, s1_json=None, llm=None):
   """The second translation's own copies of the ordinary output blocks.
 
   The headers are the ordinary ones: what marks the blocks as the second
@@ -225,7 +303,7 @@ def _print_graph_theory(got, s1_json=None, llm=None):
     # the same renderer the initial attempt's block uses, so the two read alike
     from proof_render import compute_ambiguity as _compute_ambiguity
     from utils import format_sentences_to_clauses
-    _announce_stage("graphtrans", late=True)
+    announce_stage("graphtrans", late=True)
     try:
       _compute_ambiguity(clauses)
       print("\n" + format_sentences_to_clauses(
@@ -238,7 +316,7 @@ def _print_graph_theory(got, s1_json=None, llm=None):
       print("\n=== prover result (JSON) ===\n")
       print(json.dumps(got["gk_result"], indent=2))
 
-def _print_graphtrans(got, verbose=False):
+def print_graphtrans(got, verbose=False):
   """The layer-1 block of `-explain` and above."""
   print("\n=== the second translation, step by step ===")
   tr = got.get("translation") or {}
@@ -310,7 +388,7 @@ def _graph_step_line(step):
     return _json.dumps(blob, default=str)[:120]
   return "%s%s" % (" or ".join(literals), ("  [%s]" % name) if name else "")
 
-def _print_litbridge(records, verbose=False, options=None):
+def print_litbridge(records, verbose=False, options=None):
   """Show what each bridge round did, for -logic and above."""
   print("\n=== litbridge (the ordinary run left the question unresolved) ===\n")
   if options is not None:
@@ -378,7 +456,7 @@ def _litbridge_encoding(options):
                            ", ".join(axes) if axes
                            else "no abstraction primitive")
 
-def _print_graphbridge(record, verbose=False):
+def print_graphbridge(record, verbose=False):
   """Show what the graph route did, for -logic and above."""
   print("\n=== the second translation and its invented rules, step by "
         "step ===\n")
@@ -448,7 +526,7 @@ def _print_graphbridge(record, verbose=False):
   for row in record.get("bridge_omissions") or []:
     print("      omitted: %s" % row.get("why"))
 
-def _show_simplified_to(text, s1_json):
+def show_simplified_to(text, s1_json):
   """Show the 'simplified to' block if ASU texts differ from the input."""
   asu_texts = []
   for pkg in s1_json:

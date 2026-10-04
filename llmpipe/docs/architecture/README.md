@@ -10,9 +10,12 @@ they do not say which module holds which function, which is the
 [code guide](../code/README.md). The evidence behind a design choice is in
 [mechanism experiments](../mechanisms/README.md).
 
-A run does four things in order: translate the passage into logic, compile that
-logic into clauses, search for a proof, and, when no proof is found, try again
-with a different translation. The pages below follow that order.
+A run first chooses its pipeline. The ordinary pipeline does four things in
+order: translate the passage into logic, compile that logic into clauses,
+search for a proof, and, when no proof is found, try again with a different
+translation. The pages below follow that order. A text about actions and plans
+takes the experimental action route instead, which has its own pages at the
+end of the list.
 
 ## Reading order
 
@@ -62,6 +65,17 @@ skip those sections until you need to study or enable them.
   translation and the bridge generation built on it.
 - [Literal bridges](literal-bridges.md) — the optional mechanism that invents
   rules over the case's own atoms.
+
+**Texts about actions and plans**
+
+- [The action route](action-route.md) — the experimental route for plans and
+  action questions: the choice of route and its six steps.
+- [Action translation](action-translation.md) — the controller of the route's
+  two model calls: checks, corrections, normalizations and repairs.
+- [Action compilation](action-compilation.md) — the source passes, the query
+  views and obligations, and the backend requirements.
+- [Proof search and answers](action-answers.md) — the GK launches, the answer
+  policy, the independent replay and the answer text.
 
 ## Related documentation
 

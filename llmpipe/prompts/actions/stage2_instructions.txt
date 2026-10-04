@@ -1,0 +1,265 @@
+ACTION-AWARE STAGE 2 — REVISION I, ENCODING V2
+
+This extension applies when the action profile was selected. It takes
+precedence over conflicting ordinary instructions and examples. Translate
+the entire Stage-1 passage, including unmarked state facts. Preserve source
+units and the question. Produce logic, never a candidate plan or an answer.
+
+1. Output
+
+Return exactly one JSON object, never the ordinary ["and",...] list:
+{"worlds":["W0"],"contexts":{},"query_contexts":{},"logic":[...]}
+It also has "types" when a law sentence introduces a referent (section 2).
+
+logic contains ["@id",ID,PACKAGE] for every ASU, exactly once. IDs stay as
+in Stage 1. Source PACKAGE is ["holds",WORLD,FORMULA]. Query packages have
+no holds wrapper. Source worlds follow their establishment order, not numeric
+sorting; pre_state chooses each source unit's world, default W0. Rules do not
+create worlds. Preserve explicit named snapshots; do not equate a narrated
+world with a hypothetical successor.
+
+Do not emit the ordinary next, state time, or state location packages.
+The worlds list and contexts records replace them in this envelope.
+
+contexts maps source IDs to their Stage-1 context records. For initial
+descriptions without an action_reading, add tense from time when it is
+present/past/future, otherwise from state_tense. No action_reading adds context
+tense: occurrence time is a has time atom in its event formula; availability,
+restriction and effect timing belongs in @time. @time wraps only the stated
+validity phrase of a rule or a permission, inside its package:
+["@id",ID,["holds",WORLD,["@time",TIME_TEXT,RULE]]], with TIME_TEXT the
+whole phrase as written ("until noon"); @time never wraps holds and never
+goes into contexts. A dated permission must get the temporal-scope
+diagnostic, not become unrestricted. A description never takes @time: its
+date stays in the Stage-1 time field and its tense goes to the context record
+("On Monday the gate was red": {"tense":"past"}, no @time). A tense word
+(past, present, future) is never a TIME_TEXT. A context record has at most the keys
+location, location_role, knower and tense; never copy Stage-1 time or
+time_prep into it. query_contexts
+maps query IDs to the explicitly selected planning_root, ambient and knower.
+Copy these selections faithfully; omit empty ones. Never put a query's
+selection on a source. The compiler supplies all default selections.
+
+For source probability p use exactly:
+["@id",ID,["and",["holds",WORLD,FORMULA],["@p",ID,p]]].
+Without a probability the text states, the package is ["holds",WORLD,FORMULA]
+itself, never an ["and",...] around one holds. Do not convert probability to evidence; the compiler performs 2p-1. Do not
+negate a claim to accommodate p <= 0.5: preserve it for the unsupported
+confidence diagnostic. An existential is not a probability modifier. Two
+Stage-1 confidences are conventions, not stated uncertainty, and get no @p:
+  0.99 from an indefinite article ("There is a bus from A to B"): no @p;
+  0.98 from normally: ["normally",FORMULA], no @p.
+A probability the text states gets @p: probably/likely 0.8, "with probability
+0.99" 0.99. Normally wraps the can head only, inside the quantifier and the
+implication: ["forall","X",["implies",CONDITION,["normally",["can",...]]]],
+never ["normally",["forall",...]]. Do not discard a separately stated
+probability on a default.
+
+2. Terms and atoms
+
+Reuse concrete entity IDs from Stage 1 exactly as written. Override the
+ordinary rule that puts an entity's url in place of its ID: never write a url.
+Variables are one uppercase letter
+with an optional uppercase letter or digit, except world names W0, W1, ... .
+Bind every variable with nested ["forall",V,F] or ["exists",V,F]. Do not
+introduce Skolem constants. Lexical class, relation and property names are
+lowercase. Use the following source predicates:
+
+["isa",CLASS,X]                         static class membership
+["connected",FROM,TO,MEANS]              a stated directed public route
+["is rel2","located_at",X,PLACE]        physical location
+["is rel2","on",X,SUPPORT]
+["is rel2","in",X,CONTAINER]
+["is rel2","holding",ACTOR,X]
+["have",ACTOR,X]                         possession, not necessarily holding
+["has property",VALUE,X]
+
+Adjectives are ["has property",VALUE,X]; the ordinary has degree property
+and its degree arguments do not exist in this profile.
+
+Class facts. A concrete referent that the text first introduces by a class
+noun gets one class fact, whatever its article: "the key", "a pan", "Block
+b", "the table", "the robot hand" (class hand). It stands in the first unit
+that names the referent. In a description it is a conjunct of that fact
+("Robo has the key": ["and",["isa","key","key 2"],["have","Robo 1","key 2"]]),
+never in types. The envelope field types holds only concrete Stage-1
+entities that a law sentence (availability, restriction, effect) names first,
+keyed by that unit: {"S4":[["isa","box","box 3"]]}; the law formula holds its
+rule only. A variable's class stays in its rule's guard, never in types.
+A proper name gets no class unless a sentence states one ("Robo is a robot",
+"Nia is a cook"); never ["isa","Dock","Dock 3"]. Never repeat a class fact at
+a later mention, never use a Stage-1 category word (artifact, substance) as
+the class, and never type a referent that only the question names. Do not
+write a person class that no sentence states: the compiler reads the Stage-1
+category person. A type is a fact, not a condition. A stated class
+condition about a named individual stays in its antecedent ("If Nia is a
+doctor and Nia has the pan, ..." keeps ["isa","doctor","Nia 1"]), and a
+quantified class guard stays.
+
+Negation is ["not",ATOM]; conjunction is ["and",...]; implication is
+["implies",CONDITION,HEAD]. Do not add context terms or situation arguments.
+This profile does not support arbitrary ordinary relations. Preserve a
+relation that is outside the profile for a diagnostic; never replace it by
+on/in/located_at just to pass validation.
+
+Reserved property values are clear_top (nothing on top of a block) and empty
+(a hand holding nothing). Reserved classes are person, hand, block and the
+surface classes table, floor, shelf, counter. Any hand, including a compound
+such as robot hand, has the class hand: ["isa","hand","robot hand 1"]; a
+compound class may stay beside it. Do not infer hand from person or person from
+robot. The standard means are bus, train, ship, ferry, plane,
+taxi and foot. Other values remain open and acquire no library behavior.
+
+Override the ordinary "John is at the park" -> in example: use located_at
+for an actor's physical location at a place, including "in Tallinn", and for a
+place located in a place ("Harbor is in Hilltown"). Use in only for
+object/container containment. Two nested places are not flattened into one flat place model.
+The physical location relation and context.location are different fields.
+
+3. Action terms and sufficient rules
+
+The five action constructors and their argument order are:
+["move",ACTOR,FROM,TO,MEANS]
+["take",ACTOR,OBJECT]
+["put_on",ACTOR,OBJECT,SUPPORT]
+["put_in",ACTOR,OBJECT,CONTAINER]
+["change",ACTOR,OBJECT,VALUE,TOOL]
+
+Use change when the sentence identifies the resulting property. A bare
+operation with no expressible result must not acquire a guessed VALUE. The
+VALUE of a bare operation ("Ann can boil the egg") is a result the text states
+for that verb in an effect sentence. When two methods share one stated result
+and each has its own distinguishing stated result (boil: wet, fry: crisp),
+each action term takes its distinguishing result and the shared result
+(cooked) stays an effect of both. Synonyms of one operation (take, pick up)
+are one term. Two methods whose stated results do not distinguish them are a
+method collision that the compiler reports; do not invent a value. When the
+text states no result for the verb, the VALUE is the verb's past participle:
+seal -> sealed, mend -> mended, cook -> cooked, break -> broken. A stated
+result takes precedence (paint ... red -> red). The VALUE is never
+unspecified. This never turns a creation, a transfer or a movement into
+change. A property that appears only in the question, or only as another
+verb's effect, is never a VALUE. One action has one term in every sentence:
+after "Kaja can brew the tea in the kettle", a later "After Kaja brews the
+tea, ..." uses the permission's term, with the kettle.
+In particular, a nearby rule naming a result does not supply an omitted result
+in a restriction or denial. Preserve an explicit anaphoric reference, or report
+the unsupported operation instead of borrowing an unrelated rule's result.
+MEANS and VALUE are lexical values; TOOL is an entity. Only missing MEANS or
+TOOL may use "unspecified". A missing actor is not a new someone constant.
+Transporting another object, giving possession, consuming or creating an
+object is not the self-move or property-change constructor.
+
+For action_reading availability, a positive head is
+["can",ACTOR,ACTION], optionally under forall, a stated condition, or normally.
+Its ACTOR must equal the action term's actor. An explicit denial is
+["not",["can",ACTOR,ACTION]]. A condition of a permission stands in the
+antecedent; the consequent is the can head alone, never
+["and",CONDITION,["can",...]]. A permission that names no actor ("The kite
+can be mended") is ["exists","A",["can","A",ACTION]] with A as the action's
+actor; never unspecified as an actor. Stage-2 can is a source rule to be completed
+by the physical profile; it is not an unrestricted executable assertion.
+Do not reify these recognized rules as capability events under the ordinary
+Stage-2 action rules.
+
+Travel by a means is a move, whatever the verb: "take the bus" and "ride the
+ferry" are ["move",A,F,T,MEANS], never ["take",A,"bus"].
+A source movement permission with specified endpoints and means is actor-
+scoped. Emit its can rule only; do not also manufacture connected. A movement
+rule that states no origin or destination ("Every rover can travel by taxi")
+binds both with forall, outside any condition:
+["forall","A",["forall","F",["forall","T",["implies",["isa","rover","A"],["can","A",["move","A","F","T","taxi"]]]]]].
+A denial without endpoints ("Toddlers cannot ride the ferry") binds them the
+same way:
+["forall","A",["forall","F",["forall","T",["implies",["isa","toddler","A"],["not",["can","A",["move","A","F","T","ferry"]]]]]]].
+unspecified stands only for a missing means or tool, never for an endpoint. A stated
+public service or route emits connected in its stated direction. Do not
+invent reverse routes. Variables stay under the source's quantifiers and
+conditions; do not turn a fresh universal endpoint into a particular route.
+
+Do not put physical library conditions into the source formula unless the
+source states them. The compiler adds the constructor's physical checks.
+Preserve exactly the stated condition (section 2): "Nia is a cook. If Nia has
+the pan, Nia can cook the egg" gives the possession condition only, never
+["isa","person","Nia 1"] or ["isa","pan","pan 3"] in the antecedent; an
+unstated class condition makes the rule inapplicable.
+Retain stated tool possession or tool-class conditions. Under this profile's
+reviewed recipe convention, a sufficient property-change rule that specifies
+a concrete instrument ("with the whisk", or instrumental "in the pan") also
+has have(ACTOR,TOOL) among its conditions. Add it once if not already stated.
+This convention applies to positive sufficient rules; do not weaken a denial
+or add a permission to an effect/restriction. A travel means is not a tool.
+Separate sufficient
+rules are alternatives; do not conjoin their conditions across source units.
+
+4. Restrictions and effects
+
+For "ACTION only if Q", use
+["implies",["executable",ACTION],Q].
+Retain static class guards on the antecedent, and bind source variables.
+This is not ["implies",Q,["can",...]]. Unknown required conditions are not
+true. Do not add a permission merely because a restriction names an action.
+An underlying capability restriction using can in an antecedent remains
+unsupported; do not silently change its meaning to execution.
+
+For a strict effect use ["after",ACTION,Q], or
+["implies",OLD_CONDITION,["after",ACTION,Q]]. An effect names the actor who
+performs its ACTION. A rule between two states has no after and no action
+(section 5). Q is a signed fluent or a
+conjunction of signed fluents. OLD_CONDITION is evaluated before the action.
+"No longer raw" states a negative raw effect; "becomes cooked" alone does
+not negate raw. Preserve both when both are stated. A conditional effect's
+condition is not an executability precondition. An effect grants no permission.
+Do not emit change markers, frames, hooks, poss, action_available, reachability
+seeds or derived_property. Those are compiler output.
+
+Do not discard uncertainty to make an effect strict. Defeasible/uncertain
+text effects, existential effect heads, slot restrictions such as only by
+ship, and unsupported scopes retain their meaning and get diagnostics.
+For slot equality use the source equality in the necessary-condition formula;
+do not strengthen it to a permission for the named slot value. A restriction
+that leaves the origin or the means unstated binds each with a variable under
+forall and states the equality on the means variable (example
+only_by_restriction); never unspecified there, never ship = ship.
+
+5. State scope and unsupported content
+
+State rules follow the convention of Stage 1. A dependency between states
+that Stage 1 types strict_rule or normal_rule, with no action_reading, is a
+standing rule: holds(W,["state_law",F]), for example
+["state_law",["forall","X",["implies",["and",["isa","sack","X"],["is rel2","on","X","cart 2"]],["has property","loaded","X"]]]].
+A description of the start (type situation or real) stays holds(W,F), also
+when F has forall or implies ("Initially, every sack on the cart is dusty"). A standing rule over stored physical state can be unsupported;
+do not turn it into an initial fact to suppress that diagnostic. A law with
+an existential head is unsupported; an initial existential is a distinct
+supported form with a witness created by the compiler.
+
+Preserve an actual occurrence with ordinary event vocabulary rather than
+converting it into a can/after law. Keep its time as ["has time",EVENT,TIME_TEXT]
+(using state_tense if time is absent), not as a fact-context tense. The action
+compiler reports occurrence.
+Unsupported operator meanings remain visible in an ordinary event formula
+when expressible, with the supported event roles. No source unit may vanish.
+Do not drop unsupported material to answer another question in the passage.
+
+6. Queries
+
+plan_question       ["plan",GOAL] or ["plan",GOAL,["steps","at_most"|"exactly",N]]
+                    (GOAL is one formula; a conjunctive goal is one ["and",...] list)
+reachable_question  ["reachable",GOAL] or the same steps suffix
+executable_question ["question",["executable",ACTION]], or for a who- or
+                    which-question ["ask",V,["executable",ACTION]] with V in the
+                    actor or the object slot
+verify_question     ["verify",[ACTION1,ACTION2,...],GOAL]
+ordinary fact       ["question",FORMULA]
+entity question     ["ask",VARIABLE,FORMULA]
+
+Copy step_bound to the steps suffix with its exact comparison and count.
+Preserve one goal with its conjunction, quantifiers
+and shared witnesses. Do not split it into several queries. A plan result
+is requested, not supplied. A verification supplies actions, not assertions
+that they are executable. Empty verification reads the initial snapshot.
+Do not use after or can in a query. A question about a natural skill must
+not become an immediate-executability question merely to fit this grammar.
+No question contains a situation variable or a guessed plan. Keep the
+explicit step_bound; the compiler controls the independent search allowance.

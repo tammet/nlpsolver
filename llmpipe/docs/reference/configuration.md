@@ -85,6 +85,24 @@ property name per line.
 
 **Prover defaults** (time limit, axioms, strategy) are in `globals.py`.
 
+## The action route
+
+The action route resolves its own options (`action_pipeline.resolve`). Its
+keys are `-actions`, `-noactions`, `-formal`, `-plan-depth` and
+`-action-backend`
+([experimental options](experimental-options.md#the-action-route)). The
+ordinary stage switches, the `-pipeline` presets, the representation options
+and the prover options `-axioms`, `-strategy` and `-printlevel` are errors with
+`-actions`. The model-call bounds and the caches apply to its model calls as
+above.
+
+Its settings that are not command-line options are module constants: the
+correction budget and the call budget of the translation in `action_pipeline`,
+the default search depth in `action_route`, and the registered GK builds,
+their strategy, the time per launch and the confidence cutoff in `action_gk`.
+The [action route modules](../code/action-route.md#constants-that-change-behaviour)
+list them with their values.
+
 ## The options dict
 
 `english_to_answer(text, options)` takes the same settings as a dict, so a
@@ -114,7 +132,7 @@ are `True`; `litbridge_flag` and `graphbridge_flag` are `False`.
 `-abstract-max` assign all six; an explicit stage switch sets one to `True`; a
 cancel key (`nofallback_norm_flag`, `nofallback_hyp_flag`, `nocritic_flag`,
 `nographtrans_flag`, `nolitbridge_flag`, `nographbridge_flag`) is not read by
-the pipeline at all. `_parse_cmd_line` resolves it after the whole command line
+the pipeline at all. `solve_cli.parse_cmd_line` resolves it after the whole command line
 by forcing its stage key to `False`, so a cancel wins from any position.
 `nographtrans_flag` clears `graphbridge_flag` as well, since bridge generation
 searches the graph theory.

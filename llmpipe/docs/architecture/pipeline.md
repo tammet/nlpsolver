@@ -7,6 +7,17 @@ The pipeline translates English into logic, calls the GK prover and returns an
 answer. When the prover returns `Unknown`, later stages try again with a
 different translation. The first definite answer stops the remaining stages.
 
+## The choice of pipeline
+
+Before the initial attempt, `solve.route_choice` chooses the pipeline of the
+call. `-actions` sends the text to the experimental action route and
+`-noactions` to the ordinary pipeline, and `-formal` alone selects the action
+route. Without these keys, the classifier
+`route_classify.classify` reads the text with no model call. A strong sign of
+actions or plans sends it to the action route; every other text, also an
+unclear one, takes the ordinary pipeline described on this page. The action
+route runs none of the stages below ([the action route](action-route.md)).
+
 ## The initial attempt
 
 ```text

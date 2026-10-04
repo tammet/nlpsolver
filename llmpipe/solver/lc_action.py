@@ -13,9 +13,13 @@ has, and reports two kinds of diagnostic:
                 of the reason names in REASONS.
 
 It emits no clauses.  Situations, witnesses, the library, routes,
-restrictions, effects and query views belong to the later passes of this
-module; `PENDING_PASSES` names them.  Nothing here normalizes a lexical
-value: `unspecified`, the means and the property values are kept verbatim.
+restrictions, effects and query views belong to the later passes, each in its
+own module (`lc_action_situate`, `lc_action_library`, `lc_action_avail`,
+`lc_action_restrict`, `lc_action_effects`, `lc_action_query`);
+`SOURCE_PASSES` names the source passes in order.  Nothing here normalizes a
+lexical value: `unspecified`, the means and the property values are kept
+verbatim.  The formula helpers at the top (`conjuncts`, `contains`,
+`mentions`) are shared by the other action modules.
 
 Nothing in this module calls a model or a prover.
 """
@@ -44,7 +48,6 @@ FLUENTS = {"is rel2": 3, "has property": 2, "have": 2}
 STATIC = {"isa": 2, "connected": 3}
 RELATIONS = ("located_at", "on", "in", "holding")
 ACTION_OPERATORS = {"can": 2, "executable": 1, "after": 2, "state_law": 1}
-CONNECTIVES = {"and", "or", "not", "implies", "normally"}
 QUANTIFIERS = {"forall", "exists"}
 QUERY_PACKAGES = ("plan", "reachable", "verify", "question", "ask")
 STEP_COMPARISONS = ("at_most", "exactly")
@@ -57,10 +60,6 @@ EVENT_PREDICATES = {"has type": {2}, "has actor": {2}, "has target": {2},
                     "has time": {2, 3}, "capability": {1}}
 EVENT_CLASSES = {"activity", "event"}
 
-# Reserved vocabulary the library reads (A2.2).  Kept for documentation and
-# for later passes; the validator does not close any lexical slot.
-RESERVED_PROPERTIES = ("clear_top", "empty")
-RESERVED_CLASSES = ("person", "hand", "block")
 SURFACE_CLASSES = ("table", "floor", "shelf", "counter")
 STANDARD_MODES = ("bus", "train", "ship", "ferry", "plane", "taxi", "foot")
 
@@ -95,7 +94,7 @@ REASONS = {
 }
 # the source passes after structural validation, in order.  `query_views` is
 # a pass over one query and is recorded in the query artifact.
-PENDING_PASSES = ("situation_compilation", "action_library",
+SOURCE_PASSES = ("situation_compilation", "action_library",
                   "availability_routes_identity", "restrictions",
                   "effects_state_policy")
 
@@ -111,6 +110,33 @@ CONCRETE = re.compile(r"^.+ \d+$")
 LEXICAL = re.compile(r"^[a-z][a-z0-9_ ]*$")
 WITNESS = re.compile(r"^sk_[A-Z][A-Z0-9]?$")
 UNIT_ID = re.compile(r"^[A-Za-z][A-Za-z0-9_]*$")
+
+
+# ---------------------------------------------------------------------------
+# formula helpers that the other action modules share
+
+
+def conjuncts(f):
+  """The conjuncts of a formula: the members of a nested ["and", ...], or [f]."""
+  if isinstance(f, list) and f[:1] == ["and"]:
+    return [y for x in f[1:] for y in conjuncts(x)]
+  return [f]
+
+
+def contains(f, names):
+  """Whether an operator or predicate of `names` heads f or a subformula of f."""
+  if isinstance(f, list):
+    if f and isinstance(f[0], str) and f[0] in names:
+      return True
+    return any(contains(x, names) for x in f[1:])
+  return False
+
+
+def mentions(f, v):
+  """Whether the term or formula f contains v anywhere."""
+  if isinstance(f, list):
+    return any(mentions(x, v) for x in f)
+  return f == v
 
 
 def is_var(t):
@@ -173,7 +199,21 @@ def check_term(t, bound, rep, path, identity, slot=None, witnesses=False):
       rep.invalid("unbound_variable", path, t, "variable %s is not bound by forall or exists" % t)
     return
   if t == UNSPECIFIED:
-    if slot not in UNSPECIFIED_SLOTS:
+    if slot in ("from", "to"):
+      rep.invalid("unspecified_position", path, t,
+                  "an origin or destination that the rule does not state is a universally quantified variable of the "
+                  "rule ([\"forall\",\"F\",[\"forall\",\"T\",...]]), never `unspecified`")
+    elif slot == "value":
+      # K13: the message names the value that fits
+      rep.invalid("unspecified_position", path, t,
+                  "`unspecified` stands only in a means or tool slot; the value is the result that the text states "
+                  "for this verb, else the verb's past participle (polish: polished, force: forced)")
+    elif slot == "actor":
+      rep.invalid("unspecified_position", path, t,
+                  "`unspecified` stands only in a means or tool slot; an action names its actor, a declared entity or "
+                  "a bound variable; an effect names who performs its action, and a rule between two states has no "
+                  "after and no action: [\"forall\",V,[\"implies\",STATE,STATE]]")
+    elif slot not in UNSPECIFIED_SLOTS:
       rep.invalid("unspecified_position", path, t,
                   "`unspecified` stands only in a means or tool slot; it is not an entity, a witness or a wildcard")
     return
@@ -229,8 +269,11 @@ def _check_atom(f, bound, rep, path, identity):
       for i in (1, 2):
         check_term(f[i], bound, rep, path + [i], identity)
     elif op == "isa":
-      if not is_lexical(f[1]):
-        rep.invalid("lexical_value", path + [1], f[1], "a class name is a lexical constant")
+      if isinstance(f[1], str) and isinstance(f[2], str) and f[1][:1].isupper() and re.fullmatch(re.escape(f[1]) + r" \d+", f[2]):
+        rep.invalid("lexical_value", path + [1], f[1], "%s is a proper name; a proper name gets no class unless a "
+                    "sentence states one; remove this atom" % f[2])
+      elif not is_lexical(f[1]):
+        rep.invalid("lexical_value", path + [1], f[1], "a class name is a lexical constant: a lowercase word")
       check_term(f[2], bound, rep, path + [2], identity)
     else:  # connected(F, T, M)
       for i in (1, 2):
@@ -338,6 +381,9 @@ class _Walk(object):
       if len(f) != 3:
         rep.invalid("arity", path, f, "@time takes a time expression and a formula")
         return
+      if f[1] in TENSES:
+        rep.invalid("time_text", path + [1], f[1], "a tense is the context tense, not @time: %r is not a validity "
+                    "phrase of the text; remove the @time wrapper (a description's tense goes in its context record)" % f[1])
       self.found.append((op, path, where, f))
       self.formula(f[2], bound, path + [2], where + ((op, 2),))
     elif op in EVENT_PREDICATES:
@@ -356,40 +402,36 @@ class _Walk(object):
           kind = "event"
         self.kinds.add(kind)
 
+  def event_arguments(self, f, bound, path):
+    """Binding and term kinds in the ordinary event predicates.
 
-def _event_arguments(self, f, bound, path):
-  """Binding and term kinds in the ordinary event predicates.
-
-  The first argument is the event; `has type` then holds a lexical verb; the
-  other predicates hold a participant (a bound variable, a declared id or a
-  lexical constant such as a bare noun or `past`) and, in the three-place
-  forms, a lexical context word.  The unit is unsupported either way; a free
-  variable, a Skolem term or an undeclared id makes it malformed first.
-  """
-  rep = self.rep
-  for i in range(1, len(f)):
-    t = f[i]
-    lexical_only = (f[0] == "has type" and i == 2) or i == 3
-    if not isinstance(t, str):
-      rep.invalid("term", path + [i], t, "a term is a string; Skolem and function terms do not occur in Stage 2")
-    elif WITNESS.match(t):
-      rep.invalid("witness_constant", path + [i], t, "a witness constant is compiler output and does not occur in Stage 2")
-    elif lexical_only:
-      if not is_lexical(t):
-        rep.invalid("lexical_value", path + [i], t, "this slot of %s holds a lexical constant" % f[0])
-    elif is_var(t):
-      if t not in bound:
-        rep.invalid("unbound_variable", path + [i], t, "variable %s is not bound by forall or exists" % t)
-    elif is_concrete(t):
-      if self.identity is not None and t not in self.identity:
-        rep.invalid("unknown_entity", path + [i], t, "entity id %r is not in the source identity map" % t)
-    elif i == 1:
-      rep.invalid("event_argument", path + [i], t, "the first argument of %s is the event: a bound variable or a declared id" % f[0])
-    elif not is_lexical(t):
-      rep.invalid("term", path + [i], t, "not a variable, a declared id or a lexical constant")
-
-
-_Walk.event_arguments = _event_arguments
+    The first argument is the event; `has type` then holds a lexical verb; the
+    other predicates hold a participant (a bound variable, a declared id or a
+    lexical constant such as a bare noun or `past`) and, in the three-place
+    forms, a lexical context word.  The unit is unsupported either way; a free
+    variable, a Skolem term or an undeclared id makes it malformed first.
+    """
+    rep = self.rep
+    for i in range(1, len(f)):
+      t = f[i]
+      lexical_only = (f[0] == "has type" and i == 2) or i == 3
+      if not isinstance(t, str):
+        rep.invalid("term", path + [i], t, "a term is a string; Skolem and function terms do not occur in Stage 2")
+      elif WITNESS.match(t):
+        rep.invalid("witness_constant", path + [i], t, "a witness constant is compiler output and does not occur in Stage 2")
+      elif lexical_only:
+        if not is_lexical(t):
+          rep.invalid("lexical_value", path + [i], t, "this slot of %s holds a lexical constant" % f[0])
+      elif is_var(t):
+        if t not in bound:
+          rep.invalid("unbound_variable", path + [i], t, "variable %s is not bound by forall or exists" % t)
+      elif is_concrete(t):
+        if self.identity is not None and t not in self.identity:
+          rep.invalid("unknown_entity", path + [i], t, "entity id %r is not in the source identity map" % t)
+      elif i == 1:
+        rep.invalid("event_argument", path + [i], t, "the first argument of %s is the event: a bound variable or a declared id" % f[0])
+      elif not is_lexical(t):
+        rep.invalid("term", path + [i], t, "not a variable, a declared id or a lexical constant")
 
 
 def _ops(where):
@@ -405,14 +447,6 @@ def _signed_state_literals(f):
   if f[0] == "not" and len(f) == 2:
     f = f[1]
   return isinstance(f, list) and bool(f) and f[0] in FLUENTS
-
-
-def _contains(f, names):
-  if isinstance(f, list):
-    if f and isinstance(f[0], str) and f[0] in names:
-      return True
-    return any(_contains(x, names) for x in f[1:])
-  return False
 
 
 # ---------------------------------------------------------------------------
@@ -444,7 +478,7 @@ def validate_source_unit(pkg, identity=None, profile=PROFILE, worlds=DEFAULT_WOR
   `status` is invalid, unsupported or supported; supported means that the
   structural pass found nothing, not that the later passes will accept it.
   A package is holds(W, F) for a world W of the source's `worlds` declaration
-  (default W0); another world is `undeclared_world` (encoding v2, A3.2).
+  (default W0); another world is `undeclared_world` (encoding v2).
   """
   uid, body, conf, err = split_package(pkg)
   rep = Report(uid)
@@ -458,7 +492,10 @@ def validate_source_unit(pkg, identity=None, profile=PROFILE, worlds=DEFAULT_WOR
     return out
   if not (isinstance(body, list) and len(body) == 3 and body[0] == "holds" and isinstance(body[1], str)
           and WORLD.match(body[1])):
-    rep.invalid("package", [2], body, "a source package is holds(W, F) with a world name W0, W1, ...")
+    hint = ("; a timed rule is holds(W, [\"@time\",TEXT,RULE]): @time goes inside holds"
+            if isinstance(body, list) and body[:1] == ["@time"] else "")
+    rep.invalid("package", [2], body, "a source package is [\"holds\",W,F] with a world name W0, W1, ..., or, only "
+                "with a probability the text states, [\"and\",[\"holds\",W,F],[\"@p\",ID,p]]" + hint)
     return out
   if body[1] not in worlds:
     where = [2, 1, 1] if pkg[2][0] == "and" else [2, 1]      # the world slot of the holds package
@@ -482,41 +519,67 @@ def validate_source_unit(pkg, identity=None, profile=PROFILE, worlds=DEFAULT_WOR
 
 
 def _recognize(f, walk, rep):
-  """Position rules and the unit's law form (A3.2, A2.5, A7.3).
-
-  Action-law recognition comes first: a unit with an effect, a restriction
-  or an availability is that law, whatever its other atoms are.
-  """
+  """The unit's law form, after the position rules of each action operator.  The checks report in a fixed order:
+  the ordinary event form, @time, state_law, after, executable and the restriction consequents, can, the head of a
+  standing law, then the law shape.  Action-law recognition comes first: a unit with an effect, a restriction or an
+  availability is that law, whatever its other atoms are."""
   found = walk.found
-  ops = [x[0] for x in found]
   if "event" in walk.kinds:
-    if _contains(f, set(ACTION_OPERATORS)):
-      rep.invalid("mixed_event_form", [2, 2], f, "the ordinary event form and the action operators do not mix in one unit")
-      return None
-    actual = f[0] == "exists" and not _contains(f, {"capability", "implies", "forall"})
-    if actual:
-      rep.unsupported("occurrence", [2, 2], f, "an actual narrative occurrence; the action route has no occurrence semantics")
-    else:
-      rep.unsupported("unsupported_action_kind", [2, 2], f,
-                      "an action in the ordinary event form: no constructor expresses it (creation, consumption, transport, transfer or another kind)")
-    return "ordinary_event"
+    return _event_form(f, rep)
+  _check_time(found, rep)
+  laws = [x for x in found if x[0] == "state_law"]
+  _check_state_law_positions(laws, rep)
+  _check_after(found, rep)
+  restriction = _check_executable(found, rep)
+  if restriction:
+    _check_restriction_consequents(found, rep)
+  heads, denials = _check_can(found, rep)
+  _check_state_law_heads(laws, rep)
+  return _law_form(f, walk, found, rep, laws, restriction, heads, denials)
+
+
+def _event_form(f, rep):
+  """A unit in the ordinary event form: an occurrence, or an action kind that no constructor expresses."""
+  if contains(f, set(ACTION_OPERATORS)):
+    rep.invalid("mixed_event_form", [2, 2], f, "the ordinary event form and the action operators do not mix in one unit")
+    return None
+  actual = f[0] == "exists" and not contains(f, {"capability", "implies", "forall"})
+  if actual:
+    rep.unsupported("occurrence", [2, 2], f, "an actual narrative occurrence; the action route has no occurrence semantics")
+  else:
+    rep.unsupported("unsupported_action_kind", [2, 2], f,
+                    "an action in the ordinary event form: no constructor expresses it (creation, consumption, transport, transfer or another kind)")
+  return "ordinary_event"
+
+
+def _check_time(found, rep):
+  """@time wraps only the validity phrase of a rule or a permission; a time-qualified permission is unsupported."""
   for op, path, where, node in found:
     if op == "@time":
-      if _contains(node, {"can", "executable", "after"}):
+      if contains(node, {"can", "executable", "after"}):
         rep.unsupported("unexpressible_temporal_permission_scope", path, node,
                         "a time-qualified permission; this grammar cannot express its validity interval")
       else:
-        rep.invalid("time_wrapper", path, node, "@time is not part of the action profile")
-  # state_law: directly under holds, once, with no action operator inside
-  laws = [x for x in found if x[0] == "state_law"]
+        rep.invalid("time_wrapper", path, node,
+                    "a description takes no @time: its date stays in the Stage-1 time field and its tense in the "
+                    "context record; @time wraps only the stated validity phrase of a rule or a permission "
+                    "(\"until noon\")")
+
+
+def _check_state_law_positions(laws, rep):
+  """state_law stands directly under holds, once, with no action operator inside."""
   for op, path, where, node in laws:
     if where:
       rep.invalid("state_law_position", path, node,
                   "state_law stands directly under holds(W, ...); it is not nested, negated, quantified over or placed in an antecedent")
-    elif _contains(node[1], {"can", "executable", "after", "state_law"}):
+    elif contains(node[1], {"can", "executable", "after", "state_law"}):
       rep.invalid("state_law_content", path, node,
                   "a standing state law holds state formulas only; availability, restrictions and effects have their own forms")
-  # after: under forall and at most one implies consequent
+
+
+def _check_after(found, rep):
+  """after stands under forall and at most one implies consequent; its head is a conjunction of signed state
+  literals."""
   for op, path, where, node in [x for x in found if x[0] == "after"]:
     allowed = all(w[0] in ("forall", "and") or w == ("implies", 2) for w in where) \
       and _ops(where).count("implies") <= 1
@@ -540,14 +603,18 @@ def _recognize(f, walk, rep):
       rep.unsupported("existential_effect_head", path + [2], head,
                       "an existential effect head: its witness and scope are outside the first executable fragment "
                       "(it may name a new object or an existing one)")
-    elif _contains(head, {"after"}):
+    elif contains(head, {"after"}):
       pass  # reported above as nested_after at the inner node
-    elif isinstance(head, list) and _contains(head, set(STATIC)) and not _contains(head, set(ACTION_OPERATORS)):
+    elif isinstance(head, list) and contains(head, set(STATIC)) and not contains(head, set(ACTION_OPERATORS)):
       rep.unsupported("mixed_scope_rule", path + [2], head,
                       "an effect head with a static atom: an action does not change stable types or stated routes")
     elif not _signed_state_literals(head):
       rep.invalid("after_head", path + [2], head, "an effect head is a conjunction of signed state literals")
-  # executable: only in the antecedent of a necessary-condition law
+
+
+def _check_executable(found, rep):
+  """executable stands only in the antecedent of a necessary-condition law.  Returns whether the unit has such a
+  law (a restriction)."""
   restriction = False
   for op, path, where, node in [x for x in found if x[0] == "executable"]:
     ok = ("implies", 1) in where and _ops(where).count("implies") == 1 \
@@ -563,24 +630,32 @@ def _recognize(f, walk, rep):
     else:
       rep.invalid("executable_position", path, node,
                   "in a source, executable stands in the antecedent of a necessary-condition law, unnegated")
-  if restriction:
-    # each restriction's own implication: a valid first one does not hide a second
-    for op, path, where, imp in [x for x in found if x[0] == "implies"]:
-      ant = imp[1]
-      items = ant[1:] if isinstance(ant, list) and ant and ant[0] == "and" else [ant]
-      if not any(isinstance(x, list) and x and x[0] == "executable" for x in items):
-        continue
-      if _contains(imp[2], set(ACTION_OPERATORS)):
-        rep.invalid("restriction_consequent", path + [2], imp[2], "the required condition of a restriction is a state formula")
-      elif _contains(imp[2], {"="}):
-        rep.unsupported("unsupported_restriction_scope", path, imp,
-                        "a restriction on an action slot (an equality on the actor, the means or the tool), not a state condition",
-                        detail="action_slot_constraint")
-      elif not _required(imp[2]):
-        rep.unsupported("unsupported_restriction_scope", path + [2], imp[2],
-                        "the required condition of a restriction is a signed state literal or a conjunction of them, "
-                        "with no quantifier, disjunction or implication (A4.2)")
-  # can: a head (availability, denial) or, in an antecedent, a capability restriction
+  return restriction
+
+
+def _check_restriction_consequents(found, rep):
+  """The required condition of each restriction is a state formula; each restriction is checked on its own, so a
+  valid first one does not hide a second."""
+  for op, path, where, imp in [x for x in found if x[0] == "implies"]:
+    ant = imp[1]
+    items = ant[1:] if isinstance(ant, list) and ant and ant[0] == "and" else [ant]
+    if not any(isinstance(x, list) and x and x[0] == "executable" for x in items):
+      continue
+    if contains(imp[2], set(ACTION_OPERATORS)):
+      rep.invalid("restriction_consequent", path + [2], imp[2], "the required condition of a restriction is a state formula")
+    elif contains(imp[2], {"="}):
+      rep.unsupported("unsupported_restriction_scope", path, imp,
+                      "a restriction on an action slot (an equality on the actor, the means or the tool), not a state condition",
+                      detail="action_slot_constraint")
+    elif not _required(imp[2]):
+      rep.unsupported("unsupported_restriction_scope", path + [2], imp[2],
+                      "the required condition of a restriction is a signed state literal or a conjunction of them, "
+                      "with no quantifier, disjunction or implication")
+
+
+def _check_can(found, rep):
+  """can stands as the head of an availability or a denial; in an antecedent it is a capability restriction, which
+  is unsupported.  Returns (the number of heads, the number of denials)."""
   heads, denials = 0, 0
   for op, path, where, node in [x for x in found if x[0] == "can"]:
     names = _ops(where)
@@ -603,18 +678,27 @@ def _recognize(f, walk, rep):
       continue
     heads += 1
     denials += names.count("not")
-  effects = ops.count("after")
-  # existential head of a standing law
+  return heads, denials
+
+
+def _check_state_law_heads(laws, rep):
+  """A standing law has no existential head."""
   for op, path, where, node in laws:
     body = node[1]
     while isinstance(body, list) and body and body[0] == "forall" and len(body) == 3:
       body = body[2]
     head = body[2] if isinstance(body, list) and body and body[0] == "implies" and len(body) == 3 else body
-    if _contains(head, {"exists"}):
+    if contains(head, {"exists"}):
       rep.unsupported("existential_state_law_head", path, node,
                       "an existential head in a standing law is outside the first executable fragment")
+
+
+def _law_form(f, walk, found, rep, laws, restriction, heads, denials):
+  """The form of a unit from what the checks found: effect, restriction, denial, availability, state_law or a
+  description.  An action law must have the normalized law shape, and a unit holds one law form."""
+  effects = [x[0] for x in found].count("after")
   if not rep.has("invalid") and not rep.has("unsupported") and (effects or restriction or heads):
-    if _law_shape(f) is None:
+    if law_shape(f) is None:
       rep.unsupported("unsupported_law_form", [2, 2], f,
                       "an action law is forall* over HEAD or implies(CONDITION, HEAD); CONDITION is a conjunction of "
                       "signed state literals under exists; this formula has another structure and is not normalized")
@@ -668,7 +752,7 @@ def in_fragment(f, extra=()):
 def _required(f):
   """REQUIRED := LITERAL | and(REQUIRED, ...); LITERAL := ATOM | not(ATOM).
 
-  The required condition of a restriction (A4.2).  No exists: a required
+  The required condition of a restriction.  No exists: a required
   condition introduces no fresh witness.  ATOM is a fluent or static atom.
   """
   if not (isinstance(f, list) and f):
@@ -680,7 +764,7 @@ def _required(f):
   return isinstance(f, list) and bool(f) and (f[0] in FLUENTS or f[0] in STATIC)
 
 
-def _law_shape(f):
+def law_shape(f):
   """The supported law grammar; the head kind, or None.
 
     LAW  := forall(V, LAW) | and(LAW, ...) | implies(COND, HEAD) | HEAD
@@ -694,9 +778,9 @@ def _law_shape(f):
   if not (isinstance(f, list) and f):
     return None
   if f[0] == "forall" and len(f) == 3:
-    return _law_shape(f[2])
+    return law_shape(f[2])
   if f[0] == "and":
-    kinds = {_law_shape(x) for x in f[1:]}
+    kinds = {law_shape(x) for x in f[1:]}
     return kinds.pop() if len(kinds) == 1 and None not in kinds else None
   if f[0] == "implies" and len(f) == 3:
     ant = f[1]
@@ -742,7 +826,7 @@ def _check_steps(s, rep, path):
 
 
 def _split_witnesses(f, rep, path):
-  """An existential shared by goal conjuncts has one surrounding exists (A3.3)."""
+  """An existential shared by goal conjuncts has one surrounding exists."""
   if not (isinstance(f, list) and f):
     return
   if f[0] == "and":
@@ -828,8 +912,7 @@ def validate_query(pkg, identity=None, profile=PROFILE, worlds=None, planning_ro
       return out
     for i, a in enumerate(q[1]):
       r = Report(rep.unit)
-      if check_action(a, set(), r, [2, 1, i], identity):
-        pass
+      check_action(a, set(), r, [2, 1, i], identity)
       for d in r.items:
         if d.get("code") == "unbound_variable":
           d["code"] = "sequence_not_ground"
@@ -863,7 +946,7 @@ def validate_query(pkg, identity=None, profile=PROFILE, worlds=None, planning_ro
       rep.invalid("time_wrapper", path, node, "@time is not part of the action profile")
   if "event" in walk.kinds:
     rep.invalid("event_form_in_query", gpath, goal, "a query of the action profile uses the state predicates, not the event form")
-  if kind == "ask" and not _mentions(goal, out["variable"]):
+  if kind == "ask" and not mentions(goal, out["variable"]):
     rep.invalid("ask_variable", gpath, goal, "the asked variable %s does not occur in the formula" % out["variable"])
   if not rep.has("invalid"):
     if kind in ("plan", "reachable", "verify"):
@@ -878,12 +961,6 @@ def validate_query(pkg, identity=None, profile=PROFILE, worlds=None, planning_ro
   out["witnesses"] = _witnesses(goal)
   out["status"] = "invalid" if rep.has("invalid") else "unsupported" if rep.has("unsupported") else "supported"
   return out
-
-
-def _mentions(f, v):
-  if isinstance(f, list):
-    return any(_mentions(x, v) for x in f)
-  return f == v
 
 
 # ---------------------------------------------------------------------------
@@ -930,7 +1007,7 @@ def method_collisions(units):
   `units` are dicts with id, form, action_terms and roots (the Stage-1 action
   roots of the unit).  A collision needs an effect or a restriction (a law),
   another unit with a different set of source verbs, and action terms of the
-  two that unify: the law would then apply to the other verb's action (A2.6).
+  two that unify: the law would then apply to the other verb's action.
   Different sufficient permissions for one action are alternatives, not a
   collision.  Terms that do not unify (another tool, means or participant)
   are safe.  No disjointness is inferred from differing source conditions.

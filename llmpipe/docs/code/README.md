@@ -26,13 +26,17 @@ you want.
 | proofs | [proof-processing.md](proof-processing.md) | the GK call, answer selection, proof extraction, source tracing, English rendering |
 | retries | [retries-and-abstraction.md](retries-and-abstraction.md) | the two fallbacks, the critic, the graph stages, the two bridge mechanisms, the acceptance checks |
 | prompts | [prompt-map.md](prompt-map.md) | every prompt file and the loader that reads it |
+| action route | [action-route.md](action-route.md) | the modules of the experimental route for actions and plans, one per step |
 | every module | [source-map.md](source-map.md) | one line per tracked module, with its owning page |
 
 ## What runs where
 
-`solve.py` owns the run. It resolves the options, performs the initial
+`solve.py` owns the run. It resolves the options and chooses the pipeline
+(`route_choice`). On the ordinary pipeline it performs the initial
 translation and proof attempt, and then walks the retry stages while the
-question is unresolved.
+question is unresolved. On the action route it calls `action_pipeline.run`,
+which translates, compiles, proves, replays and answers with its own modules
+([action route modules](action-route.md)).
 
 The initial attempt uses `llmparse.parse_text` for the two model calls,
 `logconvert.rawlogic_convert` for logic compilation, `prover.call_prover` for

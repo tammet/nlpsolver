@@ -41,7 +41,8 @@ class RunConfigurationError(ValueError):
 
 # ======== test-file loader ========
 
-def load_tests(path):
+def load_rows(path):
+  """The rows of a test file as written: [id, input, expected], or longer (a planning row adds its reference)."""
   with open(path) as f:
     src = f.read()
   try:
@@ -54,12 +55,14 @@ def load_tests(path):
     data = ns.get("tests")
   if not isinstance(data, list):
     raise ValueError(f"{path}: top-level is not a list")
-  out = []
   for i, entry in enumerate(data):
     if not isinstance(entry, list) or len(entry) < 3:
       raise ValueError(f"{path} entry #{i}: not a [id, input, expected] triple")
-    out.append((entry[0], entry[1], entry[2]))
-  return out
+  return data
+
+
+def load_tests(path):
+  return [(entry[0], entry[1], entry[2]) for entry in load_rows(path)]
 
 
 def testname_from_path(path):
@@ -238,12 +241,51 @@ def _import_scoring_policy():
   return _test_mod.answer_matching_policy(False)
 
 
+def planning_file(path):
+  """Whether a test file holds planning rows: a fourth element (an action list, or the gold record of the detailed
+  file) after [id, text, expected]."""
+  return any(len(r) > 3 for r in load_rows(path))
+
+
+class PlanningGrader(object):
+  """The checker of the action route (`solver/planning_check.py`) for a run with -actions: the answer against the
+  test's row [id, text, expected, actions], comparing the text, the plan or both (`mode`, -answer-check).  The rows
+  are those of the basic file (`tests/tests_planning_basic.py`); a row with a gold translation in place of its action
+  list (`tests/tests_planning.py`) is refused."""
+
+  def __init__(self, testfile, mode="text"):
+    solver = os.path.join(os.path.dirname(os.path.abspath(__file__)), "solver")
+    if solver not in sys.path:
+      sys.path.insert(0, solver)
+    import planning_check
+    self.check = planning_check
+    self.mode = mode
+    self.policy = planning_check.policy(mode)
+    self.rows = {}
+    for r in load_rows(testfile):
+      row = list(r) + [None] * (4 - len(r))
+      errors = planning_check.check_row(row)
+      if errors:
+        raise RunConfigurationError(
+          "%s, case %r: %s.  The planning checker reads [id, text, expected, actions] rows, as in "
+          "tests/tests_planning_basic.py" % (testfile, r[0], "; ".join(errors)))
+      self.rows[r[0]] = row
+
+  def grade(self, case_id, expected, answer, collect):
+    """(correctness, the case fields) of one answer."""
+    row = self.rows.get(case_id)
+    if row is None or row[2] != expected:
+      raise ValueError("case %r: the test file has no row with this expected value" % (case_id,))
+    g = self.check.grade_row(row, answer, collect.get("action_route"), self.mode)
+    return g["correct"], {"grade": g["grade"], "answer_check": g["detail"]}
+
+
 # ======== solve.py's own flags ========
 
 def _solve_options(extra):
   """Parse the flags the runner does not define with solve.py's own parser.
 
-  `solve._parse_cmd_line` returns only the keys the command line changed, so
+  `solve_cli.parse_cmd_line` returns only the keys the command line changed, so
   the result merges straight into `run_opts`.  A flag solve.py does not know
   makes it print its help and exit 0; that would look like success here, so it
   is caught and turned into an error.
@@ -256,13 +298,14 @@ def _solve_options(extra):
   if _solver not in sys.path:
     sys.path.insert(0, _solver)
   import solve
+  import solve_cli
   sentinel = "RUNTESTS_SENTINEL_TEXT"
   argv = list(sys.argv)
   said = io.StringIO()
   try:
     sys.argv = ["solve.py"] + list(extra) + [sentinel]
     with contextlib.redirect_stdout(said):    # solve.py prints its whole help
-      text, opts = solve._parse_cmd_line()
+      text, opts = solve_cli.parse_cmd_line()
   except SystemExit:
     raise SystemExit("runtests: %s"
                      % (said.getvalue().split("\n")[0]
@@ -289,22 +332,28 @@ def _strip_internal_keys(obj):
   return obj
 
 
-def build_case_json(testname, case_id, input_text, expected, llm, collect, matcher):
+def build_case_json(testname, case_id, input_text, expected, llm, collect, matcher, grader=None):
   """Assemble the final per-case dict from the collect dict + meta.
 
   Keys with empty/null values are omitted.
   - stage1/stage2 have pipeline-internal '_'-prefixed keys stripped.
   - nl_proof is returned as a list of lines (strict-JSON friendly: each
     line lives on its own row of the file, no '\\n' escapes).
+  - with a `grader` (a -actions run, `PlanningGrader`), the planning checker
+    decides `correctness` and adds `grade` and `answer_check`.
   """
   answer = collect.get("answer")
   correctness = None
+  graded = {}
   if answer is not None and "_error" not in collect:
     try:
-      # One-stage (combined-prompt) runs enable the lenient rendering-artefact
-      # fallback in the matcher; two-stage runs do not.
-      correctness = bool(matcher(expected, answer, input_text,
-                                 single_stage=bool(collect.get("combined"))))
+      if grader is not None:
+        correctness, graded = grader.grade(case_id, expected, answer, collect)
+      else:
+        # One-stage (combined-prompt) runs enable the lenient rendering-artefact
+        # fallback in the matcher; two-stage runs do not.
+        correctness = bool(matcher(expected, answer, input_text,
+                                   single_stage=bool(collect.get("combined"))))
     except Exception:
       correctness = None
 
@@ -315,7 +364,7 @@ def build_case_json(testname, case_id, input_text, expected, llm, collect, match
     "expected_answer": expected,
     "llm_name": llm,
     "llm_version": collect.get("_llm_version"),
-    "scoring_policy": _import_scoring_policy(),
+    "scoring_policy": grader.policy if grader is not None else _import_scoring_policy(),
   }
   if collect.get("_llm_calls"):
     out["llm_calls"] = collect["_llm_calls"]
@@ -323,6 +372,9 @@ def build_case_json(testname, case_id, input_text, expected, llm, collect, match
     out["answer"] = answer
   if correctness is not None:
     out["correctness"] = correctness
+  for k, v in graded.items():
+    if v is not None:
+      out[k] = v
   for k in ("combined", "directanswer",
             "stage1", "stage_1_fixes", "stage_1_retries",
             "stage2", "stage_2_fixes", "stage_2_retries",
@@ -342,7 +394,9 @@ def build_case_json(testname, case_id, input_text, expected, llm, collect, match
             # outcomes the run reached
             "pipeline_name", "run_outcome",
             # Task 4: the case-level LLM accounting vocabulary
-            "llm_accounting", "llm_accounting_stages"):
+            "llm_accounting", "llm_accounting_stages",
+            # which pipeline answered and why (solve.route_choice), and the action route's record
+            "route_choice", "action_route"):
     v = collect.get(k)
     if not v:   # skip None/[]/'' — omit empty keys
       continue
@@ -404,7 +458,7 @@ def _answer_is_definite(answer):
   if not isinstance(answer, str) or not answer.strip():
     return False
   s = answer.strip().lower()
-  if s.startswith("error"):
+  if s.startswith(("error", "cannot answer")):
     return False
   return not s.startswith(("unknown", "no answer"))
 
@@ -729,8 +783,9 @@ def _provider_versions(llms, override=None):
           for name in llms}
 
 
-def validate_run_providers(llms, override=None):
-  """Validate every requested provider before creating any run artifact."""
+def validate_run_providers(llms, override=None, require_key=True):
+  """Validate every requested provider before creating any run artifact.  A formal action run (-actions -formal)
+  calls no model: its providers are checked by name, their keys are not required."""
   here = os.path.dirname(os.path.abspath(__file__))
   solver_dir = os.path.join(here, "solver")
   if solver_dir not in sys.path:
@@ -739,7 +794,7 @@ def validate_run_providers(llms, override=None):
   resolved = {}
   for provider in llms:
     try:
-      item = llmcall.validate_provider_configuration(provider, override)
+      item = llmcall.validate_provider_configuration(provider, override, require_key=require_key)
     except (llmcall.InvalidProviderError,
             llmcall.MissingApiKeyError) as exc:
       raise RunConfigurationError(str(exc))
@@ -756,7 +811,7 @@ def _manifest_identity(testfile, testname, run_opts, scoring_policy,
   if _pipeline_git:
     git_identity = {k: _pipeline_git.get(k) for k in
                     ("commit", "dirty", "tracked_diff_sha256")}
-  return {
+  identity = {
     "test_name": testname,
     "test_file": os.path.realpath(testfile),
     "test_file_sha256": _file_sha256(testfile),
@@ -765,6 +820,7 @@ def _manifest_identity(testfile, testname, run_opts, scoring_policy,
     "scoring_policy": _jsonable(scoring_policy),
     "execution_mode": "sequential" if sequential else "parallel_by_provider",
   }
+  return identity
 
 
 def _manifest_path(outroot):
@@ -839,11 +895,62 @@ def prepare_run_manifest(outroot, identity, providers, invocation):
   return manifest
 
 
+PLANNING_CORRECT = ("match", "listed", "valid")
+
+
+def _planning_cell():
+  return {"total": 0, "answered_correctly": 0, "listed": 0, "valid": 0, "correctly_not_answered": 0, "wrong": 0,
+          "wrong_known_limit": 0, "errors": 0, "correct_with_equal_translation": 0}
+
+
+def _planning_count(cell, d):
+  """Add one case of a -actions run to a summary cell: answered correctly (match, listed, valid), correctly not
+  answered (not_answered), wrong (and of these the rows with a known limit), and errors (an error record or an
+  Error: answer).  A correct case whose accepted translation equals the reference up to renaming is also counted as
+  correct with an equal translation (C6)."""
+  cell["total"] += 1
+  grade = d.get("grade")
+  if grade in PLANNING_CORRECT + ("not_answered",) and d.get("translation_equal") is True and "error" not in d:
+    cell["correct_with_equal_translation"] += 1
+  if "error" in d or grade == "error":
+    cell["errors"] += 1
+  elif grade in PLANNING_CORRECT:
+    cell["answered_correctly"] += 1
+    if grade in ("listed", "valid"):
+      cell[grade] += 1
+  elif grade == "not_answered":
+    cell["correctly_not_answered"] += 1
+  else:
+    cell["wrong"] += 1
+    if (d.get("planning_row") or {}).get("known_limit"):
+      cell["wrong_known_limit"] += 1
+
+
+def _check_cell():
+  return {"total": 0, "answered_correctly": 0, "correctly_not_answered": 0, "wrong": 0, "errors": 0}
+
+
+def _check_count(cell, d):
+  """Add one case graded by planning_check: answered correctly (match), correctly not answered (not_answered),
+  wrong, and errors (an error record or an Error: answer)."""
+  cell["total"] += 1
+  grade = d.get("grade")
+  if "error" in d or grade == "error":
+    cell["errors"] += 1
+  elif grade == "match":
+    cell["answered_correctly"] += 1
+  elif grade == "not_answered":
+    cell["correctly_not_answered"] += 1
+  else:
+    cell["wrong"] += 1
+
+
 def update_summary(outdir, llm):
   """Scan the LLM's output dir, rebuild summary.json from per-case .py files."""
   if not os.path.isdir(outdir):
     return
   passed = failed = errored = 0
+  planning = None
   by_case = []
   answered_by = {}
   calls = {}
@@ -874,6 +981,14 @@ def update_summary(outdir, llm):
         got[k] += cell.get(k) or 0
       calls_total += cell.get("calls") or 0
       calls_live += cell.get("live") or 0
+    if (d.get("scoring_policy") or {}).get("name") == "planning_check":
+      planning = planning or {"mode": d["scoring_policy"].get("mode"), "all": _check_cell()}
+      _check_count(planning["all"], d)
+    elif (d.get("scoring_policy") or {}).get("name") == "planning_answer_check":
+      planning = planning or {"all": _planning_cell(), "by_section": {}}
+      section = (d.get("planning_row") or {}).get("section") or "unknown"
+      _planning_count(planning["all"], d)
+      _planning_count(planning["by_section"].setdefault(section, _planning_cell()), d)
     if "error" in d:
       errored += 1
       by_case.append({"case_id": cid, "status": "error"})
@@ -899,13 +1014,15 @@ def update_summary(outdir, llm):
     "scoring_policies": scoring_policies,
     "updated": datetime.datetime.now(datetime.timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
   }
+  if planning is not None:
+    summary["planning"] = planning
   if _pipeline_git:
     summary["pipeline_git"] = _pipeline_git
   with open(os.path.join(outdir, "summary.json"), "w") as f:
     json.dump(summary, f, indent=2, ensure_ascii=False)
 
 
-def update_combined_summary(outroot, testname, providers):
+def update_combined_summary(outroot, testname, providers, scoring_policy=None):
   """Write one cross-provider summary beside the provider directories."""
   rows = []
   case_status = {}
@@ -932,6 +1049,8 @@ def update_combined_summary(outroot, testname, providers):
       "llm_calls_total": int(summary.get("llm_calls_total") or 0),
       "llm_calls_live": int(summary.get("llm_calls_live") or 0),
     })
+    if summary.get("planning"):
+      rows[-1]["planning"] = summary["planning"]
     provider_dir = os.path.join(outroot, provider)
     for fn in (os.listdir(provider_dir) if os.path.isdir(provider_dir) else []):
       if not (fn.startswith("case_") and fn.endswith(".json")):
@@ -978,7 +1097,7 @@ def update_combined_summary(outroot, testname, providers):
       "mixed_correctness": mixed,
       "by_number_of_correct_providers": correct_count_distribution,
     },
-    "scoring_policy": _import_scoring_policy(),
+    "scoring_policy": scoring_policy or _import_scoring_policy(),
     "pipeline_git": _pipeline_git,
     "updated": datetime.datetime.now(datetime.timezone.utc).replace(
       microsecond=0).isoformat().replace("+00:00", "Z"),
@@ -1030,7 +1149,8 @@ def make_parser():
   common.add_argument("-sequential", action="store_true",
                   help="Run the requested LLMs SEQUENTIALLY in-process (no "
                        "parallel Pool). Best for cache-served reruns where the "
-                       "LLM calls hit the local SQLite cache.")
+                       "LLM calls hit the local SQLite cache. Always on with "
+                       "-actions, so GK runs serially.")
   common.add_argument("-version", dest="version", default=None,
                   help="Override the model version for the chosen LLM "
                        "(e.g. claude-opus-4-8). Applies to all -llms in the run.")
@@ -1049,6 +1169,15 @@ def make_parser():
                   help="Total logical LLM calls allowed for one case, counting "
                        "every role and local cache hits. 0 (default) is "
                        "unlimited.")
+  advanced.add_argument("-run-ceiling", dest="run_ceiling", default=None,
+                  help="LOGICAL,REQUESTS: hard ceilings of the whole run folder (sequential only), across "
+                       "resumed parts (the ledger run_ceiling.json in the folder). A case starts only when the "
+                       "calls so far plus -llm-call-limit stay within them; a call or outbound request past "
+                       "them is refused before it leaves, and the run stops without writing that case. "
+                       "The ledger is written after each count, before the request leaves.")
+  advanced.add_argument("-answer-check", dest="answer_check", default="text", choices=("text", "actions", "both"),
+                  help="On a planning test file: what the planning checker compares with the test row: the answer text "
+                       "(text, the default), the plan with the expected action list (actions), or both.")
   advanced.add_argument("-api-timeout", dest="api_timeout", type=int, default=120,
                   help="Hard wall-clock cap (seconds) on the LLM-parse + clause-"
                        "conversion phase of each case; disarmed before the prover "
@@ -1163,7 +1292,8 @@ def main():
   # failed logical cases.  Check every provider before loading cases, creating
   # a manifest, or starting worker processes.
   try:
-    versions = validate_run_providers(llms, args.version)
+    versions = validate_run_providers(llms, args.version, require_key=not (extra_opts.get("formal_flag")
+                                                                          and not extra_opts.get("noactions_flag")))
   except RunConfigurationError as exc:
     print("Error: " + str(exc))
     return 2
@@ -1206,6 +1336,24 @@ def main():
   # Solver options — keep cache on per project rules.
   run_opts = build_run_options(args, extra_opts)
   scoring_policy = _import_scoring_policy()
+  # the scorer, not the route: a planning test file (rows [id, text, expected, actions]) is graded with the planning
+  # checker, whichever pipeline answers.  Each text's pipeline is chosen from the text alone (solve.route_choice),
+  # as in a one-example call of solve.py.
+  try:
+    grader = PlanningGrader(args.testfile, args.answer_check) if planning_file(args.testfile) else None
+  except RunConfigurationError as exc:
+    print("Error: " + str(exc))
+    return 2
+  if grader is not None:
+    scoring_policy = grader.policy
+    with_plan = sum(1 for r in grader.rows.values() if r[3] is not None)
+    print(f"Planning checker: {grader.policy['name']} v{grader.policy['version']}, mode {grader.mode}; "
+          f"{with_plan} of {len(grader.rows)} rows have an action list")
+  if run_opts.get("actions_flag") and not args.sequential:
+    # -actions: the providers run one after another in this process.  Without it the route is chosen per text, and
+    # action_gk's lock keeps the route's GK launches serial across the provider processes (A5).
+    args.sequential = True
+    print("-actions: the providers run sequentially")
 
   # One output directory may hold several subsets and providers, but it may
   # never mix test content, source state, pipeline options, scoring policies or
@@ -1231,7 +1379,7 @@ def main():
 
   # Per-case parallel: one worker per (case, llm).  Pool size = len(llms).
   return _run_batch(args, llms, tests, testname, outroot, run_opts, matcher,
-                    manifest)
+                    manifest, grader)
 
 
 def build_run_options(args, extra_opts):
@@ -1327,7 +1475,8 @@ def build_run_options(args, extra_opts):
     run_opts["typeenrich_flag"] = True
     if args.typeenrich_gates:
       import solve
-      run_opts["typeenrich_gates"] = solve._parse_te_gates(args.typeenrich_gates)
+      import solve_cli
+      run_opts["typeenrich_gates"] = solve_cli.parse_te_gates(args.typeenrich_gates)
   if args.guarddrop:
     run_opts["guarddrop_flag"] = True
   if args.bridges:
@@ -1361,8 +1510,9 @@ def build_run_options(args, extra_opts):
   # Both entry points derive the recorded configuration name the same way, from
   # the final resolved stage vector (WP3).
   import solve
+  import solve_cli
   run_opts.pop("_pipeline_named", None)
-  run_opts["pipeline_name"] = solve.finalize_pipeline_name(run_opts)
+  run_opts["pipeline_name"] = solve_cli.finalize_pipeline_name(run_opts)
   return run_opts
 
 
@@ -1372,8 +1522,64 @@ def run_options_for(argv):
   return build_run_options(args, extra_opts)
 
 
+CEILING_LEDGER = "run_ceiling.json"
+STOP_FILE = "STOP"
+
+
+def _run_ceiling(args, run_opts):
+  """{"logical", "requests", "per_case"} of -run-ceiling, or None.  The per-case bound is -llm-call-limit."""
+  value = getattr(args, "run_ceiling", None)
+  if not value:
+    return None
+  if not args.sequential:
+    raise SystemExit("-run-ceiling needs -sequential")
+  per_case = run_opts.get("llm_call_limit") or 0
+  if per_case <= 0:
+    raise SystemExit("-run-ceiling needs -llm-call-limit, the per-case bound")
+  try:
+    logical, requests = (int(x) for x in value.split(","))
+  except ValueError:
+    raise SystemExit("-run-ceiling takes LOGICAL,REQUESTS, for example 250,280")
+  return {"logical": logical, "requests": requests, "per_case": per_case}
+
+
+def _llmcall():
+  sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "solver"))
+  import llmcall
+  return llmcall
+
+
+def _read_ledger(outroot):
+  """The ceiling ledger of a run folder: what the earlier parts of the run used.  Empty for a new folder."""
+  path = os.path.join(outroot, CEILING_LEDGER)
+  if not os.path.exists(path):
+    return {"parts": [], "used": {"logical": 0, "requests": 0}}
+  with open(path) as f:
+    return json.load(f)
+
+
+def _write_ledger(outroot, ledger):
+  os.makedirs(outroot, exist_ok=True)
+  path = os.path.join(outroot, CEILING_LEDGER)
+  with open(path + ".tmp", "w") as f:
+    json.dump(ledger, f, indent=1)
+  os.replace(path + ".tmp", path)
+
+
+def _ledger_part(ledger, part, budget, stopped=None, running=False):
+  """Record the counts of the current part and the run's totals from the budget in llmcall.  While the part runs,
+  `updated` is the time of the last count; `ended` is written when the part ends.  A part without `ended` is one
+  whose process was killed: its counts include the requests of its case in progress (`in_progress`)."""
+  part["logical"] = budget["logical_used"] - part["logical_before"]
+  part["requests"] = budget["requests_used"] - part["requests_before"]
+  part["updated" if running else "ended"] = time.strftime("%Y-%m-%dT%H:%M:%S")
+  if stopped:
+    part["stopped"] = stopped
+  ledger["used"] = {"logical": budget["logical_used"], "requests": budget["requests_used"]}
+
+
 def _run_batch(args, llms, tests, testname, outroot, run_opts, matcher,
-               manifest=None):
+               manifest=None, grader=None):
   """The batch itself, unchanged; split out so option resolution is testable."""
   # Per-case parallel: one worker per (case, llm).  Pool size = len(llms).
   ctx = get_context("fork")
@@ -1386,8 +1592,42 @@ def _run_batch(args, llms, tests, testname, outroot, run_opts, matcher,
   pool = None if args.sequential else ctx.Pool(processes=max(1, len(llms)))
   if args.sequential:
     print("Mode: SEQUENTIAL (in-process, one LLM at a time).")
+  ceiling = _run_ceiling(args, run_opts)
+  stopped = False
+  if ceiling:
+    # The ceiling holds for the run folder as a whole: a resumed run continues
+    # from what the ledger says the earlier parts used.  llmcall enforces it
+    # before every logical call and every outbound request.
+    llmcall = _llmcall()
+    ledger = _read_ledger(outroot)
+    earlier = ledger["used"]
+    part = {"started": time.strftime("%Y-%m-%dT%H:%M:%S"), "ceiling": dict(ceiling),
+            "logical_before": earlier["logical"], "requests_before": earlier["requests"],
+            "unwritten": []}
+    ledger["ceiling"] = dict(ceiling)
+    ledger["parts"].append(part)
+
+    def count_written(budget):
+      # llmcall calls this after each count and before the request leaves
+      _ledger_part(ledger, part, budget, running=True)
+      _write_ledger(outroot, ledger)
+    llmcall.set_run_budget(ceiling["logical"], ceiling["requests"], earlier["logical"], earlier["requests"],
+                           on_count=count_written)
+    print("Run ceiling: %d logical calls, %d provider requests; earlier parts used %d and %d." % (
+      ceiling["logical"], ceiling["requests"], earlier["logical"], earlier["requests"]))
+  stop_path = os.path.join(outroot, STOP_FILE)
+  if os.path.exists(stop_path):
+    print("The stop file %s exists; remove it to run." % stop_path)
+    if ceiling:
+      llmcall.clear_run_budget()
+    return 3
+  if ceiling:
+    _ledger_part(ledger, part, llmcall.run_budget(), running=True)
+    _write_ledger(outroot, ledger)
   try:
     for case_id, input_text, expected in tests:
+      if stopped:
+        break
       # Build the per-LLM task list, skipping those that already exist.
       tasks = []
       for llm in llms:
@@ -1400,14 +1640,57 @@ def _run_batch(args, llms, tests, testname, outroot, run_opts, matcher,
         continue
 
       t0 = time.time()
-      results = ([_worker(t) for t in tasks] if args.sequential
-                 else pool.map(_worker, tasks))
+      if ceiling:
+        results = []
+        for t in tasks:
+          if os.path.exists(stop_path):
+            print("Stop file: the run stops before case %d (%s)." % (t[0], t[3]))
+            _ledger_part(ledger, part, llmcall.run_budget(), "stop_file")
+            stopped = True
+            break
+          per_case = ceiling["per_case"]
+          budget = llmcall.run_budget()
+          if (budget["logical_used"] + per_case > ceiling["logical"]
+              or budget["requests_used"] + per_case > ceiling["requests"]):
+            print("Run ceiling: %d logical calls and %d provider requests used; the next case could pass %d / %d. "
+                  "The run stops before case %d (%s)." % (budget["logical_used"], budget["requests_used"],
+                                                         ceiling["logical"], ceiling["requests"], t[0], t[3]))
+            _ledger_part(ledger, part, budget, "ceiling")
+            stopped = True
+            break
+          refused = budget["refused"]
+          part["in_progress"] = [t[0], t[3]]
+          r = _worker(t)
+          part.pop("in_progress")
+          budget = llmcall.run_budget()
+          if budget["refused"] > refused:
+            # The ceiling refused a call inside this case, so the case is
+            # incomplete: it is not written, and a resumed run does it again.
+            print("Run ceiling: reached inside case %d (%s) at %d logical calls and %d provider requests. "
+                  "The case is not written; the run stops." % (t[0], t[3], budget["logical_used"],
+                                                                budget["requests_used"]))
+            part["unwritten"].append([t[0], t[3]])
+            _ledger_part(ledger, part, budget, "ceiling")
+            _write_ledger(outroot, ledger)
+            stopped = True
+            break
+          results.append(r)
+          _ledger_part(ledger, part, budget, running=True)
+          _write_ledger(outroot, ledger)
+        tasks = tasks[:len(results)]
+      elif os.path.exists(stop_path):
+        print("Stop file: the run stops before case %d." % case_id)
+        stopped = True
+        break
+      else:
+        results = ([_worker(t) for t in tasks] if args.sequential
+                   else pool.map(_worker, tasks))
       dt = time.time() - t0
 
       # Write per-case files
       summary_line = []
       for cid, llm, collect in results:
-        payload = build_case_json(testname, cid, input_text, expected, llm, collect, matcher)
+        payload = build_case_json(testname, cid, input_text, expected, llm, collect, matcher, grader)
         outpath = case_filename(os.path.join(outroot, llm), cid)
         write_case_file(outpath, payload)
         if "error" in payload:
@@ -1422,7 +1705,8 @@ def _run_batch(args, llms, tests, testname, outroot, run_opts, matcher,
       for llm in llms:
         update_summary(os.path.join(outroot, llm), llm)
       update_combined_summary(outroot, testname,
-                              (manifest or {}).get("providers", {}) or llms)
+                              (manifest or {}).get("providers", {}) or llms,
+                              grader.policy if grader else None)
 
       # Throttle solo gemini runs: free-tier RPM is tight, and back-to-back
       # Stage-1 + Stage-2 calls + no parallelism across LLMs make 429s easy
@@ -1435,17 +1719,28 @@ def _run_batch(args, llms, tests, testname, outroot, run_opts, matcher,
       pool.terminate()
       pool.join()
       pool = None
+    if ceiling:
+      _ledger_part(ledger, part, llmcall.run_budget(), "interrupted")
     print("\nInterrupted; the result set is incomplete.")
     return 130
   finally:
     if pool is not None:
       pool.close()
       pool.join()
+    if ceiling:
+      _ledger_part(ledger, part, llmcall.run_budget())
+      _write_ledger(outroot, ledger)
+      llmcall.clear_run_budget()
 
   elapsed = time.time() - start
   print()
+  if ceiling:
+    print("Run ceiling: %d of %d logical calls and %d of %d provider requests used, %d and %d in this part%s." % (
+      ledger["used"]["logical"], ceiling["logical"], ledger["used"]["requests"], ceiling["requests"],
+      part["logical"], part["requests"], "; the run stopped (%s)" % part.get("stopped") if stopped else ""))
   update_combined_summary(outroot, testname,
-                          (manifest or {}).get("providers", {}) or llms)
+                          (manifest or {}).get("providers", {}) or llms,
+                          grader.policy if grader else None)
   print(f"Done. {total_done} task(s) run, {total_skipped} skipped, {elapsed:.1f}s.")
   print(f"Combined summary: {os.path.join(outroot, 'summary.json')}")
   return 0

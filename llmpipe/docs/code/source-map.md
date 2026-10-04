@@ -21,7 +21,10 @@ Described in [orchestration](orchestration.md).
 
 | module | what it does |
 |---|---|
-| `solver/solve.py` | The pipeline: option resolution, stage scheduling, stopping and accounting |
+| `solver/solve.py` | The entry point: the choice of pipeline, the downstream-error retry and one attempt of the ordinary pipeline |
+| `solver/solve_cli.py` | The command line of solve.py: the parser, the help text and the stage configuration |
+| `solver/solve_stages.py` | The stage order, the rule that runs one stage, the stage rows, their call accounting and the summary record |
+| `solver/solve_retries.py` | The runners of the critic, the graph retranslation and the two bridges |
 | `solver/solve_display.py` | Terminal presentation of pipeline stages, summaries, logic and proofs |
 | `solver/globals.py` | Configuration and other globals for the nlpsolver |
 | `solver/utils.py` | Small utilities for the nlpsolver |
@@ -170,6 +173,34 @@ Described in [generated data](../development/generated-data.md).
 | `solver/data_synonyms.py` | Soft synonym pairs for dynamic axiom injection |
 | `solver/data_exclusions.py` | Mutual-exclusion groups for dynamic axiom injection |
 | `solver/data_names.py` | First-name and gendered-noun gender tables, generated from `mkdata/` |
+
+### Action route (experimental)
+
+Described in [action route modules](action-route.md).
+
+| module | what it does |
+|---|---|
+| `solver/action_pipeline.py` | The action route: translation with corrections, compilation, the solve step and the answer text |
+| `solver/action_json.py` | Action route: reading a model's JSON response, the fence and three repairs of closing brackets |
+| `solver/action_english.py` | Action route: the English of entity names, plans and facts, and the answer text |
+| `solver/action_display.py` | Action route: what solve.py prints at each output level, the explanation and the summary record |
+| `solver/action_prompt.py` | Checked English action annotations and the assembly of the action prompts |
+| `solver/action_repair.py` | The controller's recorded repairs of an action translation |
+| `solver/action_route.py` | Action route: source, query and result artifacts and the four operations |
+| `solver/lc_action.py` | Action profile: structural validation of Stage-2 source and query logic |
+| `solver/lc_action_situate.py` | Action profile: scope, situations, witnesses and clauses of state formulas |
+| `solver/lc_action_library.py` | Action profile: the maintained action library, its roles, its templates and its views |
+| `solver/lc_action_avail.py` | Action profile: executability paths of source rules, denials, identity, granularity |
+| `solver/lc_action_restrict.py` | Action profile: restrictions, their checks, the constructor hooks, negative necessities |
+| `solver/lc_action_effects.py` | Action profile: text effects, change markers, state policy, dependencies |
+| `solver/lc_action_query.py` | Action profile: query views, proof obligations and per-query backend requirements |
+| `solver/action_gk.py` | Action route: the adapter of the registered GK builds |
+| `solver/action_answer.py` | Action route: the answer policy, verification verdicts, English plans and scoring |
+| `solver/action_replay.py` | Action profile: an independent replay of a plan over the finite fragment |
+| `solver/action_check.py` | Action route: the detailed checker of the planning test set, by plan terms and a replay on the gold translation |
+| `solver/planning_check.py` | Action route: the answer checker of the planning test set, by the answer text, the action list or both |
+| `solver/route_classify.py` | Which pipeline a text goes to: a cheap classifier on the English, with no model call |
+| `solver/digests.py` | The SHA-256 digests and the canonical JSON that the action route's hashes read |
 
 ## Supporting files
 

@@ -33,6 +33,16 @@ def conjugate_verb(v):
   return v + "s"
 
 
+def third_person(verb):
+  """Third-person singular present tense, as `conjugate_verb` with one more rule: a verb that ends in -o takes -es
+  (goes, does).  The action route's plans use it; the ordinary proofs keep `conjugate_verb`."""
+  if verb.endswith(("s", "sh", "ch", "x", "z", "o")):
+    return verb + "es"
+  if verb.endswith("y") and verb[-2:-1] not in "aeiou":
+    return verb[:-1] + "ies"
+  return verb + "s"
+
+
 def make_comparative(adj):
   """Return the comparative form of an adjective (e.g. 'nice' -> 'nicer').
 

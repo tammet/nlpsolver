@@ -129,6 +129,7 @@ def run(s1_json, s2_json, text, base_logic, options):
   """
   import fallback_norm
   import solve
+  import solve_stages
   record = {"fallback": "fallback_hyp",
             "refutation_check": REFUTATION_CHECK,
             "submissions": [],
@@ -163,7 +164,7 @@ def run(s1_json, s2_json, text, base_logic, options):
       return out
     answer, proof = fallback_norm._submit(theory, hyp_logic, s1_json, text,
                                           options, "hypothetical", record)
-    if solve._unresolved(answer):
+    if solve_stages.unresolved(answer):
       return out
     record["answered"] = True
     record["answered_by_reading"] = "hypothetical"

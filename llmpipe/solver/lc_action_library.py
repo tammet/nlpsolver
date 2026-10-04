@@ -14,7 +14,6 @@ selects the clauses of a query view:
               denial consequence, bound to the query's planning root; no
               effect, marker, frame or reachability clause, so no
               hypothetical future state can reach an initial-state question
-              (A3.3)
 
 Contexts (library 2.0.1, encoding v2).  Every situation-bearing literal of
 a clause ends with one context term $ctxt(present, S, L, $obj) and has no
@@ -44,10 +43,10 @@ measured later, under a counted budget.
 """
 
 import copy
-import hashlib
 import json
 import os
 
+import digests
 import lc_action as la
 import lc_action_situate as sit
 
@@ -92,12 +91,8 @@ class LibraryError(Exception):
 def law_context(t):
   """$ctxt(present, S, L, $obj), S = ?:S or $do(A, ?:S), L a location variable: the context term of a library literal."""
   return isinstance(t, list) and len(t) == 5 and t[:2] == ["$ctxt", "present"] \
-    and (t[2] == SITUATION or (_is_successor(t[2]) and t[2][2] == SITUATION)) \
+    and (t[2] == SITUATION or (is_successor(t[2]) and t[2][2] == SITUATION)) \
     and isinstance(t[3], str) and t[3].startswith("?:L") and t[4] == OBJ
-
-
-def situation_of(lit):
-  return sit.situation_of(lit)
 
 
 def _location(x):
@@ -108,7 +103,7 @@ def hook_name(constructor):
   return "ok_" + constructor
 
 
-def _strip_comments(text):
+def strip_comments(text):
   return "\n".join(x for x in text.split("\n") if not x.strip().startswith("//"))
 
 
@@ -150,12 +145,12 @@ def load(library=LIBRARY, index=INDEX, templates=TEMPLATES):
   except (OSError, ValueError) as e:
     raise LibraryError("the library, its role index or its template file cannot be read: %s" % e)
   check_index(idx, os.path.basename(library))
-  digest = hashlib.sha256(raw).hexdigest()
+  digest = digests.sha256_bytes(raw)
   if idx.get("sha256") != digest:
     raise LibraryError("axioms_action.js has sha256 %s; the role index was checked against %s"
                        % (digest, idx.get("sha256")))
   try:
-    items = json.loads(_strip_comments(raw.decode("utf-8")))
+    items = json.loads(strip_comments(raw.decode("utf-8")))
   except ValueError as e:
     raise LibraryError("axioms_action.js does not parse: %s" % e)
   roles = idx.get("roles", {})
@@ -175,7 +170,7 @@ def load(library=LIBRARY, index=INDEX, templates=TEMPLATES):
     raise LibraryError("the index names clauses the library lacks: %s" % extra)
   tpl = load_templates(traw, idx["version"])
   lib = {"id": os.path.basename(library), "version": idx["version"], "sha256": digest,
-         "roles_sha256": index_digest(idx), "templates_sha256": hashlib.sha256(traw).hexdigest(),
+         "roles_sha256": index_digest(idx), "templates_sha256": digests.sha256_bytes(traw),
          "derived_from": idx["derived_from"], "clauses": clauses, "templates": tpl}
   check_roles(lib)
   return lib
@@ -186,7 +181,7 @@ TEMPLATE_RECORD_FIELDS = ("name", "role", "constructor", "note", "clause")
 
 
 def load_templates(raw, version):
-  """The applicability templates, checked: one record per name, one $source literal each (A2.3, Revision 4)."""
+  """The applicability templates, checked: one record per name, one $source literal each."""
   try:
     doc = json.loads(raw.decode("utf-8"))
   except ValueError as e:
@@ -220,16 +215,16 @@ def check_template(t):
     raise LibraryError("%s: a template concludes one positive poss" % name)
   act = poss[0][1]
   k = _constructor_of(act)
-  if k is None or k != t["constructor"] or src[0][1:-1] != poss[0][1:-1] or situation_of(src[0]) != situation_of(poss[0]):
+  if k is None or k != t["constructor"] or src[0][1:-1] != poss[0][1:-1] or sit.situation_of(src[0]) != sit.situation_of(poss[0]):
     raise LibraryError("%s: the $source literal names the concluded action and situation" % name)
   hook = [x for x in lits if predicate(x) == hook_name(k)]
-  if len(hook) != 1 or hook[0][1:-1] != poss[0][1:-1] or situation_of(hook[0]) != situation_of(poss[0]):
+  if len(hook) != 1 or hook[0][1:-1] != poss[0][1:-1] or sit.situation_of(hook[0]) != sit.situation_of(poss[0]):
     raise LibraryError("%s: a template needs the restriction hook %s on the same action and situation" % (name, hook_name(k)))
   if any(predicate(x) in (MARKER, "can", "action_available", "route_for") or predicate(x) == "$block" for x in lits):
     raise LibraryError("%s: a template reads no marker, capability or route and has no blocker" % name)
   for x in lits:
     p = predicate(x)
-    if p in FLUENT_LIKE and (len(x) < 3 or not law_context(x[-1]) or situation_of(x) != SITUATION or not _arity_ok(x)):
+    if p in FLUENT_LIKE and (len(x) < 3 or not law_context(x[-1]) or sit.situation_of(x) != SITUATION or not _arity_ok(x)):
       raise LibraryError("%s: %s must end with the context $ctxt(present, ?:S, L, $obj) and have no other situation" % (name, p))
   _check_locations(name, "template", lits)
 
@@ -239,11 +234,6 @@ def template(lib, name):
   if not hit:
     raise LibraryError("no template %s" % name)
   return hit[0]
-
-
-def templates_of(lib, constructor):
-  """The templates of a constructor, in file order."""
-  return [t for t in lib["templates"] if t["constructor"] == constructor]
 
 
 INDEX_FIELDS = ("library", "version", "sha256", "derived_from", "roles")
@@ -278,8 +268,7 @@ def check_index(idx, library_name):
 
 def index_digest(idx):
   """SHA-256 of the validated index content in canonical form, not of its whitespace."""
-  text = json.dumps({k: idx[k] for k in INDEX_FIELDS}, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
-  return hashlib.sha256(text.encode("utf-8")).hexdigest()
+  return digests.digest({k: idx[k] for k in INDEX_FIELDS})
 
 
 def _constructor_of(term):
@@ -318,15 +307,15 @@ def check_roles(lib):
     elif role == "effect":
       if len(heads) > 1 or not any(predicate(x) == "poss" and not positive(x) for x in lits):
         raise LibraryError("%s: an effect needs -poss and concludes one signed fluent" % name)
-      concl = [x for x in lits if predicate(x) in la.FLUENTS and _is_successor(situation_of(x))]
+      concl = [x for x in lits if predicate(x) in la.FLUENTS and is_successor(sit.situation_of(x))]
       if len(concl) != 1:
         raise LibraryError("%s: an effect concludes one fluent in the successor situation" % name)
     elif role in ("marker", "derived_no_inertia"):
-      if len(heads) != 1 or not preds[0].startswith("changed_") or not _is_successor(situation_of(heads[0])):
+      if len(heads) != 1 or not preds[0].startswith("changed_") or not is_successor(sit.situation_of(heads[0])):
         raise LibraryError("%s: a marker concludes changed_* in the successor situation" % name)
     elif role == "frame":
       block = [x for x in lits if predicate(x) == "$block"]
-      if len(heads) != 1 or preds[0] not in la.FLUENTS or not _is_successor(situation_of(heads[0])) or len(block) != 1 \
+      if len(heads) != 1 or preds[0] not in la.FLUENTS or not is_successor(sit.situation_of(heads[0])) or len(block) != 1 \
          or not block[0][2][0].startswith("changed_"):
         raise LibraryError("%s: a frame carries one fluent into the successor unless its marker blocks it" % name)
     elif role == "reachability":
@@ -346,7 +335,7 @@ def check_roles(lib):
 
 
 def _check_locations(name, role, lits):
-  """The agreement rule of the migration plan (section 5) on the location variables of one clause.
+  """The agreement rule on the location variables of one clause: which literals share a location variable.
 
   frame                premise, conclusion and blocker share one variable; the poss premise has another
   denial consequence   both literals have one context term (checked with the role)
@@ -396,14 +385,8 @@ def _check_default(lib, name, lits, poss):
     raise LibraryError("%s: a default is blocked by %s of the same action, situation and context" % (name, MARKER))
 
 
-def _is_successor(t):
+def is_successor(t):
   return isinstance(t, list) and len(t) == 3 and t[0] == "$do"
-
-
-def _substitute(x, var, term):
-  if isinstance(x, list):
-    return [_substitute(y, var, term) for y in x]
-  return term if x == var else x
 
 
 def select(lib, view, restricted=(), root="W0", knower=None):
@@ -429,22 +412,20 @@ def select(lib, view, restricted=(), root="W0", knower=None):
       continue
     rec = copy.deepcopy(c)
     if view == "snapshot":
-      rec["clause"]["@logic"] = _substitute(rec["clause"]["@logic"], SITUATION, root)
+      rec["clause"]["@logic"] = sit.substitute(rec["clause"]["@logic"], SITUATION, root)
     if knower is not None:
-      rec["clause"]["@logic"] = _substitute(rec["clause"]["@logic"], OBJ, sit.knower_term(knower))
+      rec["clause"]["@logic"] = sit.substitute(rec["clause"]["@logic"], OBJ, sit.knower_term(knower))
     out.append(rec)
   return out
 
 
 def view_hash(records):
   """The hash of a view: the name, the role and the clause of every selected record, in order."""
-  text = json.dumps([{"name": r["name"], "role": r["role"], "clause": r["clause"]} for r in records],
-                    sort_keys=True, separators=(",", ":"), ensure_ascii=False)
-  return hashlib.sha256(text.encode("utf-8")).hexdigest()
+  return digests.digest([{"name": r["name"], "role": r["role"], "clause": r["clause"]} for r in records])
 
 
 def identity(lib):
   """What an artifact records about the library it was compiled against: the clause file, its role index and
-  the template file (A4.3, Revision 4)."""
+  the template file."""
   return {"id": lib["id"], "version": lib["version"], "hash": lib["sha256"],
           "roles_hash": lib["roles_sha256"], "templates_hash": lib["templates_sha256"], "status": "selected"}

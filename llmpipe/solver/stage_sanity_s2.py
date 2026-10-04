@@ -996,8 +996,7 @@ def _check_stage2_missing_question(logic, s1_json, input_text=None):
   package in Stage-2.  Triggered when either unit.type == "query" or the
   parent package's raw text contains "?".
 
-  (plan fix N2, origin: the /opt/logictools/nl weak-model pilot) In combined
-  single-call mode there is no Stage 1 at all — llmparse passes s1_json=None —
+  In combined single-call mode there is no Stage 1 at all — llmparse passes s1_json=None —
   so this check used to bail and a dropped question was never flagged or
   retried; the pipeline simply reached gk's "no question given".  With no
   Stage 1, fall back to the input text: if it asks something and the logic

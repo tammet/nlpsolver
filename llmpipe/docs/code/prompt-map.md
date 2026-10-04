@@ -25,6 +25,28 @@ comparison.
 `stage_sanity_s2.py` also reads the Stage-2 instructions when it reports a
 finding.
 
+## Used by the action route
+
+`action_prompt.assemble` builds the two system prompts of the action route.
+Each prompt starts with the three ordinary files of its stage above. The files
+below follow, in this order: the instructions, the rendered examples, and the
+checklist. `prompts/actions/README.md` describes the assembly and the example
+records.
+
+| path | loader | stage | inserted at run time | expected response |
+|---|---|---|---|---|
+| `prompts/actions/stage1_instructions.txt` | `action_prompt.assemble` | Stage 1 | the input text | Stage-1 JSON units with action readings |
+| `prompts/actions/stage1_checklist.txt` | `action_prompt.assemble` | Stage 1 | none | part of the system prompt |
+| `prompts/actions/stage2_instructions.txt` | `action_prompt.assemble` | Stage 2 | the accepted Stage-1 packages without the entities' `url` fields | the Stage-2 envelope |
+| `prompts/actions/stage2_checklist.txt` | `action_prompt.assemble` | Stage 2 | none | part of the system prompt |
+| `prompts/actions/examples.json` | `action_prompt.render_examples` | Stage 1 and Stage 2 | none | part of the system prompt |
+| `prompts/actions/routing_cases.json` | `action_prompt.render_examples` | Stage 1 | none | part of the system prompt |
+
+`prompts/actions/manifest.json` holds the hashes of these files and of the
+assembled prompts. `tests/action_route/prompt_examples.py` compares the
+manifest with the current files. The authored translations that no prompt shows
+are in `tests/action_route/unseen/`.
+
 ## Used by an explicit optional mode
 
 | path | loader | selected by |

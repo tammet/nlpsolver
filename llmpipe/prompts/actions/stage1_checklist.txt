@@ -1,0 +1,25 @@
+ACTION STAGE-1 FINAL CHECK
+- Exact raw sentence coverage, stable entity IDs, and one query unit.
+- Reading distinct from ASU type; modes chosen locally, not synchronized.
+- If versus only-if versus after versus occurred preserved with negation.
+- Every stated actor, participant, tool, endpoint and result preserved.
+- No invented action, permission, effect, actor, step count or plan.
+- Whole goal and shared participant scope kept; supplied sequence ordered.
+- State rules follow the markers (initially, whenever) and the convention: an
+  unmarked dependency between states is strict_rule, a scene description is
+  situation.
+- A plain cannot-sentence is availability (a denial); cannot unless, only if
+  and requires are restriction.
+- Travel by a means has the means as instrument and no target.
+- A rule between two states has no reading and no actions; a permission and
+  its result are two units; an if-rule without normally or a probability
+  word has no confidence.
+- One entity keeps one ID.
+- Context qualification differs from the subject's physical location.
+- planning_root only for a snapshot the text names; never pre_state/next_state on a query.
+- A rule without a snapshot phrase has pre_state W0; a verify_question has no
+  step_bound; possession is no instrument.
+- A public service or route is a fact without a reading; availability names or quantifies its actor.
+- Ambiguous procedural meaning has action_issue; ordinary how/skill/event
+  language is not automatically a planning request.
+- No logic, constructors, situations, frames or answer prediction.

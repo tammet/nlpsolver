@@ -1,0 +1,35 @@
+ACTION STAGE-2 FINAL CHECK
+- One JSON object with worlds, contexts, query_contexts and logic (and types
+  when a law sentence introduces a referent); never the bare ["and",...] list.
+- Every Stage-1 unit ID occurs once; the whole question stays one package.
+- Source holds worlds, contexts and query_contexts preserve Stage 1; a package
+  without a stated probability is ["holds",W,F] itself.
+- A sufficient rule uses can as a head; a necessary condition has executable
+  in the antecedent; an effect uses after. None is an actual occurrence.
+- Every variable is bound; shared participants and supplied order survive.
+- Entity IDs as in Stage 1, never a url; any hand has class hand; a place in
+  a place uses located_at.
+- @time only for the stated validity phrase of a rule or a permission, inside
+  holds; a description's date stays in Stage 1 and its tense in its context
+  record, which holds only tense, location, location_role and knower.
+- normally wraps the can head, inside forall and implies.
+- One class fact per referent, at its first mention: in a description's own
+  formula, or in types for a concrete entity a law sentence names first.
+  No class for a proper name or a variable in types; no person class that no
+  sentence states. A type is never a condition; a stated guard stays.
+- A rule that states no origin or destination binds both with forall;
+  unspecified is only a missing means or tool.
+- A plan goal is one formula; a change VALUE is a stated result of its verb or
+  the verb's past participle, never unspecified and never a goal-only property.
+- One action has one term in every sentence; travel by a means is move.
+- A permission's condition is its antecedent and the consequent is can alone;
+  a permission without an actor is exists over can.
+- A who-question about an operation is ask over executable.
+- A dependency between states typed strict_rule is state_law; a description
+  of the start stays holds(W,F).
+- Physical checks, frames, markers, hooks, seeds and situation terms are left
+  to the compiler. No invented actor, effect, route or tool permission.
+- Signed effects remain signed; cooked alone does not delete raw.
+- Queries use the exact package grammar and no can/after. Bounds remain exact.
+- Unsupported source meaning is preserved and reported, never repaired into
+  different meaning or dropped. No answer or candidate plan is generated.

@@ -1,6 +1,6 @@
 """Action profile: restrictions, their checks, the constructor hooks, negative necessities.
 
-The pass `restrictions` of the action compiler (A4.2).  A restriction is
+The pass `restrictions` of the action compiler.  A restriction is
 
   forall V.. ( [GUARD and ..] executable(ACTION)  ->  REQUIRED )
 
@@ -74,10 +74,6 @@ def _variables(f, out):
   return out
 
 
-def _flat(f):
-  return [y for x in f[1:] for y in _flat(x)] if f[0] == "and" else [f]
-
-
 def _atom(lit):
   return lit[1] if lit[0] == "not" else lit
 
@@ -94,10 +90,10 @@ def restrictions(f, scope=()):
   if op == "and":
     return [r for x in f[1:] for r in restrictions(x, scope)]
   if op == "implies":
-    items = _flat(f[1])
+    items = la.conjuncts(f[1])
     execs = [x for x in items if x[0] == "executable"]
     if len(execs) == 1:
-      return [(scope, [x for x in items if x is not execs[0]], execs[0][1], _flat(f[2]))]
+      return [(scope, [x for x in items if x is not execs[0]], execs[0][1], la.conjuncts(f[2]))]
   return []
 
 
@@ -190,7 +186,7 @@ def compile_unit(unit, namer):
   out = {"situated": None, "situation": "shared_current", "clauses": None, "witnesses": [],
          "diagnostic": None, "requirements": [], "note": None, "checks": []}
   formula = sit._unit_formula(unit)
-  out["situated"] = ["forall", sit.SIT, sit._situate(_as_state(formula), sit.SIT)]
+  out["situated"] = ["forall", sit.SIT, sit.situate_in(_as_state(formula), sit.SIT)]
   p = unit.get("confidence")
   if p is not None and p < 1:
     out["clauses"] = []

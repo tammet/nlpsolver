@@ -91,7 +91,12 @@ loses or adds distinctions.
 | `[$has_part, C]` and `$typed_partof` | the compiler | [compiled-representations.md](compiled-representations.md) |
 | other event bases and abstraction forms | the compiler, on request | [compiled-representations.md](compiled-representations.md) |
 | open-relation graph triples | graph Stage 2, a separate model call | [graph-format.md](graph-format.md) |
+| action readings and the action Stage-2 envelope | the action route's two model calls (experimental) | [action-prompts.md](action-prompts.md) |
+| action clauses: `poss`, `$do`, markers, query questions | the action compiler | [action-clauses.md](action-clauses.md) |
+| the action library `axioms_action.js` | maintained by hand | [action-library.md](action-library.md) |
+| source, query, evidence and result records of the action route | the action compiler, the GK adapter, the answer policy | [action-artifacts.md](action-artifacts.md) |
 | one worked case, end to end | — | [end-to-end-example.md](end-to-end-example.md) |
+| one worked action case, end to end | — | [action-end-to-end-example.md](action-end-to-end-example.md) |
 
 ## Pages
 
@@ -107,6 +112,23 @@ loses or adds distinctions.
   structural checks, and its compilation.
 - [End-to-end example](end-to-end-example.md) — one passage through every
   layer.
+
+The experimental action route has its own layers: its own Stage-1
+annotations and Stage-2 envelope, its own clauses with situations, and a
+library of physical laws.
+
+- [Action prompt interface](action-prompts.md) — the Stage-1
+  action readings, the action Stage-2 envelope and terms, the routing, and
+  what the controller of the action route repairs.
+- [Action clauses](action-clauses.md) — the predicates, the context term and
+  situations, the clauses of each unit form, the query questions, and the
+  supported fragment.
+- [Action library](action-library.md) — the physical laws of the five action
+  constructors: defaults, effects, markers, frames and the search step.
+- [Action artifacts and records](action-artifacts.md) — the source and query
+  artifacts, the diagnostics, the evidence and result records.
+- [Action end-to-end example](action-end-to-end-example.md) — one plan
+  question through every layer.
 
 ## Related documentation
 

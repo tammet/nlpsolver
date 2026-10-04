@@ -32,6 +32,17 @@ with shorter equivalent forms. The replacements are checked and remain
 connected to the ordinary predicates. See
 [Proof shortening](architecture/proof-shortening.md).
 
+## Texts about actions and plans
+
+Each call first chooses its pipeline. A text with a strong sign of actions or
+plans, such as "How can Ann get to Tallinn?", goes to the experimental action
+route; every other text takes the ordinary path above. `-actions` and
+`-noactions` decide the choice explicitly. The action route has its own
+prompts, its own compiler with situations and a library of physical laws, a GK
+search for plans, and an independent replay of every plan. It answers with a
+plan, a verdict, or `Cannot answer` for a text that it does not model. See
+[The action route](architecture/action-route.md).
+
 ## What happens when the first attempt finds no proof
 
 The default `balanced` pipeline tries several independent ways of recovering a
@@ -61,7 +72,9 @@ say where a result came from, and every page stands without them.
 
 - To install and run the system, see [Getting started](getting-started.md).
 - To follow one passage through every representation, see the
-  [end-to-end example](encodings/end-to-end-example.md).
+  [end-to-end example](encodings/end-to-end-example.md), and the
+  [action end-to-end example](encodings/action-end-to-end-example.md) for a
+  plan question.
 - To understand the logic formats, see the
   [Encoding reference](encodings/README.md). It covers every representation
   the pipeline can submit to GK, not only the ordinary one.

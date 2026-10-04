@@ -213,7 +213,7 @@ options={
   "nofix_casefold": False,     # fix 7c class-name case folding
   "nofix_comparative": False,  # fix 7d comparative canonicalisation
   "nofix_containment": False,  # fix 8a unparseable-clause containment
-  "nofix_downstream": False,   # N1    downstream-error corrective retry
+  "nofix_downstream": False,   # turn off the downstream-error corrective retry
   # Reference/scope repairs (2026-08-09 parse-repair campaign).  Each switch
   # disables one independently measurable mechanism.
   "nofix_kindnumber": False,          # generic kind constants: minerals -> mineral

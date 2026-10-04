@@ -35,7 +35,7 @@ gives.  Three rules
 fix the order:
 
 - A definite answer from the initial attempt is never disturbed.  Each fallback runs only
-  while `solve._unresolved(answer)` holds, so a base win cannot be re-opened.
+  while `solve_stages.unresolved(answer)` holds, so a base win cannot be re-opened.
 - The first definite fallback answer stops everything after it, including the
   second fallback.
 - `fallback_hyp` converts with `fallback_norm`'s switches on.  A case that
@@ -327,10 +327,10 @@ verdict, the units asked for, the corrective, the answer before and after, and
 which units the rerun changed.  `-explain` prints the reading, the chain, the
 findings, the verdict and what the rerun changed.
 
-**Who answered the rerun.**  The rerun re-enters `_english_to_answer_body`, so
+**Who answered the rerun.**  The rerun re-enters `solve.ordinary_attempt`, so
 the two fallbacks run again on the retranslated Stage 2 (the graph and bridge
 stages
-do not: `_route_enabled` refuses inside a rerun).  `record["rerun"]` therefore
+do not: `solve_stages.route_enabled` refuses inside a rerun).  `record["rerun"]` therefore
 carries the inner run's `answered_by` and its `fallback` record beside
 `stage1`, `stage2` and `answer`.  The case's own `answered_by` stays `critic` —
 the retranslation is what made the answer reachable — and `-summary` names the
@@ -340,7 +340,7 @@ stage that closed it:
 answered_by: critic (rerun answered by fallback_norm)   (front door: Unknown.)
 ```
 
-`_summary_record` carries the same value as `rerun_answered_by`, `None` when
+`solve_stages.summary_record` carries the same value as `rerun_answered_by`, `None` when
 the critic did not answer.  When the critic answers, the rerun's own gk call —
 its `proof`, `gk_command`, `nl_proof` and `final_clauses` — becomes the run's
 top-level record ([runtime records](../reference/runtime-records.md)).

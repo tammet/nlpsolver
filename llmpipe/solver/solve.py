@@ -1,21 +1,31 @@
 #!/usr/bin/env python3
+"""The pipeline's entry point: English text in, an answer out, from the command line or as a library.
 
-# LLM-based English-to-answer pipeline.
-#
-# Primary entry point: english_to_answer(text, options=None)
-# Can also be called from the command line.
-#
-# Pipeline:
-#   English text
-#     -> llmparse.parse_text()         [two-stage LLM: English -> ASUs -> logic JSON]
-#     -> logconvert.rawlogic_convert() [improve/adjust the logic; currently pass-through]
-#     -> prover.call_prover()          [gk theorem prover]
-#     -> procproofs.process_proof()    [post-process proof result; currently pass-through]
-#     -> answer string
-#
-# LLM calls are cached by default (keyed on provider, version, all call
-# parameters, sysprompt and input text).  Use -nollmcache to disable.
-#
+  english_to_answer(text, options=None, collect=None) -> the answer string
+
+A call first chooses the pipeline (`route_choice`): the experimental action route for texts about actions and plans
+(`action_pipeline.py`), or the ordinary pipeline.  One attempt of the ordinary pipeline:
+
+  English text
+    -> llmparse.parse_text()           Stage 1: English -> units; Stage 2: units -> logic JSON
+    -> logconvert.rawlogic_convert()   logic JSON -> GK clauses
+    -> semnormalize                    antonym folding and canonical words
+    -> prover.call_prover()            the gk theorem prover: the initial attempt
+    -> procproofs.process_proof()      the answer string and its English proof
+    -> the retry stages, in order, while the question is open: the two fallbacks, the critic, the graph
+       retranslation and the bridges
+
+`ordinary_pipeline` repeats an attempt, at most twice, when it ends in a known downstream error.
+
+The other solve_* files hold the rest: solve_cli.py the command line and the help text, solve_stages.py the stage
+order, the rule that runs one stage, the stage rows and the summary record, solve_retries.py the runners of the
+retry stages after the fallbacks, and solve_display.py the terminal output.  This module calls their functions
+through the module name (`solve_stages.run_stage`), and so do the runners, the checks and the tools.  The run state
+(the provider, the debug switch, the critic flags) stays in this module; the other files read it through
+`import solve`.
+
+LLM calls are cached (`cache.db`).  The options: docs/reference/command-line.md.
+"""
 #-----------------------------------------------------------------
 # Copyright 2026 Tanel Tammet (tanel.tammet@gmail.com)
 #
@@ -33,70 +43,42 @@
 #-------------------------------------------------------------------
 
 import sys
-import re
+
+if __name__ == "__main__":
+  # Run as a script, this module is __main__.  The solve_* modules read the run state through `import solve`, which
+  # must find this module and not load a second copy with empty state.
+  sys.modules.setdefault("solve", sys.modules[__name__])
+
 import contextlib
-import json
+import re
 import signal
 import threading
-import pretty
-
-# ==== import other source files ====
-
-# configuration and globals (also puts 'options' into this module's namespace)
-from globals import *
-import globals
-
-# two-stage LLM parser: English -> ASUs -> logic
-import llmparse
-import llmcall
-
-# logic improvement (stub: pass-through until real logic-convert rules are added)
-from logconvert import rawlogic_convert
-import lc_encoding
-
-# proof post-processing (stub: pass-through until answer extraction is implemented)
-from procproofs import process_proof
-
-# semantic normalisation of GK clauses
-import semnormalize
 import unicodedata
 
-# gk theorem prover caller
-import prover
+# configuration and globals (also puts 'options' into this module's namespace)
+from globals import *                                           # noqa: F401,F403
+import globals
 
-
-def _ascii_fold_logic(obj):
-  """Recursively transliterate every string in a parsed-logic structure to plain
-  ASCII (NFKD decompose, drop combining marks, drop any remaining non-ASCII).
-  Keeps the prover input pure ASCII so its ASCII-decoded output never crashes on
-  accented entity names.  No-op for already-ASCII input; returns None unchanged."""
-  if obj is None:
-    return None
-  if isinstance(obj, str):
-    s = unicodedata.normalize("NFKD", obj)
-    s = "".join(c for c in s if not unicodedata.combining(c))
-    return s.encode("ascii", "ignore").decode("ascii")
-  if isinstance(obj, list):
-    return [_ascii_fold_logic(x) for x in obj]
-  if isinstance(obj, dict):
-    return {_ascii_fold_logic(k): _ascii_fold_logic(v) for k, v in obj.items()}
-  return obj
-
-# cache utilities
 import cache
+import lc_encoding
+import llmcall
+import llmparse
+import prover
+import semnormalize
+from logconvert import rawlogic_convert
+from procproofs import process_proof
+
+import solve_cli
 import solve_display
-# Re-exported so `solve.<name>` keeps working: the terminal display moved to
-# solve_display.py, but fixtures and older scripts call these through `solve`.
-from solve_display import (                                    # noqa: F401
-  _print_summary, _show_summary, _print_critic, _print_stages,
-  _print_graph_theory, _print_graphtrans, _graph_proof_lines, _graph_step_line,
-  _print_litbridge, _litbridge_encoding, _print_graphbridge,
-  _show_simplified_to, _loud_enough, _announce_stage, _graph_atoms)
+import solve_retries
+import solve_stages
 
 
-# ======== configuration ========
+# ======== the run state ========
+#
+# Module globals, because the runners set them per case (`solve.llm = ...`) and the solve_* modules read them.
 
-# Print pipeline stages and intermediate results to stdout
+# Print pipeline stages and intermediate results to stdout (-debug)
 debug = False
 
 # LLM provider / version overrides passed through to llmparse / llmcall.
@@ -105,38 +87,45 @@ llm         = None   # "gpt" | "claude" | "gemini" | "deepseek" | None
 llm_version = None   # model version string, or None for default
 max_tokens  = None   # int, or None for default
 
+# How deeply the pipeline is calling itself: the critique pass's rerun and the
+# downstream-error retry run the whole thing again from inside it.
+_depth = 0
 
-# ======== main pipeline ========
+# Where the current attempt's calls begin in `llmcall.call_log`.  Set at the
+# top of every attempt by `ordinary_attempt`.
+call_log_mark = 0
 
 
-def main(): 
-  """
-  logic=[
-{"@logic": ["isa","car","car 2"],
- "@name": "sent_S1"},
-{"@logic": ["have","John 1","car 2"],
- "@name": "sent_S2"},
-{"@logic": ["isa","person","John 1"],
- "@name": "sent_S3"}, 
-{"@question": ["exists",["?:X"],["and",["isa","person","?:X"],["isa","car","?:Y"],["have","?:X","?:Y"]],
- "@name": "sent_S4"}
-  ]
+# True once the critique pass has run for the case now being answered.  Reset
+# by `english_to_answer`, which is where a case run begins.
+critiqued = False
 
-  r=prover.call_prover(logic)
-  print(r)
-  sys.exit(0)
-  """
-  text, opts = _parse_cmd_line()
+# True while the critique pass's rerun is running.  The rerun re-enters the
+# whole pipeline, and without this the abstraction routes would run inside it
+# and again in the outer run.
+in_critic_rerun = False
+
+# english_to_answer printed the input under -logic: the ordinary pipeline's first attempt does not print it again
+_text_shown = False
+
+
+
+def main():
+  """The command line: answer the text of sys.argv and print the answer.  The exit status is 1 for an answer that
+  starts with Error, 2 for a bad command line, 0 otherwise."""
+  text, opts = solve_cli.parse_cmd_line()
   if opts.get("clearcache_flag"):
     counts = cache.clear_all_caches()
     print("Cache cleared: {:d} LLM, {:d} proof, {:d} parse entries removed.".format(
       counts["llm"], counts["proof"], counts["parse"]))
     return 0
   if not text:
-    print("No text given.\n" + helptext)
+    print("No text given.\n" + solve_cli.helptext)
     return 2
   try:
-    llmcall.validate_provider_configuration(llm, llm_version)
+    # a formal action record calls no model: its provider name is checked, its key is not required
+    llmcall.validate_provider_configuration(
+      llm, llm_version, require_key=not (opts.get("formal_flag") and not opts.get("noactions_flag")))
   except (llmcall.InvalidProviderError, llmcall.MissingApiKeyError) as exc:
     print("Error: " + str(exc))
     return 2
@@ -144,26 +133,234 @@ def main():
   if opts.get("show_logic_flag"):
     print("\n=== result ===\n")
   print(result)
-  return 1 if _is_error(result) else 0
+  return 1 if solve_stages.is_error(result) else 0
 
 
-class _ApiTimeout(BaseException):
-  """Raised by the SIGALRM handler when the LLM-parse-plus-clause-conversion
-  phase exceeds the api_timeout cap.  The cap is disarmed before the prover
-  (gk) runs, so it never interrupts the prover or proof post-processing.
+# ======== the entry point: which pipeline answers ========
 
-  Subclasses BaseException (NOT Exception) on purpose: the LLM-call retry loops
-  in llmcall.py catch `except Exception` (and used to catch bare `except:`) and
-  would otherwise swallow the timeout and retry, defeating the cap. As a
-  BaseException it propagates straight through those handlers to the
-  `except _ApiTimeout` in english_to_answer."""
+def english_to_answer(text, options=None, collect=None):
+  """Full pipeline, with the downstream-error corrective retry around it.
+
+  The retry loop runs the whole pipeline again on a downstream error, so the
+  summary block is held back until the loop is done and only the last one is
+  printed: a case run reports once, whatever it took to answer it.
+  """
+  global critiqued, _text_shown
+  critiqued = False
+  solve_display.suppress(True)
+  # This is the case entry: the critic's rerun re-enters
+  # `ordinary_attempt`, not this function, so resetting here cannot
+  # discard the outer stage or the running call count.
+  prover.reset_stages()
+  llmcall.reset_call_limit()
+  try:
+
+    # Every call this case makes -- parse, critic, critic rerun, graph, bridges
+    # -- is pinned to the run's own provider and version.  A call that names
+    # another model raises instead of quietly answering.
+    with llmcall.locked_model(llm, llm_version):
+      route = route_choice(text, options)
+      if collect is not None:
+        collect["route_choice"] = {k: v for k, v in route.items() if k != "options"}
+      if route.get("error"):
+        if collect is not None:
+          collect["answer"] = route["error"]
+        return route["error"]
+      if _shows_logic(options):
+        # -logic and up: the input, then which pipeline answers it; the ordinary pipeline does not print the input
+        # again for its first attempt
+        solve_display.print_input(text, bool((route["options"] or {}).get("formal_flag")))
+        solve_display.print_route(route)
+        _text_shown = True
+      if route["route"] == "actions":
+        # the action route: its own translation, compiler and prover profile; it enters no ordinary stage and
+        # writes nothing into globals.options
+        import action_pipeline
+        answer = action_pipeline.run(text, route["options"], collect, llm=llm, version=llm_version,
+                                     max_tokens=max_tokens)
+      else:
+        answer = ordinary_pipeline(text, route["options"], collect)
+        if collect is not None:
+          # the ordinary pipeline rebuilds the collector; the choice is kept
+          collect["route_choice"] = {k: v for k, v in route.items() if k != "options"}
+      solve_display.set_route(route)
+      return answer
+  finally:
+    _text_shown = False
+    solve_display.suppress(False)
+    solve_display.flush()
 
 
-def _api_timeout_handler(signum, frame):
-  raise _ApiTimeout()
+def _shows_logic(options):
+  o = options or {}
+  return bool(o.get("show_logic_flag") or o.get("show_details_flag") or o.get("debug_print_flag"))
 
 
-def _english_to_answer_once(text, options=None, collect=None,
+_ACTION_KEYS = ("actions_flag", "plan_depth", "action_backend", "formal_flag")
+_ROUTE_KEYS = _ACTION_KEYS + ("noactions_flag",)
+
+
+def _key_names(keys):
+  return ", ".join("-" + k.replace("_flag", "").replace("_", "-") for k in keys)
+
+
+def route_choice(text, options):
+  """Which pipeline a call goes to, and with which options: {"mode", "route", "verdict", "signals", "options"} or
+  {"error"}.
+
+  -actions sends every text to the action route and -noactions every text to the ordinary pipeline; giving both is
+  an error, and so is an action option with -noactions.  Without either (mode `auto`), a formal input goes to the
+  action route, and otherwise the cheap classifier decides (`route_classify.classify`): `actions` goes to the action
+  route; `ordinary` and `unclear` go to the ordinary pipeline.  An automatic call to the action route gets the action
+  keys and the shared keys (model calls, caches, the GK time, output) only, so an ordinary preset or stage switch
+  applies to the ordinary pipeline alone; an automatic ordinary call drops the action keys."""
+  opts = options or {}
+  if opts.get("actions_flag") and opts.get("noactions_flag"):
+    return {"error": "Error: -actions and -noactions exclude each other"}
+  if opts.get("actions_flag"):
+    return {"mode": "actions", "route": "actions", "options": options}
+  if opts.get("noactions_flag"):
+    extra = [k for k in _ACTION_KEYS if opts.get(k) is not None and opts.get(k) is not False]
+    if extra:
+      return {"error": "Error: %s cannot be combined with -noactions" % _key_names(extra)}
+    return {"mode": "noactions", "route": "ordinary", "options": _without(options, _ROUTE_KEYS)}
+  if opts.get("formal_flag"):
+    choice = {"verdict": "actions", "signals": ["formal_input"]}
+  else:
+    import route_classify
+    choice = route_classify.classify(text)
+  if choice["verdict"] == "actions":
+    import action_pipeline
+    keep = set(action_pipeline.ACTION_KEYS) | set(action_pipeline.SHARED_KEYS)
+    action_opts = {k: v for k, v in opts.items() if k in keep or k.startswith("_")}
+    action_opts["actions_flag"] = True
+    return dict(choice, mode="auto", route="actions", options=action_opts)
+  return dict(choice, mode="auto", route="ordinary", options=_without(options, _ROUTE_KEYS))
+
+
+def _without(options, keys):
+  """`options` itself when it holds none of `keys`, else a copy without them."""
+  if not options or not any(k in options for k in keys):
+    return options
+  return {k: v for k, v in options.items() if k not in keys}
+
+
+# ======== the downstream-error corrective retry ========
+#
+# The Stage-1/Stage-2 sanity retries only ever see the STRUCTURE of the parsed
+# JSON.  Errors that surface later — in rawlogic_convert, in clausification, in
+# gk, or at question handling — arrive after that retry window has closed and
+# were never re-prompted.  This loop matches the resulting error against a table
+# of known failure shapes and re-calls Stage 2 with the actual error plus a
+# targeted, imperative hint.
+#
+# It can only improve correctness: it fires exclusively on results that are
+# already errors.  Stage 1 is not re-run — the corrective text is appended to
+# the Stage-2 input, so the Stage-1 call is served from cache unchanged.
+
+MAX_DOWNSTREAM_RETRIES = 2
+
+_DOWNSTREAM_HINTS = [
+  (re.compile(r"first argument of (exists|a quantifier)|connective not a variable"
+              r"|error in formula"),
+   "A connective or quantifier was FLATTENED. Each is ONE nested list passed as a "
+   "SINGLE argument: [\"question\", [\"exists\", \"X\", FORMULA]], never "
+   "[\"question\", \"exists\", \"X\", FORMULA]. Likewise [\"and\", A, B], "
+   "[\"or\", A, B], [\"not\", A] where A and B are THEMSELVES lists such as "
+   "[\"isa\", \"house\", \"X\"], never bare strings spread into the parent list. "
+   "Comparisons must use the named predicates, not operator symbols."),
+  (re.compile(r"unhashable type|abnormal var found"),
+   "Your nesting is malformed — a list appeared where a single element was expected, "
+   "usually a DOUBLE-WRAPPED body, or a variable was used outside the quantifier that "
+   "binds it. Each package is [\"@id\", \"Sx\", BODY] with BODY a SINGLE list: "
+   "[\"@id\",\"S1\",[\"holds\",\"W0\", F]], not [\"@id\",\"S1\",[[\"holds\",\"W0\", F]]]. "
+   "Every variable must appear inside the exists/forall that introduces it."),
+  (re.compile(r"several questions|multiple question"),
+   "You marked more than one package as a question. Output EXACTLY ONE query package, "
+   "for the single sentence that ends in '?': [\"question\", F] for yes/no or "
+   "[\"ask\", \"X\", F] for who/what/where/when. EVERY premise is an assertion "
+   "[\"holds\", W, F] — never a question."),
+  (re.compile(r"rawlogic_convert returned None"),
+   "Your output could not be converted. Use nested JSON ARRAYS only — never objects "
+   "with named keys. The WHOLE output is ONE list starting with \"and\": "
+   "[\"and\", [\"@id\",\"S1\", BODY], [\"@id\",\"S2\", BODY], ...]. Each BODY is a "
+   "SINGLE list and must not be wrapped in an extra pair of brackets. Output ONLY the "
+   "JSON, with no code fences."),
+  (re.compile(r"produced no output|parsing failed|prover returned empty"),
+   "You returned no usable JSON. Output ONLY the JSON list [\"and\", ...] and nothing "
+   "else — no explanation, no prose, no code fences."),
+  (re.compile(r"no question given"),
+   "You did not encode the question. Add exactly ONE query package for the sentence "
+   "that asks the question (it ends with '?'): yes/no -> [\"question\", FORMULA]; "
+   "who/what/where/when -> [\"ask\", \"X\", FORMULA]. Keep the facts as separate "
+   "packages."),
+]
+
+
+def downstream_hint(answer):
+  """Return a corrective hint when the answer is a known downstream failure."""
+  if not isinstance(answer, str) or not answer:
+    return None
+  first = answer.split("\n", 1)[0]
+  # gk formula errors do not start with "Error"; scan the first line as well.
+  if not answer.startswith("Error") and not any(p.search(first)
+                                                for p, _ in _DOWNSTREAM_HINTS):
+    return None
+  for pat, hint in _DOWNSTREAM_HINTS:
+    if pat.search(answer) or pat.search(first):
+      return hint
+  return None
+
+
+def ordinary_pipeline(text, options=None, collect=None):
+  """The ordinary pipeline, with the downstream-error retry around it."""
+  correction = ""
+  fired = []
+  answer = None
+  for attempt in range(MAX_DOWNSTREAM_RETRIES + 1):
+    inner = {} if collect is not None else None
+    # The prover records into this attempt's own collector.  A stage that runs
+    # gk without one to hand -- the graph route calls the prover directly --
+    # is recorded here too, and `prover.stage` says which stage owns it.
+    with (prover.collector(inner) if inner is not None
+          else contextlib.nullcontext()):
+      answer = ordinary_attempt(text, options, inner,
+                                       stage2_corrective=correction)
+    if collect is not None:
+      collect.clear()
+      collect.update(inner)
+    hint = None if globals.options.get("nofix_downstream") \
+           else downstream_hint(answer)
+    if hint is None or attempt == MAX_DOWNSTREAM_RETRIES:
+      break
+    fired.append(str(answer).split("\n", 1)[0][:90])
+    correction = ("\n\nYour previous answer FAILED downstream with:\n"
+                  + str(answer).split("\n", 1)[0][:200] + "\n" + hint
+                  + "\nReturn only the corrected JSON.")
+  if fired and collect is not None:
+    collect["downstream_retries"] = fired
+  if collect is not None and collect.get("answer") is None:
+    # The body returned early — a parse that produced nothing, a converter or
+    # prover error — so the block that writes `answer`, `answered_by` and the
+    # stage keys never ran.  Without this the case lands in `testresults/`
+    # with no answer and no error at all, which is indistinguishable from a
+    # case that ran, and invisible to an error count.  The `_ApiTimeout` path
+    # inside the body already did this for itself; every other early return
+    # is covered here.
+    if answer is not None:
+      collect["answer"] = answer
+    collect.setdefault("stages_enabled", solve_stages.stages_enabled())
+  return answer
+
+
+# ======== one attempt of the ordinary pipeline ========
+#
+# An attempt translates and converts the text, proves the question once (the initial attempt, `front_door` in the
+# records), then runs the retry stages in PIPELINE_ORDER while the question is open.  The phases share one record,
+# `run`: the attempt's inputs, the answer so far, the stage that gave it, the theory and the gk call behind it, and
+# the stage rows.
+
+def ordinary_attempt(text, options=None, collect=None,
                             stage2_corrective="", stage1_corrective="",
                             stage1_json=None):
   """Full pipeline: English -> LLM parse -> logic convert -> prove -> answer.
@@ -187,30 +384,28 @@ def _english_to_answer_once(text, options=None, collect=None,
   Returns the answer string.  On any error returns a string starting with
   "Error:" rather than raising an exception or calling sys.exit().
   """
-  global _call_log_mark
+  global call_log_mark
   # This attempt's calls start here; the downstream-error retry keeps the log
   # growing.  Only the outermost attempt marks it: the critic's rerun re-enters
   # this function, and marking there would drop the critic's own call out of
   # the window the stage rows are computed from.
-  if not _in_critic_rerun:
-    _call_log_mark = len(llmcall.call_log)
+  if not in_critic_rerun:
+    call_log_mark = len(llmcall.call_log)
   global _depth
   _depth += 1
   try:
-    return _english_to_answer_body(text, options, collect, stage2_corrective,
+    return _attempt_body(text, options, collect, stage2_corrective,
                                    stage1_corrective, stage1_json)
   finally:
     _depth -= 1
 
 
-# How deeply the pipeline is calling itself: the critique pass's rerun and the
-# downstream-error retry run the whole thing again from inside it.
-_depth = 0
-
-
-def _english_to_answer_body(text, options=None, collect=None,
+def _attempt_body(text, options=None, collect=None,
                             stage2_corrective="", stage1_corrective="",
                             stage1_json=None):
+  """One attempt: translate and convert, prove, then the retry stages while the question is open.  Returns the answer
+  string; an early failure returns a string that starts with Error."""
+  global _text_shown
   if options is None:
     options = {}
   if collect is not None:
@@ -222,28 +417,99 @@ def _english_to_answer_body(text, options=None, collect=None,
   show_details = options and options.get("show_details_flag")
   show_logic   = options and options.get("show_logic_flag")
 
+  # -logic+: show input text at the top, unless english_to_answer just printed it
+  if show_logic and not _text_shown:
+    print(text)
+  _text_shown = False
+
+  if globals.options.get("directanswer_flag"):
+    return _direct_answer(text, collect, show_logic or show_details)
+
+  got = _translate_and_convert(text, options, collect, stage2_corrective, stage1_corrective, stage1_json)
+  if isinstance(got, str):
+    return got
+  s1_json, s2_json, logic = got
+
+  # --- call the theorem prover (uncapped: gk has its own -seconds limit) ---
+  try:
+    proof_result = prover.call_prover(logic, s1_json=s1_json)
+  except KeyboardInterrupt:
+    raise
+  except Exception as e:
+    return "Error: prover raised an exception: " + str(e)
+
+  if proof_result is None:
+    return "Error: prover returned None."
+
+  # -nosolve: prover was not run; logic JSON was already shown by prover.py
+  if options and options.get("prover_nosolve_flag"):
+    return ""
+
+  # -rawresult: caller wants the raw prover JSON, skip post-processing
+  if options and options.get("prover_rawresult_flag"):
+    return proof_result
+
+  # -details+ or -prover: show prover result JSON
+  show_prover = options and options.get("show_prover_flag")
+  if show_details or show_prover:
+    print("\n=== prover result (JSON) ===\n")
+    print(proof_result)
+
+  # --- process_proof: post-process prover output into final answer (procproofs.py) ---
+  answer = process_proof(proof_result, text=text, s1_json=s1_json, s2_json=s2_json, logic=logic, options=options)
+
+  run = {"text": text, "s1_json": s1_json, "s2_json": s2_json, "options": options, "collect": collect,
+         # the answer so far, and the stage that gave it ("none" while the question is open)
+         "answer": answer, "answered_by": "front_door" if not solve_stages.unresolved(answer) else "none",
+         # the theory behind the answer so far, and the last proof result
+         "logic": logic, "proof_result": proof_result,
+         # the gk call that produced the final answer when a later stage answered.  Every later `call_prover`
+         # overwrites `collect["gk_command"]`, so a stage that RAN without answering would otherwise leave its
+         # command at the top level; the top-level `proof` and `gk_command` are set from this at the end.
+         "answering": None,
+         # which stage answered the critic's retranslation, when the critic answered
+         "rerun_answered_by": None,
+         # the initial attempt's own answer and gk call, kept beside a later stage's
+         "front_door_answer": answer, "front_door_proof": proof_result,
+         "front_door_gk_command": (collect or {}).get("gk_command"),
+         # What each stage did: one row per stage, in stage order.  A separate information block, printed by
+         # `-summary` and by `-logic` and above, and written to the case record as `stages`.
+         "stage_rows": [],
+         # the graph retranslation's record, which the graph bridge reuses
+         "graph": {"graphtrans": None}}
+  solve_display.reset_announced()
+  solve_stages.note_stage(run["stage_rows"], "front_door", True, answer, theory=logic,
+              provider=llm, version=llm_version)
+  _run_fallbacks(run)
+  _run_critic_stage(run, show_logic, show_details)
+  _run_abstraction_routes(run, show_logic, show_details)
+  return _finish_attempt(run)
+
+
+def _direct_answer(text, collect, show):
+  """-directanswer: ONE LLM call with the given prompt answers the text, skipping the parse -> logic -> prover
+  pipeline.  Works for any test set."""
+  import directanswer
+  prompt_file = globals.options.get("directanswer_file")
+  answer = directanswer.answer_directly(
+    text, prompt_file, llm=llm, version=llm_version, tokens=max_tokens,
+    think=globals.options.get("think_flag", False))
+  if collect is not None:
+    collect["answer"] = answer
+    collect["directanswer"] = {"prompt": prompt_file}
+  if show:
+    print(answer)
+  return answer
+
+
+def _translate_and_convert(text, options, collect, stage2_corrective, stage1_corrective, stage1_json):
+  """Stage 1 and Stage 2, the conversion to clauses and the semantic normalization.  Returns (s1_json, s2_json,
+  logic), or an error string."""
+  show_details = options and options.get("show_details_flag")
+  show_logic   = options and options.get("show_logic_flag")
   # Resolve which LLM is being used (for display in headers).
   actual_llm = llm or llmcall.use_llm
-
-  # -logic+: show input text at the top
-  if show_logic:
-    print(text)
-
   think_flag = globals.options.get("think_flag", False)
-
-  # Direct-answer mode: answer with ONE LLM call using the given prompt, skipping
-  # the parse -> logic -> prover pipeline.  Works for any test set.
-  if globals.options.get("directanswer_flag"):
-    import directanswer
-    prompt_file = globals.options.get("directanswer_file")
-    answer = directanswer.answer_directly(
-      text, prompt_file, llm=llm, version=llm_version, tokens=max_tokens, think=think_flag)
-    if collect is not None:
-      collect["answer"] = answer
-      collect["directanswer"] = {"prompt": prompt_file}
-    if show_logic or show_details:
-      print(answer)
-    return answer
 
   llmparse.prenorm_enabled = globals.options.get("prenorm_flag", False)
   llmparse.negretry_enabled = globals.options.get("negretry_flag", False)
@@ -317,7 +583,7 @@ def _english_to_answer_body(text, options=None, collect=None,
 
     # -logic+: show "simplified to" block if ASU texts differ from input
     if show_logic and s1_json:
-      _show_simplified_to(text, s1_json)
+      solve_display.show_simplified_to(text, s1_json)
 
     # --- rawlogic_convert: improve / adjust the parsed logic (logconvert.py) ---
 
@@ -332,7 +598,7 @@ def _english_to_answer_body(text, options=None, collect=None,
       # fixes (they repair the same Stage-2 output, just later in the pipeline).
       if lc_fixes:
         collect["stage_2_fixes"] = list(collect.get("stage_2_fixes", [])) + lc_fixes
-      collect["clauses"] = _build_clauses_with_nl(logic, s1_json)
+      collect["clauses"] = build_clauses_with_nl(logic, s1_json)
 
     # --- show "sentences mapped to clauses" block ---
     if show_logic or debug:
@@ -354,7 +620,7 @@ def _english_to_answer_body(text, options=None, collect=None,
       logic = semnormalize.sem_normalize_clauses(logic)
   except _ApiTimeout:
     msg = "Error: LLM/parse phase exceeded the %ds api-timeout cap." % int(_api_to)
-    # `_english_to_answer` records this in `collect`, as it does for every
+    # `ordinary_pipeline` records this in `collect`, as it does for every
     # early return: a batch runner otherwise stores a case file with no answer
     # and no error, which is indistinguishable from a case that ran.
     return msg
@@ -375,209 +641,142 @@ def _english_to_answer_body(text, options=None, collect=None,
           logic, s1_json, pre_clauses=_pre_norm_logic)
     except Exception as e:
       collect["final_clause_trace_error"] = str(e)
+  return s1_json, s2_json, logic
 
-  # --- call the theorem prover (uncapped: gk has its own -seconds limit) ---
-  try:
-    proof_result = prover.call_prover(logic, s1_json=s1_json)
-  except KeyboardInterrupt:
-    raise
-  except Exception as e:
-    return "Error: prover raised an exception: " + str(e)
 
-  if proof_result is None:
-    return "Error: prover returned None."
-
-  # -nosolve: prover was not run; logic JSON was already shown by prover.py
-  if options and options.get("prover_nosolve_flag"):
-    return ""
-
-  # -rawresult: caller wants the raw prover JSON, skip post-processing
-  if options and options.get("prover_rawresult_flag"):
-    return proof_result
-
-  # -details+ or -prover: show prover result JSON
-  show_prover = options and options.get("show_prover_flag")
-  if show_details or show_prover:
-    print("\n=== prover result (JSON) ===\n")
-    print(proof_result)
-
-  # --- process_proof: post-process prover output into final answer (procproofs.py) ---
-  answer = process_proof(proof_result, text=text, s1_json=s1_json, s2_json=s2_json, logic=logic, options=options)
-
-  # --- the critique pass (-critic), before any abstraction route ---
-  # One call audits the translation the initial attempt produced.  On RETRANSLATE
-  # Stage 2 (or Stage 1 and 2) runs once more with the findings appended, and
-  # the ordinary converter and gk follow.  One critique, one rerun, then stop.
-  answered_by = "front_door" if not _unresolved(answer) else "none"
-  front_door_answer = answer
-  # which stage answered the critic's retranslation, when the critic answered
-  rerun_answered_by = None
-  # The initial attempt's own gk call, snapshot here.  Every later `call_prover`
-  # overwrites `collect["gk_command"]`, so a stage that RAN without answering
-  # would otherwise leave its command at the top level.  `answering` holds the
-  # gk call that produced the final answer; the top-level `proof` and
-  # `gk_command` are set from it at the end of the run.
-  front_door_proof = proof_result
-  front_door_gk_command = (collect or {}).get("gk_command")
-  answering = None
-  # What each stage did: one row per stage, in stage order.  A separate
-  # information block, printed by `-summary` and by `-logic` and above, and
-  # written to the case record as `stages`.  No ordinary key changes shape
-  # because a later stage answered.
-  stage_rows = []
-  solve_display.reset_announced()
-  _note_stage(stage_rows, "front_door", True, answer, theory=logic,
-              provider=llm, version=llm_version)
-
-  # --- the two abstention fallbacks, before the critic and the abstraction
-  # routes.  Each converts the SAME Stage-1/Stage-2 parse a second time and
-  # calls gk again; neither makes an LLM call.  They run only when the front
-  # door left the question unresolved, so a definite front-door answer is
-  # never disturbed, and the first definite fallback answer stops the rest.
-  _fb_records = {}
-  for _fb_name, _fb_key in (("fallback_norm", "fallback_norm_flag"),
-                            ("fallback_hyp", "fallback_hyp_flag")):
-    def _fb_run(_n=_fb_name):
+def _run_fallbacks(run):
+  """The two abstention fallbacks, before the critic and the abstraction routes.  Each converts the SAME
+  Stage-1/Stage-2 parse a second time and calls gk again; neither makes an LLM call.  They run only while the
+  question is open, so a definite answer of the initial attempt is never disturbed, and the first definite fallback
+  answer stops the rest."""
+  collect = run["collect"]
+  records = {}
+  for name, key in (("fallback_norm", "fallback_norm_flag"),
+                    ("fallback_hyp", "fallback_hyp_flag")):
+    def run_fallback(_n=name):
       if _n == "fallback_norm":
         import fallback_norm as _m
       else:
         import fallback_hyp as _m
-      got = _m.run(s1_json, s2_json, text, logic, options)
-      _fb_records[_n.split("_", 1)[1]] = got["record"]
+      got = _m.run(run["s1_json"], run["s2_json"], run["text"], run["logic"], run["options"])
+      records[_n.split("_", 1)[1]] = got["record"]
       # a fallback reports `answered` itself; the driver reads `answer`
       return got if got.get("answered") else {"answer": None}
 
-    def _fb_adopt(got, _n=_fb_name):
-      nonlocal_state["logic"] = got["logic"]
-      nonlocal_state["proof_result"] = got["proof"]
-      nonlocal_state["answering"] = {
-        "proof": got["proof"],
-        "gk_command": (collect or {}).get("gk_command")}
+    def adopt(got):
+      run["logic"] = got["logic"]
+      run["proof_result"] = got["proof"]
+      run["answering"] = {"proof": got["proof"], "gk_command": (collect or {}).get("gk_command")}
       if collect is not None and not globals.options.get("nofinaltrace"):
         collect["final_clauses"] = got["logic"]
 
-    def _fb_err(msg, _n=_fb_name):
-      _fb_records[_n.split("_", 1)[1] + "_error"] = msg
+    def note_error(msg, _n=name):
+      records[_n.split("_", 1)[1] + "_error"] = msg
 
-    nonlocal_state = {"logic": logic, "proof_result": proof_result,
-                      "answering": answering}
-    answer, _by = run_stage(_fb_name, globals.options.get(_fb_key), answer,
-                            stage_rows, _fb_run, adopt=_fb_adopt,
-                            announce=_announce_stage, on_error=_fb_err)
-    if _by:
-      answered_by = _by
-      logic = nonlocal_state["logic"]
-      proof_result = nonlocal_state["proof_result"]
-      answering = nonlocal_state["answering"]
-  if _fb_records and collect is not None:
-    _fb_records["answered_by"] = (answered_by if answered_by
-                                  in ("fallback_norm", "fallback_hyp")
-                                  else None)
-    collect["fallback"] = _fb_records
+    run["answer"], by = solve_stages.run_stage(name, globals.options.get(key), run["answer"], run["stage_rows"],
+                                               run_fallback,
+                                  adopt=adopt, announce=solve_display.announce_stage, on_error=note_error)
+    if by:
+      run["answered_by"] = by
+  if records and collect is not None:
+    records["answered_by"] = (run["answered_by"] if run["answered_by"] in ("fallback_norm", "fallback_hyp")
+                              else None)
+    collect["fallback"] = records
 
-  global _critiqued
-  _critic_state = {}
 
-  def _critic_run():
-    global _critiqued
-    _critiqued = True
-    return _run_critic(text, s1_json, s2_json, logic, answer, llm,
-                       llm_version, max_tokens, options, collect=collect,
-                       loud=debug or show_details or show_logic
-                       or globals.options.get("prover_explain_flag"))
+def _run_critic_stage(run, show_logic, show_details):
+  """The critique pass (-critic), before any abstraction route.  One call audits the translation the initial attempt
+  produced.  On RETRANSLATE, Stage 2 (or Stage 1 and 2) runs once more with the findings appended, and the ordinary
+  converter and gk follow.  One critique, one rerun, then stop."""
+  collect = run["collect"]
 
-  def _critic_adopt(got):
-    _critic_state["rerun_answered_by"] = got.get("rerun_answered_by")
-    _critic_state["answering"] = {"proof": got.get("proof"),
-                                  "gk_command": got.get("gk_command")}
-    if got.get("logic") is not None:
-      _critic_state["logic"] = got["logic"]
-      if collect is not None and not globals.options.get("nofinaltrace"):
-        collect["final_clauses"] = got["logic"]
-
-  # The experimental acceptance check refuses an answer by making the stage
-  # look unresolved, so the ordinary rules carry the run on to the next stage.
-  def _critic_run_checked():
-    got = _critic_run()
-    if got and got.get("answer") is not None and not _acceptance(
-        {"answered_by": "critic", "stage1": s1_json, "stage2": s2_json,
-         "proof": got.get("proof"),
-         "critic": ((collect or {}).get("critic")
-                    or got.get("critic_record") or {})}, collect):
+  def critique():
+    global critiqued
+    critiqued = True
+    got = solve_retries.run_critic(run["text"], run["s1_json"], run["s2_json"], run["logic"], run["answer"], llm,
+                                   llm_version, max_tokens, run["options"], collect=collect,
+                                   loud=debug or show_details or show_logic
+                                   or globals.options.get("prover_explain_flag"))
+    # The experimental acceptance check refuses an answer by making the stage look unresolved, so the ordinary
+    # rules carry the run on to the next stage.
+    if got and got.get("answer") is not None and not solve_retries.acceptance(
+        {"answered_by": "critic", "stage1": run["s1_json"], "stage2": run["s2_json"], "proof": got.get("proof"),
+         "critic": ((collect or {}).get("critic") or got.get("critic_record") or {})}, collect):
       got = dict(got)
       got["answer"] = None
     return got
 
-  answer, _by = run_stage(
-    "critic", _should_critique_enabled(), answer, stage_rows,
-    _critic_run_checked, adopt=_critic_adopt, announce=_announce_stage,
-    tag="critic",
+  def adopt(got):
+    run["rerun_answered_by"] = got.get("rerun_answered_by")
+    run["answering"] = {"proof": got.get("proof"), "gk_command": got.get("gk_command")}
+    if got.get("logic") is not None:
+      run["logic"] = got["logic"]
+      if collect is not None and not globals.options.get("nofinaltrace"):
+        collect["final_clauses"] = got["logic"]
+
+  run["answer"], by = solve_stages.run_stage(
+    "critic", solve_retries.should_critique_enabled(), run["answer"], run["stage_rows"], critique, adopt=adopt,
+    announce=solve_display.announce_stage, tag="critic",
     disabled_why=("off" if not globals.options.get("critic_flag")
                   else "not needed: the critique already ran in this run"))
-  if _by:
-    answered_by = "critic"
-    rerun_answered_by = _critic_state.get("rerun_answered_by")
-    answering = _critic_state.get("answering", answering)
-    logic = _critic_state.get("logic", logic)
+  if by:
+    run["answered_by"] = "critic"
 
-  # --- the abstraction routes, in the order `abstraction_order` gives ---
-  # Each route runs only when the question is still unresolved, and only when
-  # its own flag is on.  A route not named in the order never runs, whatever
-  # its flag says: the order is the list of routes this run may use.
-  # the graph blocks appear from `-explain` up, the literal bridge's from
-  # `-logic` up, as before
-  loud = (debug or show_details or show_logic
-          or globals.options.get("prover_explain_flag"))
-  routes = {"graphtrans": _run_graphtrans,
-            "litbridge": _run_litbridge,
-            "graphbridge": _run_graphbridge}
-  state = {"graphtrans": None}          # layer 1's record, reused by layer 2
-  order = _abstraction_order()
-  for name in order:
-    _route_state = {}
 
-    def _route_run(_n=name):
-      got = routes[_n](text, s1_json, s2_json, logic, answer, llm,
-                       llm_version, max_tokens, options, loud=loud,
-                       verbose=debug or show_details, collect=collect,
-                       state=state)
-      if got and got.get("answer") is not None and _n == "graphtrans" \
-         and not _acceptance(
-           {"answered_by": _n, "stage1": s1_json, "stage2": s2_json,
-            "graphtrans": ((collect or {}).get(_n)
-                           or _graphtrans_record(got))}, collect):
+def _run_abstraction_routes(run, show_logic, show_details):
+  """The abstraction routes, in the order `solve_stages.abstraction_order` gives.  Each route runs only while the
+  question is open, and only when its own flag is on.  A route not named in the order never runs, whatever its flag
+  says: the order is the list of routes this run may use."""
+  collect = run["collect"]
+  # the graph blocks appear from `-explain` up, the literal bridge's from `-logic` up
+  loud = debug or show_details or show_logic or globals.options.get("prover_explain_flag")
+  routes = {"graphtrans": solve_retries.run_graphtrans,
+            "litbridge": solve_retries.run_litbridge,
+            "graphbridge": solve_retries.run_graphbridge}
+  for name in solve_stages.abstraction_order():
+    def run_route(_n=name):
+      got = routes[_n](run["text"], run["s1_json"], run["s2_json"], run["logic"], run["answer"], llm, llm_version,
+                       max_tokens, run["options"], loud=loud, verbose=debug or show_details, collect=collect,
+                       state=run["graph"])
+      if got and got.get("answer") is not None and _n == "graphtrans" and not solve_retries.acceptance(
+          {"answered_by": _n, "stage1": run["s1_json"], "stage2": run["s2_json"],
+           "graphtrans": ((collect or {}).get(_n) or solve_retries.graphtrans_record(got))}, collect):
         got = dict(got)
         got["answer"] = None
       return got
 
-    def _route_adopt(got):
-      _route_state["answering"] = {"proof": got.get("proof"),
-                                   "gk_command": got.get("gk_command")}
+    def adopt(got):
+      run["answering"] = {"proof": got.get("proof"), "gk_command": got.get("gk_command")}
       if got.get("logic") is not None:
-        _route_state["logic"] = got["logic"]
+        run["logic"] = got["logic"]
         if collect is not None and not globals.options.get("nofinaltrace"):
           collect["final_clauses"] = got["logic"]
 
-    answer, _by = run_stage(name, _route_enabled(name), answer, stage_rows,
-                            _route_run, adopt=_route_adopt,
-                            announce=_announce_stage, tag=name)
-    if _by:
-      answered_by = name
-      answering = _route_state.get("answering", answering)
-      logic = _route_state.get("logic", logic)
-  stage_rows = _complete_stage_rows(stage_rows, answered_by, collect)
+    run["answer"], by = solve_stages.run_stage(name, solve_stages.route_enabled(name), run["answer"],
+                                               run["stage_rows"], run_route,
+                                  adopt=adopt, announce=solve_display.announce_stage, tag=name)
+    if by:
+      run["answered_by"] = name
+
+
+def _finish_attempt(run):
+  """Complete the stage rows, write the attempt's record into the collector, print the stages block and the
+  summary.  Returns the answer."""
+  collect = run["collect"]
+  answer, answered_by = run["answer"], run["answered_by"]
+  stage_rows = solve_stages.complete_stage_rows(run["stage_rows"], answered_by, collect)
   if collect is not None:
-    collect["abstraction_order"] = _abstraction_order()
-    collect["stages_enabled"] = _stages_enabled()
+    collect["abstraction_order"] = solve_stages.abstraction_order()
+    collect["stages_enabled"] = solve_stages.stages_enabled()
     collect["encoding_experiments"] = lc_encoding.active_experiments()
     collect["stages"] = stage_rows
     collect["pipeline_name"] = globals.options.get("pipeline_name")
-    collect["run_outcome"] = _run_outcome(answer, stage_rows, answered_by)
+    collect["run_outcome"] = solve_stages.run_outcome(answer, stage_rows, answered_by)
     collect["answered_by"] = answered_by
     # the first line only: the explanation, when there is one, is `nl_proof`
     collect["front_door_answer"] = str(
-        front_door_answer or "").split("\n")[0] or None
-    collect["llm_call_counts"] = _call_counts()
+        run["front_door_answer"] or "").split("\n")[0] or None
+    collect["llm_call_counts"] = solve_stages.call_counts()
     # Two figures, because they answer two questions.  `llm_accounting` is the
     # whole case, retries included: that is the true cost and what the
     # `-llm-call-limit` counter bounds.  `llm_accounting_stages` is the final
@@ -597,13 +796,13 @@ def _english_to_answer_body(text, options=None, collect=None,
     collect["llm_calls_total"] = sum(
         v["calls"] for v in collect["llm_call_counts"].values())
   if _depth == 1:
-    _print_stages(stage_rows)
+    solve_display.print_stages(stage_rows)
   if (globals.options.get("summary_flag")
       or globals.options.get("summary_json_flag")) and _depth == 1:
     # only the outermost pipeline run reports: the critique pass's rerun calls
     # this function again from inside it, and that inner run is not a case run
-    _print_summary(answer, answered_by, front_door_answer, state,
-                   rerun_answered_by=rerun_answered_by, stages=stage_rows)
+    solve_display.print_summary(answer, answered_by, run["front_door_answer"], run["graph"],
+                   rerun_answered_by=run["rerun_answered_by"], stages=stage_rows)
 
   if collect is not None:
     # process_proof appends "\n\n<explanation>" when prover_explain_flag is on.
@@ -615,1097 +814,48 @@ def _english_to_answer_body(text, options=None, collect=None,
         collect["nl_proof"] = expl
     else:
       collect["answer"] = answer
-    _set_answering_call(collect, answering, front_door_proof,
-                        front_door_gk_command)
-
+    solve_stages.set_answering_call(collect, run["answering"], run["front_door_proof"],
+                        run["front_door_gk_command"])
   return answer
 
 
-# ======== N1: downstream-error corrective retry ========
-#
-# Origin: the /opt/logictools/nl weak-model pilot (Doc/NANO_PROMPT.md), adapted.
-#
-# The Stage-1/Stage-2 sanity retries only ever see the STRUCTURE of the parsed
-# JSON.  Errors that surface later — in rawlogic_convert, in clausification, in
-# gk, or at question handling — arrive after that retry window has closed and
-# were never re-prompted.  This loop matches the resulting error against a table
-# of known failure shapes and re-calls Stage 2 with the actual error plus a
-# targeted, imperative hint.
-#
-# It can only improve correctness: it fires exclusively on results that are
-# already errors.  Stage 1 is not re-run — the corrective text is appended to
-# the Stage-2 input, so the Stage-1 call is served from cache unchanged.
+# ======== helpers ========
 
-_MAX_DOWNSTREAM_RETRIES = 2
+class _ApiTimeout(BaseException):
+  """Raised by the SIGALRM handler when the LLM-parse-plus-clause-conversion
+  phase exceeds the api_timeout cap.  The cap is disarmed before the prover
+  (gk) runs, so it never interrupts the prover or proof post-processing.
 
-_DOWNSTREAM_HINTS = [
-  (re.compile(r"first argument of (exists|a quantifier)|connective not a variable"
-              r"|error in formula"),
-   "A connective or quantifier was FLATTENED. Each is ONE nested list passed as a "
-   "SINGLE argument: [\"question\", [\"exists\", \"X\", FORMULA]], never "
-   "[\"question\", \"exists\", \"X\", FORMULA]. Likewise [\"and\", A, B], "
-   "[\"or\", A, B], [\"not\", A] where A and B are THEMSELVES lists such as "
-   "[\"isa\", \"house\", \"X\"], never bare strings spread into the parent list. "
-   "Comparisons must use the named predicates, not operator symbols."),
-  (re.compile(r"unhashable type|abnormal var found"),
-   "Your nesting is malformed — a list appeared where a single element was expected, "
-   "usually a DOUBLE-WRAPPED body, or a variable was used outside the quantifier that "
-   "binds it. Each package is [\"@id\", \"Sx\", BODY] with BODY a SINGLE list: "
-   "[\"@id\",\"S1\",[\"holds\",\"W0\", F]], not [\"@id\",\"S1\",[[\"holds\",\"W0\", F]]]. "
-   "Every variable must appear inside the exists/forall that introduces it."),
-  (re.compile(r"several questions|multiple question"),
-   "You marked more than one package as a question. Output EXACTLY ONE query package, "
-   "for the single sentence that ends in '?': [\"question\", F] for yes/no or "
-   "[\"ask\", \"X\", F] for who/what/where/when. EVERY premise is an assertion "
-   "[\"holds\", W, F] — never a question."),
-  (re.compile(r"rawlogic_convert returned None"),
-   "Your output could not be converted. Use nested JSON ARRAYS only — never objects "
-   "with named keys. The WHOLE output is ONE list starting with \"and\": "
-   "[\"and\", [\"@id\",\"S1\", BODY], [\"@id\",\"S2\", BODY], ...]. Each BODY is a "
-   "SINGLE list and must not be wrapped in an extra pair of brackets. Output ONLY the "
-   "JSON, with no code fences."),
-  (re.compile(r"produced no output|parsing failed|prover returned empty"),
-   "You returned no usable JSON. Output ONLY the JSON list [\"and\", ...] and nothing "
-   "else — no explanation, no prose, no code fences."),
-  (re.compile(r"no question given"),
-   "You did not encode the question. Add exactly ONE query package for the sentence "
-   "that asks the question (it ends with '?'): yes/no -> [\"question\", FORMULA]; "
-   "who/what/where/when -> [\"ask\", \"X\", FORMULA]. Keep the facts as separate "
-   "packages."),
-]
+  Subclasses BaseException (NOT Exception) on purpose: the LLM-call retry loops
+  in llmcall.py catch `except Exception` (and used to catch bare `except:`) and
+  would otherwise swallow the timeout and retry, defeating the cap. As a
+  BaseException it propagates straight through those handlers to the
+  `except _ApiTimeout` in english_to_answer."""
 
 
-def _downstream_hint(answer):
-  """Return a corrective hint when the answer is a known downstream failure."""
-  if not isinstance(answer, str) or not answer:
+def _api_timeout_handler(signum, frame):
+  raise _ApiTimeout()
+
+
+def _ascii_fold_logic(obj):
+  """Recursively transliterate every string in a parsed-logic structure to plain
+  ASCII (NFKD decompose, drop combining marks, drop any remaining non-ASCII).
+  Keeps the prover input pure ASCII so its ASCII-decoded output never crashes on
+  accented entity names.  No-op for already-ASCII input; returns None unchanged."""
+  if obj is None:
     return None
-  first = answer.split("\n", 1)[0]
-  # gk formula errors do not start with "Error"; scan the first line as well.
-  if not answer.startswith("Error") and not any(p.search(first)
-                                                for p, _ in _DOWNSTREAM_HINTS):
-    return None
-  for pat, hint in _DOWNSTREAM_HINTS:
-    if pat.search(answer) or pat.search(first):
-      return hint
-  return None
-
-
-def _run_critic(text, s1_json, s2_json, logic, answer, llm, llm_version,
-                max_tokens, options, collect=None, loud=False):
-  """The critique pass and, when it is earned, one retranslation."""
-  import critic_pass
-  record = {"ran": True, "answer_before": answer}
-  got = critic_pass.critique(text, s1_json, s2_json, llm=llm,
-                             version=llm_version)
-  report = got.get("report")
-  if report is not None:
-    # the quoted-fix rule needs the units' own text, so the report is read
-    # again with it in hand
-    report = critic_pass.parse_reply(got.get("raw"),
-                                     critic_pass.unit_texts(s1_json))
-    got["report"] = report
-  record.update({"report": report, "parse_failure": got.get("parse_failure"),
-                 "tokens_estimate": got.get("tokens_estimate"),
-                 "system_prompt_sha256": got.get("system_prompt_sha256")})
-  verdict, units, stage = critic_pass.decide(report)
-  record["verdict"] = verdict
-  record["units_to_redo"] = units
-  record["stage"] = stage
-  out = {"answer": None, "logic": None}
-  if verdict != "RETRANSLATE":
-    record["why"] = (got.get("parse_failure") or (report or {}).get("reason")
-                     or "the critic kept the translation")
-    if collect is not None:
-      collect["critic"] = record
-    if loud:
-      _print_critic(record)
-    return out
-  blocking = [f for f in report["findings"] if f["severity"] == "blocking"]
-  wanted = blocking or report["findings"]
-  wanted, empty = critic_pass.drop_empty_fixes(wanted)
-  record["empty_fix"] = empty
-  record["compact_fix"] = critic_pass.has_compact_fix(wanted)
-  if not wanted:
-    record["why"] = "every finding said no change was needed"
-    if collect is not None:
-      collect["critic"] = record
-    if loud:
-      _print_critic(record)
-    return out
-  # Stage 1 lost a word: Stage 1 runs again and Stage 2 follows it plainly.
-  # A Stage-2 corrective would name unit ids the new Stage 1 may not use.
-  if stage == 1:
-    s1_corr = critic_pass.corrective_stage1(wanted, s1_json)
-    s2_corr = ""
-  else:
-    s1_corr = ""
-    s2_corr = critic_pass.corrective_suffix(wanted, s2_json)
-  record["corrective"] = s2_corr or s1_corr
-  record["corrective_stage"] = stage
-  global _in_critic_rerun
-  _in_critic_rerun = True
-  try:
-    inner = {}
-    with llmcall.tagged(None, critic_rerun=True):
-      again = _english_to_answer_once(text, options, inner,
-                                      stage2_corrective=s2_corr,
-                                      stage1_corrective=s1_corr)
-    record["answer_after"] = again
-    record["rerun_changed_units"] = _changed_units(
-        s2_json, inner.get("stage2"))
-    touched = (set(record["rerun_changed_units"]["changed"])
-               | set(record["rerun_changed_units"]["added"]))
-    record["touched_units"] = sorted(touched)
-    record["unasked_units"] = sorted(touched - set(units))
-    record["corrective_call"] = _corrective_call(inner, stage)
-    if collect is not None:
-      # `answered_by` and `fallback` say whether a fallback answered the
-      # retranslation: the rerun re-enters the pipeline, so `fallback_norm`
-      # and `fallback_hyp` run again on the new Stage 2 (the abstraction
-      # routes do not — `_route_enabled` refuses inside a rerun).
-      record["rerun"] = {k: v for k, v in inner.items()
-                         if k in ("stage1", "stage2", "answer",
-                                  "answered_by", "fallback")}
-    if not _unresolved(again):
-      out["answer"] = again
-      out["rerun_answered_by"] = inner.get("answered_by")
-      out["logic"] = inner.get("final_clauses") or logic
-      # the rerun's own gk call, for the run's top-level record
-      out["proof"] = inner.get("proof")
-      out["gk_command"] = inner.get("gk_command")
-  except Exception as e:                                        # noqa: BLE001
-    record["rerun_error"] = "%s: %s" % (type(e).__name__, e)
-  finally:
-    _in_critic_rerun = False
-  if collect is not None:
-    collect["critic"] = record
-  if loud:
-    _print_critic(record)
-  return out
-
-
-def _call_counts():
-  """Per stage tag: how many LLM calls, how many live, how many were retries.
-
-  `llmcall.call_log` is reset once per case by the runners, so this counts
-  this case alone.  The tag is set by `llmcall.tagged` at each call site.
-  """
-  out = {}
-  for row in llmcall.call_log:
-    tag = row.get("tag") or "untagged"
-    cell = out.setdefault(tag, {"calls": 0, "live": 0, "retries": 0})
-    cell["calls"] += 1
-    if row.get("source") == "api":
-      cell["live"] += 1
-    if row.get("retry"):
-      cell["retries"] += 1
-  return out
-
-
-def _summary_record(answer, answered_by, front_door_answer, state=None,
-                    rerun_answered_by=None, stages=None):
-  """The one block `-summary` prints, as a dict."""
-  counts = _call_counts()
-  routes = []
-  for name in _abstraction_order():
-    if name == answered_by:
-      routes.append("%s (answer found)" % name)
-    elif not _route_enabled(name):
-      routes.append("%s off" % name)
-    elif counts.get(name):
-      routes.append("%s ran, no answer" % name)
-    else:
-      routes.append("%s not run" % name)
-  return {"answer": str(answer or "").split("\n")[0],
-          "answered_by": answered_by,
-          "front_door_answer": str(front_door_answer or "").split("\n")[0],
-          "abstraction_order": ",".join(_abstraction_order()),
-          "stages_enabled": _stages_enabled(),
-          # `LLMPIPE_ABSEXP` is the one control outside the option dict, so a
-          # record that did not name it could not be reproduced.  [] is ordinary.
-          "encoding_experiments": lc_encoding.active_experiments(),
-          "stages": stages or [],
-          "rerun_answered_by": rerun_answered_by,
-          "llm_call_counts": counts,
-          "llm_calls_total": sum(v["calls"] for v in counts.values()),
-          "llm_calls_live": sum(v["live"] for v in counts.values()),
-          "routes": routes}
-
-
-def _corrective_call(inner, stage):
-  """Was the call carrying the corrective made, and by whom answered?
-
-  A rerun whose corrective call never happened is the first call again, served
-  from the cache; the measurement excludes it.  -> "api" | "cache" | "missing".
-  """
-  want = 1 if stage == 1 else 2
-  rows = [r for r in (inner.get("parse_calls") or [])
-          if r.get("stage") == want]
-  if not rows:
-    return "missing"
-  return rows[0].get("source") or "unknown"
-
-
-def _changed_units(before, after):
-  """Which `@id` packages the rerun rewrote, and which it touched unasked."""
-  import json as _json
-
-  def packages(s2):
-    out = {}
-    if isinstance(s2, list) and s2 and s2[0] == "and":
-      for item in s2[1:]:
-        if isinstance(item, list) and len(item) >= 3 and item[0] == "@id":
-          out[str(item[1])] = _json.dumps(item[2], sort_keys=True,
-                                          default=str)
-    return out
-
-  a, b = packages(before), packages(after)
-  changed = sorted(k for k in set(a) & set(b) if a[k] != b[k])
-  return {"changed": changed,
-          "added": sorted(set(b) - set(a)),
-          "removed": sorted(set(a) - set(b))}
-
-
-def _stages_enabled():
-  """The stage keys this run has on, in stage order.
-
-  Written into the case record next to `abstraction_order`, so a results
-  folder says what ran without its command line.
-  """
-  import globals
-  return [k[:-5] for k in STAGE_KEYS if globals.options.get(k)]
-
-
-# The three stages `_english_to_answer_once` dispatches from a table; the two
-# fallbacks and the critic are called by name before them.  `PIPELINE_ORDER` is
-# the declared order of all seven and the order every record is written in.
-ABSTRACTION_STAGES = ("graphtrans", "litbridge", "graphbridge")
-
-
-def _abstraction_order():
-  """The graph and bridge stages this run may use, in order.
-
-  A stage the list omits never runs, whatever its own flag says: the list is
-  what this run is allowed to try, and the flags say which of those are on.
-  A name that is not one of the three is an error rather than a silently
-  dropped stage.
-  """
-  import globals
-  order = list(globals.ABSTRACTION_ROUTES)
-  unknown = [n for n in order if n not in ABSTRACTION_STAGES]
-  if unknown:
-    raise ValueError("globals.ABSTRACTION_ROUTES names %s; the stages are %s"
-                     % (", ".join(unknown), ", ".join(ABSTRACTION_STAGES)))
-  return order
-
-
-def _route_enabled(name):
-  import globals
-  if _in_critic_rerun:
-    # The rerun is a retranslation: Stage 2 again, the converter, gk.  Running
-    # the routes inside it would run them twice per case — once on the
-    # repaired translation and once on the original, in the outer run.
-    return False
-  if name == "graphtrans":
-    return bool(globals.options.get("graphtrans_flag")
-                or globals.options.get("graphbridge_flag"))
-  if name == "litbridge":
-    return bool(globals.options.get("litbridge_flag"))
-  if name == "graphbridge":
-    return bool(globals.options.get("graphbridge_flag"))
-  return False
-
-
-def _run_graphtrans(text, s1_json, s2_json, logic, answer, llm, llm_version,
-                    max_tokens, options, loud=False, verbose=False,
-                    collect=None, state=None):
-  """Layer 1: the graph retranslation and one gk call (`-graphtrans`)."""
-  import graph_p0
-  _announce_stage("graphtrans")
-  got = graph_p0.run_graph_p0(text, s1_json, llm=llm, version=llm_version,
-                              max_tokens=max_tokens, options=None)
-  if state is not None:
-    state["graphtrans"] = got
-  if collect is not None:
-    collect["graphtrans"] = _graphtrans_record(got)
-  if debug:
-    _print_graphtrans(got, verbose=verbose)
-  _print_graph_theory(got, s1_json, llm)
-  if got.get("answer") is None:
-    return {"answer": None, "logic": None}
-  return {"answer": got["answer_string"], "logic": got["clauses"],
-          "proof": got.get("gk_result"), "gk_command": got.get("gk_command")}
-
-
-def _acceptance(view, collect):
-  """EXPERIMENTAL (Task 2B).  Judge a later stage's answer with the proof-local
-  acceptance checks and record the verdict.  Returns True when the answer may
-  be adopted.  With the option off, every answer is adopted, as before."""
-  policy = globals.options.get("accept_policy")
-  if not policy:
-    return True
-  import retrans_accept as _ra
-  if view.get("answered_by") not in _ra.JUDGED_STAGES:
-    return True                       # only the two stages Task 2B measured
-  try:
-    import retrans_accept
-    rec = retrans_accept.check(view, policy)
-  except Exception as exc:                                       # pragma: no cover
-    rec = {"decision": "CAUTION", "reasons": ["record_incomplete"],
-           "answering_stage": view.get("answered_by"), "used_units": [],
-           "changed_units": [], "policy": policy,
-           "evidence": {"error": str(exc)[:200]}}
-  if collect is not None:
-    collect.setdefault("acceptance", []).append(rec)
-  ok = rec["decision"] == "ACCEPT"
-  if not ok and _loud_enough():
-    print("--- acceptance (%s): %s %s ---"
-          % (policy, rec["decision"], ", ".join(rec["reasons"]) or "-"))
-  return ok
-
-
-def _graphtrans_record(got):
-  """What a runtests JSON keeps.
-
-  The open-triple Stage 2 and the graph clause list stay: each is the size of
-  an ordinary Stage 2 and clause list, and without them the record cannot say
-  what was proved.  Only the compiler sidecar and the unparsed result string
-  are dropped; `gk_result` carries the same result as JSON.
-  """
-  return {k: v for k, v in got.items() if k not in ("sidecar", "raw")}
-
-
-def _theory_sha(logic):
-  """An immutable reference to the theory a stage submitted."""
-  if not logic:
-    return None
-  try:
-    import hashlib
-    return hashlib.sha256(
-      json.dumps(logic, sort_keys=True, default=str).encode("utf-8")
-    ).hexdigest()[:16]
-  except Exception:                                              # pragma: no cover
-    return None
-
-
-def _note_stage(rows, name, ran, answer=None, why=None, enabled=None,
-                error=None, theory=None, provider=None, version=None):
-  """Record what one stage did, for the stages block and the case record.
-
-  One row per stage, whether or not it ran, so a results folder says what the
-  run tried without its command line.  `answered` is set later, once the run
-  knows which stage produced the final answer.
-  """
-  row = {"stage": name, "ran": bool(ran), "answered": False,
-         "enabled": bool(ran) if enabled is None else bool(enabled),
-         "answer": None, "error": None, "why": None,
-         "theory_sha256": _theory_sha(theory),
-         "gk_calls": 0, "gk_seconds": 0.0,
-         "llm_calls": 0, "llm_seconds": 0.0, "llm_allowed": 0,
-         "llm_cached": 0, "llm_live": 0, "llm_refused": 0,
-         "llm_provider_requests": 0,
-         "provider": provider, "version": version, "acceptance": None}
-  head = str(answer or "").split("\n")[0].strip()
-  if ran:
-    row["answer"] = head or None
-    if error is None and _is_error(answer):
-      error = head
-  if error:
-    row["error"] = str(error).split("\n")[0][:200]
-  if not ran and why:
-    row["why"] = why
-  rows.append(row)
-  return row
-
-
-# Where the current attempt's calls begin in `llmcall.call_log`.  Set at the
-# top of every attempt by `_english_to_answer_once`.
-_call_log_mark = 0
-
-
-def run_stage(name, enabled, answer, rows, run, adopt=None, announce=None,
-             on_error=None, tag=None, disabled_why="off"):
-  """Run one retry stage under the pipeline's rules, and say what came of it.
-
-  This is the whole control flow, in one place, so the pipeline and the tests
-  exercise the same implementation rather than two loops that can drift:
-
-    * a disabled stage does not run and says so;
-    * an enabled stage runs only while the question is unresolved;
-    * an exception becomes a recorded error and the run continues;
-    * `None`, empty output, `Unknown`, `no answer` and every `Error:` value
-      leave the question unresolved;
-    * an earlier definite answer is never replaced.
-
-  Returns (answer, answered_by_or_None).  `adopt(got)` runs only when the
-  stage's answer is definite and is where a stage does its own bookkeeping.
-  """
-  if not enabled:
-    _note_stage(rows, name, False, why=disabled_why)
-    return answer, None
-  if not _unresolved(answer):
-    _note_stage(rows, name, False,
-                why="not needed: the question was already answered")
-    return answer, None
-  if announce:
-    announce(name)
-  ctx = contextlib.ExitStack()
-  with ctx:
-    if tag is not None:
-      ctx.enter_context(llmcall.tagged(tag))
-    ctx.enter_context(prover.stage(name))
-    got, err = _guarded(name, rows, run)
-  if err and on_error:
-    on_error(err)
-  _note_stage(rows, name, True, (got or {}).get("answer"), error=err,
-              theory=(got or {}).get("logic"),
-              provider=llm, version=llm_version)
-  if err or not got:
-    return answer, None
-  got_answer = got.get("answer")
-  if got_answer is None or _unresolved(got_answer):
-    return answer, None
-  if adopt:
-    adopt(got)
-  return got_answer, name
-
-
-def _complete_stage_rows(rows, answered_by, collect=None):
-  """One ordered row per stage in `PIPELINE_ORDER`, whether or not it ran.
-
-  A stage that never reached its call site still gets a row saying it was off
-  or not needed, so a case record can be read without the command line.  The
-  per-stage gk and LLM accounting is attached here, from the tagged call log.
-  """
-  seen = {}
-  for r in rows:
-    seen.setdefault(r["stage"], r)
-  out = []
-  for name in PIPELINE_ORDER:
-    row = seen.get(name)
-    if row is None:
-      on = (name == "front_door") or bool(
-        globals.options.get(name + "_flag"))
-      row = {"stage": name, "ran": False, "answered": False, "enabled": on,
-             "answer": None, "error": None,
-             "why": ("off" if not on else
-                     "not needed: an earlier stage answered"),
-             "theory_sha256": None, "gk_calls": 0, "gk_seconds": 0.0,
-             "llm_calls": 0, "llm_seconds": 0.0, "llm_allowed": 0,
-             "llm_cached": 0, "llm_live": 0, "llm_refused": 0,
-             "llm_provider_requests": 0, "provider": None,
-             "version": None, "acceptance": None}
-    # `enabled` comes from the resolved options, not from whether the stage
-    # happened to run: a stage skipped because an earlier one answered is still
-    # an enabled stage.
-    row["enabled"] = (True if name == "front_door"
-                      else bool(globals.options.get(name + "_flag")))
-    if not row["ran"] and not row.get("why"):
-      row["why"] = ("off" if not row["enabled"]
-                    else "not needed: an earlier stage answered")
-    if not row["ran"] and row["enabled"] and row.get("why") == "off":
-      # the stage is on; something other than the flag stopped it
-      row["why"] = "not needed: the stage was already used in this run"
-    row["answered"] = bool(row["ran"] and name == answered_by)
-    out.append(row)
-  _attach_call_accounting(out, collect)
-  return out
-
-
-def _attach_call_accounting(rows, collect):
-  """Per-stage LLM and gk counts, provider and version, from the call log.
-
-  Only the calls of the attempt these rows describe are counted: the
-  downstream-error retry runs the whole pipeline again, and the call log keeps
-  growing across attempts.
-  """
-  by = {r["stage"]: r for r in rows}
-  try:
-    log = list(llmcall.call_log)[_call_log_mark:]
-  except Exception:                                              # pragma: no cover
-    log = []
-  for entry in log:
-    # `tagged` labels each call with the stage that made it; an untagged call
-    # is the initial attempt's own parse.
-    stage = entry.get("tag") or "front_door"
-    if stage in ("untagged", "stage1", "stage2", "parse", "prenorm"):
-      stage = "front_door"
-    row = by.get(stage)
-    if row is None:
-      continue
-    row["llm_seconds"] = round(
-      row["llm_seconds"] + float(entry.get("seconds") or 0), 3)
-    source = entry.get("source")
-    # Every provider attempt is one log entry; only the first of a logical call
-    # carries `logical`, so an empty-response retry adds a provider request and
-    # not a second logical call.
-    if source == "api":
-      row["llm_provider_requests"] = row.get("llm_provider_requests", 0) + 1
-    if not entry.get("logical"):
-      continue
-    row["llm_calls"] += 1              # attempted: allowed + refused
-    if source == "cache":
-      row["llm_cached"] = row.get("llm_cached", 0) + 1
-      row["llm_allowed"] = row.get("llm_allowed", 0) + 1
-    elif source == "refused":
-      # refused before the cache lookup and before any dispatch: never live
-      row["llm_refused"] = row.get("llm_refused", 0) + 1
-    else:
-      row["llm_live"] = row.get("llm_live", 0) + 1
-      row["llm_allowed"] = row.get("llm_allowed", 0) + 1
-    for a, b in (("input", "input_tokens"), ("output", "output_tokens")):
-      if entry.get(a) is not None:
-        row[b] = row.get(b, 0) + int(entry[a] or 0)
-    if entry.get("reason"):
-      row["error"] = row.get("error") or ("Error: %s" % entry["reason"])
-    if entry.get("llm"):
-      row["provider"] = entry["llm"]
-    if entry.get("version"):
-      row["version"] = entry["version"]
-  for g in (collect or {}).get("gk_calls") or []:
-    stage = g.get("stage") or "front_door"
-    row = by.get(stage)
-    if row is None:
-      continue
-    row["gk_calls"] += 1
-    row["gk_seconds"] = round(row["gk_seconds"] + float(g.get("seconds") or 0), 3)
-  for rec in (collect or {}).get("acceptance") or []:
-    row = by.get(rec.get("answering_stage"))
-    if row is not None:
-      row["acceptance"] = {k: rec[k] for k in ("decision", "reasons", "policy")
-                           if k in rec}
-  return rows
-
-
-def _run_outcome(answer, rows, answered_by):
-  """Which of the four outcomes this run reached.
-
-  `Unknown` after every enabled stage ran is not the same as `Unknown` because
-  a later stage failed, and neither is a translation failure before a valid gk
-  question existed.
-  """
-  if not _unresolved(answer):
-    return "answered"
-  ran = [r for r in rows if r["ran"]]
-  front = next((r for r in rows if r["stage"] == "front_door"), None)
-  if front is not None and front.get("error"):
-    return "translation_failure"
-  if any(r.get("error") for r in ran):
-    return "unknown_after_stage_failure"
-  return "unknown_all_stages_ran"
-
-
-def _guarded(name, rows, fn, *a, **kw):
-  """Run one stage.  An exception becomes a recorded error on that stage's row
-  and the run continues with the next enabled stage; it never aborts the case
-  and never becomes an answer."""
-  try:
-    return fn(*a, **kw), None
-  except KeyboardInterrupt:
-    raise
-  except Exception as exc:
-    return None, "Error: %s: %s" % (type(exc).__name__, str(exc)[:160])
-
-
-def _run_litbridge(text, s1_json, s2_json, logic, answer, llm, llm_version,
-                   max_tokens, options, loud=False, verbose=False,
-                   collect=None, state=None):
-  """The literal bridge, exactly as it ran before the route loop existed.
-
-  The body is the block that used to sit inline in `_english_to_answer_once`;
-  only its wrapper changed.  It returns the answer it reached, or None when it
-  reached none, and the theory that answer rests on.
-  """
-  debug = globals.options.get("debug_print_flag")
-  show_details = globals.options.get("show_details_flag")
-  show_logic = globals.options.get("show_logic_flag")
-  show_prover = globals.options.get("show_prover_flag")
-  import litbridge_procedure
-  base_answer, base_logic = answer, logic
-  loud = debug or show_details or show_logic
-  view = _litbridge_view(text, s1_json, s2_json, logic)
-  respond = _litbridge_responder(llm, llm_version, max_tokens)
-  extras = bool(litbridge_procedure.EXTRAS)
-  records = []
-  # the round that answered, for the run's top-level record
-  answering_proof, answering_command = None, None
-  # accumulated across the rounds, so a round-2 proof can name a round-1 rule
-  provenance, rules_by_id = {}, {}
-  try:
-    ctx, refused = litbridge_procedure.bridge_context(view)
-  except Exception as e:                                      # noqa: BLE001
-    ctx, refused = None, "%s: %s" % (type(e).__name__, str(e)[:160])
-  if ctx is None:
-    records.append({"round": 0, "stopped_at": refused, "asked": False,
-                    "rules": 0, "clauses": 0, "printed_rules": []})
-  for number in (1, 2):
-    if ctx is None:
-      break
-    try:
-      extra, rec = litbridge_procedure.bridge_round(
-          ctx, view, respond, number, extras=extras)
-    except Exception as e:                                    # noqa: BLE001
-      rec = {"round": number, "asked": False, "rules": 0, "clauses": 0,
-             "printed_rules": [],
-             "stopped_at": "%s: %s" % (type(e).__name__, str(e)[:160])}
-      extra = []
-    records.append(rec)
-    # no new rule: nothing is added and gk is not called again
-    if not extra:
-      break
-    logic = list(logic) + extra
-    try:
-      proof_result = prover.call_prover(logic, s1_json=s1_json)
-    except KeyboardInterrupt:
-      raise
-    except Exception as e:
-      return "Error: prover raised an exception: " + str(e)
-    if proof_result is None:
-      return "Error: prover returned None."
-    if show_details or show_prover:
-      print("\n=== prover result with the round-%d bridge clauses (JSON) "
-            "===\n" % number)
-      print(proof_result)
-    answer = process_proof(proof_result, text=text, s1_json=s1_json,
-                           s2_json=s2_json, logic=logic, options=options)
-    rec["gk_called"] = True
-    rec["resolved"] = not _unresolved(answer)
-    provenance.update(rec.get("clause_provenance") or {})
-    rules_by_id.update(rec.get("rules_by_id") or {})
-    if rec["resolved"] and _litbridge_grader_mode():
-      grade = _grade_litbridge(text, proof_result, provenance, rules_by_id,
-                               respond)
-      rec["grading"] = grade
-      if grade.get("withdrawn"):
-        # the proof rests on a rule the grader failed: the bridge answers
-        # nothing and the initial attempt's answer stands
-        answer = base_answer
-        rec["resolved"] = False
-        rec["withdrawn"] = True
-        break
-    if rec["resolved"]:
-      answering_proof = proof_result
-      answering_command = (collect or {}).get("gk_command")
-      break
-  # nothing was proved: the run ends exactly where it would have without
-  # litbridge, with the answer and the theory the ordinary pipeline produced
-  if _unresolved(answer):
-    answer, logic = base_answer, base_logic
-  if collect is not None:
-    collect["litbridge"] = {"extras": extras, "rounds": records,
-                            "proved": not _unresolved(answer),
-                            "grader": _litbridge_grader_mode(),
-                            "options": view["configuration"]}
-    if not globals.options.get("nofinaltrace"):
-      collect["final_clauses"] = logic
-  if loud:
-    _print_litbridge(records, verbose=debug or show_details,
-                     options=view["configuration"])
-  return {"answer": None if _unresolved(answer) else answer, "logic": logic,
-          "proof": answering_proof, "gk_command": answering_command}
-
-
-def _litbridge_grader_mode():
-  """The grader's mode, or None when it is off (`litbridge_grader.MODE`)."""
-  import litbridge_grader
-  return litbridge_grader.MODE
-
-
-def _grade_litbridge(text, proof_result, provenance, rules_by_id, respond):
-  """Grade the rules the proof cites, one call each.  -> the grading record.
-
-  Every proof gk returned is graded, and the answer stands only if some proof
-  survives.  A proof citing no invented rule is not the bridge's doing and is
-  left alone.
-  """
-  import litbridge_grader as grader
-  import litbridge_procedure
-
-  mode = grader.normalise_mode(grader.MODE)
-
-  def ask(rule_id, message):
-    got, _note = respond("grader", str(rule_id), message)
-    return got
-
-  proofs = litbridge_procedure.proofs_of(proof_result, provenance)
-  dynamic = [p for p in proofs if not p["cites_no_dynamic_hypothesis"]]
-  if not dynamic:
-    return {"asked": False, "mode": mode, "proofs": [],
-            "why": "no returned proof cites an invented rule",
-            "withdrawn": False}
-  rows = []
-  for p in dynamic:
-    got = grader.grade_proof(text, p["cited_hypothesis_ids"], rules_by_id,
-                             ask, mode)
-    got["answer"] = p.get("answer")
-    rows.append(got)
-  graded = [r for r in rows if r["graded"]]
-  return {"asked": True, "mode": mode, "proofs": rows,
-          "version": grader.VERSION,
-          # every proof that cited a rule was withdrawn, so nothing invented
-          # is left holding the answer up
-          "withdrawn": bool(graded) and all(r["withdrawn"] for r in graded)}
-
-
-def _set_answering_call(collect, answering, front_door_proof,
-                        front_door_gk_command):
-  """Put the gk call that produced the answer at the top level of the record.
-
-  `proof` and `gk_command` describe the ANSWERING stage's call, whichever
-  stage that was.  When a stage after the initial attempt answered, the front
-  door's own call is kept beside them as `front_door_proof` and
-  `front_door_gk_command`.  When nothing after the initial attempt answered, the
-  initial attempt's call is the top-level one — every `call_prover` writes
-  `collect["gk_command"]`, so a stage that RAN without answering would
-  otherwise leave its own command there.  `clauses` is untouched: it is the
-  initial attempt's clause list at every level.
-  """
-  if collect is None:
-    return
-  if answering is not None:
-    collect["front_door_proof"] = _as_json(front_door_proof)
-    collect["front_door_gk_command"] = front_door_gk_command
-    collect["proof"] = _as_json(answering.get("proof"))
-    if answering.get("gk_command"):
-      collect["gk_command"] = answering["gk_command"]
-  else:
-    collect["proof"] = _as_json(front_door_proof)
-    if front_door_gk_command:
-      collect["gk_command"] = front_door_gk_command
-  if collect.get("proof") is None:
-    collect.pop("proof", None)
-
-
-def _as_json(proof_result):
-  """A gk result as a JSON object, so a dump does not drown in escapes.
-
-  Falls back to the raw string when it does not parse (an "Error: …" return),
-  and to None when there is nothing.
-  """
-  if proof_result is None:
-    return None
-  if isinstance(proof_result, (dict, list)):
-    return proof_result
-  if not (isinstance(proof_result, str) and proof_result.strip()):
-    return None
-  try:
-    return json.loads(proof_result)
-  except Exception:                                             # noqa: BLE001
-    return proof_result
-
-
-# Everything a stage can hand back that is not a definite answer.  An error is
-# never an answer and never a correct abstention: it means the stage failed.
-_NON_ANSWERS = ("unknown", "no answer", "none", "n/a")
-
-
-def _unresolved(answer):
-  """The question is still open, so a later stage is worth running.
-
-  `None`, empty output, `Unknown.`, `no answer`, and every `Error:` value.  The
-  error case follows litbridge_procedure.FRONT_DOOR_POLICY: an error is not a
-  definite answer.
-  """
-  if answer is None:
-    return True
-  head = str(answer).split("\n", 1)[0].strip()
-  if not head:
-    return True
-  low = head.lower().rstrip(".").strip()
-  return (low in _NON_ANSWERS or head.lower().startswith("error")
-          or low.startswith("unknown"))
-
-
-def _is_error(answer):
-  """The value is a stage failure rather than an abstention."""
-  if answer is None:
-    return False
-  return str(answer).split("\n", 1)[0].strip().lower().startswith("error")
-
-
-def _litbridge_view(text, s1_json, s2_json, logic):
-  """The case as the bridge machinery reads it.
-
-  `configuration` is the run's own option dict, not a label: the theory was
-  converted in this process under `globals.options`, so the bridge is
-  converted the same way, minus the passes that would strip its `$block`.
-  It is captured here, before the first bridge conversion, because a
-  conversion scopes `globals.options` while it runs.
-  """
-  import litbridge_converter
-  return {"case_id": "solve", "input_text": text, "stage1": s1_json,
-          "stage2": s2_json, "final_clauses": logic,
-          "configuration": litbridge_converter.live_options()}
-
-
-def _run_graphbridge(text, s1_json, s2_json, logic, answer, llm, llm_version,
-                     max_tokens, options, loud=False, verbose=False,
-                     collect=None, state=None):
-  """Layer 2: bridges over layer 1's translation (`-graphbridge`).
-
-  Layer 1 must have run: layer 2 searches its theory and never translates the
-  case a second time.  When the route order puts `graphbridge` first, layer 1
-  is run here, once, and its record is kept for the loop.
-  """
-  import graph_compile
-  import graph_procedure
-  import litbridge_converter
-  state = state if state is not None else {}
-  p0 = state.get("graphtrans")
-  if p0 is None:
-    got = _run_graphtrans(text, s1_json, s2_json, logic, answer, llm,
-                          llm_version, max_tokens, options, loud=loud,
-                          verbose=verbose, collect=collect, state=state)
-    p0 = state.get("graphtrans")
-    if got and got.get("answer") is not None:
-      return got
-  if not p0 or p0.get("stage2_graph") is None:
-    return {"answer": None, "logic": None}
-  _announce_stage("graphbridge")
-  base_options = graph_compile.graph_options(litbridge_converter.live_options())
-  respond = _graphbridge_responder(llm, llm_version, max_tokens)
-  gk_log = []
-  gk = graph_compile.gk_runner(s1_json, seconds=5, options=base_options,
-                               log=gk_log)
-  ordinary = None
-  if graph_procedure.LIFT:
-    ordinary = {"view": _litbridge_view(text, s1_json, s2_json, logic),
-                "options": litbridge_converter.live_options(),
-                "gk": _graphbridge_ordinary_gk(s1_json, s2_json, text)}
-  evidence = str(graph_procedure.EVIDENCE or "any")
-  try:
-    record = graph_procedure.run_bridges(
-        p0["stage2_graph"], s1_json, respond, gk, case_id="solve",
-        options=base_options, input_text=text, sources=_graphbridge_sources(),
-        evidence=evidence, lift=bool(ordinary), ordinary=ordinary)
-  except Exception as e:                                        # noqa: BLE001
-    record = {"stopped_at": "%s: %s" % (type(e).__name__, str(e)[:200])}
-  record["gk_calls"] = gk_log
-  record["evidence_mode"] = evidence
-  if collect is not None:
-    collect["graphbridge"] = record   # the key runtests.py copies
-  out = {"answer": None, "logic": None}
-  value, verdict = graph_procedure.credible_answer(record, evidence)
-  if value is not None:
-    row = _graphbridge_minimal_set(record, verdict)
-    out["answer"] = _graph_answer_string(value, row)
-    out["logic"] = p0.get("clauses")
-    out["proof"] = (row or {}).get("gk_result")
-    out["gk_command"] = (row or {}).get("gk_command")
-    record["answer_label"] = "bridged"
-  if globals.options.get("debug_print_flag"):
-    _print_graphbridge(record, verbose=verbose)
-  return out
-
-
-def _graphbridge_minimal_set(record, verdict):
-  """The minimal-set row the accepted verdict was computed from."""
-  rows = record.get("minimal_sets") or []
-  i = (verdict or {}).get("set_index")
-  if isinstance(i, int) and 0 <= i < len(rows):
-    return rows[i]
-  return None
-
-
-def _graph_answer_string(value, row):
-  """The pipeline's answer string for a bridged answer.
-
-  The replay of the accepted minimal set is an ordinary gk call read by
-  `process_proof`, so its answer already carries the hedge and, at `-explain`
-  and above, the English proof.  It is used whenever its polarity agrees with
-  the accepted verdict's; otherwise the bare polarity stands and the record
-  says both.
-  """
-  bare = "True." if value else "False."
-  got = (row or {}).get("answer_string")
-  if not isinstance(got, str) or not got.strip():
-    return bare
-  head = got.split("\n")[0].strip().rstrip(".").lower()
-  for hedge in ("probably ", "likely ", "possibly "):
-    head = head.replace(hedge, "")
-  if head in ("true", "false") and (head == "true") == bool(value):
-    return got
-  return bare
-
-
-def _graphbridge_sources():
-  """The candidate sources this run enumerates."""
-  import graph_procedure
-  return tuple(graph_procedure.DEFAULT_SOURCES)
-
-
-def _graphbridge_ordinary_gk(s1_json, s2_json, text):
-  """-> a gk callable over the ORDINARY theory, for a lifted world."""
-  def call(clauses, stored, tag, seconds=None, dynamic=False):
-    import hashlib
-    import utils
-    try:
-      raw = prover.call_prover(clauses, s1_json=s1_json)
-    except Exception as e:                                      # noqa: BLE001
-      return {"answer": None, "raw": "{}", "gk_input": None,
-              "error": "%s: %s" % (type(e).__name__, e),
-              "gk_input_sha256": "", "seconds": 0}
-    got = process_proof(raw, text=text, s1_json=s1_json, s2_json=s2_json,
-                        logic=clauses)
-    if isinstance(got, tuple):
-      got = got[0]
-    try:
-      shown = utils.clause_list_to_json_commented(clauses, s1_json=s1_json)
-    except Exception:                                           # noqa: BLE001
-      shown = None
-    return {"answer": got, "raw": raw if isinstance(raw, str)
-            else json.dumps(raw), "gk_input": shown,
-            "gk_input_sha256": hashlib.sha256(
-                (shown or "").encode()).hexdigest(), "seconds": 0}
-  return call
-
-
-def _graphbridge_responder(llm, llm_version, max_tokens):
-  """-> respond(role, key, message) -> (text, note), one LLM call per call."""
-  import graph_judge
-  import graph_lift
-  import graph_search
-  import litbridge_prompts
-
-  def respond(role, key, prompt, retry=False):
-    if role == "graph_judge":
-      sysprompt = graph_judge.judge_system_prompt(True)
-    elif role == "graph_judge_lexical":
-      sysprompt = graph_judge.lexical_system_prompt()
-    elif role == "graph_holistic":
-      sysprompt = graph_judge.holistic_system_prompt()
-    elif role == "graph_grader":
-      sysprompt = graph_search.grader_system_prompt()
-    elif role == "graph_lift":
-      sysprompt = litbridge_prompts.system_prompt()
-    elif role == "graph_retranslate":
-      import llmparse
-      if not llmparse._stage2_sysprompt:
-        llmparse.load_prompts()
-      sysprompt = llmparse._stage2_sysprompt
-    else:
-      return None, "unknown graph role %r" % role
-    with llmcall.tagged(None, role=role):
-      return llmcall.call_llm(sysprompt, prompt, llm=llm, version=llm_version,
-                              max_tokens=max_tokens), None
-  return respond
-
-
-def _litbridge_responder(llm, llm_version, max_tokens):
-  """-> respond(role, key, message) -> (text, note), one LLM call per call."""
-  import litbridge_procedure
-
-  def respond(role, key, prompt, retry=False):
-    sysprompt = litbridge_procedure.prompts.system_prompt()
-    if role == "distinct":
-      sysprompt = litbridge_procedure.rules.distinct_system_prompt()
-    elif role == "negative":
-      sysprompt = litbridge_procedure.rules.negative_system_prompt()
-    elif role == "grader":
-      import litbridge_grader
-      sysprompt = litbridge_grader.system_prompt(litbridge_grader.MODE)
-    with llmcall.tagged(None, role=role):
-      return llmcall.call_llm(sysprompt, prompt, llm=llm, version=llm_version,
-                              max_tokens=max_tokens), None
-  return respond
-
-
-# True once the critique pass has run for the case now being answered.  Reset
-# by `english_to_answer`, which is where a case run begins.
-_critiqued = False
-
-# True while the critique pass's rerun is running.  The rerun re-enters the
-# whole pipeline, and without this the abstraction routes would run inside it
-# and again in the outer run.
-_in_critic_rerun = False
-
-
-def _should_critique_enabled():
-  """Whether the critic stage may run at all.
-
-  `run_stage` applies the `unresolved` rule itself, so this must not repeat it,
-  but every other part of the old guard still belongs here:
-
-  `_critiqued` does double duty.  It is set before the critique runs, so the
-  rerun cannot critique itself, and it survives the downstream-error retry loop
-  in `english_to_answer`, which used to critique the same case once per
-  attempt.  It is a module flag on purpose -- the earlier guard lived in
-  `globals.options`, where the routes' own option resolvers deep-copied it and
-  rejected it as an unknown key.
-  """
-  if _in_critic_rerun or _critiqued:
-    return False
-  return bool(globals.options.get("critic_flag"))
-
-
-def english_to_answer(text, options=None, collect=None):
-  """Full pipeline, with the N1 downstream-error corrective retry around it.
-
-  The retry loop runs the whole pipeline again on a downstream error, so the
-  summary block is held back until the loop is done and only the last one is
-  printed: a case run reports once, whatever it took to answer it.
-  """
-  global _critiqued
-  _critiqued = False
-  solve_display.suppress(True)
-  # This is the case entry: the critic's rerun re-enters
-  # `_english_to_answer_once`, not this function, so resetting here cannot
-  # discard the outer stage or the running call count.
-  prover.reset_stages()
-  llmcall.reset_call_limit()
-  try:
-
-    # Every call this case makes -- parse, critic, critic rerun, graph, bridges
-    # -- is pinned to the run's own provider and version.  A call that names
-    # another model raises instead of quietly answering.
-    with llmcall.locked_model(llm, llm_version):
-      return _english_to_answer(text, options, collect)
-  finally:
-    solve_display.suppress(False)
-    solve_display.flush()
-
-
-def _english_to_answer(text, options=None, collect=None):
-  correction = ""
-  fired = []
-  answer = None
-  for attempt in range(_MAX_DOWNSTREAM_RETRIES + 1):
-    inner = {} if collect is not None else None
-    # The prover records into this attempt's own collector.  A stage that runs
-    # gk without one to hand -- the graph route calls the prover directly --
-    # is recorded here too, and `prover.stage` says which stage owns it.
-    with (prover.collector(inner) if inner is not None
-          else contextlib.nullcontext()):
-      answer = _english_to_answer_once(text, options, inner,
-                                       stage2_corrective=correction)
-    if collect is not None:
-      collect.clear()
-      collect.update(inner)
-    hint = None if globals.options.get("nofix_downstream") \
-           else _downstream_hint(answer)
-    if hint is None or attempt == _MAX_DOWNSTREAM_RETRIES:
-      break
-    fired.append(str(answer).split("\n", 1)[0][:90])
-    correction = ("\n\nYour previous answer FAILED downstream with:\n"
-                  + str(answer).split("\n", 1)[0][:200] + "\n" + hint
-                  + "\nReturn only the corrected JSON.")
-  if fired and collect is not None:
-    collect["downstream_retries"] = fired
-  if collect is not None and collect.get("answer") is None:
-    # The body returned early — a parse that produced nothing, a converter or
-    # prover error — so the block that writes `answer`, `answered_by` and the
-    # stage keys never ran.  Without this the case lands in `testresults/`
-    # with no answer and no error at all, which is indistinguishable from a
-    # case that ran, and invisible to an error count.  The `_ApiTimeout` path
-    # inside the body already did this for itself; every other early return
-    # is covered here.
-    if answer is not None:
-      collect["answer"] = answer
-    collect.setdefault("stages_enabled", _stages_enabled())
-  return answer
-
-
-def _build_clauses_with_nl(logic, s1_json):
+  if isinstance(obj, str):
+    s = unicodedata.normalize("NFKD", obj)
+    s = "".join(c for c in s if not unicodedata.combining(c))
+    return s.encode("ascii", "ignore").decode("ascii")
+  if isinstance(obj, list):
+    return [_ascii_fold_logic(x) for x in obj]
+  if isinstance(obj, dict):
+    return {_ascii_fold_logic(k): _ascii_fold_logic(v) for k, v in obj.items()}
+  return obj
+
+
+def build_clauses_with_nl(logic, s1_json):
   """Return a copy of the clause list with an @nl key on each clause whose
   value is the source English (from build_asu_text_map), or a synthetic
   bracket-tag for population / generated clauses.  Used only for the
@@ -1733,759 +883,6 @@ def _build_clauses_with_nl(logic, s1_json):
     c["@nl"] = nl
     out.append(c)
   return out
-
-
-# ======== command-line interface ========
-
-
-_TE_GATES = ("super", "gender", "nametype", "compound", "plural", "gnoun")
-
-
-def _parse_te_gates(spec):
-  """Parse a -typeenrich=<list> spec into a set of enabled sub-gates.
-
-  Tokens are gate names (include), `-name` (exclude), or `all`. A spec made up
-  entirely of excludes starts from the full set (e.g. `-plural` == all but plural).
-  """
-  toks = [t.strip() for t in spec.split(",") if t.strip()]
-  if toks and all(t.startswith("-") for t in toks):
-    gates = set(_TE_GATES)
-    for t in toks:
-      gates.discard(t[1:])
-  else:
-    gates = set()
-    for t in toks:
-      if t == "all":
-        gates |= set(_TE_GATES)
-      elif t.startswith("-"):
-        gates.discard(t[1:])
-      else:
-        gates.add(t)
-  return gates
-
-
-# ---------------------------------------------------------------------------
-# The one declaration of what stages exist and in what order they run.
-# Execution, the summary output and the tests all read these, so a stage
-# cannot be added to one and forgotten in another.
-# ---------------------------------------------------------------------------
-
-# Every stage, in execution order, and the named configurations: one source,
-# `globals`, so the two command-line entry points and the option defaults
-# cannot drift.  The
-# names are re-exported here because the whole pipeline reads them from
-# `solve`.
-PIPELINE_ORDER = globals.PIPELINE_ORDER
-STAGE_KEYS = tuple(s + "_flag" for s in PIPELINE_ORDER[1:])
-PIPELINES = globals.PIPELINES
-STACK_OPEN_VECTOR = globals.STACK_OPEN_VECTOR
-
-# The ordinary no-option configuration, adopted 2026-08-27.  `globals.options`
-# takes its six stage defaults from `PIPELINES[DEFAULT_PIPELINE]`, so naming it
-# explicitly and naming nothing at all resolve to the same stage vector.
-DEFAULT_PIPELINE = globals.DEFAULT_PIPELINE
-
-# The cancels, so a line that only cancels still counts as naming a
-# configuration explicitly.
-CANCEL_KEYS = ("nocritic_flag", "nographtrans_flag", "nographbridge_flag",
-               "nolitbridge_flag", "nofallback_norm_flag",
-               "nofallback_hyp_flag", "nofallback_flag")
-
-
-def stage_vector(opts):
-  """The six stage flags a resolved option dict holds, as a plain dict."""
-  return {s: bool(opts.get(s + "_flag", globals.options.get(s + "_flag")))
-          for s in PIPELINE_ORDER[1:]}
-
-
-def names_a_configuration(opts, extra=False):
-  """True when the command line said anything about the retry stages."""
-  return bool(extra or opts.get("_pipeline_named")
-              or (set(opts) & set(STAGE_KEYS))
-              or (set(opts) & set(CANCEL_KEYS)))
-
-
-def finalize_pipeline_name(opts, named=False):
-  """The configuration name to record, derived from the FINAL stage vector.
-
-  `-pipeline` used to stamp the name where it was parsed, so a later `-stack*`,
-  an explicit stage switch or a cancel left it stale.  The name is now read
-  back from what the run actually resolved to.
-
-  A command line that says nothing about the retry stages still gets a name:
-  since the adoption it is the default configuration's own name, so an
-  ordinary run records `balanced` rather than nothing.
-  """
-  vec = stage_vector(opts)
-  for name, want in PIPELINES.items():
-    if vec == want:
-      return name
-  if vec == STACK_OPEN_VECTOR:
-    return "stack-open"
-  return "custom"
-
-
-def apply_pipeline(opts, name):
-  """Assign all six stage keys from a named configuration.
-
-  Shared by `solve.py` and `runtests.py` so the two entry points cannot grow
-  different meanings for the same word.  Round 1 of the resolution order.
-  """
-  key = (name or "").strip().lower()
-  if key not in PIPELINES:
-    raise ValueError(
-      "unknown -pipeline value %r; expected one of %s"
-      % (name, ", ".join(sorted(PIPELINES))))
-  for stage, on in PIPELINES[key].items():
-    opts[stage + "_flag"] = bool(on)
-  opts["_pipeline_named"] = True
-  return opts
-
-
-def _set_stages(opts, litbridge, graphbridge):
-  """Assign all six stage keys.  The fallbacks, the critic and the graph
-  translation are on in every set; the two bridges are what the sets differ
-  in.
-
-  `-stack-closed` is `-pipeline balanced` and `-stack` is
-  `-pipeline high-recall`; `-stack-open` keeps its documented meaning, which
-  includes the literal bridge and so matches no named configuration.
-  """
-  opts["fallback_norm_flag"] = True
-  opts["fallback_hyp_flag"] = True
-  opts["critic_flag"] = True
-  opts["graphtrans_flag"] = True
-  opts["litbridge_flag"] = bool(litbridge)
-  opts["graphbridge_flag"] = bool(graphbridge)
-
-
-def _parse_cmd_line():
-  """Parse sys.argv; return (text, options_dict)."""
-  global debug, llm, llm_version
-
-  if len(sys.argv) < 2:
-    print(helptext)
-    sys.exit(0)
-
-  text = ""
-  opts = {}
-  params = sys.argv[1:]
-  elpos = -1
-  skippos = 0
-  # Stage-key resolution, in three rounds (§12.0):
-  #   1. presets and flag sets (-abstract-max, -stack*) assign ALL SIX stage
-  #      keys, left to right, so a later one overwrites an earlier one;
-  #   2. explicit stage switches (-critic, -graphtrans, -graphbridge,
-  #      -litbridge, -fallback_norm, -fallback_hyp) set their key True
-  #      whatever their position relative to a preset — they are collected
-  #      here and applied after the loop;
-  #   3. the cancels (-nocritic, -nographtrans, -nographbridge, -nolitbridge,
-  #      -nofallback*) are applied last and win over 1 and 2.
-  explicit_on = set()
-
-  for el in params:
-    elpos += 1
-    if skippos > 0:
-      skippos -= 1
-      continue
-    textpart = ""
-    if el in ["-debug", "--debug"]:
-      debug = True
-      opts["debug_print_flag"] = True
-      opts["prover_print_flag"] = True
-      opts["show_details_flag"] = True
-      opts["show_logic_flag"] = True
-      opts["prover_explain_flag"] = True
-      opts["json_flag"] = True
-      llmparse.debug = True
-      llmcall.debug = True
-    elif el in ["-details", "--details"]:
-      opts["show_details_flag"] = True
-      opts["show_logic_flag"] = True
-      opts["prover_explain_flag"] = True
-    elif el in ["-logic", "--logic"]:
-      opts["show_logic_flag"] = True
-      opts["prover_explain_flag"] = True
-    elif el in ["-explain", "--explain"]:
-      opts["prover_explain_flag"] = True
-    elif el in ["-json", "--json"]:
-      opts["json_flag"] = True
-    elif el in ["-jsonlogic", "--jsonlogic"]:
-      opts["show_logic_flag"] = True
-      opts["prover_explain_flag"] = True
-      opts["json_flag"] = True
-    elif el in ["-cache", "--cache"]:
-      opts["use_cache_flag"] = True
-    elif el in ["-clearcache", "--clearcache"]:
-      opts["clearcache_flag"] = True
-    elif el in ["-think", "--think"]:
-      # -think alone → True; -think N → integer budget
-      if elpos + 1 < len(params):
-        try:
-          opts["think_flag"] = int(params[elpos + 1])
-          skippos = 1
-        except ValueError:
-          opts["think_flag"] = True
-      else:
-        opts["think_flag"] = True
-    elif el in ["-nollmcache", "--nollmcache"]:
-      # LLM response caching is ON by default; this disables it for this run
-      opts["use_llm_cache_flag"] = False
-    elif el in ["-nogeminicache", "--nogeminicache"]:
-      # Gemini context caching (cachedContents API) is ON by default; this
-      # disables it, so the sysprompt is sent inline on every call.
-      opts["use_gemini_cache_flag"] = False
-    elif el in ["-geminicache", "--geminicache"]:
-      # Accepted and ignored: caching is now the default.  Kept so older
-      # command lines and scripts keep working.
-      opts["use_gemini_cache_flag"] = True
-    elif el in ["-nosemnormal", "--nosemnormal"]:
-      opts["nosemnormal_flag"] = True
-    elif el in ["-nosolve", "--nosolve"]:
-      opts["prover_nosolve_flag"] = True
-    elif el in ["-rawresult", "--rawresult"]:
-      opts["prover_rawresult_flag"] = True
-    elif el in ["-prover", "--prover"]:
-      opts["show_prover_flag"] = True
-    elif el in ["-simple", "--simple"]:
-      opts["nocontext_flag"] = True
-      opts["noexceptions_flag"] = True
-      opts["noproptypes_flag"] = True
-    elif el in ["-nocontext", "--nocontext"]:
-      opts["nocontext_flag"] = True
-    elif el in ["-noexceptions", "--noexceptions"]:
-      opts["noexceptions_flag"] = True
-    elif el in ["-simpleprops", "--simpleprops"]:
-      opts["noproptypes_flag"] = True
-      opts["noexceptions_flag"] = True
-    # --- Event-encoding base: one mutually-exclusive selector. ---
-    elif el in ["-event", "--event"]:
-      if elpos + 1 >= len(params):
-        print("Error: -event requires a mode "
-              "(neodavidson|davidson|davidson2|flat|flatroles)")
-        sys.exit(2)
-      mode = params[elpos + 1]
-      if mode not in ("neodavidson", "davidson", "davidson2", "flat", "flatroles"):
-        print("Error: unknown -event mode:", mode,
-              "(expected neodavidson|davidson|davidson2|flat|flatroles)")
-        sys.exit(2)
-      opts["event_base"] = mode
-      # Naming a base asks for that base's own historical theory, so the v2
-      # defaults stand aside (lc_encoding.EncodingConfig).
-      opts["event_base_explicit"] = True
-      skippos = 1
-    # --- Additive abstraction primitives (compose with any base). ---
-    elif el in ["-existfold", "--existfold"]:
-      opts["existfold_flag"] = True
-    # --- The versioned proof shorteners (experimental, off by default). ---
-    elif el in ["-davidson2", "--davidson2"]:
-      opts["davidson2_flag"] = True
-    elif el in ["-existfold2", "--existfold2"]:
-      opts["existfold2_flag"] = True
-    elif el in ["-proofshort2", "--proofshort2"]:
-      opts["davidson2_flag"] = True
-      opts["existfold2_flag"] = True
-    # --- Cancellations.  Each wins from any position; -noproofshort2 is the
-    # documented command for reproducing the pre-2026-08-26 ordinary theory. ---
-    elif el in ["-nodavidson2", "--nodavidson2"]:
-      opts["nodavidson2_flag"] = True
-    elif el in ["-noexistfold2", "--noexistfold2"]:
-      opts["noexistfold2_flag"] = True
-    elif el in ["-noproofshort2", "--noproofshort2"]:
-      opts["noproofshort2_flag"] = True
-    elif el in ["-entitymerge", "--entitymerge"]:
-      opts["entitymerge_flag"] = True
-    elif el in ["-guarddrop", "--guarddrop"]:
-      opts["guarddrop_flag"] = True
-    elif el in ["-bridges", "--bridges"]:
-      opts["bridges_flag"] = True
-    elif el in ["-dropdefinites", "--dropdefinites"]:
-      opts["dropdefinites_flag"] = True
-    elif el in ["-localantonyms", "--localantonyms"]:
-      opts["localantonyms_flag"] = True
-    elif el in ["-typeenrich", "--typeenrich"]:
-      opts["typeenrich_flag"] = True
-    elif el.startswith("-typeenrich=") or el.startswith("--typeenrich="):
-      opts["typeenrich_flag"] = True
-      opts["typeenrich_gates"] = _parse_te_gates(el.split("=", 1)[1])
-    # --- Abstraction presets: pure expansions into primitives (read nowhere
-    #     else in the pipeline). -abstract / -abstract-roles / -abstract-max. ---
-    elif el in ["-litbridge", "--litbridge"]:
-      explicit_on.add("litbridge_flag")
-    elif el in ["-nolitbridge", "--nolitbridge"]:
-      opts["nolitbridge_flag"] = True
-    elif el in ["-summary", "--summary"]:
-      opts["summary_flag"] = True
-    elif el in ["-summary-json", "--summary-json"]:
-      opts["summary_json_flag"] = True
-    elif el.startswith(("-accept=", "--accept=")):
-      # EXPERIMENTAL (Task 2B): proof-local acceptance checks on the critic and
-      # graph retranslations.  Off unless named.  `permissive` reproduces the
-      # behaviour without the option.
-      opts["accept_policy"] = el.split("=", 1)[1].strip()
-    elif el in ["-accept", "--accept"]:
-      # `-accept POLICY`, like `-llm NAME`: the value is the next argument.
-      if elpos + 1 >= len(params):
-        print("-accept requires a policy: permissive, balanced, or strict")
-        sys.exit(2)
-      opts["accept_policy"] = params[elpos + 1]
-      skippos = 1
-    elif el in ["-critic", "--critic"]:
-      explicit_on.add("critic_flag")
-    elif el in ["-nocritic", "--nocritic"]:
-      opts["nocritic_flag"] = True
-    elif el in ["-graphtrans", "--graphtrans"]:
-      explicit_on.add("graphtrans_flag")
-    elif el in ["-nographtrans", "--nographtrans"]:
-      opts["nographtrans_flag"] = True
-    elif el in ["-graphbridge", "--graphbridge"]:
-      # layer 2 searches layer 1's theory, so it turns layer 1 on as well
-      explicit_on.add("graphbridge_flag")
-      explicit_on.add("graphtrans_flag")
-    elif el in ["-nographbridge", "--nographbridge"]:
-      opts["nographbridge_flag"] = True
-    elif el in ["-llm-call-limit", "--llm-call-limit"]:
-      if elpos + 1 >= len(params):
-        print("-llm-call-limit requires a number of calls (0 = unlimited)")
-        sys.exit(2)
-      opts["llm_call_limit"] = int(params[elpos + 1])
-      skippos = 1
-    elif el in ["-llm-call-timeout", "--llm-call-timeout"]:
-      if elpos + 1 >= len(params):
-        print("-llm-call-timeout requires a number of seconds")
-        sys.exit(2)
-      opts["llm_call_timeout"] = float(params[elpos + 1])
-      skippos = 1
-    elif el in ["-pipeline", "--pipeline"]:
-      if elpos + 1 >= len(params):
-        print("-pipeline requires a name: %s" % ", ".join(sorted(PIPELINES)))
-        sys.exit(2)
-      try:
-        apply_pipeline(opts, params[elpos + 1])
-      except ValueError as exc:
-        print("Error: %s" % exc)
-        sys.exit(2)
-      skippos = 1
-    elif el.startswith(("-pipeline=", "--pipeline=")):
-      try:
-        apply_pipeline(opts, el.split("=", 1)[1])
-      except ValueError as exc:
-        print("Error: %s" % exc)
-        sys.exit(2)
-    elif el in ["-stack", "--stack", "-stack-closed", "--stack-closed",
-                "-stack-open", "--stack-open"]:
-      # A flag set assigns all six stage keys, so it fully replaces whatever
-      # an earlier set or preset put there.  Round 1 of the resolution order.
-      _set_stages(opts, litbridge=("open" in el),
-                  graphbridge=("closed" not in el))
-      opts["_pipeline_named"] = True
-    elif el in ["-abstract", "--abstract", "-abstract-roles", "--abstract-roles",
-                "-abstract-max", "--abstract-max"]:
-      opts["event_base"] = "flatroles" if ("roles" in el or "max" in el) else "flat"
-      opts["abstract_preset_flag"] = True   # reproduce this preset's own theory
-      opts["entitymerge_flag"] = True
-      opts["guarddrop_flag"] = True
-      opts["bridges_flag"] = True
-      opts["dropdefinites_flag"] = True
-      opts["typeenrich_flag"] = True
-      opts["localantonyms_flag"] = True
-      opts["noproptypes_flag"] = True
-      if "max" in el:
-        opts["prenorm_flag"] = True
-        opts["propclass_flag"] = True
-        opts["numtype_flag"] = True
-        opts["compasym_flag"] = True
-        opts["nominalretry_flag"] = True
-        opts["negretry_flag"] = True
-        # the converter preset plus the open-world stack
-        _set_stages(opts, litbridge=True, graphbridge=True)
-
-    elif el in ["-propclass", "--propclass"]:
-      opts["propclass_flag"] = True
-    elif el in ["-fallback_norm", "--fallback_norm"]:
-      explicit_on.add("fallback_norm_flag")
-    elif el in ["-fallback_hyp", "--fallback_hyp"]:
-      explicit_on.add("fallback_hyp_flag")
-    elif el in ["-nofallback_norm", "--nofallback_norm"]:
-      opts["nofallback_norm_flag"] = True
-    elif el in ["-nofallback_hyp", "--nofallback_hyp"]:
-      opts["nofallback_hyp_flag"] = True
-    elif el in ["-nofallback", "--nofallback"]:
-      opts["nofallback_norm_flag"] = True
-      opts["nofallback_hyp_flag"] = True
-    elif el in ["-numtype", "--numtype"]:
-      opts["numtype_flag"] = True
-    elif el in ["-compasym", "--compasym"]:
-      opts["compasym_flag"] = True
-    elif el in ["-prenorm", "--prenorm"]:
-      opts["prenorm_flag"] = True
-    elif el in ["-noprenorm", "--noprenorm"]:
-      opts["prenorm_flag"] = False
-    elif el in ["-s2split", "--s2split"]:
-      opts["s2split_flag"] = True
-    elif el in ["-nocrossstage", "--nocrossstage"]:
-      opts["crossstage_retry_flag"] = False
-    elif el in ["-llm", "--llm"]:
-      if elpos + 1 >= len(params):
-        print("-llm requires a provider name: gpt, claude, gemini, or deepseek")
-        sys.exit(2)
-      llm = params[elpos + 1]
-      if llm not in llmcall.SUPPORTED_PROVIDERS:
-        print("Error: unknown LLM provider %r; expected one of %s"
-              % (llm, ", ".join(llmcall.SUPPORTED_PROVIDERS)))
-        sys.exit(2)
-      skippos = 1
-    elif el in ["-version", "--version"]:
-      if elpos + 1 >= len(params):
-        print("-version requires a model version string")
-        sys.exit(2)
-      llm_version = params[elpos + 1]
-      skippos = 1
-    elif el in ["-combined-instr", "--combined-instr"]:
-      if elpos + 1 >= len(params):
-        print("-combined-instr requires a path to a combined instructions prompt file")
-        sys.exit(2)
-      opts["combined_instr_file"] = params[elpos + 1]
-      opts["combined_flag"] = True   # presence of -combined-instr turns single-stage mode on
-      skippos = 1
-    elif el in ["-combined-examples", "--combined-examples"]:
-      if elpos + 1 >= len(params):
-        print("-combined-examples requires a path to a combined examples prompt file")
-        sys.exit(2)
-      opts["combined_examples_file"] = params[elpos + 1]
-      skippos = 1
-    elif el in ["-combined-checklist", "--combined-checklist"]:
-      if elpos + 1 >= len(params):
-        print("-combined-checklist requires a path to a combined checklist prompt file")
-        sys.exit(2)
-      opts["combined_checklist_file"] = params[elpos + 1]
-      skippos = 1
-    elif el in ["-directanswer", "--directanswer"]:
-      if elpos + 1 >= len(params):
-        print("-directanswer requires a path to a direct-answer prompt file")
-        sys.exit(2)
-      opts["directanswer_file"] = params[elpos + 1]
-      opts["directanswer_flag"] = True   # answer with one LLM call, no pipeline
-      skippos = 1
-    elif el in ["-seconds", "--seconds"]:
-      if elpos + 1 >= len(params):
-        print("-seconds takes an integer parameter")
-        sys.exit(2)
-      try:
-        n = int(params[elpos + 1])
-      except:
-        print("-seconds takes an integer parameter")
-        sys.exit(2)
-      if n < 1:
-        print("-seconds takes an integer parameter 1 or more")
-        sys.exit(2)
-      opts["prover_seconds"] = n
-      opts["prover_seconds_cli"] = True
-      skippos = 1
-    elif el in ["-printlevel", "--printlevel"]:
-      if elpos + 1 >= len(params):
-        print("-printlevel takes an integer parameter")
-        sys.exit(2)
-      try:
-        n = int(params[elpos + 1])
-      except:
-        print("-printlevel takes an integer parameter")
-        sys.exit(2)
-      if n < 10:
-        print("-printlevel takes an integer parameter 10 or more")
-        sys.exit(2)
-      opts["prover_print"] = n
-      skippos = 1
-    elif el in ["-gkin", "--gkin"]:
-      if elpos + 1 >= len(params):
-        print("-gkin takes a file name as a parameter")
-        sys.exit(2)
-      opts["gkin_file"] = params[elpos + 1]
-      skippos = 1
-    elif el in ["-strategy", "--strategy"]:
-      if elpos + 1 >= len(params):
-        print("-strategy takes a file name as a parameter")
-        sys.exit(2)
-      opts["prover_strategy"] = params[elpos + 1]
-      skippos = 1
-    elif el in ["-axioms", "--axioms"]:
-      axiomfiles = []
-      fpos = 1
-      while elpos + fpos < len(params):
-        if not params[elpos + fpos] or params[elpos + fpos].startswith("-"):
-          break
-        axiomfiles.append(params[elpos + fpos])
-        fpos += 1
-      skippos = fpos - 1
-      opts["prover_axiomfiles"] = axiomfiles
-    elif el in ["help", "-help", "--help"]:
-      print(helptext)
-      sys.exit(0)
-    elif el and el[0] == "-":
-      print("Key " + el + " is not recognized.")
-      print(helptext)
-      sys.exit(2)
-    elif (len(el) < 50 and
-          len(el.split(".")) == 2 and
-          len(el.split(".")[1]) > 1 and
-          len(el.split(" ")) == 1):
-      # a filename
-      try:
-        f = open(el, "r")
-        textpart = f.read()
-        f.close()
-      except:
-        print("Could not read from the file " + el)
-        sys.exit(2)
-    else:
-      # normal text
-      textpart = el
-
-    if text and textpart:
-      text = text + " " + textpart
-    elif textpart:
-      text = textpart
-
-  # Round 2 of the resolution order: an explicit stage switch sets its key
-  # True whatever its position relative to a preset or a flag set, so
-  # `-stack-closed -litbridge` and `-litbridge -stack-closed` mean the same.
-  for _key in explicit_on:
-    opts[_key] = True
-
-  # Round 3: the cancels are applied after the whole line and win over both
-  # rounds above, so `-nolitbridge` beats `-litbridge`, `-stack-open` and the
-  # `-abstract-max` that turns the literal bridge on, wherever each stands.
-  if opts.get("nolitbridge_flag"):
-    opts["litbridge_flag"] = False
-  if opts.get("nographbridge_flag"):
-    opts["graphbridge_flag"] = False
-  if opts.get("nocritic_flag"):
-    opts["critic_flag"] = False
-  if opts.get("nographtrans_flag"):
-    # layer 2 searches layer 1's theory, so cancelling layer 1 cancels both
-    opts["graphtrans_flag"] = False
-    opts["graphbridge_flag"] = False
-  if opts.get("nofallback_norm_flag"):
-    opts["fallback_norm_flag"] = False
-  if opts.get("nofallback_hyp_flag"):
-    opts["fallback_hyp_flag"] = False
-
-  # Round 4: the recorded name is read back from the final vector, so it can
-  # never disagree with the stages the run will actually use.
-  opts.pop("_pipeline_named", None)
-  opts["pipeline_name"] = finalize_pipeline_name(opts)
-
-  return (text, opts)
-
-helptext = """call solve.py with a natural language text like
-"Elephants are big. John is an elephant. Who is big?"
-and/or a filename as an argument, with optional keys.
-
-Every -x key is also accepted as --x.  Full reference:
-docs/reference/command-line.md, and docs/reference/experimental-options.md for
-everything under EXPERIMENTAL AND LEGACY below.
-
-=== COMMON ===
-
-model:
- -llm NAME    : provider: gpt, claude, gemini or deepseek (default: gemini)
- -version VER : model version string, e.g. claude-sonnet-4-6, gpt-5.1
-
-retry configuration (which stages run when the initial attempt answers Unknown):
- -pipeline NAME : conservative | balanced | high-recall.  Also -pipeline=NAME.
-                  balanced is the default: the two fallbacks, the critic and
-                  the graph retranslation.  conservative is the two fallbacks
-                  only.  high-recall adds graph bridges.
-
-output level (a hierarchy; each level includes everything above it):
- -explain   : show the English proof explanation
- -logic     : + simplified ASU texts, sentences mapped to clauses, step logic
- -details   : + stage-1/2 JSON, prover input/output JSON
- -debug     : + raw LLM responses, prover params, full pipeline trace
-
-output format:
- -json      : show all logic in raw JSON instead of pred(arg,...) syntax
- -jsonlogic : shortcut for -logic -json
- -summary   : one block at the end, whatever the output level: the answer, the
-              stage that produced it, the answer the initial attempt reached, the enabled
-              stages and the LLM calls per stage
- -summary-json : the same block as one JSON line, for scripts
- -gkin FILE : save the GK prover input to FILE (with the GK command as comment)
-
-time and call bounds:
- -seconds N          : proof search time for one gk call (default 2)
- -llm-call-timeout N : deadline in seconds for one logical LLM call, covering
-                       provider attempts, retries and the waits between them.
-                       It never encloses gk.  Default 240; 0 disables it.
- -llm-call-limit N   : bound on the logical LLM calls for one case, across all
-                       stages, counting cache hits.  0 is unlimited (default).
-
- -help      : output this helptext
-
-=== ADVANCED ===
-
-caching (LLM responses are cached by default, per provider, version, all
-parameters and input):
- -nollmcache    : disable LLM response caching for this run
- -clearcache    : clear all caches (LLM, proof, parse) and exit
- -nogeminicache : disable Gemini context caching (on by default)
- -cache         : cache GK prover results as well (off by default)
-
-single retry stages, on top of the chosen configuration.  A switch turns its
-stage on from any position on the command line; a cancel turns it off from any
-position and wins over everything:
- -fallback_norm  : the normalization fallback (on by default; this confirms it).
-                   Converts the same parse again with the token and shape
-                   normalizations on, and calls gk once more.  No LLM call.
- -fallback_hyp   : the conditional-question fallback (on by default).  Assumes
-                   the antecedent in an isolated theory and asks the consequent.
-                   No LLM call.
- -critic         : one LLM call audits the initial attempt's translation; a blocking
-                   finding on its own chain makes Stage 2 run once more with the
-                   findings appended.  One critique, one rerun.
- -graphtrans     : translate the case a second time into open triples, compile
-                   it and call gk once.  No judge, no bridge.
- -graphbridge    : invent implications between the open names and search the
-                   graph theory with them.  Turns -graphtrans on as well.
- -litbridge      : propose implication rules over the case's own displayed
-                   atoms, compile them beside the stored theory and resubmit to
-                   gk, in two rounds.  In no named configuration.
- cancels: -nofallback_norm  -nofallback_hyp  -nofallback (both)
-          -nocritic  -nographtrans (cancels graphbridge too)
-          -nolitbridge  -nographbridge
-
-the prover:
- -prover       : show prover params (also included in -debug)
- -axioms file1.js ... fileN.js : use these files instead of axioms_std.js
- -strategy file.js : use the given JSON strategy file instead of the default
- -printlevel N : N>10 shows more of the search process (10 is default, try 12)
- -nosolve      : parse to logic only, do not run the prover
- -rawresult    : output only the raw JSON result from the prover
-
-other:
- -think        : reasoning mode (GPT: reasoning_effort=medium; Claude: extended
-                 thinking; Gemini: needs a 2.5+ model; DeepSeek: reasoner).
-                 -think N sets an integer budget.
- -nosemnormal  : disable antonym folding and canonical word substitution
-
-settings that are module constants, not flags:
- litbridge_procedure.EXTRAS      the two code-built litbridge channels
- litbridge_grader.MODE           None / "stated" / "any"
- graph_procedure.LIFT            lift a graph proof into the ordinary theory
- graph_procedure.EVIDENCE        "any" / "stated"
- graph_procedure.DEFAULT_SOURCES the candidate sources layer 2 enumerates
- globals.ABSTRACTION_ROUTES      the order the three routes run in
-
-=== EXPERIMENTAL AND LEGACY ===
-
-None of the following is needed for ordinary use.  Each is described in
-docs/reference/experimental-options.md.
-
-the safe proof-shortening rewrites.  Two guarded, exactly reversible rewrites
-are ATTEMPTED BY DEFAULT on the ordinary canonical theory.  Each checks its own
-conditions per occurrence and, when one fails, leaves that source form
-unchanged.  Each keeps bidirectional adapters to the canonical neo-Davidsonian
-predicates, which remain the language of axioms_std.js and of any later
-knowledge base.  A compact atom may appear in the formal proof and is the basis
-of the English proof; a step that converts between the two spellings is
-labelled "representation conversion" and is not presented as knowledge.  The
-internal names are davidson2 and existfold2:
- -nodavidson2   : reversible event compression off; the canonical
-                  neo-Davidsonian spine is restored.  davidson2 compresses
-                  {isa(activity,E), has type(E,V), has actor(E,A),
-                  has target(E,T)} to event(V,A,T,E), and only when expanding
-                  it back reproduces the group.  It never replaces a participant
-                  by its class, never invents a missing actor or target, and
-                  never puts a goal or topic in the object slot.
- -noexistfold2  : repeated part-witness compression off.  existfold2 folds only
-                  the bare "exists Y. isa(C,Y) & has part(X,Y)" pattern, and
-                  only for a class with at least four occurrences, emitting
-                  three class-specific compatibility clauses.
- -noproofshort2 : both off.  THIS IS THE COMMAND that reproduces the ordinary
-                  theory and answers as they stood before 2026-08-26.
- -davidson2 / -existfold2 / -proofshort2 : request one or both from any
-                  position, including on top of an -abstract* preset (the event
-                  compression declines on a flat base and leaves it alone).
- -event davidson2 : select the event compression as the base outright.
- Naming a base or a preset asks for that base's own historical theory, so the
- defaults stand aside for -event neodavidson / davidson / flat / flatroles, the
- legacy -existfold, and every -abstract* preset.
-
-acceptance policy:
- -accept NAME  : permissive | balanced | strict.  Also -accept=NAME.  Applies
-                 proof-local checks to a critic or graph answer.  Off unless
-                 given.  balanced and strict discarded more correct answers than
-                 wrong ones in measurement.
-
-alternative parsing shapes (replace the default two-stage English->logic parse):
- -s2split     : one Stage-2 LLM call per Stage-1 sentence package; outputs
-                joined (failed sentences skipped unless they hold the question;
-                locally-invented worlds renumbered).  Also applies the
-                cross-sentence shape-unification repair.
- -combined-instr FILE     : single-stage parsing -- one LLM call, English ->
-                            logic, no Stage-1 JSON
- -combined-examples FILE  : combined examples prompt file (optional)
- -combined-checklist FILE : combined checklist prompt file (optional)
- -directanswer FILE       : answer the question directly with one LLM call (no
-                            logic, no prover)
- -prenorm      : pre-Stage-1 LLM wording normalisation (composable)
- -noprenorm    : force prenorm off after a preset
- -nocrossstage : disable the cross-stage guard-retry
-
-event-encoding bases -- one selector, default neodavidson:
- -event MODE   neodavidson : reified neo-Davidsonian events (default)
-               davidson    : compact event(V,A,O,E), keep handle + adjuncts
-               davidson2   : the exact spine compression (see above)
-               flat        : flat relational is_rel2(V,subj,obj)
-               flatroles   : flat relational, eventprop-tagged object
-
-additive abstraction primitives (compose with any -event base):
- -entitymerge   : proper-noun entity canonicalization + set-label coreference
- -typeenrich[=GATES] : taxonomy/isa enrichment; bare = all six sub-gates, or a
-                  comma list of super,gender,nametype,compound,plural,gnoun (use
-                  -name to exclude, `all` for all; e.g. -typeenrich=all,-plural)
- -guarddrop     : drop redundant antecedent isa type guards (needs a fold base)
- -bridges       : frame/bridge axioms: rel2<->event, occasion-location,
-                  in-haspart, reflexive-property (needs -event flat/flatroles)
- -dropdefinites : skip $theof1 definite reification; leave definites as relations
- -localantonyms : restrict antonym folding to the problem + axiom vocabulary
- -existfold     : (legacy) fold "exists Y. isa(C,Y) & has_part/have(X,Y)" into
-                  has_property([$has_part/$have,C], X) + named-witness bridge
- -propclass     : property<->class canonicalization: bridge
-                  isa(W,X)<->has_property(W,X) for a concept the flat fold left
-                  in both shapes
- -numtype       : numeric-literal typing: parse numeral strings ("34") to
-                  int/float and materialize isa(number/integer/...,N) on demand
- -compasym      : comparative asymmetry: for a strict-scalar adjective R used as
-                  is_rel2(R,X,Y), emit is_rel2(R,X,Y)->-is_rel2(R,Y,X)
-
-simplification:
- -simple        : no context, no exceptions, simple properties (the three below)
- -nocontext     : no context (time, situation) information in logic
- -noexceptions  : no exception (blocker) information in logic
- -simpleprops   : simplified properties without strength/type parameters
-
-abstraction presets (pure expansions into the primitives above):
- -abstract       : -event flat + entitymerge + guarddrop + bridges
-                   + dropdefinites + typeenrich + localantonyms + simpleprops
- -abstract-roles : as -abstract but -event flatroles
- -abstract-max   : as -abstract-roles + prenorm + propclass + numtype + compasym
-                   + nominalretry + negretry, plus all six retry stages.
-                   prenorm, nominalretry and negretry can make live LLM calls,
-                   and so does every stage but the two fallbacks.
-
-older spellings, kept so existing scripts keep working:
- -stack         : same as -pipeline high-recall
- -stack-closed  : same as -pipeline balanced
- -stack-open    : all six stages, literal bridge included
- -geminicache   : accepted and ignored; Gemini context caching is the default
-
-resolution order for every stage selection:
- 1. named configurations, presets and flag sets, left to right; a later one
-    overwrites an earlier one
- 2. an explicit stage switch turns its stage on from any position
- 3. a cancel wins over both, wherever it stands
-"""
 
 
 # ========= main caller =========

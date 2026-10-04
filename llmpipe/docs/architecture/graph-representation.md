@@ -54,7 +54,7 @@ and the stage reports unresolved. The raw result stays in the record.
 
 ## What it is and where it sits
 
-`solve._english_to_answer_once` runs the abstraction routes in the order
+`solve.ordinary_attempt` runs the abstraction routes in the order
 `abstraction_order` names — by default `graphtrans,litbridge,graphbridge`.  Each route
 runs only when the question is still unresolved and only when its own flag is on; a
 route the order omits never runs, whatever its flag says.  `collect["answered_by"]`

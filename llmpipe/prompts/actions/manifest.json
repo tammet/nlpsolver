@@ -1,0 +1,31 @@
+{
+  "bytes": {
+    "stage1": 162766,
+    "stage2": 193933
+  },
+  "files": {
+    "prompts/actions/examples.json": "2a2f296f3717d04f3efdc730da9e246fac405b600f1800b158affb05e164d8c0",
+    "prompts/actions/routing_cases.json": "2228699d339d6947bccc84663cb75adbdae9f9221a73616b92a71ac9c1b4f0af",
+    "prompts/actions/stage1_checklist.txt": "7474b2c73b9a86223b06def5df0359d2469dbd533e19828e7b7e789f1e0404fc",
+    "prompts/actions/stage1_instructions.txt": "e20aa87b22fcc4303ce1c0602f5f90db0ab60aae9549b98850aea8113affa6a7",
+    "prompts/actions/stage2_checklist.txt": "e50f86e6138db17bafe1cfe10d4f78a3654af8f721642a2d707c55e5a3a4321b",
+    "prompts/actions/stage2_instructions.txt": "928a7fa7e17ef8203601605c0a79b5278ff40a2765e0748dba6844dcde0b734d",
+    "prompts/stage1_checklist_full.txt": "370ee77b387d0927bf27ab56eafb165e256b251bb5eb3321b8b616074b158761",
+    "prompts/stage1_examples.txt": "d60487f8cb8393ef766b4b3d7bf040943d977c79543419003e127d290e879e40",
+    "prompts/stage1_instructions_full.txt": "ab0d69b91e9d69e79baef73705b8ea2e28841e21b83ce213f517d90edd5446cf",
+    "prompts/stage2_checklist_full.txt": "71494a78c176abec54a5418296c872f39904eaf962af573dde70d28c1e702319",
+    "prompts/stage2_examples.txt": "62dc3875de67cbe39ef08a6b355b51077494dbc3ade1b2fef027156548107a2a",
+    "prompts/stage2_instructions_full.txt": "12caa47a486014fcb6092f6940e2bee3f9970ca65274f27b57dd061e131d265f"
+  },
+  "rendered_sha256": {
+    "stage1": "2dc51d10c2dd3816a71571e8ec0e8974726b216895773c275c74689551384134",
+    "stage2": "9162920ab8b524f4b0936ae1c46e76bad0883b6c3b83d9889d423055904ff4ba"
+  },
+  "revision": "I",
+  "schema": 1,
+  "sha256": {
+    "stage1": "bc56c4a9b4eadfea9ed67a24423da998bea919cceb76fe008f17bac9934e565f",
+    "stage2": "9fd64228eb1108396ed57b871e35c51d8cb0e1a2fd32d161526664dbb6cbfdf5"
+  },
+  "status": "the planning fixes after the first run of the planning test set (2026-09-30): Q1 to Q10 and the state-rule convention, with 7 prompt examples of new nouns; WP19, v3, v4, v5, v6 and the planning run's outputs seen"
+}

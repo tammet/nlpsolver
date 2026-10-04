@@ -1,9 +1,9 @@
 """Action route: source, query and result artifacts and the four operations.
 
-  translate_source(source_text, profile, model_options) -> result (not implemented)
+  translate_source(source_text, profile, model_options) -> source artifact (action_pipeline.translate)
   compile_source(stage1, stage2_source, profile)         -> source artifact
   compile_query(query_logic, source_artifact, limits)    -> query artifact
-  solve_query(source_artifact, query_artifact, options)  -> result (not implemented)
+  solve_query(source_artifact, query_artifact, options)  -> result (action_answer.solve: GK, replay, policy)
 
 The artifacts are plain JSON dictionaries with an `artifact` name and a
 `version`.  A source artifact is a persisted translation result: the source
@@ -22,18 +22,27 @@ and the root's world, then the query pass (`query_views`): it selects the
 input view, writes the proof obligations and decides the backend
 requirements of that query.
 `query_input` builds the prover input of one obligation from the two
-artifacts.  `translate_source` and `solve_query` return a `not_implemented`
-result; they never return an A5.3 outcome.
+artifacts; `action_gk.run_query` runs every obligation of a query on the
+registered GK build and returns the evidence; `solve_query` runs it and
+decides the answer with the replay (`action_answer`).
+`translate_source` translates English with an action prompt bundle
+(`action_pipeline`); without the bundle's files it returns a
+`not_implemented` result.  The pipeline's own run calls `action_pipeline.translate`
+and `action_answer.solve` directly; `translate_source` and `solve_query` are
+the library interface of the same operations, which the checks use.
+docs/code/action-route.md lists the modules of each pass.
 
-No operation here calls a model or a prover, and `compile_query` never
-changes its source artifact: it works on the artifact's hashes and checks
-them again before it returns.
+No operation here calls a model.  Only `solve_query` calls the prover, and
+`compile_query` never changes its source artifact: it works on the
+artifact's hashes and checks them again before it returns.
 """
 
 import copy
-import hashlib
 import json
 
+import action_prompt
+from digests import canonical, digest
+import action_repair as arep
 import lc_action
 import lc_action_avail
 import lc_action_effects
@@ -48,14 +57,14 @@ QUERY = "action_query"
 RESULT = "action_result"
 DEFAULT_SEARCH_CAP = 4
 
-# typed outcomes (A5.3) plus the two run-limit and ordinary-route names the
+# the typed outcomes of the route plus the two run-limit and ordinary-route names the
 # reviewed fixtures use; `not_implemented` is not an outcome of the route
 OUTCOMES = ("source_compiled", "plan_found", "goal_already_holds", "verification_result",
             "not_found", "candidate_not_validated", "inconsistent_action_state",
             "unsupported_backend_requirement", "unsupported_translation",
             "translation_invalid", "call_limit", "model_timeout", "prover_timeout",
-            "prover_error", "backend_incompatible", "insufficient_search_allowance",
-            "ordinary_result")
+            "prover_error", "backend_incompatible", "backend_unavailable", "model_error",
+            "insufficient_search_allowance", "ordinary_result")
 NOT_IMPLEMENTED = "not_implemented"
 
 VIEWS = {"plan": "discovery", "reachable": "discovery", "verify": "verify",
@@ -70,15 +79,6 @@ class ArtifactError(Exception):
 # deterministic serialization and hashes
 
 
-def canonical(obj):
-  """The one serialization every hash and every stored artifact uses."""
-  return json.dumps(obj, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
-
-
-def digest(obj):
-  return hashlib.sha256(canonical(obj).encode("utf-8")).hexdigest()
-
-
 def dumps(artifact):
   """A stored artifact: canonical key order, one trailing newline."""
   return json.dumps(artifact, sort_keys=True, indent=1, ensure_ascii=False) + "\n"
@@ -86,11 +86,16 @@ def dumps(artifact):
 
 def _source_content(a):
   """What the source hash covers: what was given, not what was derived.  The worlds declaration and every unit
-  context record are given input (encoding v2): two sources that differ only in a qualifier have different hashes."""
-  return {"profile": a["profile"], "library": a["library"], "source_text": a["source_text"],
-          "identity": a["identity"], "worlds": a["worlds"],
-          "units": [{"id": u["id"], "text": u["text"], "stage1": u["stage1"], "stage2": u["stage2"], "context": u["context"]}
-                    for u in a["units"]]}
+  context record are given input (encoding v2): two sources that differ only in a qualifier have different hashes.
+  The given type records are input too; a source without them hashes as before."""
+  out = {"profile": a["profile"], "library": a["library"], "source_text": a["source_text"],
+         "identity": a["identity"], "worlds": a["worlds"],
+         "units": [{"id": u["id"], "text": u["text"], "stage1": u["stage1"], "stage2": u["stage2"], "context": u["context"]}
+                   for u in a["units"]]}
+  given = [{k: t[k] for k in TYPE_FIELDS if k in t} for t in a.get("types") or [] if t["kind"] in GIVEN_TYPES]
+  if given:
+    out["types"] = given
+  return out
 
 
 def source_hashes(a):
@@ -114,7 +119,7 @@ def _names(value, what):
 
 
 def normalize_profile(profile):
-  """`physical_v1`, `ordinary`, or {"name", "policy", "locations"} (A2.5, A2.7).
+  """`physical_v1`, `ordinary`, or {"name", "policy", "locations"}.
 
   A caller configuration error raises ArtifactError; nothing is coerced.
   """
@@ -184,6 +189,11 @@ def _projection_errors(proj):
   return out
 
 
+def _places(ident):
+  """The ids that the identity map declares places: Stage-1 category place, or class place in a formal entity map."""
+  return {i for i, v in ident.items() if "place" in (v.get("category"), v.get("class"))}
+
+
 def _identity(stage1, packages, entities):
   """The source identity map: id -> {type, category?, class?}.
 
@@ -235,6 +245,24 @@ def library_view(source_artifact, view, restricted=()):
 
 CONTEXT_FIELDS = ("tense", "location", "location_role", "knower")
 
+# Type records.  A type record is a static class
+# fact of a concrete entity that stands apart from any unit formula:
+#   stated                  the class of a referent that a law sentence introduces by a class noun, from the
+#                           Stage-2 envelope field `types` of that unit (a law unit holds its rule only)
+#   stage1_person           the documented person convention: an objective source unit lists the entity with the
+#                           Stage-1 category person (`action_prompt.person_types`); an LLM interpretation, recorded
+#                           with its units, never verified by the compiler
+#   lexical_identification  derived here: an unconditional isa fact of a past or future description whose class noun
+#                           names the entity ("Yesterday block b was on the table"); it stays when a query's
+#                           selection leaves the description out for its tense, and only then enters a view
+# The first two are given input (source hash); the third is derived (artifact hash).  Every record compiles to one
+# static clause; the replay reads the records, never the clauses.
+TYPE_KINDS = ("stated", "stage1_person", "lexical_identification")
+GIVEN_TYPES = ("stated", "stage1_person")
+TYPE_FIELDS = ("entity", "class", "kind", "unit", "units")
+TYPE_ROLE = "static_type"
+DESCRIPTIONS = ("description_static", "description_initial")
+
 
 def normalize_worlds(worlds):
   """The source's worlds in narrative order; None is ["W0"].  The order comes from the declaration only."""
@@ -273,16 +301,18 @@ def normalize_contexts(contexts):
 
 
 def _context_diagnostics(unit, ident):
-  """The unit-level diagnostics of a context record (migration plan section 9)."""
+  """The unit-level diagnostics of a context record: where a context record may stand and what it holds.  The
+  query decides which facts a context record leaves out (`lc_action_query.exclusions`)."""
   c = unit["context"]
   out = []
   if c is None:
     return out
   given = {k: v for k, v in c.items() if v is not None and not (k == "tense" and v == "present")}
-  if given and unit["form"] != "description_initial":
+  # a unit whose form the validator could not read has its own invalid diagnostic; its record is judged after the fix
+  if given and unit["form"] is not None and unit["form"] != "description_initial":
     out.append(("invalid", "context_record_position", ["context"],
                 "a context record qualifies the facts of an initial description; a %s unit has no fact context "
-                "(the law pattern of section 3 gives its literals their context)" % unit["form"]))
+                "(the law pattern gives its literals their context)" % unit["form"]))
   if c["location"] is not None and c["location"] not in ident:
     out.append(("invalid", "undeclared_context_location", ["context", "location"],
                 "context location %r names no location entity of the source" % c["location"]))
@@ -291,12 +321,73 @@ def _context_diagnostics(unit, ident):
                 "context knower %r names no entity of the source" % c["knower"]))
   if c["location"] is not None and c["location_role"] is None:
     out.append(("unsupported", "unsupported_contextual_location", ["context", "location_role"],
-                "a stated location without a location_role: provenance and scope compile differently (section 3)"))
+                "a stated location without a location_role: provenance and scope compile differently"))
   return out
 
 
+def normalize_types(types, ident, unit_ids):
+  """Given type records: [{"entity", "class", "kind": stated | stage1_person, "unit", "units"?}].  None is []."""
+  if types is None:
+    return []
+  if not isinstance(types, list):
+    raise ArtifactError("types is a list of type records")
+  out, seen = [], set()
+  for t in types:
+    if not isinstance(t, dict) or set(t) - set(TYPE_FIELDS) or t.get("kind") not in GIVEN_TYPES:
+      raise ArtifactError("a given type record is {entity, class, kind: %s, unit, units?}, got %r" % (" | ".join(GIVEN_TYPES), t))
+    if not (lc_action.is_concrete(t.get("entity")) and t["entity"] in ident):
+      raise ArtifactError("a type record names a concrete entity of the source, got %r" % (t.get("entity"),))
+    if not lc_action.is_lexical(t.get("class")):
+      raise ArtifactError("a type record's class is a lexical constant, got %r" % (t.get("class"),))
+    for uid in [t.get("unit")] + list(t.get("units") or []):
+      if uid not in unit_ids:
+        raise ArtifactError("a type record names %r, which is no unit of the source" % (uid,))
+    k = (t["entity"], t["class"])
+    if k in seen:
+      continue
+    seen.add(k)
+    out.append({f: copy.deepcopy(t[f]) for f in TYPE_FIELDS if f in t})
+  return out
+
+
+def _lexical_types(units):
+  """The lexical_identification records: the unconditional positive isa conjuncts of a supported past or future
+  description, whose class noun names the entity in the unit's Stage-1 text.  A unit with a knower or a scope
+  location keeps its qualification (no record); an uncertain unit gives no certain type; a class predication
+  ("b 3 was a block") is no lexical identification; a type that an unqualified description also states needs none."""
+  plain = set()
+  for u in units:
+    if u["status"] == "supported" and u["form"] in DESCRIPTIONS and not u.get("context"):
+      f = lc_action_situate._unit_formula(u)
+      plain.update(tuple(a) for a in lc_action.conjuncts(f) if action_prompt.is_class_atom(a))
+  out = []
+  for u in units:
+    c = u.get("context") or {}
+    if u["status"] != "supported" or u["form"] not in DESCRIPTIONS:
+      continue
+    if (c.get("tense") or "present") == "present" or c.get("knower") is not None or c.get("location_role") == "scope":
+      continue
+    if u.get("confidence") is not None and u["confidence"] < 1:
+      continue
+    for a in lc_action.conjuncts(lc_action_situate._unit_formula(u)):
+      if (action_prompt.is_class_atom(a) and tuple(a) not in plain
+          and action_prompt.names_class(u.get("text"), a[1], a[2])):
+        out.append({"entity": a[2], "class": a[1], "kind": "lexical_identification", "unit": u["id"]})
+  return out
+
+
+def _type_clauses(types):
+  return [{"role": TYPE_ROLE, "unit": None, "units": ["types"], "type_kind": t["kind"], "type_unit": t["unit"],
+           "clause": [["isa", t["class"], "#:" + t["entity"]]], "pass": "types"} for t in types]
+
+
+def type_facts(artifact):
+  """(entity, class) of every type record of a source artifact: the classes the dependency analyses may assume."""
+  return [(t["entity"], t["class"]) for t in artifact.get("types") or []]
+
+
 def compile_source(stage1, stage2_source, profile, source_text=None, entities=None, provenance=None, worlds=None,
-                   contexts=None):
+                   contexts=None, types=None, type_notes=None):
   """Build a source artifact from a gold or replayed translation.  No model.
 
   stage1          list of {"id", "text", "stage1": projection}, or None for a
@@ -308,6 +399,9 @@ def compile_source(stage1, stage2_source, profile, source_text=None, entities=No
   worlds          optional list of the source's worlds in narrative order;
                   default ["W0"]
   contexts        optional {unit id: {tense, location, location_role, knower}}
+  types           optional given type records (stated, stage1_person); see TYPE_KINDS
+  type_notes      optional notes of a type the caller suppressed (a conflicting category); kept as source
+                  diagnostics of level note
   """
   prof = normalize_profile(profile)
   worlds = normalize_worlds(worlds)
@@ -323,8 +417,56 @@ def compile_source(stage1, stage2_source, profile, source_text=None, entities=No
   if source_text is not None and not isinstance(source_text, str):
     raise ArtifactError("source_text is a string")
   ident = _identity(stage1, packages, entities)
-  by_s1 = {}
+  given_types = normalize_types(types, ident, {p[1] for p in packages if isinstance(p, list) and len(p) == 3})
   diagnostics = []
+  for n in type_notes or []:
+    diagnostics.append({"level": "note", "reason": n["reason"], "unit": None, "units": list(n.get("units") or []),
+                        "path": "/", "subformula": None, "entity": n["entity"],
+                        "message": "no %s type for %s: %s" % (n.get("class", "person"), n["entity"], json.dumps(
+                          {k: v for k, v in n.items() if k in ("categories", "classes") and v}, sort_keys=True))})
+  units = _validated_units(stage1, packages, ident, prof, worlds, contexts, diagnostics)
+  _mark_method_collisions(units)
+  namer = lc_action_situate.witness_namer(units)
+  _situation_pass(units, namer)
+  all_types = given_types + [t for t in _lexical_types(units)
+                             if (t["entity"], t["class"]) not in {(g["entity"], g["class"]) for g in given_types}]
+  compiled = {"identity_clauses": [], "restriction_clauses": [], "restrictions": {"constructors": {}, "paths": []},
+              "policy_clauses": [], "dependencies": None, "backend_requirements": None}
+  if prof["name"] == lc_action.PROFILE:
+    compiled = _action_passes(units, namer, prof, ident, [(t["entity"], t["class"]) for t in all_types], diagnostics)
+  passes = ["structural_validation", lc_action_situate.PASS]
+  library = {"id": None, "hash": None, "status": "not_selected"}
+  if prof["name"] == lc_action.PROFILE:
+    # the maintained library, checked against its role index; its identity is part of the source hash
+    library = lc_action_library.identity(_library())
+    passes.append(lc_action_library.PASS)
+    passes.append(lc_action_avail.PASS)
+    passes.append(lc_action_restrict.PASS)
+    passes.append(lc_action_effects.PASS)
+  artifact = {"artifact": SOURCE, "version": ARTIFACT_VERSION, "profile": prof,
+              "library": library, "worlds": worlds,
+              "source_text": source_text, "identity": ident, "identity_clauses": compiled["identity_clauses"],
+              "units": units,
+              "restriction_clauses": compiled["restriction_clauses"], "restrictions": compiled["restrictions"],
+              "policy_clauses": compiled["policy_clauses"],
+              "provenance": copy.deepcopy(provenance) if provenance else {"kind": "supplied_translation", "model": None, "prompt": None},
+              "diagnostics": diagnostics,
+              "clauses": None, "dependencies": compiled["dependencies"],
+              "backend_requirements": compiled["backend_requirements"],
+              "passes": passes, "pending_passes": [x for x in lc_action.SOURCE_PASSES if x not in passes]}
+  if all_types:
+    # only a source with type records has the fields: every other artifact keeps its earlier hashes
+    artifact["types"] = all_types
+    artifact["type_clauses"] = _type_clauses(all_types)
+  _refresh(artifact)
+  return artifact
+
+
+def _validated_units(stage1, packages, ident, prof, worlds, contexts, diagnostics):
+  """The structural pass: one unit record per Stage-2 package, validated (`lc_action.validate_source_unit`), with its
+  Stage-1 projection, its reading checked against its form and its context record.  Source-level findings go to
+  `diagnostics`."""
+  by_s1 = {}
   for s in stage1 or []:
     if s.get("id") in by_s1:
       diagnostics.append(_source_diag("invalid", "duplicate_unit", s.get("id"), "Stage 1 has two units with this id"))
@@ -369,8 +511,23 @@ def compile_source(stage1, stage2_source, profile, source_text=None, entities=No
   for uid in by_s1:
     if uid not in seen:
       diagnostics.append(_source_diag("invalid", "unit_coverage", uid, "a Stage-1 unit without a Stage-2 package"))
+  return units
+
+
+def _first_by_id(units):
+  """{unit id: unit}, the first unit of an id (a duplicate id has its own diagnostic)."""
+  out = {}
+  for u in units:
+    out.setdefault(u["id"], u)
+  return out
+
+
+def _mark_method_collisions(units):
+  """Two supported units whose action terms can name one action, one of them an effect or a restriction, are
+  unsupported (`method_collision`)."""
+  by_id = _first_by_id(units)
   for uid, hit in sorted(lc_action.method_collisions([u for u in units if u["status"] == "supported"]).items()):
-    u = [x for x in units if x["id"] == uid][0]
+    u = by_id[uid]
     for h in hit:
       u["diagnostics"].append({"level": "unsupported", "reason": "method_collision", "unit": uid, "path": "/",
                                "subformula": canonical(h["term"]), "with": h["with"],
@@ -379,105 +536,97 @@ def compile_source(stage1, stage2_source, profile, source_text=None, entities=No
                                           "(source verb %s) can name one action, and one of the two is an effect "
                                           "or a restriction" % (", ".join(h["roots"]), h["with"], ", ".join(h["other_roots"]))})
     u["status"] = "unsupported"
-  namer = lc_action_situate.witness_namer(units)
+
+
+def _take(u, r, requirements=True):
+  """A pass's compiled unit (`compile_unit` of a pass) into the unit record."""
+  u.update({"situated": r["situated"], "situation": r["situation"], "clauses": r["clauses"],
+            "witnesses": r["witnesses"], "compile_note": r["note"]})
+  if requirements:
+    u["requirements"] = r["requirements"]
+
+
+def _unsupported(u, reason, message, pass_name, **fields):
+  """An unsupported diagnostic of a later pass on a unit; the unit becomes unsupported."""
+  d = {"level": "unsupported", "reason": reason, "unit": u["id"], "path": "/", "subformula": None,
+       "message": message, "pass": pass_name}
+  d.update(fields)
+  u["diagnostics"].append(d)
+  u["status"] = "unsupported"
+
+
+def _situation_pass(units, namer):
+  """The situation pass (`lc_action_situate`): situations, witnesses and the clauses of the state units."""
   for u in units:
     u.update({"situated": None, "situation": None, "clauses": None, "witnesses": [], "compile_note": None})
     if u["status"] != "supported":
       continue
     r = lc_action_situate.compile_unit(u, namer)
-    u.update({"situated": r["situated"], "situation": r["situation"], "clauses": r["clauses"],
-              "witnesses": r["witnesses"], "compile_note": r["note"]})
+    _take(u, r, requirements=False)
     if r["diagnostic"]:
       sub = r["diagnostic"][2]
-      u["diagnostics"].append({"level": "unsupported", "reason": r["diagnostic"][0], "unit": u["id"], "path": "/",
-                               "subformula": canonical(sub) if sub is not None else None,
-                               "message": r["diagnostic"][1], "pass": lc_action_situate.PASS})
-      u["status"] = "unsupported"
+      _unsupported(u, r["diagnostic"][0], r["diagnostic"][1], lc_action_situate.PASS,
+                   subformula=canonical(sub) if sub is not None else None)
     elif u["form"] in lc_action_situate.STATE_FORMS and u["clauses"] is None:
       raise ArtifactError("unit %s: the situation pass left a supported state unit without clauses" % u["id"])
-  identity_clauses, restriction_clauses, restrictions = [], [], {"constructors": {}, "paths": []}
-  policy_clauses, writes, dependencies, backend_requirements = [], [], None, None
-  if prof["name"] == lc_action.PROFILE:
-    for u in units:
-      u["requirements"] = []
-      if u["status"] != "supported" or u["form"] not in lc_action_avail.FORMS:
-        continue
-      r = lc_action_avail.compile_unit(u, namer, _library())
-      u.update({"situated": r["situated"], "situation": r["situation"], "clauses": r["clauses"],
-                "witnesses": r["witnesses"], "compile_note": r["note"], "requirements": r["requirements"]})
-      if r["diagnostic"]:
-        u["diagnostics"].append({"level": "unsupported", "reason": r["diagnostic"][0], "unit": u["id"], "path": "/",
-                                 "subformula": None, "message": r["diagnostic"][1], "pass": lc_action_avail.PASS})
-        u["status"] = "unsupported"
-    for g in lc_action_avail.location_granularity(units, prof["locations"]["flat"]):
-      d = {"level": "unsupported", "reason": "unsupported_location_granularity", "path": "/", "subformula": None,
-           "message": g["message"], "pass": lc_action_avail.PASS}
-      if g["unit_level"]:
-        u = [x for x in units if x["id"] == g["units"][0]][0]
-        u["diagnostics"].append(dict(d, unit=u["id"]))
-        u["status"] = "unsupported"
-        u["clauses"] = []
-      else:
-        diagnostics.append(dict(d, unit=None, units=g["units"]))
-    identity_clauses = lc_action_avail.differ_clauses(units, ident)
-    checks = {}
-    for u in units:
-      if u["status"] != "supported" or u["form"] != lc_action_restrict.FORM:
-        continue
-      r = lc_action_restrict.compile_unit(u, namer)
-      u.update({"situated": r["situated"], "situation": r["situation"], "clauses": r["clauses"],
-                "witnesses": r["witnesses"], "compile_note": r["note"], "requirements": r["requirements"]})
-      checks[u["id"]] = r["checks"]
-      if r["diagnostic"]:
-        d = {"level": "unsupported", "reason": r["diagnostic"][0], "unit": u["id"], "path": "/",
-             "subformula": None, "message": r["diagnostic"][1], "pass": lc_action_restrict.PASS}
-        if r["diagnostic"][2]:
-          d["detail"] = r["diagnostic"][2]
-        u["diagnostics"].append(d)
-        u["status"] = "unsupported"
-    restriction_clauses, table = lc_action_restrict.hooks(units, checks, namer)
-    restrictions = {"constructors": table, "paths": lc_action_restrict.path_coverage(_library(), table)}
-    for u in units:
-      if u["status"] != "supported" or u["form"] != lc_action_effects.FORM:
-        continue
-      r = lc_action_effects.compile_unit(u, namer, _library())
-      u.update({"situated": r["situated"], "situation": r["situation"], "clauses": r["clauses"],
-                "witnesses": r["witnesses"], "compile_note": r["note"], "requirements": r["requirements"]})
-      writes.extend(r["writes"])
-      if r["diagnostic"]:
-        u["diagnostics"].append({"level": "unsupported", "reason": r["diagnostic"][0], "unit": u["id"], "path": "/",
-                                 "subformula": None, "message": r["diagnostic"][1], "pass": lc_action_effects.PASS})
-        u["status"] = "unsupported"
-    policy_clauses, found, properties = lc_action_effects.state_policy(units, prof["policy"])
-    for uid, reason, message, detail in found:
-      u = [x for x in units if x["id"] == uid][0]
-      u["diagnostics"].append({"level": "unsupported", "reason": reason, "unit": uid, "path": "/", "subformula": None,
-                               "message": message, "detail": detail, "pass": lc_action_effects.PASS})
+
+
+def _action_passes(units, namer, prof, ident, classes, diagnostics):
+  """The passes of the physical profile, in order: availability and denials, location granularity, the identity
+  clauses, restrictions and their hooks, effects, the state policy and the dependencies.  Returns the source-level
+  results: identity_clauses, restriction_clauses, restrictions, policy_clauses, dependencies, backend_requirements."""
+  by_id = _first_by_id(units)
+  for u in units:
+    u["requirements"] = []
+    if u["status"] != "supported" or u["form"] not in lc_action_avail.FORMS:
+      continue
+    r = lc_action_avail.compile_unit(u, namer, _library())
+    _take(u, r)
+    if r["diagnostic"]:
+      _unsupported(u, r["diagnostic"][0], r["diagnostic"][1], lc_action_avail.PASS)
+  for g in lc_action_avail.location_granularity(units, prof["locations"]["flat"], _places(ident)):
+    d = {"level": "unsupported", "reason": "unsupported_location_granularity", "path": "/", "subformula": None,
+         "message": g["message"], "pass": lc_action_avail.PASS}
+    if g["unit_level"]:
+      u = by_id[g["units"][0]]
+      u["diagnostics"].append(dict(d, unit=u["id"]))
       u["status"] = "unsupported"
       u["clauses"] = []
-    dependencies, backend_requirements = lc_action_effects.dependencies(units, _library())
-    dependencies["writes"] = writes
-    dependencies["properties"] = properties
-  passes = ["structural_validation", lc_action_situate.PASS]
-  library = {"id": None, "hash": None, "status": "not_selected"}
-  if prof["name"] == lc_action.PROFILE:
-    # the maintained library, checked against its role index; its identity is part of the source hash
-    library = lc_action_library.identity(_library())
-    passes.append(lc_action_library.PASS)
-    passes.append(lc_action_avail.PASS)
-    passes.append(lc_action_restrict.PASS)
-    passes.append(lc_action_effects.PASS)
-  artifact = {"artifact": SOURCE, "version": ARTIFACT_VERSION, "profile": prof,
-              "library": library, "worlds": worlds,
-              "source_text": source_text, "identity": ident, "identity_clauses": identity_clauses, "units": units,
-              "restriction_clauses": restriction_clauses, "restrictions": restrictions,
-              "policy_clauses": policy_clauses,
-              "provenance": copy.deepcopy(provenance) if provenance else {"kind": "supplied_translation", "model": None, "prompt": None},
-              "diagnostics": diagnostics,
-              "clauses": None, "dependencies": dependencies, "backend_requirements": backend_requirements,
-              "passes": passes, "pending_passes": [x for x in lc_action.PENDING_PASSES if x not in passes]}
-  _refresh(artifact)
-  return artifact
+    else:
+      diagnostics.append(dict(d, unit=None, units=g["units"]))
+  identity_clauses = lc_action_avail.differ_clauses(units, ident)
+  checks = {}
+  for u in units:
+    if u["status"] != "supported" or u["form"] != lc_action_restrict.FORM:
+      continue
+    r = lc_action_restrict.compile_unit(u, namer)
+    _take(u, r)
+    checks[u["id"]] = r["checks"]
+    if r["diagnostic"]:
+      extra = {"detail": r["diagnostic"][2]} if r["diagnostic"][2] else {}
+      _unsupported(u, r["diagnostic"][0], r["diagnostic"][1], lc_action_restrict.PASS, **extra)
+  restriction_clauses, table = lc_action_restrict.hooks(units, checks, namer)
+  restrictions = {"constructors": table, "paths": lc_action_restrict.path_coverage(_library(), table)}
+  writes = []
+  for u in units:
+    if u["status"] != "supported" or u["form"] != lc_action_effects.FORM:
+      continue
+    r = lc_action_effects.compile_unit(u, namer, _library())
+    _take(u, r)
+    writes.extend(r["writes"])
+    if r["diagnostic"]:
+      _unsupported(u, r["diagnostic"][0], r["diagnostic"][1], lc_action_effects.PASS)
+  policy_clauses, found, properties = lc_action_effects.state_policy(units, prof["policy"])
+  for uid, reason, message, detail in found:
+    u = by_id[uid]
+    _unsupported(u, reason, message, lc_action_effects.PASS, detail=detail)
+    u["clauses"] = []
+  dependencies, backend_requirements = lc_action_effects.dependencies(units, _library(), classes)
+  dependencies["writes"] = writes
+  dependencies["properties"] = properties
+  return {"identity_clauses": identity_clauses, "restriction_clauses": restriction_clauses,
+          "restrictions": restrictions, "policy_clauses": policy_clauses, "dependencies": dependencies,
+          "backend_requirements": backend_requirements}
 
 
 def _source_diag(level, code, unit, message):
@@ -491,10 +640,12 @@ READING_FORMS = {"availability": ("availability", "denial"), "restriction": ("re
 
 
 def _check_reading(unit):
-  """The Stage-1 action reading agrees with the recognized Stage-2 form (A7.3).
+  """The Stage-1 action reading agrees with the recognized Stage-2 form.
 
   Checked only for a structurally supported unit: an unsupported form has its
   own diagnostic, and the reading of a mistranslation is part of that case.
+  A reading that the sentence itself contradicts is adjusted (`action_repair.adjusted_reading`): the note `reading_adjusted`
+  records the repair, the reading before and the reading after, and the unit is kept.
   """
   if unit["status"] != "supported" or unit["stage1"] is None:
     return
@@ -503,6 +654,23 @@ def _check_reading(unit):
   if reading is None and not law:
     return
   if reading is None or unit["form"] not in READING_FORMS.get(reading, ()):
+    adjusted = arep.adjusted_reading(unit)
+    if adjusted is not None:
+      repair, after = adjusted
+      unit["diagnostics"].append({"level": "note", "reason": "reading_adjusted", "unit": unit["id"], "path": "/",
+                                  "subformula": None, "repair": repair, "before": reading, "after": after,
+                                  "message": "Stage-1 action_reading %r is read as %r: the sentence and the Stage-2 "
+                                             "form %s establish it (%s)" % (reading, after, unit["form"], repair)})
+      return
+    if arep.public_route_under_availability(unit):
+      # A public service or route that Stage 1 labelled availability without an actor, compiled to the connected
+      # fact the sentence states: the fact is kept and the label recorded.  A correction cannot change Stage 1, and
+      # a correction request made the models invent a personal permission instead.
+      unit["diagnostics"].append({"level": "note", "reason": "reading_adjusted", "unit": unit["id"], "path": "/",
+                                  "subformula": None,
+                                  "message": "Stage-1 action_reading 'availability' names no actor and the formula is the "
+                                             "stated public route: the connected fact is kept as a static description"})
+      return
     unit["diagnostics"].append({"level": "invalid", "code": "reading_form_mismatch", "unit": unit["id"], "path": "/",
                                 "subformula": None,
                                 "message": "Stage-1 action_reading %r does not fit the Stage-2 form %s" % (reading, unit["form"])})
@@ -531,7 +699,7 @@ def _refresh(artifact):
   if status == "supported":
     artifact["clauses"] = [c for u in artifact["units"] for c in (u.get("clauses") or [])] \
       + list(artifact.get("restriction_clauses") or []) + list(artifact.get("policy_clauses") or []) \
-      + list(artifact.get("identity_clauses") or [])
+      + list(artifact.get("identity_clauses") or []) + list(artifact.get("type_clauses") or [])
   artifact["hashes"] = source_hashes(artifact)
 
 
@@ -611,8 +779,8 @@ def check_artifact(artifact, name):
 def source_outcome(artifact):
   """The typed outcome of a source-only operation.
 
-  `source_compiled` needs a supported source and no pending compiler pass.
-  Until the passes exist the answer is `not_implemented`, with their names.
+  `source_compiled` needs a supported source and no pending compiler pass.  A profile whose passes do not run
+  (the `ordinary` profile) gives `not_implemented`, with the names of the pending passes.
   """
   check_artifact(artifact, SOURCE)
   s = artifact["support"]
@@ -646,7 +814,7 @@ def normalize_limits(limits):
 
 
 def search_depth(kind, steps, sequence, limits):
-  """The reachability seed depth of A3.3 and the verify allowance of A3.4.
+  """The reachability seed depth of a discovery and the step allowance of a verification.
 
   Returns {"depth", "require_zero_remaining", "covers_bound", "insufficient"}.
   The semantic bound N and the search cap K stay separate: an exact bound is
@@ -686,7 +854,7 @@ def normalize_backend(backend):
   A capability in `lc_action_query.UNAVAILABLE` stops a query that needs it
   until the caller names it as validated.  `shared_source_confidence` is
   recorded as a requirement and never stops compilation: the runtime's
-  backend profile decides it for the selected binary (WP12).
+  backend profile decides it for the selected binary (`action_gk`).
   """
   if backend is None:
     return {"validated": []}
@@ -704,17 +872,19 @@ def compile_query(query_logic, source_artifact, limits=None, backend=None, plann
 
   The source artifact is read, never changed.  An unsupported or invalid
   source gives a query artifact with that outcome: attaching a query does not
-  turn a partly supported source into a planning problem (A3.1).
+  turn a partly supported source into a planning problem.
 
   A supported query of the action profile gets its input view (clause names
   and a view hash), its proof obligations and its backend requirements.  A
   query that needs an unvalidated capability stops with
-  `unsupported_backend_requirement` and gets no view.
+  `unsupported_backend_requirement` and gets no view, unless only the
+  negative obligation of a verification's final formula needs it: that query
+  runs, and the answer policy refuses every answer but Yes.
 
   `planning_root` names a declared world (default: the last declared world);
   `ambient` a location entity whose scope facts the query's views keep;
   `knower` an entity whose knower-scoped facts they keep and whose constant
-  replaces the objective knower of the laws (migration step 1b.5).
+  replaces the objective knower of the laws.
   """
   check_artifact(source_artifact, SOURCE)
   before = canonical(source_artifact)
@@ -760,7 +930,7 @@ def _attach(q, v, source_artifact, sel, lim):
 
   The exclusions come first and stay recorded when a later check stops the
   query.  Granularity, transport and negative persistence read the admitted
-  units and the root's world (Astra's review R2).
+  units and the root's world.
   """
   units = source_artifact["units"]
   action = source_artifact["profile"]["name"] == lc_action.PROFILE
@@ -768,8 +938,10 @@ def _attach(q, v, source_artifact, sel, lim):
     q["excluded"] = lc_action_query.exclusions(units, sel)
     units = lc_action_query.admitted(units, q["excluded"])
   root = sel["planning_root"]
-  grain = lc_action_avail.query_granularity(units, source_artifact["profile"]["locations"]["flat"], root) if action else []
-  hit = lc_action_effects.query_transport(v["kind"], v["goal"], v["sequence"], units, source_artifact.get("dependencies"), root)
+  grain = lc_action_avail.query_granularity(units, source_artifact["profile"]["locations"]["flat"], root,
+                                            _places(source_artifact["identity"])) if action else []
+  hit = lc_action_effects.query_transport(v["kind"], v["goal"], v["sequence"], units, source_artifact.get("dependencies"), root,
+                                          type_facts(source_artifact))
   if grain:
     q["outcome"] = {"outcome": "unsupported_translation", "reasons": ["unsupported_location_granularity"],
                     "units": sorted({x for g in grain for x in g["units"]}), "pass": lc_action_avail.PASS,
@@ -794,7 +966,7 @@ def _attach(q, v, source_artifact, sel, lim):
 
 
 def _selection(query_artifact):
-  return lc_action_query.selection(query_artifact["planning_root"], query_artifact["ambient"], query_artifact["knower"])
+  return lc_action_query.selection_of(query_artifact)
 
 
 def _query_views(q, source_artifact, sel, units):
@@ -803,11 +975,12 @@ def _query_views(q, source_artifact, sel, units):
     return
   query = q["query"]
   needs = lc_action_query.backend_requirements(query, q["search"], units, source_artifact.get("dependencies"), _library(),
-                                               sel["planning_root"])
+                                               sel["planning_root"], type_facts(source_artifact))
   q["backend_requirements"] = needs
   q["passes"], q["pending_passes"] = [lc_action_query.PASS], []
+  # a requirement that only the negative polarity reads lets the query run; the answer policy decides at answer time
   missing = [n for n in needs if n["capability"] in lc_action_query.UNAVAILABLE
-             and n["capability"] not in q["backend"]["validated"]]
+             and n["capability"] not in q["backend"]["validated"] and "positive" in n.get("polarities", ["positive"])]
   if missing:
     q["outcome"] = {"outcome": "unsupported_backend_requirement",
                     "reason": lc_action_query.UNAVAILABLE[missing[0]["capability"]],
@@ -845,7 +1018,7 @@ def query_input(source_artifact, query_artifact, obligation="q", polarity="posit
   """
   check_artifact(source_artifact, SOURCE)
   check_artifact(query_artifact, QUERY)
-  _same_revision(source_artifact, query_artifact)
+  same_revision(source_artifact, query_artifact)
   if query_artifact["outcome"] or not query_artifact["obligations"]:
     raise ArtifactError("the query artifact has no runnable view: %r" % (query_artifact["outcome"] or query_artifact["pending_passes"],))
   src, libc, ordc = lc_action_query.view_records(source_artifact, _library(), query_artifact["selected_clauses"]["view"],
@@ -876,7 +1049,7 @@ def query_input(source_artifact, query_artifact, obligation="q", polarity="posit
   return out
 
 
-def _same_revision(source_artifact, query_artifact):
+def same_revision(source_artifact, query_artifact):
   if query_artifact["source"]["source_hash"] != source_artifact["hashes"]["source"]:
     raise ArtifactError("the query artifact belongs to another source")
   if query_artifact["source"]["artifact_hash"] != source_artifact["hashes"]["artifact"]:
@@ -885,11 +1058,11 @@ def _same_revision(source_artifact, query_artifact):
 
 
 # ---------------------------------------------------------------------------
-# operations that do not exist yet
+# results and the two operations
 
 
 def result(outcome, **fields):
-  """A result record.  `outcome` is an A5.3 name or `not_implemented`."""
+  """A result record.  `outcome` is a name of OUTCOMES or `not_implemented`."""
   if outcome not in OUTCOMES and outcome != NOT_IMPLEMENTED:
     raise ArtifactError("unknown outcome %r" % outcome)
   r = {"artifact": RESULT, "version": ARTIFACT_VERSION, "outcome": outcome,
@@ -899,26 +1072,44 @@ def result(outcome, **fields):
 
 
 def translate_source(source_text, profile, model_options=None):
-  """English to a source artifact.  Not implemented: no prompt variant exists."""
-  normalize_profile(profile)
-  return result(NOT_IMPLEMENTED, operation="translate_source",
-                detail="the action-aware Stage-1 and Stage-2 prompt variants do not exist; "
-                       "use compile_source with a gold or replayed translation")
+  """English to a source artifact with an action prompt bundle (`action_pipeline.translate`).
+
+  `model_options`: {"bundle", "llm", "version", "max_tokens", "think"}; the default bundle is the measured one
+  (`action_pipeline.DEFAULT_BUNDLE`).  Without the bundle's files the result is `not_implemented`.  A translation that holds a query package is
+  `translation_invalid`: a source-only operation takes no question.  A failed translation is a result record
+  with its typed outcome; a supported or unsupported translation is the source artifact.
+  """
+  prof = normalize_profile(profile)
+  import action_pipeline
+  opts = dict(model_options or {})
+  bundle = action_pipeline.load_bundle(opts.get("bundle"))
+  if bundle is None or prof["name"] != lc_action.PROFILE:
+    return result(NOT_IMPLEMENTED, operation="translate_source",
+                  detail="the action prompt bundle has missing files; use compile_source with a gold or replayed "
+                         "translation" if bundle is None else "only the action profile has a translation")
+  tr = action_pipeline.translate(source_text, bundle, opts.get("llm"), opts.get("version"), opts.get("max_tokens"),
+                                 bool(opts.get("think")))
+  if tr["status"] == "ok" and tr["queries"]:
+    return result("translation_invalid", operation="translate_source",
+                  errors=["a source-only translation holds the query package %s" % tr["queries"][0][1]])
+  if tr["status"] == "ok" or (tr["status"] == "unsupported_translation" and tr["source"] is not None
+                              and tr["source"]["support"]["status"] == "unsupported"):
+    return tr["source"]
+  if tr["status"] == "unsupported_translation":
+    return result("unsupported_translation", operation="translate_source", **tr["unsupported"])
+  return result(tr["status"], operation="translate_source", diagnostics=tr["errors"])
 
 
 def solve_query(source_artifact, query_artifact, options=None):
-  """Run a compiled query on the prover.  Not implemented: no prover adapter exists.
+  """Run a compiled query on the registered GK build and decide its answer (`action_answer.solve`).
 
-  A query artifact that already has an outcome (invalid, unsupported,
-  insufficient allowance) returns that outcome; it needs no prover.
+  `options`: {"backend": a registered build name, "limits": the adapter's limits, "ledger": a run collector}.
+  A query artifact that already has an outcome (invalid, unsupported, insufficient allowance) returns that
+  outcome without a prover.  Artifact errors are raised before any launch.
   """
-  check_artifact(source_artifact, SOURCE)
-  check_artifact(query_artifact, QUERY)
-  _same_revision(source_artifact, query_artifact)
-  if query_artifact["outcome"]:
-    o = dict(query_artifact["outcome"])
-    return result(o.pop("outcome"), operation="solve_query", **o)
-  return result(NOT_IMPLEMENTED, operation="solve_query",
-                pending_passes=list(source_artifact["pending_passes"]) + list(query_artifact["pending_passes"]),
-                detail="the prover adapter, the replay and the answer policy do not exist; the query artifact holds "
-                       "the input view and the obligations; no prover was called")
+  import action_answer
+  opts = dict(options or {})
+  bad = sorted(set(opts) - {"backend", "limits", "ledger"})
+  if bad:
+    raise ArtifactError("unknown solve_query options %s" % bad)
+  return action_answer.solve(source_artifact, query_artifact, opts.get("backend"), opts.get("limits"), opts.get("ledger"))

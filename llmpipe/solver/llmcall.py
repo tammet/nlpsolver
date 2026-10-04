@@ -127,6 +127,8 @@ def _label():
   return out
 
 _last_usage = None      # set by the provider functions, consumed by call_llm
+# the stop reasons of a response that the provider cut at its output limit
+TRUNCATED_FINISH = ("MAX_TOKENS", "max_tokens", "length", "max_output_tokens")
 
 
 def reset_call_log():
@@ -135,10 +137,14 @@ def reset_call_log():
 
 
 def _note_usage(input=None, cached_input=None, cache_write=None,
-                output=None, thinking=None):
-  """Record normalized token counts of the request just completed.
+                output=None, thinking=None, model=None, finish=None):
+  """Record normalized token counts of the request just completed, the
+  model name the provider's response states (`model_returned`) and the
+  provider's stop reason (`finish_reason`, e.g. MAX_TOKENS or max_tokens).
   Counts add up when one call_llm() makes several requests (a provider-level
-  retry, or gemini's cache-miss and truncation retries)."""
+  retry, or gemini's cache-miss and truncation retries); two different
+  returned model names are both kept, joined by " | "; the stop reason is
+  the last request's, because the returned text is the last request's."""
   global _last_usage
   if not record_calls:
     return
@@ -148,6 +154,11 @@ def _note_usage(input=None, cached_input=None, cache_write=None,
     for k, v in new.items():
       old = _last_usage.get(k)
       new[k] = v if old is None else (old if v is None else old + v)
+  old_model = (_last_usage or {}).get("model_returned")
+  model = model if isinstance(model, str) else None
+  new["model_returned"] = (old_model if model is None or model == old_model else
+                           model if old_model is None else old_model + " | " + model)
+  new["finish_reason"] = finish if isinstance(finish, str) else None
   _last_usage = new
 
 
@@ -184,6 +195,7 @@ def _usage_number(d, *path):
 
 TIMEOUT_MARKER = "llm_call_timeout"
 LIMIT_MARKER = "llm_call_limit"
+CEILING_MARKER = "run_ceiling"
 
 
 def _now():
@@ -201,6 +213,10 @@ class LlmDeadlineExceeded(Exception):
 
 class LlmCallLimitExceeded(Exception):
   """The run's total logical-call limit is already used up."""
+
+
+class LlmRunCeilingExceeded(Exception):
+  """The batch's ceiling of provider requests is used up.  Raised before the request leaves."""
 
 
 class Deadline(object):
@@ -343,6 +359,53 @@ def reset_call_limit():
     _counts[k] = 0
 
 
+# The ceilings of a whole batch (runtests -run-ceiling), across its cases and
+# across the parts of a resumed batch.  Only a runner sets it, and the runner
+# clears it when the batch ends; solve.py never sets it, and reset_call_limit
+# leaves it alone, so it limits no other call.  `logical` and `requests` are the
+# ceilings; `logical_used` and `requests_used` start at what earlier parts used.
+# A provider request is every outbound request: each HTTP retry and each Gemini
+# context-cache creation counts, and the check runs before the request leaves.
+# `on_count`, when the runner gives it, gets a copy of the budget after each
+# count and before the request leaves, so the runner's ledger holds the count
+# even when the process is killed during the request.
+_run_budget = None
+_on_count = None
+
+
+def set_run_budget(logical, requests, logical_used=0, requests_used=0, on_count=None):
+  global _run_budget, _on_count
+  _run_budget = {"logical": int(logical), "requests": int(requests),
+                 "logical_used": int(logical_used),
+                 "requests_used": int(requests_used), "refused": 0}
+  _on_count = on_count
+
+
+def clear_run_budget():
+  global _run_budget, _on_count
+  _run_budget = None
+  _on_count = None
+
+
+def run_budget():
+  """A copy of the batch's budget, or None when no batch ceiling is set."""
+  return dict(_run_budget) if _run_budget is not None else None
+
+
+def _take_request_slot(provider):
+  """Claim one outbound provider request, or raise when the batch's ceiling is used up."""
+  if _run_budget is not None:
+    if _run_budget["requests_used"] >= _run_budget["requests"]:
+      _run_budget["refused"] += 1
+      raise LlmRunCeilingExceeded(
+        "the run's ceiling of %d provider requests is used up before a %s request"
+        % (_run_budget["requests"], provider))
+    _run_budget["requests_used"] += 1
+    if _on_count is not None:
+      _on_count(dict(_run_budget))
+  _counts["provider_requests"] += 1
+
+
 def call_counts():
   out = dict(_counts)
   out["attempted"] = out["allowed"] + out["refused"]
@@ -373,7 +436,16 @@ def _take_call_slot():
     _counts["refused"] += 1
     raise LlmCallLimitExceeded(
       "this run's limit of %d logical LLM calls is used up" % limit)
+  if _run_budget is not None and _run_budget["logical_used"] >= _run_budget["logical"]:
+    _counts["refused"] += 1
+    _run_budget["refused"] += 1
+    raise LlmRunCeilingExceeded(
+      "the run's ceiling of %d logical LLM calls is used up" % _run_budget["logical"])
   _counts["allowed"] += 1
+  if _run_budget is not None:
+    _run_budget["logical_used"] += 1
+    if _on_count is not None:
+      _on_count(dict(_run_budget))
 
 
 def _call_timeout():
@@ -390,7 +462,7 @@ def _call_timeout():
   return v if v > 0 else 0
 
 
-def call_llm(sysprompt, input_text, llm=None, version=None, max_tokens=None, think=False):
+def call_llm(sysprompt, input_text, llm=None, version=None, max_tokens=None, think=False, cache_truncated=True):
   """Call the configured LLM with a system prompt and input text.
 
   llm, version, max_tokens, think override module-level configuration when given.
@@ -405,6 +477,10 @@ def call_llm(sysprompt, input_text, llm=None, version=None, max_tokens=None, thi
   cached result is only reused when every one of these is identical.
   Caching is controlled by globals.options["use_llm_cache_flag"] (default
   True) and can be disabled per-run via -nollmcache in solve.py.
+  cache_truncated=False keeps a response out of the cache when the provider
+  stopped it at its output limit (a stop reason in TRUNCATED_FINISH), so a
+  caller can treat every cached response as complete.  The stop reason is
+  known only while record_calls is on.
   """
   llm = llm or use_llm
   if llm not in SUPPORTED_PROVIDERS:
@@ -429,14 +505,15 @@ def call_llm(sysprompt, input_text, llm=None, version=None, max_tokens=None, thi
   # provider is dispatched: a refused call touches neither.
   try:
     _take_call_slot()
-  except LlmCallLimitExceeded as exc:
+  except (LlmCallLimitExceeded, LlmRunCeilingExceeded) as exc:
+    marker = CEILING_MARKER if isinstance(exc, LlmRunCeilingExceeded) else LIMIT_MARKER
     if record_calls:
       rec = {"llm": llm, "version": ver, "source": "refused", "seconds": 0.0,
-             "failed": True, "reason": LIMIT_MARKER, "logical": True,
+             "failed": True, "reason": marker, "logical": True,
              "limit": _call_limit()}
       rec.update(_label())
       call_log.append(rec)
-    return llm_error("%s: %s" % (LIMIT_MARKER, exc))
+    return llm_error("%s: %s" % (marker, exc))
 
   # --- check cache ---
   _t0 = time.time()
@@ -470,13 +547,13 @@ def call_llm(sysprompt, input_text, llm=None, version=None, max_tokens=None, thi
   _counts["live"] += 1
   _first_api_entry = [True]
 
-  def _timed_out(where):
+  def _timed_out(where, requests=0):
     """Record and report one timed-out logical call."""
     elapsed = round(deadline.elapsed(), 3)
     if record_calls:
       rec = {"llm": llm, "version": ver, "source": "api",
              "seconds": elapsed, "failed": True,
-             "logical": _first_api_entry[0],
+             "logical": _first_api_entry[0], "requests": requests,
              "reason": TIMEOUT_MARKER, "where": where,
              "timeout_seconds": budget}
       _first_api_entry[0] = False
@@ -490,6 +567,7 @@ def call_llm(sysprompt, input_text, llm=None, version=None, max_tokens=None, thi
     for attempt in range(1, empty_response_retries + 2):
       _last_usage = None
       _t0 = time.time()
+      _sent = _counts["provider_requests"]
       try:
         if deadline is not None:
           deadline.check("before attempt %d" % attempt)
@@ -508,17 +586,29 @@ def call_llm(sysprompt, input_text, llm=None, version=None, max_tokens=None, thi
         if deadline is not None:
           deadline.check("after attempt %d" % attempt)
       except LlmDeadlineExceeded as late:
-        return _timed_out(late.where)
+        return _timed_out(late.where, _counts["provider_requests"] - _sent)
       except KeyboardInterrupt:
         raise
+      except LlmRunCeilingExceeded as e:
+        # No request left for this attempt; the requests before it are recorded.
+        _log_failure(llm, ver, _t0, _first_api_entry, "api", CEILING_MARKER, e,
+                     _counts["provider_requests"] - _sent)
+        return llm_error("%s: %s" % (CEILING_MARKER, e))
       except MissingApiKeyError as e:
-        # Permanent configuration error — do not retry.
+        # Permanent configuration error — do not retry.  No request left, but the logical call is recorded.
+        _log_failure(llm, ver, _t0, _first_api_entry, "error", "missing_api_key", e,
+                     _counts["provider_requests"] - _sent)
         return llm_error(str(e))
       except Exception as e:
+        # The provider function raised: one failed attempt, recorded like any other, so the call log agrees
+        # with _counts["live"] and a stage's accounting sees the call.
+        _log_failure(llm, ver, _t0, _first_api_entry, "api", "provider_exception", e,
+                     _counts["provider_requests"] - _sent)
         return llm_error("unexpected error calling LLM: " + str(e))
       if record_calls:
         rec = {"llm": llm, "version": ver, "source": "api",
                "logical": _first_api_entry[0],
+               "requests": _counts["provider_requests"] - _sent,
                "seconds": round(time.time() - _t0, 3)}
         _first_api_entry[0] = False
         rec.update(_label())
@@ -541,10 +631,23 @@ def call_llm(sysprompt, input_text, llm=None, version=None, max_tokens=None, thi
     _deadline = outer_deadline
 
   # --- store to cache (skip None / empty — likely a transient failure) ---
-  if result is not None and result.strip():
+  truncated = (_last_usage or {}).get("finish_reason") in TRUNCATED_FINISH
+  if result is not None and result.strip() and (cache_truncated or not truncated):
     _store_llm_cached(llm, ver, max_tokens, think, sysprompt, input_text, result)
 
   return result
+
+
+def _log_failure(llm, ver, t0, first, source, reason, exc, requests=0):
+  """One call-log entry for an attempt that raised instead of returning a response."""
+  if not record_calls:
+    return
+  rec = {"llm": llm, "version": ver, "source": source, "logical": first[0], "failed": True,
+         "requests": requests, "seconds": round(time.time() - t0, 3), "reason": reason,
+         "error": str(exc)[:200]}
+  first[0] = False
+  rec.update(_label())
+  call_log.append(rec)
 
 
 def _get_llm_cached(llm, ver, max_tokens, think, sysprompt, input_text):
@@ -653,7 +756,7 @@ def _post_with_retry(host, url, body, headers, provider, deadline=None):
   rate_tries = 0
   while True:
     _check_deadline("before a %s request" % provider, deadline)
-    _counts["provider_requests"] += 1
+    _take_request_slot(provider)
     conn = http.client.HTTPSConnection(host,
                                        timeout=_http_timeout(deadline))
     try:
@@ -778,6 +881,7 @@ def _gemini_get_or_create_cache(model, sysprompt, api_key, deadline=None):
   # the context-cache request is part of the logical call, so it is inside the
   # same deadline as the generation request
   _check_deadline("before the Gemini context-cache request", deadline)
+  _take_request_slot("Gemini context-cache")
   conn = http.client.HTTPSConnection(host, timeout=_http_timeout(deadline))
   try:
     conn.request("POST", "/v1beta/cachedContents", json.dumps(body),
@@ -960,7 +1064,9 @@ def call_gemini(version, sentences, sysprompt, max_tokens, think=False,
     _note_usage(input=None if prompt is None else prompt - (gcached or 0),
                 cached_input=gcached,
                 output=_usage_number(um, "candidatesTokenCount"),
-                thinking=_usage_number(um, "thoughtsTokenCount"))
+                thinking=_usage_number(um, "thoughtsTokenCount"),
+                model=data.get("modelVersion"),
+                finish=((data.get("candidates") or [{}])[0] or {}).get("finishReason"))
     if "candidates" not in data:
       return llm_error("Gemini response has no candidates: " + str(data)), None
     cand = data["candidates"][0]
@@ -1064,7 +1170,8 @@ def call_claude(version, sentences, sysprompt, max_tokens, think=False,
               cached_input=_usage_number(u, "cache_read_input_tokens"),
               cache_write=_usage_number(u, "cache_creation_input_tokens"),
               output=_usage_number(u, "output_tokens"),
-              thinking=_usage_number(u, "output_tokens_details", "thinking_tokens"))
+              thinking=_usage_number(u, "output_tokens_details", "thinking_tokens"),
+              model=data.get("model"), finish=data.get("stop_reason"))
 
   if "content" not in data:
     return llm_error("Claude response has no content: " + str(data))
@@ -1132,13 +1239,17 @@ def call_gpt(version, sentences, sysprompt, max_tokens, think=False,
     _note_usage(input=None if gin is None else gin - (gcached or 0),
                 cached_input=gcached,
                 output=_usage_number(u, "output_tokens"),
-                thinking=_usage_number(u, "output_tokens_details", "reasoning_tokens"))
+                thinking=_usage_number(u, "output_tokens_details", "reasoning_tokens"),
+                model=data.get("model"),
+                finish=(data.get("incomplete_details") or {}).get("reason") or data.get("status"))
   else:
     gin = _usage_number(u, "prompt_tokens")
     gcached = _usage_number(u, "prompt_tokens_details", "cached_tokens")
     _note_usage(input=None if gin is None else gin - (gcached or 0),
                 cached_input=gcached,
-                output=_usage_number(u, "completion_tokens"))
+                output=_usage_number(u, "completion_tokens"),
+                model=data.get("model"),
+                finish=((data.get("choices") or [{}])[0] or {}).get("finish_reason"))
 
   if version.startswith("gpt-5"):
     if "output" not in data:
@@ -1213,7 +1324,9 @@ def call_deepseek(version, sentences, sysprompt, max_tokens, think=False,
   _note_usage(input=_usage_number(u, "prompt_cache_miss_tokens"),
               cached_input=_usage_number(u, "prompt_cache_hit_tokens"),
               output=_usage_number(u, "completion_tokens"),
-              thinking=_usage_number(u, "completion_tokens_details", "reasoning_tokens"))
+              thinking=_usage_number(u, "completion_tokens_details", "reasoning_tokens"),
+              model=data.get("model"),
+              finish=((data.get("choices") or [{}])[0] or {}).get("finish_reason"))
 
   if "choices" not in data:
     return llm_error("DeepSeek response has no 'choices': " + str(data))

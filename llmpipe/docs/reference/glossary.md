@@ -24,6 +24,31 @@ here.
 | checkpoint | a result read from one run's stage rows: initial attempt, conservative, or balanced. |
 
 
+## Terms of the action route
+
+| term | meaning |
+|---|---|
+| action route | the experimental pipeline for texts about actions and plans: its own prompts, compiler, GK profile, replay and answer forms. See [the action route](../architecture/action-route.md). |
+| route choice | the decision, before Stage 1, between the action route and the ordinary pipeline: `-actions`, `-noactions`, `-formal`, or the text classifier. |
+| action reading | the Stage-1 annotation of a unit's role: `availability`, `restriction`, `effect`, `occurrence`, or one of the four question readings. |
+| constructor | one of the five action terms: `move`, `take`, `put_on`, `put_in`, `change`. |
+| permission | a sufficient rule that an action is executable: `can` in Stage 2, `poss` in the clauses. Its reading is `availability`. |
+| denial | a rule that an action is not executable: `not can` in Stage 2, the marker `execution_denied` in the clauses. |
+| restriction | a necessary condition of an action: "only if", "unless", "requires". |
+| effect | what holds after an action: `after(ACTION, ...)` in Stage 2. An effect grants no permission. |
+| standing rule | a rule between states that holds at every situation: `state_law` in Stage 2. |
+| world | a named state of the text: `W0`, `W1`, ... |
+| situation | a world, or `$do(ACTION, S)`: the state after an action. |
+| planning root | the world that starts every action history of a question. |
+| frame | a library clause that keeps a stored fact across an action that did not write it. |
+| marker | a `changed_*` fact that an action writes; it blocks the frame of the fact it changed. |
+| obligation | one prover question of a query, with a positive and usually a negative launch. |
+| view | the clause set of a query kind: `snapshot`, `verify` or `discovery`. |
+| candidate | an accepted GK answer that may support a verdict or a plan. |
+| replay | the independent execution of a plan or a supplied sequence from the source units, without GK. |
+| backend requirement | a prover capability that a query needs, such as `negative_persistence`. |
+| `Cannot answer` | the answer for a text that the route reads but does not model. It is not an error. |
+
 ## Related documentation
 
 - [Encoding reference](../encodings/README.md)

@@ -19,12 +19,13 @@ runs one against several in parallel.
   of all three commands, with the exact argument form of each. Start here.
 - [Experimental options](experimental-options.md) — the research, ablation,
   diagnostic, legacy and compatibility controls, each with its status and its
-  principal risk. None is needed for ordinary use.
+  principal risk, and the keys, answer forms and output levels of the action
+  route. None is needed for ordinary use.
 - [Configuration](configuration.md) — how options resolve into the six stage
   keys, what the defaults are, and the settings that are module constants
   rather than command-line keys.
 - [Runtime records](runtime-records.md) — the fields a run writes into its case
-  JSON, including the per-stage rows.
+  JSON, including the per-stage rows and the action route's record.
 - [Proof output](proof-output.md) — the English proof renderer, entity naming,
   and the display modes.
 - [Glossary](glossary.md) — the terms these pages use, with the meaning they

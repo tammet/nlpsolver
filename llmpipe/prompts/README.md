@@ -1,7 +1,9 @@
 # prompts/
 
-The LLM system prompts the pipeline sends.  Every file here is either loaded
-by the code or was named on the command line by a published experiment run.
+The LLM system prompts the pipeline sends, plus explicitly labelled experimental
+variants. The action variant is documented in
+[`actions/README.md`](actions/README.md); it is assembled when a text takes
+the action route, and does not alter the ordinary files below.
 
 Superseded drafts and pinned snapshots stay on the working copy but are not
 committed; `.gitignore` lists them.  The prompt versions the two papers cite

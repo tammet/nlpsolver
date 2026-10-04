@@ -97,10 +97,6 @@ new_stage2_examples.txt
 /llmpipe/notes.md
 /llmpipe/tests/tests_folio_v2_agreed.py
 
-# action-planning experiment: two isolated modules with their own prompts and
-# case files, driven only from tools/ and imported by no pipeline module
-/llmpipe/solver/action_planning_*.py
-/llmpipe/prompts/action_planning_*/
 /llmpipe/data/
 
 # prompt snapshots that duplicate a committed file, and the rejected critic v2

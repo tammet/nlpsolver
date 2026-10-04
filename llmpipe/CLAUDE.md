@@ -66,7 +66,13 @@ python3 test.py tests/tests_core.py -llm claude
 the research options, and `configuration.md` how they resolve.  What matters
 here is what a bare command line already does.
 
-**A bare command line resolves to `-pipeline balanced`.**  It runs the initial
+**A bare command line first chooses the pipeline from the text.**  A cheap
+classifier (`solver/route_classify.py`, no model call) sends a text with a
+strong sign of actions or plans to the experimental action route
+(`docs/reference/experimental-options.md`); `-noactions` turns this off and
+`-actions` forces the route.  Every other text takes the ordinary pipeline.
+
+**The ordinary pipeline resolves to `-pipeline balanced`.**  It runs the initial
 attempt and then, while the answer is unresolved, four retry stages in order:
 `fallback_norm`, `fallback_hyp` (deterministic, no model call), `critic`, then
 `graphtrans` (one model call each).  The first definite answer stops the rest.
@@ -90,6 +96,8 @@ Output level, each including the previous:
 -details  + stage-1/2 JSON and prover input/output   -debug  + raw responses
 Every block is printed for the stage that ANSWERED, under the same headers, so
 a run with a retry prints them twice; `--- stage: NAME ---` says whose they are.
+From -logic up the input and a `=== pipeline ===` block (which pipeline, why)
+come first.  The action route follows the same levels with its own blocks.
 
 Common:
 -llm NAME / -version VER   provider and model     -seconds N   prover limit
@@ -137,9 +145,13 @@ source map rather than guessing from a name.  The groups:
 | proving and proofs | `prover.py`, `procproofs.py`, the `proof_*` modules, `entity_map.py`, `linguistics.py` |
 | retry stages | `fallback_norm.py`, `fallback_hyp.py` (no model call), `critic_pass.py` + `critic_render.py`, `graph_p0.py` + the eight `graph_*` modules, the seven `litbridge_*` modules |
 | infra and data | `globals.py`, `cache.py`, `pretty.py`, `utils.py`, generated `data_*.py` |
+| action route (experimental) | `route_classify.py`, `action_pipeline.py`, the `action_*` and `lc_action_*` modules, `axioms_action.js` |
 
 Each retry stage has an architecture page: `docs/architecture/retries.md`,
-`graph-representation.md`, `literal-bridges.md`.
+`graph-representation.md`, `literal-bridges.md`.  The action route has
+`docs/architecture/action-route.md` and its three pages (translation,
+compilation, proof search and answers), the formats in
+`docs/encodings/action-*.md`, and the module map `docs/code/action-route.md`.
 
 ### Semantic Normalization
 
@@ -197,7 +209,8 @@ prompts/stage{1,2}_checklist_full.txt
 
 The retry stages have their own directories — `prompts/critic/`,
 `prompts/graph/`, and `prompts/dynamic_alignment/` for the literal bridge,
-whose name predates the mechanism.  `prenorm_full.txt`,
+whose name predates the mechanism.  The action route's prompts are in
+`prompts/actions/` (`prompts/actions/README.md`).  `prenorm_full.txt`,
 `folio_directanswer_instructions.txt` and the two `combined_*` files serve
 their own switches.  `prompts/README.md` says which prompts the repository
 tracks and why; `docs/code/prompt-map.md` maps each file to the module and

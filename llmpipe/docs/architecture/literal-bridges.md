@@ -31,7 +31,7 @@ The machinery **never calls gk and never produces an answer**: it returns clause
 `solve.py` appends them to the clause list it already has and calls the prover again.
 A proof found then is an ordinary gk proof.
 
-Two rounds, in `_english_to_answer_once`:
+Two rounds, in `solve_retries.run_litbridge`:
 
 1. **Round 1.**  One LLM call for rules over the displayed atoms.  No rule accepted →
    nothing is added, gk is not called again, and the loop ends.
@@ -93,7 +93,7 @@ renaming, after the `$block` guard is removed).  Tautological auxiliaries are st
 ## The two code-built channels (`litbridge_procedure.EXTRAS`)
 
 Off.  `EXTRAS` is a module constant in `solver/litbridge_procedure.py`, with no CLI
-flag and no option key; `solve._run_litbridge` reads it.  Each channel adds one LLM
+flag and no option key; `solve_retries.run_litbridge` reads it.  Each channel adds one LLM
 call in round 1 in which the model does not write a rule — it only picks among pairs
 the code enumerated.
 
@@ -173,7 +173,7 @@ minimisation of the proving set, and a bounded search for a different proof.
 Off.  `MODE` is a module constant in `solver/litbridge_grader.py` — `None` off,
 else `"stated"` or `"any"` — with no CLI flag and no option key.  When a bridge round
 proves the question and `MODE` is set,
-`solve._grade_litbridge` asks the model about every invented rule the proof cites
+`solve_retries.grade_litbridge` asks the model about every invented rule the proof cites
 (`litbridge_procedure.proofs_of` → `cited_hypothesis_ids`), one call per rule,
 capped at `litbridge_grader.MAX_GRADED_RULES` (4) in citation order.  The grader
 (`solver/litbridge_grader.py`, prompt

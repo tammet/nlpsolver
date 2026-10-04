@@ -1,0 +1,92 @@
+[
+  {
+    "id": "ordinary_ability",
+    "purpose": "Authored routing contrast; no claim about a model's recognition.",
+    "authorship": "authored development example; no model response",
+    "text": "Can Ada swim?",
+    "route": "ordinary",
+    "stage1": [
+      {
+        "raw": "Can Ada swim?",
+        "units": [
+          {
+            "unit_id": "S1",
+            "text": "Can Ada 1 swim?",
+            "type": "query",
+            "entities": [{"id": "Ada 1", "type": "concrete", "category": "person"}],
+            "actions": [{"root": "swim", "mode": "capability", "roles": {"actor": "Ada 1"}}]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "how_tall",
+    "purpose": "Authored routing contrast; no claim about a model's recognition.",
+    "authorship": "authored development example; no model response",
+    "text": "How tall is the tower?",
+    "route": "ordinary",
+    "stage1": [
+      {
+        "raw": "How tall is the tower?",
+        "units": [
+          {
+            "unit_id": "S1",
+            "text": "How tall is the tower 1?",
+            "type": "query",
+            "entities": [{"id": "tower 1", "type": "concrete", "category": "artifact"}]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "reported_instruction",
+    "purpose": "Authored routing contrast; no claim about a model's recognition.",
+    "authorship": "authored development example; no model response",
+    "text": "Lea told Ann to put b on a.",
+    "route": "ordinary",
+    "stage1": [
+      {
+        "raw": "Lea told Ann to put b on a.",
+        "units": [
+          {
+            "unit_id": "S1",
+            "text": "Lea 2 told Ann 1 to put b 1 on a 2.",
+            "type": "situation",
+            "entities": [
+              {"id": "Ann 1", "type": "concrete", "category": "person"},
+              {"id": "Lea 2", "type": "concrete", "category": "person"},
+              {"id": "b 1", "type": "concrete", "category": "artifact"},
+              {"id": "a 2", "type": "concrete", "category": "artifact"}
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "bare_imperative",
+    "purpose": "Authored routing contrast; no claim about a model's recognition.",
+    "authorship": "authored development example; no model response",
+    "text": "Put b on a.",
+    "route": "diagnostic",
+    "stage1": [
+      {
+        "raw": "Put b on a.",
+        "units": [
+          {
+            "unit_id": "S1",
+            "text": "Put b 1 on a 2.",
+            "type": "situation",
+            "entities": [
+              {"id": "b 1", "type": "concrete", "category": "artifact"},
+              {"id": "a 2", "type": "concrete", "category": "artifact"}
+            ],
+            "action_issue": {"kind": "ambiguous", "text": "Put b on a.", "detail": "The directive does not distinguish execution, a plan, or a procedure step."}
+          }
+        ]
+      }
+    ]
+  }
+]

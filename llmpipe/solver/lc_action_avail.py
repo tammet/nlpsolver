@@ -1,7 +1,7 @@
 """Action profile: executability paths of source rules, denials, identity, granularity.
 
-The pass `availability_routes_identity` of the action compiler (encoding v2,
-A2.3 and A2.4 with their Revision-4 notes).  It compiles
+The pass `availability_routes_identity` of the action compiler (encoding v2).  It
+compiles
 
   availability   a source rule `... -> can(A, ACTION)`: one executability
                  path per applicability template of the action's constructor,
@@ -14,7 +14,8 @@ A2.3 and A2.4 with their Revision-4 notes).  It compiles
   identity       differ facts, both orders, for the concrete entity ids the
                  source formulas use; never for a witness or a lexical value
   granularity    one actor at two places outside a declared flat set, or a
-                 place located in a place, is unsupported_location_granularity:
+                 place located in a place (located_at, or in between two ids
+                 of the category place), is unsupported_location_granularity:
                  for the unqualified facts of a world at the source level, for
                  facts a query selection can leave out per query
 
@@ -33,9 +34,9 @@ denial marker of its action, as the library defaults are.
 
 Evidence.  An uncertain unit (@p) has the evidence e = 2p - 1 on every path
 it compiles to.  There is no helper clause: the paths of one unit are
-alternatives for one application.  The counting rule (Sol's) counts an
+alternatives for one application.  The counting rule counts an
 uncertain rule once per action application.  GK counts the evidence once per
-use in a proof, and one application reads `poss` several times (C29.Q2), so
+use in a proof, and one application reads `poss` several times (fixture c29, Q2), so
 a query that can apply an uncertain path declares shared_source_confidence
 (`lc_action_query`).
 
@@ -103,7 +104,7 @@ def _positive_variables(f, out, positive=True):
 
 
 def stated_endpoints(can, bound):
-  """Whether a movement head qualifies for the stated-endpoint path (migration plan section 4).
+  """Whether a movement head qualifies for the stated-endpoint path.
 
   The origin, the destination and the means are each a constant, or a source
   variable that a positive condition dominating this head binds; the actor
@@ -230,6 +231,14 @@ def _priorities(unit_id, formula, applies, namer):
   return [([x[1] for x in c["clause"] if x[0] == "$block"] or [None])[0] for c in clauses]
 
 
+def _refused(out, ex):
+  """The result of a unit whose formula the situation pass refuses: no clauses, the refusal as the diagnostic."""
+  out["situated"] = getattr(ex, "situated", None)
+  out["clauses"] = []
+  out["diagnostic"] = (ex.reason, str(ex), None)
+  return out
+
+
 def compile_unit(unit, namer, library):
   """Clauses of one structurally supported availability or denial unit.
 
@@ -274,10 +283,7 @@ def compile_unit(unit, namer, library):
         if f is not None:
           formulas.append((tname, f, _priorities(unit["id"], formula, applies, namer)))
   except sit.Unsupported as ex:
-    out["situated"] = getattr(ex, "situated", None)
-    out["clauses"] = []
-    out["diagnostic"] = (ex.reason, str(ex), None)
-    return out
+    return _refused(out, ex)
   records, views = [], []
   try:
     for tname, f, priorities in formulas:
@@ -299,10 +305,7 @@ def compile_unit(unit, namer, library):
       if tname:
         out["paths"].append(tname)
   except sit.Unsupported as ex:
-    out["situated"] = getattr(ex, "situated", None)
-    out["clauses"] = []
-    out["diagnostic"] = (ex.reason, str(ex), None)
-    return out
+    return _refused(out, ex)
   # one situation binder over all generated formulas of the unit
   out["situated"] = views[0] if len(views) == 1 else ["forall", sit.SIT, ["and"] + [v[2] for v in views]]
   out["clauses"] = records
@@ -342,10 +345,11 @@ def differ_clauses(artifact_units, identity):
   return out
 
 
-def _ground_locations(units, root=None):
-  """(unit id, entity, place, world, qualified) of every ground positive located_at fact of an initial description.
+def _ground_locations(units, root=None, relation="located_at", places=None):
+  """(unit id, entity, place, world, qualified) of every ground positive `relation` fact of an initial description.
 
-  With `root` only the facts of that world.
+  With `root` only the facts of that world.  With `places`, only facts whose two arguments are both in it.
+  A negated fact, a condition and a law are not asserted facts and are never read.
   """
   out = []
 
@@ -357,8 +361,9 @@ def _ground_locations(units, root=None):
     elif f[0] == "and":
       for x in f[1:]:
         walk(x, uid, world, q, positive)
-    elif f[0] == "is rel2" and f[1] == "located_at" and positive and la.is_concrete(f[2]) and la.is_concrete(f[3]):
-      out.append((uid, f[2], f[3], world, q))
+    elif f[0] == "is rel2" and f[1] == relation and positive and la.is_concrete(f[2]) and la.is_concrete(f[3]):
+      if places is None or (f[2] in places and f[3] in places):
+        out.append((uid, f[2], f[3], world, q))
 
   for u in units:
     if u["form"] == "description_initial" and u["status"] == "supported":
@@ -368,10 +373,18 @@ def _ground_locations(units, root=None):
   return out
 
 
-def _granularity(facts, flat):
-  """{"units", "unit_level", "message"} for each unsupported location structure among facts that hold together."""
+def _granularity(facts, flat, nested=()):
+  """{"units", "unit_level", "message"} for each unsupported location structure among facts that hold together.
+
+  `nested` holds in-facts between two declared places: each states a place inside a place.
+  """
   places = {p for _, _, p, _, _ in facts}
   out = []
+  for uid, x, p, w, q in nested:
+    out.append({"units": [uid], "unit_level": True,
+                "message": "%s and %s are both places, and %s is stated to be in %s: nested places need hierarchical "
+                           "location updates, which this route does not have; in is for an object in a container"
+                           % (x, p, x, p)})
   for uid, x, p, w, q in facts:
     if x in places:
       out.append({"units": [uid], "unit_level": True,
@@ -390,24 +403,27 @@ def _granularity(facts, flat):
   return out
 
 
-def location_granularity(units, flat):
+def location_granularity(units, flat, places=None):
   """Source-level diagnostics: {"units", "unit_level", "message"} for each unsupported location structure.
 
-  Location uniqueness holds only inside the declared flat set (A2.7).  One
+  Location uniqueness holds only inside the declared flat set.  One
   entity at two places that are not both in that set may be nested places, so
   it is neither a conflict nor two facts to keep: the route has no
   hierarchical location update.  A place that is itself located in a place
   states the nesting outright.  Facts are grouped by entity and world: one
-  entity at one place in W0 and at another in W1 is two facts of two worlds
-  (migration step 1b.6).  The source level reads the unqualified facts only
+  entity at one place in W0 and at another in W1 is two facts of two worlds.
+  The source level reads the unqualified facts only
   (present, no scope location, no knower): every query rooted in their world
   keeps them together.  Facts that a query selection can leave out are
-  checked per query (`query_granularity`; Astra's review R2).
+  checked per query (`query_granularity`).  `places` are
+  the ids the identity map gives the category place: an `in` fact between
+  two of them states a place inside a place, however it is spelled.
   """
-  return _granularity([f for f in _ground_locations(units) if not f[4]], flat)
+  return _granularity([f for f in _ground_locations(units) if not f[4]], flat,
+                      [f for f in _ground_locations(units, relation="in", places=places or set()) if not f[4]])
 
 
-def query_granularity(units, flat, root):
+def query_granularity(units, flat, root, places=None):
   """The location structures of one query: the root world's facts of the units its selection admits.
 
   A past fact, a fact of another knower or of another scope location is not
@@ -415,4 +431,5 @@ def query_granularity(units, flat, root):
   named knower's.  An issue among unqualified facts alone has already made
   the source unsupported, so every issue found here involves a qualified fact.
   """
-  return _granularity(_ground_locations(units, root), flat)
+  return _granularity(_ground_locations(units, root), flat,
+                      _ground_locations(units, root, relation="in", places=places or set()))

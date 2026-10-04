@@ -4,13 +4,13 @@ The last compiler pass (`query_views`).  It reads a supported source artifact
 and one validated query and produces, without a model and without a prover:
 
   the input view     which source clauses and which library clauses a prover
-                     input of this query holds (A3.3)
+                     input of this query holds
   the obligations    the prover questions of the query, each with its own
                      definition clauses; a Boolean obligation has a positive
                      and a negative question, because one GK launch answers
-                     one polarity (A3.4)
+                     one polarity
   the requirements   the backend capabilities this query needs, decided from
-                     the source dependencies and the query horizon (A6.3)
+                     the source dependencies and the query horizon
 
 Selection (encoding v2).  A query names its planning root (a declared
 world; default the last declared world), optionally an ambient location and
@@ -22,7 +22,9 @@ a fresh variable.  A fact unit leaves every view of the query, with its reason i
 query artifact's `excluded` list, when its tense is past or future
 (underspecified_temporal_root), when its location is a scope other than the
 ambient (scope_location_mismatch), or when it has a knower other than the
-query's (knower_mismatch).  A knower-relative query gives every law the
+query's (knower_mismatch).  A lexical type record of a past or future
+description (`action_route.TYPE_KINDS`) then stands in for its class fact;
+every other type record is in every view.  A knower-relative query gives every law the
 knower in place of $obj.  The query's dependency checks (negative
 persistence here, transport and location granularity in `action_route`) read
 the same selection: the units that are not excluded, and the initial facts of
@@ -33,7 +35,7 @@ effects, markers and no-inertia facts, with `?:Sit` bound to the root's
 world name, plus the library's snapshot roles bound the same way.  `verify`
 holds every source clause and every library role but reachability.
 `discovery` holds everything and the seed.  Every view holds the selected
-ordinary families (V1-core, the plan's section 6), bound to the root in a
+ordinary families (V1-core: `on` excludes `under` and `below`), bound to the root in a
 snapshot.  Clauses are selected by role and unit, never by their text.
 
 Situations.  A question or ask formula gets the root's situation in every
@@ -45,8 +47,8 @@ the final formula at the whole chain.  `executable(A)` becomes
 and no reachable fact.
 
 Nothing here decides an answer.  A positive and a negative obligation are
-related by their ids; the adapter (WP12) runs them and the answer policy
-(WP13) combines them.
+related by their ids; the adapter (`action_gk`) runs them and the answer
+policy (`action_answer`) combines them.
 """
 
 import copy
@@ -59,9 +61,7 @@ import lc_action_situate as sit
 PASS = "query_views"
 DEFQ = "$defq0"
 QUERY_L, QUERY_K = "?:Qv1", "?:Qv2"
-EXCLUSIONS = ("underspecified_temporal_root", "scope_location_mismatch", "knower_mismatch")
-# the selected ordinary view (migration plan section 6): the reviewed V1-core family, in the law pattern; the
-# layout experiment's family E (elogs/situation_context_experiment_2026_09_22/gen.py, FAMILY_E)
+# the selected ordinary view: the reviewed V1-core family, in the law pattern
 ORDINARY_FAMILIES = {"V1-core": (
   ("on_not_under", [["-is rel2", "on", "?:X", "?:Y"], ["-is rel2", "under", "?:X", "?:Y"]]),
   ("on_not_below", [["-is rel2", "on", "?:X", "?:Y"], ["-is rel2", "below", "?:X", "?:Y"]]))}
@@ -90,6 +90,11 @@ def selection(planning_root="W0", ambient=None, knower=None):
   return {"planning_root": planning_root, "ambient": ambient, "knower": knower}
 
 
+def selection_of(query_artifact):
+  """The selection that a compiled query artifact records."""
+  return selection(query_artifact["planning_root"], query_artifact["ambient"], query_artifact["knower"])
+
+
 DEFAULT = selection()
 
 
@@ -107,7 +112,7 @@ def query_context(sel=None):
 
 
 def exclusions(units, sel=None):
-  """[{unit, reason}] of the fact units this query's views leave out (migration plan sections 2, 3 and 9).
+  """[{unit, reason}] of the fact units this query's views leave out (the reasons: the module docstring, "Selection").
 
   A unit's facts are kept in the source artifact with their qualifiers; the
   query decides.  Only a unit with a context record can be excluded.
@@ -133,7 +138,7 @@ def exclusions(units, sel=None):
 def admitted(units, excluded=()):
   """The source units that a query's dependency and granularity checks read: every unit but the excluded ones.
 
-  The checks read the facts the query's views keep (Astra's review R2).  An
+  The checks read the facts the query's views keep.  An
   excluded unit leaves as a whole, as its clauses leave the views.  A
   description of another world stays: its static facts hold in every world,
   and each reader of initial fluent facts takes the facts of the planning
@@ -176,12 +181,14 @@ def source_view(artifact, view, sel=None, excluded=()):
       continue
     if r.get("unit") in gone:
       continue
+    if r.get("type_kind") == "lexical_identification" and r.get("type_unit") not in gone:
+      continue        # the unit's own clause states it; the record stands in only when the unit leaves the view
     rec = copy.deepcopy(r)
     rec["name"] = clause_name(n, r)
     if view == "snapshot":
-      rec["clause"] = lib._substitute(rec["clause"], sit.SIT, root_situation(sel))
+      rec["clause"] = sit.substitute(rec["clause"], sit.SIT, root_situation(sel))
     if sel.get("knower"):
-      rec["clause"] = lib._substitute(rec["clause"], sit.OBJ, sit.knower_term(sel["knower"]))
+      rec["clause"] = sit.substitute(rec["clause"], sit.OBJ, sit.knower_term(sel["knower"]))
     out.append(rec)
   return out
 
@@ -201,9 +208,9 @@ def ordinary_view(view, sel=None, families=SELECTED_FAMILIES):
         ctx = make(x + [sit.SIT])
         clause.append(list(x) + [ctx])
       if view == "snapshot":
-        clause = lib._substitute(clause, sit.SIT, root_situation(sel))
+        clause = sit.substitute(clause, sit.SIT, root_situation(sel))
       if sel.get("knower"):
-        clause = lib._substitute(clause, sit.OBJ, sit.knower_term(sel["knower"]))
+        clause = sit.substitute(clause, sit.OBJ, sit.knower_term(sel["knower"]))
       out.append({"name": "ordinary:%s:%s" % (fam, name), "role": "ordinary", "family": fam, "clause": clause})
   return out
 
@@ -246,7 +253,7 @@ def _strip(f):
 def situated(formula, situation):
   """The query formula with `situation` in every situation-bearing atom."""
   try:
-    return sit._situate(_strip(formula), situation)
+    return sit.situate_in(_strip(formula), situation)
   except sit.NotCompiled as e:
     raise Unsupported("unsupported_goal_form", str(e))
 
@@ -263,16 +270,16 @@ def _namer(qid):
 def _clauses(formula, qid, context):
   """Clause literal lists of a situated formula, in the query context `context`."""
   try:
-    nnf = sit._nnf(formula)
+    nnf = sit.negation_normal_form(formula)
   except sit.Unsupported as e:
     raise Unsupported("unsupported_goal_form", str(e))
-  universals = sit._collect_universals(nnf, [])
-  matrix = sit._skolemize(nnf, [], qid, _namer(qid), [])
+  universals = sit.collect_universals(nnf, [])
+  matrix = sit.skolemize(nnf, [], qid, _namer(qid), [])
   out = []
-  for clause in sit._cnf(matrix):
+  for clause in sit.conjunctive_normal_form(matrix):
     lits = []
     for x in clause:
-      y = sit._literal(x, set(universals), copy.deepcopy(context))
+      y = sit.clause_literal(x, set(universals), copy.deepcopy(context))
       if y not in lits:
         lits.append(y)
     out.append(lits)
@@ -281,7 +288,7 @@ def _clauses(formula, qid, context):
 
 def _is_ground_literal(f):
   atom = f[1] if f[0] == "not" else f
-  return sit._is_literal(f) and not _variables(atom)
+  return sit.is_literal(f) and not _variables(atom)
 
 
 def _variables(t, out=None):
@@ -308,7 +315,7 @@ def question(body, qid, tag, answer=(), extra=(), context=None):
   context = context or query_context()
   name = "query:%s:%s" % (qid, tag)
   if not answer and not extra and _is_ground_literal(body):
-    lit = sit._literal(body, set(), copy.deepcopy(context))
+    lit = sit.clause_literal(body, set(), copy.deepcopy(context))
     return {"form": "literal", "clauses": [], "question": {"@name": name, "@question": lit}}
   head = [DEFQ] + list(answer)
   f = ["implies", body, head]
@@ -412,7 +419,7 @@ def obligations(query, search, sel=None):
     out["obligations"].append(_paired("final", "final" if seq else "snapshot", final, qid, ctx,
                                       situation=chain(seq, root), requires_prefix=len(seq)))
     if seq:
-      # the one positive proof obligation of A3.4, with one shared context; the paired list above is what a verdict needs
+      # the one joint positive obligation, with one shared context; the paired list above is what a verdict needs
       out["joint_positive"] = question(["and"] + parts, qid, "joint:positive", context=ctx)
   else:
     body, witnesses = _outer_witnesses(situated(goal, sit.SIT), query.get("witnesses") or [])
@@ -463,7 +470,7 @@ def _effect_writes(units):
       continue
     for scope, conditions, action, heads in ef.effects(sit._unit_formula(u)):
       for h in heads:
-        out.append((u["id"], action, ef._atom(h), ef._sign(h), bool(conditions)))
+        out.append((u["id"], action, ef._atom(h), ef.literal_sign(h), bool(conditions)))
   return out
 
 
@@ -477,12 +484,12 @@ def _library_negative_writes(library):
     concl = [x for x in lits if lib.predicate(x) in la.FLUENTS and isinstance(sit.situation_of(x), list)]
     poss = [x for x in lits if x[0] == "-poss"]
     if concl and poss and not lib.positive(concl[0]):
-      out.append((c["name"], ef._plain(poss[0][1]), ef._plain([lib.predicate(concl[0])] + concl[0][1:-1])))
+      out.append((c["name"], ef.source_spelling(poss[0][1]), ef.source_spelling([lib.predicate(concl[0])] + concl[0][1:-1])))
   return out
 
 
 def _meets(a, b):
-  return ef._unify(ef._standardize(a, "a"), ef._standardize(b, "b"), {}) is not None
+  return ef.unify(ef.standardize_apart(a, "a"), ef.standardize_apart(b, "b"), {}) is not None
 
 
 def _class_may_hold(entity, cls, units, classes):
@@ -491,44 +498,45 @@ def _class_may_hold(entity, cls, units, classes):
     return True
   for u in units:
     if u["status"] == "supported" and u["form"] in ("description_initial", "description_static"):
-      if any(a[0] == "isa" and a[1] == cls and not la.is_concrete(a[2]) for a in ef._positive_facts(sit._unit_formula(u), [])):
+      if any(a[0] == "isa" and a[1] == cls and not la.is_concrete(a[2]) for a in ef.positive_facts(sit._unit_formula(u), [])):
         return True
   return False
 
 
-def _default_may_apply(action, units, library):
+def _default_may_apply(action, units, library, extra=()):
   """Whether a library executability default can license an action of this pattern (its class guards may hold)."""
-  classes = ef._classes(units)
+  classes = ef._classes(units, extra)
   for c in (library or {}).get("clauses", []):
     if c["role"] != "applicability_default":
       continue
-    s = ef._unify(ef._standardize(ef._plain(lib.head(c["clause"], "poss")[1]), "d"), ef._standardize(action, "a"), {})
+    s = ef.unify(ef.standardize_apart(ef.source_spelling(lib.head(c["clause"], "poss")[1]), "d"), ef.standardize_apart(action, "a"), {})
     if s is None:
       continue
-    guards = [(g[1], ef._apply(ef._standardize(ef._plain(g[2]), "d"), s)) for g in lib.literals(c["clause"]) if g[0] == "-isa"]
+    guards = [(g[1], ef.apply_bindings(ef.standardize_apart(ef.source_spelling(g[2]), "d"), s)) for g in lib.literals(c["clause"]) if g[0] == "-isa"]
     if all(_class_may_hold(t[5:] if isinstance(t, str) and t.startswith("?:a_") else t, cls, units, classes) for cls, t in guards):
       return True
   return False
 
 
-def _may_be_available(actions, units, library):
+def _may_be_available(actions, units, library, extra=()):
   """Whether an action of these patterns can have a sufficient rule: a source availability or a library default.
 
   An action without any permission is never executable, so a law about it is
   irrelevant to every plan.  This is the one relevance test of v1.
   """
   given = [t for u in units if u["status"] == "supported" and u["form"] == "availability" for t in u.get("action_terms") or []]
-  return any(_meets(a, t) for a in actions for t in given) or any(_default_may_apply(a, units, library) for a in actions)
+  return any(_meets(a, t) for a in actions for t in given) or any(_default_may_apply(a, units, library, extra)
+                                                                  for a in actions)
 
 
 def _instance(pattern, atom, lit):
   """The action pattern of a write, narrowed by the fact that its atom is the read literal."""
-  s = ef._unify(ef._standardize(atom, "w"), ef._standardize(lit, "r"), {})
-  return None if s is None else ef._apply(ef._standardize(pattern, "w"), s)
+  s = ef.unify(ef.standardize_apart(atom, "w"), ef.standardize_apart(lit, "r"), {})
+  return None if s is None else ef.apply_bindings(ef.standardize_apart(pattern, "w"), s)
 
 
 def _closure(reads, deps):
-  """Reads plus the body reads of every standing law whose head a read meets (A6.3: indirect dependencies)."""
+  """Reads plus the body reads of every standing law whose head a read meets: the indirect dependencies."""
   laws = [d for d in deps["units"] if d["form"] == "state_law"]
   out, todo = [], list(reads)
   while todo:
@@ -564,13 +572,12 @@ def _goal_reads(goal):
   return reads, actions
 
 
-def _discovery_persistence(goal, depth, units, deps, library, root):
+def _discovery_persistence(goal, depth, units, deps, library, root, extra=()):
   """The negative-persistence dependency of a discovery, or None.
 
   An established negative is an initial negative fact of the root's world or
   a negative write.  A law reads the situation before its action, the goal reads the final one.
-  The requirement applies when a transition can lie between the two
-  (REVIEW.md disposition 8):
+  The requirement applies when a transition can lie between the two:
 
                       read by a law      read by the goal
     initial negative    depth >= 2          depth >= 1
@@ -585,7 +592,8 @@ def _discovery_persistence(goal, depth, units, deps, library, root):
     + _library_negative_writes(library)
   law_reads = []
   for d in deps["units"]:
-    if d["form"] in ("availability", "denial", "restriction", "effect") and _may_be_available(d["actions"], units, library):
+    if d["form"] in ("availability", "denial", "restriction", "effect") and _may_be_available(d["actions"], units, library,
+                                                                                             extra):
       law_reads.extend((d["unit"], r["literal"], r["sign"]) for r in d["reads"] if r["dynamic"])
   goal_reads = [("goal", a, s) for a, s in _goal_reads(goal)[0]]
   hits = []
@@ -603,7 +611,7 @@ def _discovery_persistence(goal, depth, units, deps, library, root):
       for src, action, atom in written:
         # a write counts when its action, narrowed to this fact, can have a permission
         act = _instance(action, atom, lit) if depth >= need_written else None
-        if act is not None and _may_be_available([_unstandardize(act)], units, library):
+        if act is not None and _may_be_available([_unstandardize(act)], units, library, extra):
           hits.append({"read_by": who, "level": level, "literal": copy.deepcopy(lit), "established": "written",
                        "established_by": src, "needs_depth": need_written})
   return hits or None
@@ -620,9 +628,9 @@ def _step_writes(action, units, library):
   """(atom, sign, certain) of what one ground action writes: text effects and library effects."""
   out = []
   for uid, pattern, atom, sign, conditional in _effect_writes(units):
-    s = ef._unify(ef._standardize(pattern, "e"), action, {})
+    s = ef.unify(ef.standardize_apart(pattern, "e"), action, {})
     if s is not None:
-      out.append((ef._apply(ef._standardize(atom, "e"), s), sign, not conditional))
+      out.append((ef.apply_bindings(ef.standardize_apart(atom, "e"), s), sign, not conditional))
   for w in ef.library_writes(action, library):
     out.append((w["literal"], w["sign"], not w["conditional"]))
   return out
@@ -637,25 +645,27 @@ def _action_reads(action, deps):
   """
   out = []
   # an unconditional denial of this action refutes it at every situation; a carried negative adds nothing to that No
-  denied = any(d["form"] == "denial" and not d["reads"] and any(ef._unify(ef._standardize(p, "u"), action, {}) is not None
+  denied = any(d["form"] == "denial" and not d["reads"] and any(ef.unify(ef.standardize_apart(p, "u"), action, {}) is not None
                                                                 for p in d["actions"]) for d in deps["units"])
   for d in deps["units"]:
     if d["form"] not in ("availability", "denial", "restriction", "effect"):
       continue
     for pattern in d["actions"]:
-      s = ef._unify(ef._standardize(pattern, "u"), action, {})
+      s = ef.unify(ef.standardize_apart(pattern, "u"), action, {})
       if s is None:
         continue
       for r in d["reads"]:
         necessity = d["form"] == "restriction" and r["sign"] == "+"
         if r["dynamic"] and not (necessity and denied):
-          out.append((d["unit"], ef._apply(ef._standardize(r["literal"], "u"), s), r["sign"], necessity))
+          out.append((d["unit"], ef.apply_bindings(ef.standardize_apart(r["literal"], "u"), s), r["sign"], necessity))
   return out
 
 
-def _verify_persistence(goal, sequence, units, deps, library, root):
+def _verify_persistence(goal, sequence, units, deps, library, root, negated=True):
   """The negative-persistence dependency of a supplied sequence, or None.
 
+  The final formula's literals are read with both signs: its positive and its negative obligation each need one.
+  With `negated` False they are read with their own sign only, as the positive obligations read them.
   The scan is structural and decides no executability.  A read at the
   situation after step i needs a carried negative when the negative was
   established before step i (initially or by an earlier step), no certain
@@ -671,7 +681,10 @@ def _verify_persistence(goal, sequence, units, deps, library, root):
     if i:
       points.append((i, "step %d" % (i + 1), _action_reads(act, deps)))
   freads, factions = _goal_reads(goal)
-  final = [("final formula", a, s, False) for a, s in freads]
+  # a Boolean verification pairs a positive and a negative obligation: the negative one reads each final literal with
+  # the opposite sign, so a No needs the negative carried
+  final = [("final formula", a, s2, False) for a, s in freads
+           for s2 in ((s, "-" if s == "+" else "+") if negated else (s,))]
   for act in factions:
     final.extend(_action_reads(act, deps))
   points.append((len(sequence), "final formula", final))
@@ -707,13 +720,13 @@ def _shared_units(kind, sequence, units):
   One action application reads `poss` several times: the reachability step,
   every effect of the action and every frame across it.  GK counts the
   evidence of an uncertain path once per use in a proof, so one application
-  can count the source twice (checkpoint-2 decision, C29.Q2).  The backend
+  can count the source twice (fixture c29, query Q2).  The backend
   then has to count one application once: `shared_source_confidence`.
   Discovery: every uncertain path.  Verify with steps: a path whose action
   meets a step.  The declaration is conservative.  Another sufficient rule for
   the same action does not remove it: unifying action patterns does not show
   that the other rule applies, or that it covers every application a proof
-  uses (Astra's review R1, 2026-09-24).  A snapshot query is not analysed; a
+  uses.  A snapshot query is not analysed; a
   conjunction of `executable` atoms and overlapping paths have no provenance
   test yet.
   """
@@ -727,17 +740,6 @@ def _shared_units(kind, sequence, units):
   return []
 
 
-def _executables(f, out=None):
-  out = [] if out is None else out
-  if isinstance(f, list) and f:
-    if f[0] == "executable":
-      out.append(f)
-    else:
-      for x in f[1:]:
-        _executables(x, out)
-  return out
-
-
 def _hit_units(hits, units):
   """The source units of a dependency: who reads the negative and who states or writes it.  Library clauses are left out."""
   ids = {u["id"] for u in units}
@@ -748,22 +750,37 @@ def _hit_units(hits, units):
   return sorted(x for x in named if x in ids)
 
 
-def backend_requirements(query, search, units, deps, library, root="W0"):
+def backend_requirements(query, search, units, deps, library, root="W0", extra=()):
   """The backend capabilities this query needs: a list of {capability, units, detail, evidence}.
 
   `units` are the units the query's selection admits (`admitted`), `root` its
   planning root: an initial negative of another world, or of an excluded
-  unit, is no initial fact of this query.
+  unit, is no initial fact of this query.  `extra` are the (entity, class)
+  pairs of the source's type records.
+
+  A verification whose negative persistence only the negative obligation of its final formula reads gets the
+  requirement with `polarities` ["negative"]: a Yes needs no carried negative, so the query runs, and the answer
+  policy keeps a Yes and gives the typed refusal for every other answer.  Every other requirement is needed by both
+  polarities and has no `polarities` field.
   """
   out = []
   kind = query["kind"]
   if deps:
-    hits = None
+    hits, polarities = None, None
     if kind in ("plan", "reachable") and search and search["depth"] is not None:
-      hits = _discovery_persistence(query["goal"], search["depth"], units, deps, library, root)
+      hits = _discovery_persistence(query["goal"], search["depth"], units, deps, library, root, extra)
     elif kind == "verify":
       hits = _verify_persistence(query["goal"], query["sequence"], units, deps, library, root)
-    if hits:
+      if hits and not _verify_persistence(query["goal"], query["sequence"], units, deps, library, root, negated=False):
+        polarities = ["negative"]
+    if hits and polarities:
+      out.append({"capability": NEGATIVE_PERSISTENCE, "polarities": polarities,
+                  "units": _hit_units(hits, units),
+                  "detail": "the negative obligation of the final formula reads a negative fact after a transition that "
+                            "does not write it; the starting backend has no negative frame, so it would lose the fact; "
+                            "a Yes needs no carried negative",
+                  "evidence": hits})
+    elif hits:
       out.append({"capability": NEGATIVE_PERSISTENCE,
                   "units": _hit_units(hits, units),
                   "detail": "a negative fact is read after a transition that does not write it; the starting backend has no "

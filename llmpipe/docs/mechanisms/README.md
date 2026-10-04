@@ -65,6 +65,7 @@ The experiments used several kinds of material. Their differences matter.
 | EntailmentBank and EB2 | 20/21-case early cohorts and later 100-case samples | Open-world science entailment where a missing ordinary-knowledge connection is often necessary. |
 | Literal-bridge widening cohort | 165 | 80 FOLIO, 41 EntailmentBank, 25 Core, and 19 Multi-LogiEval cases, deliberately including positive and negative controls. |
 | Action-planning pilot | 20 | Travel, tools, blocks, effects, possession, reachability, and actual-versus-hypothetical action tests. |
+| Planning test set | 126 | English problems for the action route: snapshot questions, permissions, effects, supplied sequences, plans of one and several steps, step bounds, uncertainty, texts outside the profile. |
 
 The same numeric result can mean different things on these sets. A mechanism
 that invents a plausible background rule may help EntailmentBank while being
@@ -134,7 +135,8 @@ yields no definite answer.
 | bridge graders | diagnostic only | Semantic grade did not improve case-level decisions. |
 | NEEDS_CONDITION repair | experimental, not integrated | Most repaired rules remained counterexampled; large recall loss. |
 | graph-proof lifting | experimental | Produces detailed proofs in some cases, no clear net answer gain. |
-| action-planning translator | isolated experimental pipeline | Sound representation pilot; translation coverage not mature. |
+| action route for actions and plans | experimental, chosen automatically | Most planning problems answered on four models; every plan replayed; three backend capabilities missing. |
+| merged action Stage 1 for unclear texts | not adopted, removed | Fewer correct answers than the ordinary pipeline on unclear texts. |
 | multiple-model voting or proposal union | evaluation only | Models are complementary, but no reliable conflict-selection rule was found. |
 | typed-filler and role-shape projections | considered, not built | Corrected opportunity census found 12 and 0 qualifying residual records. |
 | template/operator bridge pipeline | superseded | Valuable lessons, but excessive selector and admission complexity. |

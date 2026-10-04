@@ -1,0 +1,185 @@
+ACTION-AWARE STAGE 1 — REVISION I
+
+These rules extend the preceding ordinary Stage-1 instructions. Where they
+conflict, these explicit overrides take precedence. Return the same JSON list
+of sentence packages, each with the exact original sentence in raw and its
+semantic units in units. Produce no logic and solve no planning problem.
+
+1. Keep type, add a reading
+
+Keep type real, situation, strict_rule, normal_rule or query. Do not use
+instruction or askplan as a type. Add action_reading only when appropriate:
+
+availability: a source presents an available physical operation, including
+an explicit denial of that operation. A sufficient conditional rule belongs
+here. It is completed by the physical profile, not a promise that all
+physical conditions already hold. A sentence that says who cannot do an
+operation is availability (a denial), also with a condition on who:
+"Toddlers cannot ride the ferry", "A sailor who is not certified cannot
+travel by ship".
+restriction: a necessary condition on executing an operation: only if,
+cannot unless, or requires. Preserve which action and actors it restricts.
+effect: a general statement of what an operation changes, possibly under an
+old-state condition. This does not grant permission to perform it. An effect
+needs an operation that an actor performs. A rule between two states ("If the
+jar is sealed, the jar is airtight") is no effect: it has no action_reading
+and no actions array.
+occurrence: an actual reported action, with its own local event reading.
+plan_question: asks for an action sequence achieving the full stated goal.
+reachable_question: asks whether some sequence can achieve the goal.
+executable_question: asks whether a specified operation is executable now.
+verify_question: supplies an ordered hypothetical sequence and asks about
+its execution and/or the resulting state.
+
+These are the only action_reading values. State facts need no reading. An
+ordinary skill, intention, obligation, speech act, manner or explanation
+question need not acquire one. "Birds can fly" and "Can Ada swim?" remain
+ordinary capabilities in an ordinary passage. A procedural source specifying
+available operations is different; decide from its meaning and discourse,
+not from whether a desired plan would need the operation.
+
+2. Preserve the distinctions
+
+"If red, the robot can take the block" is availability. "The robot can take
+the block only if red" is restriction. "Taking the block makes the hand
+nonempty" is effect. "The robot took the block" is occurrence. "Robo is
+holding the key" is the state relation holding: no actions array, no reading. "The robot
+should take the block" expresses advice or obligation, not availability.
+A public service or route ("A bus service goes from A to B", "There is a
+train service from A to B", "A ferry service runs from A to B") is an
+ordinary fact: no actions array and no action_reading. availability needs an
+actor the sentence names or quantifies ("Mira can travel from A to B by bus",
+"Every robot can travel from A to B"); an actor is never borrowed from another
+sentence or from the question to fill an empty slot.
+Never turn only-if into if, a negative into absence, or a possibility into
+an occurrence. Never invent a missing permission, actor, condition or effect.
+A sentence that gives a permission and then its result ("A person with the
+kettle can brew the tea; then the tea is strong") is two units: the
+permission (availability) and the effect.
+
+Choose each action's mode locally. The preceding instructions to synchronize
+modes across equal verb roots (the sentence in section 6.2 and section 6.3)
+are replaced: can press, pressed, did not press, intends to press and pressing
+changes a property retain their different local meanings.
+
+Do not move a rule or hypothetical action into a narrative successor world.
+An effect description is not an actual event. A supplied verification
+sequence is not an assertion that its steps occurred. Preserve actual events
+as occurrences even when the action compiler will report them unsupported.
+
+3. Participants, conditions and scope
+
+Use the existing actions array, natural verb root and roles. Identify actor,
+target, source, destination, location, location_prep, instrument and result
+when stated. A support or container goes in location with location_prep on or
+in; a travel means goes in instrument. Travel by a means is travel, whatever
+the verb: "take the bus" and "ride the ferry" have the means as instrument and
+no target. Do not create roles named means, support or container. Do not replace the natural verb with a formal constructor.
+Every role referencing an entity uses its existing ID. A travel means such
+as bus is a lexical value; a pan or whisk used as a tool is an entity. The
+instrument comes only from "with X" or "in X" on the action phrase itself: a
+possession condition ("If Nia has the pan, Nia can paint the fence") is no
+instrument.
+A compound such as robot hand keeps the whole compound in its ID
+("robot hand 1"); its head noun still says what it is. One entity keeps one
+ID: after "There is a delivery van", a later "the van" is delivery van 1.
+Keep negation and its scope in text, never as a role. Include the complete
+conditional in one unit. Do not add precondition/effect formula arrays.
+
+Generic participants keep generic entity IDs and scope; named participants
+keep concrete IDs. Put the IDs in normalized text, as in the ordinary examples;
+raw stays verbatim. Keep the ordinary confidence annotation conventions and
+preserve all probability words and numbers in text. The action Stage-2 variant
+handles the ordinary indefinite-article 0.99 convention. Normally is normal_rule;
+can still has mode capability, even in a normal_rule. A named actor's unqualified stated action
+rule is strict_rule; a genuine default is normal_rule. An if-rule without
+normally, usually or a probability word is strict_rule with no confidence.
+
+State rules follow one convention. A marker decides: "initially", "at the
+start" and "now" give a description of the start; "always", "at all times",
+"at every state" and "whenever" give a standing rule. Without a marker, a
+dependency between states is a standing rule ("If a sack is on the cart,
+the sack is loaded"), and a description of the scene is a description of
+the start ("Every sack on the cart is dusty", "Nothing is on any sack").
+The words if and every do not decide alone. A standing rule is strict_rule
+(normal_rule with normally); a description of the start is situation. Keep
+the marker words in text. "Every sack on the cart is dusty" does not say
+that lifting a sack removes the dust.
+
+4. Questions
+
+This first English action route accepts at most one question sentence; multiple
+independent questions receive a validation diagnostic. Formal input can already
+contain multiple queries. Keep one query unit for the entire goal, including conjunctions and shared
+participants. A plan goal may name no operation: do not invent an actions
+array for "Find a plan with b on a and c on b". "How tall?" is not a plan;
+"How did Ann arrive?" asks about an occurrence. "Can Ann eventually reach
+Tallinn?" asks reachability; "Can Ann take this bus now?" asks immediate
+executability. If the reading really cannot be resolved, report an issue.
+
+For a stated number of actions add step_bound:
+  {"comparison":"at_most","count":3}
+or {"comparison":"exactly","count":3}.
+Count is a nonnegative integer. No search default belongs in Stage 1. Zero
+is meaningful. Do not turn shortest/cheapest/fastest into at_most; unsupported
+optimization requests must be preserved as an issue.
+
+For a supplied hypothetical sequence, add action_order: "sequence" and
+list exactly its supplied actions, in order. Preserve the final question
+in text. "With no actions performed, is X ...?" is a verify_question with an
+empty actions list and no step_bound; "in exactly zero actions" on a plan or
+reachability question is its step_bound. A verify_question never has a
+step_bound. An action inside the final question is not another sequence step.
+Do not invent an ordering for an unordered conjunction or split the question.
+
+5. Context
+
+Keep pre_state/next_state for source-world references. Start with W0;
+explicit snapshots can establish later worlds in source order. A rule or
+permission without a snapshot phrase has pre_state W0, also after a later
+snapshot sentence. A query unit
+has no pre_state or next_state. It names planning_root only when the text
+selects a snapshot ("Starting from snapshot W0"); otherwise it has no world
+field at all, and the compiler selects the root. No inferred
+successor is introduced for availability, restriction, effect or verification.
+
+A qualified fact may carry context with the explicitly given entries:
+  location: the qualifying location's entity ID;
+  location_role: provenance (where the report was made) or scope (where the
+    assertion applies);
+  knower: the named viewpoint's entity ID.
+Use the existing time field for present/past/future. When time contains a
+specific expression, preserve it and use state_tense for its relative tense.
+Do not duplicate tense in context. Omit unstated entries. "Ann is in Tallinn" puts Tallinn in the assertion,
+not in context.location. Never resolve yesterday to the present or invent
+a named past snapshot. Preserve temporal or attitude meanings the simple
+record cannot express as an issue. A dated permission such as "On Monday Ann
+can travel" must retain that scope; it is not an unrestricted rule. If old
+location/mental_holder fields are present too, do not equate a mental holder
+with a knower unless the sentence actually selects that viewpoint. Conflicting
+annotations need correction.
+
+On a query use planning_root, ambient and knower only for an explicitly or
+unambiguously selected snapshot, scope location and viewpoint. No fabricated
+defaults. These select a view; they do not change the source facts.
+
+6. Do not hide unresolved procedural meaning
+
+Override the command normalization in ordinary section 3.1 for direct requests:
+"Find/Give/Show a plan ..." remains a query, never "You should find ...".
+"How can ..." is a plan question only when it asks for a sequence to a goal.
+A direct request "Find a plan to put b on a" is a plan query. Bare "Put b
+on a" may request execution, a plan, or give a procedure step. If unresolved,
+retain it and add action_issue:
+  {"kind":"ambiguous","text":"Put b on a","detail":"The request does
+    not distinguish execution, a plan, or a procedure step."}
+Use kind unsupported when the requested interpretation is clear but outside
+this first interface, such as an optimization request or a procedure that
+cannot be represented without losing scope. Keep its original content.
+An issue is metadata, not a new ASU type and not a logical assertion.
+
+An occurrence alone will stay on the ordinary route. Availability,
+restriction, effect or a planning-question reading selects the whole passage
+for action translation. Therefore annotate readings faithfully even when
+the fragment cannot execute them. Never rewrite unsupported movement,
+transfer, creation or consumption to a familiar operator merely to fit.

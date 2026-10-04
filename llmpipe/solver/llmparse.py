@@ -563,7 +563,7 @@ def parse_text(text, llm=None, version=None, tokens=None, think=None,
                stage2_corrective="", stage1_corrective="", stage1_json=None):
   """Parse English text through stage 1 (ASUs) then stage 2 (logic).
 
-  stage2_corrective -- (plan fix N1) text appended to the Stage-2 input on a
+  stage2_corrective -- text appended to the Stage-2 input on a
   downstream-error retry.  Stage 1 is unchanged and therefore served from the
   LLM cache, so only Stage 2 is actually re-called.
 
@@ -936,13 +936,9 @@ def _maybe_sanity_retry(stage_nr, input_text, parsed, raw, check_fn,
 
 # ======== JSON fixing ========
 
-def fix_json(s):
-  """Attempt to repair common JSON errors in LLM output.
-
-  Returns (fixed_string, list_of_fix_names) where list_of_fix_names is
-  non-empty if any fix was applied and the result is valid JSON, or
-  (best_attempt, None) if all fixes failed.
-  """
+def strip_fence(s):
+  """A model response without the text before its JSON and without a markdown code fence: the first two repairs of
+  `fix_json`.  Returns (text, the names of the repairs applied).  The action route uses it as well."""
   s = s.strip()
   applied = []
 
@@ -957,7 +953,6 @@ def fix_json(s):
       if m:
         s = s[m.start():]
         applied.append("stripped preamble before JSON")
-  if _ok(s): return (s, applied or None)
 
   # 1. Strip markdown code fences (```json...``` or ```...```)
   if s.startswith("```"):
@@ -968,6 +963,18 @@ def fix_json(s):
       lines = lines[:-1]
     s = "\n".join(lines).strip()
     applied.append("stripped markdown fence")
+  return s, applied
+
+
+def fix_json(s):
+  """Attempt to repair common JSON errors in LLM output.
+
+  Returns (fixed_string, list_of_fix_names) where list_of_fix_names is
+  non-empty if any fix was applied and the result is valid JSON, or
+  (best_attempt, None) if all fixes failed.
+  """
+  # 0 and 1: the preamble and the markdown fence
+  s, applied = strip_fence(s)
   if _ok(s): return (s, applied or None)
 
   # 2. Remove null / None values appearing as bare array elements

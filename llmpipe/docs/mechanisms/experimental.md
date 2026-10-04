@@ -119,58 +119,69 @@ representation.
 Provenance: graph v2 result (local archive: `memos/MEMO_2026_08_17_graph_v2_result.md`) and
 graph pipeline result (local archive: `memos/MEMO_2026_08_17_graph_pipeline_result.md`).
 
-### Specialized action-planning translation
+### The action route for texts about actions and plans
 
-**Mechanism.** This isolated pilot extends English-to-logic translation with
-actions and state changes. Stage 1 identifies entities, action roles, whether a
-sentence states applicability, an effect, or an actual occurrence, and whether
-the question asks about the actual state or a reachable state. Stage 2
-translates each sentence separately as an initial fact, applicability rule,
-effect rule, occurrence, or question. Code, not the LLM, constructs action
-terms, hypothetical successors, reachability counters, frame clauses, and GK
-syntax.
+**Mechanism.** A separate pipeline for texts about actions and plans
+([the action route](../architecture/action-route.md)). A cheap classifier
+routes a text with a strong sign of actions or plans to it. Its two model
+calls use action prompts with readings (permission, restriction, effect, plan
+question, ...). A controller checks, corrects and repairs each response. Code,
+not the model, builds the situations, the permission paths, the effects with
+their markers, the frames and the plan search ([action
+compilation](../architecture/action-compilation.md)), from a maintained library
+of five action constructors ([action library](../encodings/action-library.md)).
+GK searches for a plan as an answer term. An independent replay checks every
+plan and every supplied sequence before the route accepts it.
 
-Hypothetical applicability uses `succ(W,$do(A,W))`; `next` is reserved for an
-action that actually occurs in the narrative. Effects are separate clauses,
-including explicit negative effects. Persistence is keyed to the successor so
-one hypothetical action does not alter a sibling successor. Actual-state
-questions require an `actual(W)` condition; plan questions require
-`reachable(W,N)`. Separate partial effect laws are not merged into a single
-STRIPS schema.
+**Experiments.** The planning test set has 126 English problems in eight
+sections, from snapshot questions to plans of several steps and texts outside
+the profile. The full run of 2026-10-02 on four models, with the code frozen
+before the run, gave these numbers of correct rows:
 
-**Experiments.** A hand-written pipeline-form GK suite ran 24 fixtures: 20
-passed and four remained expected search failures. It covered two alternative
-travel plans, bounded route depth, sibling persistence, explicit deletion,
-possession transfer, a two-step blocks plan, a supplied six-step Sussman plan,
-partial effects, actual versus merely possible actions, and the ordinary
-0.10 reporting threshold. The unresolved Sussman cases were search-strategy
-give-ups, not representation failures.
+| model | correct of 126 | correctly not answered | errors |
+|---|---|---|---|
+| gemini | 113 | 11 | 9 |
+| claude | 118 | 9 | 0 |
+| gpt | 115 | 10 | 6 |
+| deepseek | 115 | 11 | 8 |
 
-The 20-case LLM translation pilot used Gemini 3.7 Flash, DeepSeek V4 Flash, and
-GPT-5.4. Frozen-run outcome accuracy was 15/20, 7/20, and 8/20; an adapter-only
-repair raised DeepSeek and GPT to 8/20 and 9/20. No compiled negative control
-produced an unexpected plan. The dominant failure was missing entity typing:
-rules required `person(Alice)` or `block(A)`, while the translation supplied
-only possession or location. Adding only human-identified entity types to the
-stored translations recovered five missed Gemini cases and ten each for
-DeepSeek and GPT. This was a diagnosis, not a corrected pipeline score.
+Among the wrong cases are five rows that the prover could not answer at the
+time: a negative fact kept across an action (three rows), a four-step tower
+beyond the search, and one three-step plan. Two repairs after the run, a guard
+in the formula check and a bracket repair before an envelope field, gave 117
+for gemini when the saved responses were replayed, and 116 for gpt with three
+new correction calls. The 17 contrast rows of
+the current prompt revision were correct on all four models.
 
-**Decision.** Retained as a separate experimental planning pipeline. It does
-not modify the normal English-to-logic path.
+The classifier was measured on every labelled text offline. Of 4,741 texts of
+the ordinary test sets, it sent none to the action route and found 192
+unclear, which take the ordinary pipeline. Of the 154 planning texts, from
+which its rules were written, it sent 145 to the action route and 9 to the
+ordinary pipeline.
 
-**Reason.** The representation successfully separates ability from actuality,
-supports partial and negative effects, and allows GK to extract plan terms.
-The LLM interface is not mature enough for wider adoption: case-wide entity
-typing, population witnesses, action-role aliases, and planning-oriented
-search still need work. Isolation prevents these temporal assumptions from
-changing ordinary static reasoning. The hand-written suite passed 20/24
-fixtures, with four declared search failures; the 20-case, three-model LLM
-pilot scored 15/20, 7/20, and 8/20 before a small adapter repair. Its dominant
-missing-type failures show that the representation evidence is stronger than
-the translation evidence.
+The route moved from an experimental GK build to the installed GK 1.0.11 with
+the planning strategy. On the gold fixtures both builds give 251 of 254 scored
+queries correct, with the same three failures. GK 1.0.11 also finds the
+three-step plan of one planning row that the experimental build did not find.
 
-Provenance: pipeline-form GK suite (local archive: `memos/MEMO_2026_08_23_action_planning_gk_x1b_result.md`)
-and LLM pilot (local archive: `memos/MEMO_2026_08_23_action_planning_x2_result.md`).
+**Decision.** Retained as an experimental pipeline, chosen automatically for
+texts with a strong sign of actions or plans. It does not change the ordinary
+pipeline.
+
+**Reason.** The route answers most planning problems on all four models, and
+the replay keeps a wrong GK plan or a wrong negative answer out of the
+results. The classifier changes no text of the ordinary test sets. The
+registered GK build lacks two capabilities: a frame for negative facts, and a
+count of one uncertain rule once per application. A question that needs the
+first is reported as `Cannot answer`; an answer that rests on the second gets
+an experimental confidence. The library also does not move a held object with
+its holder, and a question that reads such a location is reported as
+`Cannot answer`.
+
+Provenance: the full run, the repairs, the routing measurement and the GK
+build comparison (local archive:
+`memos/MEMO_2026_09_30_planning_fixes_opus.md`, sections 13, 17, 19 and 21;
+`elogs/gk_build_comparison_2026_10_03/`).
 
 ### Multiple-model portfolios and voting
 

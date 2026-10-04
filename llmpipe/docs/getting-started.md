@@ -94,6 +94,24 @@ python3 solver/solve.py -llm gemini -pipeline high-recall "Elephants are animals
 
 See [configuration](reference/configuration.md) for what each pipeline enables.
 
+## Texts about actions and plans
+
+A text with a strong sign of actions or plans goes to the experimental action
+route by itself. It answers with a plan, a verdict, or `Cannot answer` for a
+text that it does not model:
+
+```bash
+python3 solver/solve.py "Ann is in Haapsalu. There is a bus route from Haapsalu to Tallinn. How can Ann get to Tallinn?"
+# Plan: Ann goes from Haapsalu to Tallinn by bus.
+
+python3 solver/solve.py -explain -summary "Ann is in Haapsalu. There is a bus route from Haapsalu to Tallinn. How can Ann get to Tallinn?"
+```
+
+`-actions` sends any text to the action route, and `-noactions` keeps it on
+the ordinary pipeline. The route uses the same model keys and the installed
+`../gk/gk`. It checks the binary's SHA-256: another GK build gives the outcome
+`backend_unavailable`. See [the action route](architecture/action-route.md).
+
 ## Calling a model without the logic pipeline
 
 The separate `ask.py` utility sends a plain request directly to a model:

@@ -402,6 +402,53 @@ and self-matches.
 
 Provenance: canonical census (local archive: `memos/MEMO_2026_08_27_canonical_stack_census_closed.md`).
 
+## Superseded action-planning designs
+
+### The August action-planning pilot
+
+**Mechanism.** An isolated pilot of August 2026 extended the two-stage
+translation with actions. Hypothetical applicability used
+`succ(W, $do(A, W))`, `next` marked an action that actually occurred, an
+actual-state question required `actual(W)`, and a plan question required
+`reachable(W, N)`. Code built the action terms, the successors, the counters
+and the frames.
+
+**Experiments.** A hand-written GK suite of 24 fixtures passed 20; three of
+the other four were search failures and one a defect of the pipeline. A 20-case translation pilot on three models
+scored 15, 7 and 8 of 20. The main failure was missing entity types.
+
+**Decision.** Superseded by the action route ([experimental
+mechanisms](experimental.md#the-action-route-for-texts-about-actions-and-plans)).
+
+**Reason.** The current route keeps the separation of ability from actuality
+and the plan terms of the pilot. It replaces the successor relation by one
+executability predicate, `poss`, and one context term per literal, and it
+adds the permission templates, the restrictions, the replay and the typed
+answers that the pilot lacked.
+
+Provenance: the GK suite (local archive:
+`memos/august_2026/MEMO_2026_08_23_action_planning_gk_x1b_result.md`) and the
+translation pilot (local archive:
+`memos/august_2026/MEMO_2026_08_23_action_planning_x2_result.md`).
+
+### A merged Stage 1 for unclear texts
+
+**Mechanism.** A text that the classifier finds unclear went to the action
+route's Stage 1, whose prompt holds the ordinary Stage-1 prompt. When the
+annotations selected the ordinary pipeline, a copy without the action fields
+became the ordinary Stage 1.
+
+**Experiments.** On gemini, over 105 unclear texts of the ordinary test sets,
+the merged Stage 1 answered 58 correctly with 6 errors; the ordinary pipeline
+answered 66 correctly with no error. The five texts that it sent to the action
+route all ended in errors.
+
+**Decision.** Not adopted, and removed. An unclear text takes the ordinary
+pipeline.
+
+Provenance: local archive: `memos/MEMO_2026_09_30_planning_fixes_opus.md`,
+sections 18 and 19.
+
 ## Related documentation
 
 - [Mechanism index](README.md)

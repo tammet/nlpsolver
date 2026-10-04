@@ -3,14 +3,21 @@
 Entry points, option resolution, stage scheduling, stopping, the per-call
 deadline and call accounting.
 
-`solve.py` owns the run. It resolves the command line into the option dict,
-fills the six stage keys from the named configuration, calls the initial attempt,
-and then walks `PIPELINE_ORDER` while the question is unresolved.
+`solve.py` owns the run. It chooses the pipeline for the text, calls the
+initial attempt, and then walks `PIPELINE_ORDER` while the question is
+unresolved. Four modules beside it hold the rest:
+
+| module | what it holds |
+|---|---|
+| `solve_cli.py` | the command line: `parse_cmd_line`, the help text, and the resolution of the stage configuration (`apply_pipeline`, `finalize_pipeline_name`) |
+| `solve_stages.py` | the stage order, `run_stage` (the rule that runs one stage), the stage rows, their call accounting and the summary record |
+| `solve_retries.py` | the runners of the critic, the graph retranslation and the two bridges |
+| `solve_display.py` | the terminal output |
 
 ## Stage scheduling
 
-`solve.PIPELINE_ORDER` lists the initial attempt and the six retry stages in the
-order they run. `solve.STAGE_KEYS` is derived from it. A stage runs when its
+`solve_stages.PIPELINE_ORDER` lists the initial attempt and the six retry stages in the
+order they run. `solve_stages.STAGE_KEYS` is derived from it. A stage runs when its
 key is on and the question is still unresolved. The first definite answer stops
 the rest, and an earlier definite answer is never replaced.
 
@@ -62,8 +69,11 @@ stage that contains it.
 **Role:** CLI entry point and library facade.
 
 **Key function:** `english_to_answer(text, options=None, collect=None) -> str`
-Orchestrates the complete pipeline.  Calls `llmparse.parse_text`, then `rawlogic_convert`,
-then `prover.call_prover`, then `process_proof`.  Returns the answer string; on any error
+Chooses the pipeline (`route_choice`), then runs the action route or the ordinary
+pipeline.  The ordinary pipeline is `ordinary_pipeline`, which repeats
+`ordinary_attempt` on a known downstream error.  One attempt calls
+`llmparse.parse_text`, then `rawlogic_convert`, then `prover.call_prover`, then
+`process_proof`, then the retry stages.  Returns the answer string; on any error
 returns a string starting with `"Error:"` rather than raising.
 
 If `collect` is a dict, the pipeline fills it in place with the intermediate artifacts of
@@ -72,7 +82,7 @@ stored as `globals.options["_collect"]` and populated as each stage completes). 
 hook `runtests.py` uses to capture per-case JSON without re-running the pipeline; ordinary CLI
 and library callers leave it `None`.
 
-`main()` parses `sys.argv`, builds an options dict, and calls `english_to_answer`.
+`main()` parses `sys.argv` with `solve_cli.parse_cmd_line`, and calls `english_to_answer`.
 
 **CLI flags** (all optional):
 
