@@ -187,7 +187,7 @@ Exit status is 0 when every selected case passes, 1 when any case fails,
 # ======== exact-key resume records ========
 
 RESUME_SCHEMA_VERSION = 1
-ANSWER_MATCH_POLICY_VERSION = 1
+ANSWER_MATCH_POLICY_VERSION = 2
 
 
 def answer_matching_policy(single_stage=False):
@@ -199,8 +199,10 @@ def answer_matching_policy(single_stage=False):
     "strict_prepositions": bool(strict_prepositions),
     "single_stage_rendering_tolerance": bool(single_stage),
     "multiple_expected_answers": "any alternative may match",
-    "unknown_expected": "first output line begins with Unknown",
+    "unknown_expected": "the answer reads as unknown (truth_value)",
+    "truth_values": "true, false and unknown in the vocabularies of the test sets (truth_value)",
     "normalizations": [
+      "truth_value_vocabulary",
       "python_boolean_to_true_false",
       "first_output_line_only",
       "case_and_punctuation",
@@ -593,6 +595,98 @@ def run_file(path, solver_opts):
 
 # ======== result comparison ========
 
+# Truth values.  An expected answer and the pipeline's answer use different words for true, false and unknown.  The
+# expected answers come as Python booleans and None (core), as "True." / "False." / "Unknown." strings and lists of
+# them (the external sets), and in the vocabularies of the source data sets: yes/no, proved/disproved/unknown,
+# entailment/contradiction/neutral, True/False/Uncertain, not-entailed and invalid.  The answers come as "True.",
+# "Probably false.", "Likely true.", "Unknown.", with a confidence in brackets, and from the action route as "Yes."
+# and "No.".  truth_value reads one value into a set of truth classes and whether it has a confidence qualifier;
+# truth_match decides a comparison when the expected answer is a truth value.
+
+TRUE, FALSE, UNKNOWN = "true", "false", "unknown"
+
+_TRUTH_PHRASES = {
+  TRUE: ["true", "yes", "correct", "right", "proved", "proven", "provable", "entailed", "entailment", "entails",
+         "follows", "it follows", "holds", "it holds", "valid", "it is true", "that is true", "this is true",
+         "the statement is true", "the answer is yes", "a"],
+  FALSE: ["false", "no", "incorrect", "wrong", "disproved", "disproven", "refuted", "contradiction",
+          "contradicted", "contradicts", "contradictory", "not true", "it is false", "that is false",
+          "this is false", "the statement is false", "the answer is no", "does not hold", "it does not hold",
+          "b"],
+  UNKNOWN: ["unknown", "uncertain", "undetermined", "indeterminate", "undecided", "undecidable", "unclear",
+            "unsure", "neutral", "maybe", "unprovable", "not provable", "cannot be determined",
+            "can't be determined", "cannot be decided", "can't be decided", "cannot tell", "can't tell",
+            "cannot say", "can't say", "don't know", "do not know", "not known", "it is unknown",
+            "it is uncertain", "not enough information", "insufficient information", "no conclusion",
+            "undef", "m", "dk", "c"],
+}
+# labels that say only that the conclusion does not follow: false or unknown
+_TRUTH_OPEN_FALSE = ["not entailed", "not-entailed", "non-entailment", "not entailment", "invalid",
+                     "does not follow", "it does not follow", "not proved", "not proven", "unproved"]
+# qualifiers before a truth value: "Probably true", "Most likely false"; the last three mean the plain value
+_TRUTH_QUALIFIERS = ["most likely", "very likely", "highly likely", "quite likely", "more likely", "probably",
+                     "likely", "possibly", "perhaps", "presumably", "plausibly", "certainly", "definitely",
+                     "surely"]
+_TRUTH_PLAIN = {"certainly", "definitely", "surely"}
+_TRUTH_TABLE = {p: frozenset([cls]) for cls, ps in _TRUTH_PHRASES.items() for p in ps}
+_TRUTH_TABLE.update({p: frozenset([FALSE, UNKNOWN]) for p in _TRUTH_OPEN_FALSE})
+# single letters are labels only in an expected answer (A/B/C of multiple choice, M of MultiLogicNMR)
+_TRUTH_LETTERS = {"a", "b", "c", "m"}
+
+
+def _first_sentence(text):
+  """The first line without bracketed parts, cut at the end of its first sentence or clause, lower case."""
+  line = text.strip().split("\n")[0]
+  line = re.sub(r"\([^)]*\)|\[[^\]]*\]", " ", line)
+  line = re.split(r"[.;:!?](?:\s|$)|,\s", line + " ", maxsplit=1)[0]
+  return re.sub(r"\s+", " ", line).strip().strip(".,;:!?\"'").lower()
+
+
+def truth_value(value, letters=False):
+  """(classes, qualified) of a truth value, or None when `value` is no truth value.
+
+  classes is a frozenset of "true", "false" and "unknown": a label that says only that a conclusion does not
+  follow ("not entailed", "invalid") has two.  qualified says whether a confidence qualifier ("Probably") came
+  first.  Only the first sentence of the first line counts, without bracketed parts: "Yes. Plan: ..." is a yes,
+  "Unknown: no proof was found" an unknown.  "A mouse.", "No one.", "Cannot answer: ..." and "Contested." are no
+  truth values.  `letters` admits the single-letter labels, which an answer never uses.
+  """
+  if value is True:
+    return frozenset([TRUE]), False
+  if value is False:
+    return frozenset([FALSE]), False
+  if value is None:
+    return frozenset([UNKNOWN]), False
+  if not isinstance(value, str) or not value.strip():
+    return None
+  phrase = _first_sentence(value)
+  qualified = False
+  for q in _TRUTH_QUALIFIERS:
+    if phrase.startswith(q + " "):
+      phrase = phrase[len(q) + 1:].strip()
+      qualified = q not in _TRUTH_PLAIN
+      break
+  if phrase in _TRUTH_LETTERS and not letters:
+    return None
+  classes = _TRUTH_TABLE.get(phrase)
+  return (classes, qualified) if classes is not None else None
+
+
+def truth_match(expected, received, strict=False):
+  """True or False when `expected` (a value or a list of alternatives, all truth values) is a truth value; None
+  otherwise, and the texts are compared as before.  The answer must be a truth value whose classes meet the
+  expected classes.  A qualifier is ignored unless `strict`; then a qualified answer and a plain expected value (or
+  the reverse) differ."""
+  alternatives = expected if isinstance(expected, list) else [expected]
+  exp = [truth_value(e, letters=True) for e in alternatives]
+  if not exp or any(e is None for e in exp):
+    return None
+  got = truth_value(received)
+  if got is None:
+    return False
+  return any(e[0] & got[0] and (not strict or e[1] == got[1]) for e in exp)
+
+
 # Unit conversion factors to a canonical base unit, grouped by dimension.
 # Singular unit names; the parser strips a trailing plural "s".
 _UNIT_FACTORS = {
@@ -648,6 +742,10 @@ def _result_matches(expected, received, input_text="", single_stage=False):
   entity-id letters, dropped adjectives, singular/plural).  Two-stage runs leave
   it False, so their matching is completely unchanged.
   """
+  # A truth-value expected answer (True, "No.", None, "neutral", ...): the answer's truth value decides.
+  truth = truth_match(expected, received, strict_confidences)
+  if truth is not None:
+    return truth
   # Multiple acceptable answers: pass if any alternative matches.
   if isinstance(expected, list):
     return any(_result_matches_single(alt, received, input_text, single_stage) for alt in expected)

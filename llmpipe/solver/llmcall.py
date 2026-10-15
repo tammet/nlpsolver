@@ -26,6 +26,7 @@ import json
 import os
 import random
 import hashlib
+import re
 import http.client
 
 # Absolute path to llmpipe/ so secrets files are found from any working directory.
@@ -48,11 +49,35 @@ import utils
 SUPPORTED_PROVIDERS = ("gpt", "claude", "gemini", "deepseek")
 use_llm = "gemini"
 
-# Model versions
+# Model versions.  A version may name a thinking level after a colon, as in
+# "gpt-6.1-sol:low".  The provider gets the model name before the colon; the
+# whole label goes into the cache key and the call records.  The levels are
+# those of thinking_level below, plus "between_tools" for the newer Claude models.
 gptversion = "gpt-5.1"
 claudeversion = "claude-sonnet-4-6"
 geminiversion = "gemini-2.5-flash"
-deepseekversion = "deepseek-v4-flash"      # V4-flash (deepseek-chat alias was V3.2, deprecated); "deepseek-reasoner" for thinking
+deepseekversion = "deepseek-flash:none"    # V4.1 Flash, no reasoning
+
+# The defaults until 2026-10-05:
+# gptversion = "gpt-5.1"
+# claudeversion = "claude-sonnet-4-6"
+# geminiversion = "gemini-2.5-flash"
+# deepseekversion = "deepseek-v4-flash"
+
+# The candidates of the model comparison of 2026-10-05:
+# gptversion = "gpt-6.1-sol:low"
+# gptversion = "gpt-6-sol:none"
+# gptversion = "gpt-6-luna:none"
+# claudeversion = "claude-sonnet-5-5:between_tools"
+# geminiversion = "gemini-3.5-flash-lite:minimal"
+# geminiversion = "gemini-3.8-flash:low"
+# deepseekversion = "deepseek-flash:none"
+
+# Versions that the provider no longer serves under their own name.  The cache
+# still answers them; a cache miss is an error, because a live call would reach
+# a newer model.  Since 2026-09-10 deepseek-v4-flash is an alias of V4.1 Flash
+# (deepseek-flash).
+RETIRED_VERSIONS = {"deepseek-v4-flash": "deepseek-flash:none"}
 
 # New-model trial set (2026-08-04): swap these in to re-run that comparison.
 # The version-gated API compatibility code below (sonnet-5 thinking-off,
@@ -500,6 +525,10 @@ def call_llm(sysprompt, input_text, llm=None, version=None, max_tokens=None, thi
     ver = version or gptversion
 
   _check_model(llm, ver)
+  # the provider gets the model name; a level in the label applies when the
+  # caller asks for no thinking of its own
+  model, level = split_version(ver)
+  call_think = level if level and not think else think
 
   # One logical call, counted before the cache is consulted and before any
   # provider is dispatched: a refused call touches neither.
@@ -524,10 +553,19 @@ def call_llm(sysprompt, input_text, llm=None, version=None, max_tokens=None, thi
     _counts["cached"] += 1
     if record_calls:
       rec = {"llm": llm, "version": ver, "source": "cache", "logical": True,
-             "seconds": round(time.time() - _t0, 3)}
+             "seconds": round(time.time() - _t0, 3),
+             "cached_at": _llm_cached_at(llm, ver, max_tokens, think, sysprompt, input_text)}
       rec.update(_label())
       call_log.append(rec)
     return cached
+  if ver in RETIRED_VERSIONS:
+    if record_calls:
+      rec = {"llm": llm, "version": ver, "source": "refused", "seconds": 0.0,
+             "failed": True, "reason": "retired_version", "logical": True}
+      rec.update(_label())
+      call_log.append(rec)
+    return llm_error("%s is retired: the cache has no answer for this call, and a live call "
+                     "would reach another model; use %s" % (ver, RETIRED_VERSIONS[ver]))
 
   # --- call the LLM (retry on None / empty response) ---
   # All providers can return None (200-OK but missing the expected structure)
@@ -572,16 +610,16 @@ def call_llm(sysprompt, input_text, llm=None, version=None, max_tokens=None, thi
         if deadline is not None:
           deadline.check("before attempt %d" % attempt)
         if llm == "claude":
-          result = call_claude(ver, input_text, sysprompt, max_tokens,
-                               think=think)
+          result = call_claude(model, input_text, sysprompt, max_tokens,
+                               think=call_think)
         elif llm == "gemini":
-          result = call_gemini(ver, input_text, sysprompt, max_tokens,
-                               think=think)
+          result = call_gemini(model, input_text, sysprompt, max_tokens,
+                               think=call_think)
         elif llm == "deepseek":
-          result = call_deepseek(ver, input_text, sysprompt, max_tokens,
-                                 think=think)
+          result = call_deepseek(model, input_text, sysprompt, max_tokens,
+                                 think=call_think)
         else:
-          result = call_gpt(ver, input_text, sysprompt, max_tokens, think=think)
+          result = call_gpt(model, input_text, sysprompt, max_tokens, think=call_think)
         # the request may have returned just as the deadline passed
         if deadline is not None:
           deadline.check("after attempt %d" % attempt)
@@ -659,6 +697,24 @@ def _get_llm_cached(llm, ver, max_tokens, think, sysprompt, input_text):
     return _cache.get_llm_from_cache(key)
   except Exception:
     return None
+
+
+def _llm_cached_at(llm, ver, max_tokens, think, sysprompt, input_text):
+  """The time (UTC) the cached result of this call was stored, or None."""
+  if _cache is None:
+    return None
+  try:
+    key = _cache.make_llm_cache_key(llm, ver, temperature, seed, max_tokens, think, sysprompt, input_text)
+    return _cache.llm_cache_time(key)
+  except Exception:
+    return None
+
+
+def split_version(version):
+  """'gpt-6.1-sol:low' -> ('gpt-6.1-sol', 'low'); a version without a colon
+  -> (version, None)."""
+  model, _, level = (version or "").partition(":")
+  return model, level or None
 
 
 def _store_llm_cached(llm, ver, max_tokens, think, sysprompt, input_text, result):
@@ -1139,7 +1195,12 @@ def call_claude(version, sentences, sysprompt, max_tokens, think=False,
   }
   if not use_effort:                       # newer models deprecate temperature
     call["temperature"] = 1 if think else temperature
-  if think:
+  if think == "between_tools":
+    # Claude Sonnet 5.5 and later: thinking only between tool calls, and the
+    # pipeline makes none, so the reply comes without thinking
+    call["thinking"] = {"type": "between_tools"}
+    call["output_config"] = {"effort": "low"}
+  elif think:
     if use_effort:
       call["thinking"] = {"type": "adaptive"}
       call["output_config"] = {"effort": _claude_effort(think)}
@@ -1186,12 +1247,18 @@ def call_claude(version, sentences, sysprompt, max_tokens, think=False,
 
 # ======== gpt ========
 
+def _gpt_responses_api(version):
+  """GPT-5 and later models take the Responses API with a reasoning effort."""
+  m = re.match(r"gpt-(\d+)", version or "")
+  return bool(m) and int(m.group(1)) >= 5
+
+
 def call_gpt(version, sentences, sysprompt, max_tokens, think=False,
               deadline=None):
   key = _read_api_key(gpt_secrets_file, "GPT")
   if key is None: return None
 
-  if version.startswith("gpt-5"):
+  if _gpt_responses_api(version):
     url = "/v1/responses"
     messages = []
     if sysprompt:
@@ -1233,7 +1300,7 @@ def call_gpt(version, sentences, sysprompt, max_tokens, think=False,
 
   # OpenAI's input/prompt count includes the cached part; bill the remainder.
   u = data.get("usage")
-  if version.startswith("gpt-5"):
+  if _gpt_responses_api(version):
     gin = _usage_number(u, "input_tokens")
     gcached = _usage_number(u, "input_tokens_details", "cached_tokens")
     _note_usage(input=None if gin is None else gin - (gcached or 0),
@@ -1251,7 +1318,7 @@ def call_gpt(version, sentences, sysprompt, max_tokens, think=False,
                 model=data.get("model"),
                 finish=((data.get("choices") or [{}])[0] or {}).get("finish_reason"))
 
-  if version.startswith("gpt-5"):
+  if _gpt_responses_api(version):
     if "output" not in data:
       return llm_error("GPT response has no 'output'")
     for el in data["output"]:
@@ -1306,8 +1373,10 @@ def call_deepseek(version, sentences, sysprompt, max_tokens, think=False,
   # The V4 models (flash and pro) reason by default, which the pipeline does not
   # ask for and which costs ~8x the latency: switch it off unless thinking was
   # requested, as for the other providers.
-  if "-v4-" in version and not think:
+  if ("-v4-" in version or version == "deepseek-flash") and (not think or think == "none"):
     call["reasoning_effort"] = "none"
+  elif thinking_level(think) is not None:
+    call["reasoning_effort"] = think
 
   utils.debug_print("deepseek call", call, flag=calldebug)
   data = _post_with_retry("api.deepseek.com", "/v1/chat/completions",

@@ -351,6 +351,15 @@ def get_llm_from_cache(key):
   return row[0]
 
 
+def llm_cache_time(key):
+  """-> the time (UTC, "YYYY-MM-DD HH:MM:SS") the response for `key` was stored, or None."""
+  if not options.get("use_llm_cache_flag", True) or not key:
+    return None
+  row = _fetch_one("llm_cache",
+                   "select timestamp from llm_cache where keyhash=?", (key,))
+  return row[0] if row else None
+
+
 def add_llm_to_cache(key, result):
   """Store one model response.  A key another worker already wrote is kept."""
   if not options.get("use_llm_cache_flag", True):

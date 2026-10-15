@@ -63,15 +63,38 @@ N+1 is refused before the cache lookup and before any provider request.
 
 ```python
 use_llm          = "gemini"            # "gpt" | "claude" | "gemini" | "deepseek"
+gptversion       = "gpt-5.1"
 geminiversion    = "gemini-2.5-flash"
 claudeversion    = "claude-sonnet-4-6"
-deepseekversion  = "deepseek-v4-flash"
+deepseekversion  = "deepseek-flash:none"
 ```
 
-DeepSeek V4 models (`-v4-flash`, `-v4-pro`) reason by default, which the
-pipeline does not ask for and which costs roughly 8x the latency; `llmcall.py`
-therefore sends `reasoning_effort="none"` for any `-v4-` version unless
+A version may name a thinking level after a colon, as in `gpt-6.1-sol:low`.
+The provider gets the model name before the colon. The whole label is part of
+the LLM cache key and of each call record, so two levels of one model never
+share a cached response. `-version` of `solve.py` and `runtests.py` takes the
+same labels. The levels are:
+
+| provider | levels |
+|---|---|
+| GPT 5 and later | `none`, `low`, `medium`, `high` (the reasoning effort) |
+| Gemini 3 | `minimal` (up to 3.5), `low`, `medium`, `high` |
+| Claude Sonnet 5.5 and later | `between_tools`: thinking only between tool calls, effort `low`; the pipeline makes no tool calls |
+| DeepSeek | `none`, `low`, `high`, `max` |
+
+A version without a level gets the provider's non-thinking call.
+
+DeepSeek models reason by default, which the pipeline does not ask for and
+which costs roughly 8x the latency; `llmcall.py` therefore sends
+`reasoning_effort="none"` for `deepseek-flash` and any `-v4-` version unless
 thinking was requested.
+
+`llmcall.RETIRED_VERSIONS` lists the versions that the provider now serves
+under another model. The cache still answers them; a cache miss is an error
+and makes no request. `deepseek-v4-flash` is retired: since 2026-09-10 it is an
+alias of DeepSeek V4.1 Flash (`deepseek-flash`). A cache hit's call record
+holds the time the response was stored (`cached_at`), and a live call's record
+holds the model name that the provider returned (`model_returned`).
 
 Gemini 3 models also think by default and take a `thinkingLevel` enum instead
 of a token budget. None of them can turn thinking off. `gemini-3.0` to `3.5`

@@ -48,8 +48,13 @@ many failed benchmark cases.
 
 The answer matcher is permissive by design. It normalizes presentation details
 including case, punctuation, coordinated-answer order, confidence wording,
-selected prepositions, and equivalent units. Every batch case record includes
-the machine-readable policy used for its `correctness` field.
+selected prepositions, and equivalent units. When the expected answer is a
+truth value, `test.truth_match` decides. It reads true, false and unknown in the
+words of the test sets and of the pipeline: `True`, "Yes.", "proved",
+"entailment", "Probably true.", None, "neutral", "Uncertain", "not entailed".
+It ignores a confidence qualifier unless `test.py -strict` is set. Every batch
+case record includes the machine-readable policy used for its `correctness`
+field.
 
 Start small. A full pass over `tests_core.py` is 1600 cases per provider and
 makes a provider request for every case the cache does not already hold.
