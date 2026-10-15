@@ -1,0 +1,43 @@
+{
+  "id": "p01_travel",
+  "purpose": "integration regression: the September 5 travel pilot with its gold formulas reviewed under the contract",
+  "contract": ["A8.1 pilot regressions", "A2.2", "A2.4", "A3.3"],
+  "family": ["Route scope", "Queries"],
+  "input_kind": "text",
+  "text": "Ann is in Haapsalu. There is a bus service from Haapsalu to Tallinn. There is a ship service from Tallinn to Helsinki.",
+  "profile": "physical_v1",
+  "entities": {"Ann 1": "person", "Haapsalu 2": "place", "Tallinn 3": "place", "Helsinki 4": "place"},
+  "units": [
+    {"id": "S1", "text": "Ann is in Haapsalu.", "stage1": {"type": "situation", "entities": [{"id": "Ann 1", "type": "concrete", "category": "person"}, {"id": "Haapsalu 2", "type": "concrete", "category": "place"}]}, "stage2": ["@id", "S1", ["holds", "W0", ["and", ["isa", "person", "Ann 1"], ["is rel2", "located_at", "Ann 1", "Haapsalu 2"]]]], "scope": "initial", "syntax": "supported", "compile": "supported", "clauses": {"must_have": [{"role": "static", "unit": "S1", "lit": ["isa", "person", "Ann 1"], "sign": "+", "situation": "none", "note": "from the Stage-1 category, as the hand file's entity_S1 clause"}, {"role": "initial_fact", "unit": "S1", "lit": ["is rel2", "located_at", "Ann 1", "Haapsalu 2"], "sign": "+", "situation": "named"}, {"role": "distinct", "pairs": [["Haapsalu 2", "Tallinn 3"], ["Haapsalu 2", "Helsinki 4"], ["Tallinn 3", "Helsinki 4"]], "note": "both orders: six directed facts over the three places, as in travel.js; Ann is not paired there"}]}, "note": "'in' with a place-category object is located_at (A2.2)"},
+    {"id": "S2", "text": "There is a bus service from Haapsalu to Tallinn.", "stage1": {"type": "real", "entities": [{"id": "Haapsalu 2", "type": "concrete", "category": "place"}, {"id": "Tallinn 3", "type": "concrete", "category": "place"}]}, "stage2": ["@id", "S2", ["holds", "W0", ["connected", "Haapsalu 2", "Tallinn 3", "bus"]]], "scope": "static", "syntax": "supported", "compile": "supported", "clauses": {"must_have": [{"role": "static", "unit": "S2", "lit": ["connected", "Haapsalu 2", "Tallinn 3", "bus"], "sign": "+", "situation": "none"}], "must_not_have": [{"role": "static", "lit": ["connected", "Tallinn 3", "Haapsalu 2", "bus"], "note": "a service from A to B is directed (travel_reversed control)"}]}},
+    {"id": "S3", "text": "There is a ship service from Tallinn to Helsinki.", "stage1": {"type": "real", "entities": [{"id": "Tallinn 3", "type": "concrete", "category": "place"}, {"id": "Helsinki 4", "type": "concrete", "category": "place"}]}, "stage2": ["@id", "S3", ["holds", "W0", ["connected", "Tallinn 3", "Helsinki 4", "ship"]]], "scope": "static", "syntax": "supported", "compile": "supported", "clauses": {}}
+  ],
+  "queries": [
+    {"id": "Q1", "text": "How can Ann get to Helsinki?", "stage1_reading": "plan_question", "stage2": ["@id", "Q1", ["plan", ["is rel2", "located_at", "Ann 1", "Helsinki 4"]]], "view": "discovery", "seed": "s^4(0)", "expect": {"outcome": "plan_found", "plan": [["move", "Ann 1", "Haapsalu 2", "Tallinn 3", "bus"], ["move", "Ann 1", "Tallinn 3", "Helsinki 4", "ship"]], "reference_shortest_length": 2, "render": "Ann goes from Haapsalu to Tallinn by bus, then from Tallinn to Helsinki by ship", "evidence": "library default for a person with standard modes; two public connections; the hand file used depth 3 and found this plan with axioms_std.js loaded (EXAMPLES.md)"}, "backend": [], "replay": "covered"},
+    {"id": "Q2", "text": "Is Ann in Tallinn?", "stage2": ["@id", "Q2", ["question", ["is rel2", "located_at", "Ann 1", "Tallinn 3"]]], "view": "snapshot", "expect": {"answer": "Unknown", "forbidden_answers": ["Yes"], "evidence": "no unit places Ann in Tallinn at the planning root; Ann is in Tallinn only at successors. The migration harness also asks this question inside the discovery view of Q1 (a diagnostic input, not a query form: transition clauses present, laws not bound to the root); the answer must still come from the root world alone, so Yes there is a leak from a hypothetical successor"}, "backend": [], "replay": "n/a"},
+    {"id": "Q3", "text": "Is Ann in Haapsalu?", "stage2": ["@id", "Q3", ["question", ["is rel2", "located_at", "Ann 1", "Haapsalu 2"]]], "view": "snapshot", "expect": {"answer": "Yes", "evidence": "S1 at the planning root; the positive control of Q2, also asked in the diagnostic input"}, "backend": [], "replay": "n/a"}
+  ],
+  "variants": [
+    {"id": "reversed",
+     "text": "Ann is in Haapsalu. There is a bus service from Haapsalu to Tallinn. There is a ship service from Helsinki to Tallinn.",
+     "units_replace": [
+      {"id": "S3", "text": "There is a ship service from Helsinki to Tallinn.", "stage1": {"type": "real", "entities": [{"id": "Helsinki 4", "type": "concrete", "category": "place"}, {"id": "Tallinn 3", "type": "concrete", "category": "place"}]}, "stage2": ["@id", "S3", ["holds", "W0", ["connected", "Helsinki 4", "Tallinn 3", "ship"]]], "scope": "static", "syntax": "supported", "compile": "supported"}],
+     "queries": [
+      {"id": "Q1", "expect": {"outcome": "not_found", "evidence": "directed route (travel_reversed.js control)"}}]},
+    {"id": "stated_capability",
+     "text": "Ann is in Haapsalu. There is a bus service from Haapsalu to Tallinn. There is a ship service from Tallinn to Helsinki. Ann can travel by bus and by ship.",
+     "units_add": [
+      {"id": "S4", "text": "Ann can travel by bus and by ship.", "stage1": {"type": "strict_rule", "entities": [{"id": "Ann 1", "type": "concrete", "category": "person"}], "actions": [{"root": "travel", "mode": "capability", "roles": {"actor": "Ann 1", "instrument": "bus"}}, {"root": "travel", "mode": "capability", "roles": {"actor": "Ann 1", "instrument": "ship"}}], "action_reading": "availability"}, "stage2": ["@id", "S4", ["holds", "W0", ["forall", "F", ["forall", "T", ["and", ["can", "Ann 1", ["move", "Ann 1", "F", "T", "bus"]], ["can", "Ann 1", ["move", "Ann 1", "F", "T", "ship"]]]]]]], "scope": "availability", "syntax": "supported", "compile": "supported", "clauses": {"must_not_have": [{"role": "availability", "unit": "S4", "body_absent": ["connected"], "note": "no stated-endpoint path; every movement path of the unit reads connected"}]}}],
+     "queries": [
+      {"id": "Q1", "expect": {"outcome": "plan_found", "plan": [["move", "Ann 1", "Haapsalu 2", "Tallinn 3", "bus"], ["move", "Ann 1", "Tallinn 3", "Helsinki 4", "ship"]], "evidence": "travel_stated.js: the rule with universal endpoints restates the default; its paths take the public template and read connected"}}]},
+    {"id": "after_bus_not_at",
+     "queries": [
+      {"id": "Q2", "text": "After the bus, is Ann no longer in Haapsalu?", "stage1_reading": "verify_question", "stage2": ["@id", "Q2", ["verify", [["move", "Ann 1", "Haapsalu 2", "Tallinn 3", "bus"]], ["not", ["is rel2", "located_at", "Ann 1", "Haapsalu 2"]]]], "view": "verify", "expect": {"answer": "Yes", "evidence": "eff_move_not_at (travel_after_bus_not_at.js: true; the unsigned library cannot answer it)"}, "backend": [], "replay": "covered"}]}
+  ],
+  "candidates": [
+    {"id": "K1", "sequence": [["move", "Ann 1", "Haapsalu 2", "Tallinn 3", "bus"], ["move", "Ann 1", "Tallinn 3", "Helsinki 4", "ship"]], "states": [{"after": 0, "facts": ["+located_at(Ann,Haapsalu)"]}, {"after": 1, "facts": ["+located_at(Ann,Tallinn)", "-located_at(Ann,Haapsalu)"]}, {"after": 2, "facts": ["+located_at(Ann,Helsinki)", "-located_at(Ann,Tallinn)"]}], "verdict": "valid", "reason": "independent replay of the pilot plan (A8.1: verify their plans independently)"}
+  ],
+  "support": {"syntax": "supported", "compile": "supported", "backend_requirements": [], "replay_fragment": "covered"},
+  "explain": "The gold formulas match the hand translation travel.js in meaning. Differences in the compiled clauses versus the hand file are listed in PILOTS.md: the hook on the movement path (template tpl_move_public), the six differ facts over the three place ids in both orders (the same six as the hand file), the seed from the query's bound (default four instead of the hand file's three), and the $defq0 question form kept.",
+  "notes": "Hand input: fixtures/gk/travel.js (copied with provenance). Controls kept as variants: travel_reversed, travel_stated, travel_after_bus_not_at; travel_baby is c04; travel_rabbit and travel_rabbit_forest are in c19. Amended 2026-09-23 (encoding v2, step 0.5): Q2 and Q3 are the factual questions that the migration harness also asks beside the successor clauses of Q1's discovery view."
+}

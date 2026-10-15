@@ -1,0 +1,550 @@
+{
+  "id": "c02_licence_granted",
+  "purpose": "an actual licence-granting action may remove the prohibition; the signed positive write must explain it",
+  "contract": [
+    "C02",
+    "A2.5",
+    "A4.4",
+    "A5.1",
+    "A6.3"
+  ],
+  "family": [
+    "Negative state: persisted condition",
+    "Partial effects"
+  ],
+  "input_kind": "text",
+  "text": "Ann is a person. Ann is in Haapsalu. There is a bus route from Haapsalu to Tallinn. Ann is not licensed. A person who is not licensed cannot travel by bus. Ann can obtain a licence.",
+  "profile": "physical_v1",
+  "entities": {
+    "Ann 1": "person",
+    "Haapsalu 2": "place",
+    "Tallinn 3": "place"
+  },
+  "units": [
+    {
+      "id": "S1",
+      "text": "Ann is a person.",
+      "stage1": {
+        "type": "real",
+        "entities": [
+          {
+            "id": "Ann 1",
+            "type": "concrete",
+            "category": "person"
+          }
+        ]
+      },
+      "stage2": [
+        "@id",
+        "S1",
+        [
+          "holds",
+          "W0",
+          [
+            "isa",
+            "person",
+            "Ann 1"
+          ]
+        ]
+      ],
+      "scope": "static",
+      "syntax": "supported",
+      "compile": "supported",
+      "clauses": {}
+    },
+    {
+      "id": "S2",
+      "text": "Ann is in Haapsalu.",
+      "stage1": {
+        "type": "situation",
+        "entities": [
+          {
+            "id": "Ann 1",
+            "type": "concrete",
+            "category": "person"
+          },
+          {
+            "id": "Haapsalu 2",
+            "type": "concrete",
+            "category": "place"
+          }
+        ]
+      },
+      "stage2": [
+        "@id",
+        "S2",
+        [
+          "holds",
+          "W0",
+          [
+            "is rel2",
+            "located_at",
+            "Ann 1",
+            "Haapsalu 2"
+          ]
+        ]
+      ],
+      "scope": "initial",
+      "syntax": "supported",
+      "compile": "supported",
+      "clauses": {}
+    },
+    {
+      "id": "S3",
+      "text": "There is a bus route from Haapsalu to Tallinn.",
+      "stage1": {
+        "type": "real",
+        "entities": [
+          {
+            "id": "Haapsalu 2",
+            "type": "concrete",
+            "category": "place"
+          },
+          {
+            "id": "Tallinn 3",
+            "type": "concrete",
+            "category": "place"
+          }
+        ]
+      },
+      "stage2": [
+        "@id",
+        "S3",
+        [
+          "holds",
+          "W0",
+          [
+            "connected",
+            "Haapsalu 2",
+            "Tallinn 3",
+            "bus"
+          ]
+        ]
+      ],
+      "scope": "static",
+      "syntax": "supported",
+      "compile": "supported",
+      "clauses": {}
+    },
+    {
+      "id": "S4",
+      "text": "Ann is not licensed.",
+      "stage1": {
+        "type": "situation",
+        "entities": [
+          {
+            "id": "Ann 1",
+            "type": "concrete",
+            "category": "person"
+          }
+        ]
+      },
+      "stage2": [
+        "@id",
+        "S4",
+        [
+          "holds",
+          "W0",
+          [
+            "not",
+            [
+              "has property",
+              "licensed",
+              "Ann 1"
+            ]
+          ]
+        ]
+      ],
+      "scope": "initial",
+      "syntax": "supported",
+      "compile": "supported",
+      "clauses": {
+        "must_have": [
+          {
+            "role": "initial_fact",
+            "unit": "S4",
+            "lit": [
+              "has property",
+              "licensed",
+              "Ann 1"
+            ],
+            "sign": "-",
+            "situation": "named"
+          }
+        ]
+      }
+    },
+    {
+      "id": "S5",
+      "text": "A person who is not licensed cannot travel by bus.",
+      "stage1": {
+        "type": "strict_rule",
+        "entities": [
+          {
+            "id": "person",
+            "type": "generic",
+            "category": "person"
+          }
+        ],
+        "actions": [
+          {
+            "root": "travel",
+            "mode": "capability",
+            "roles": {
+              "instrument": "bus"
+            }
+          }
+        ],
+        "action_reading": "availability"
+      },
+      "stage2": [
+        "@id",
+        "S5",
+        [
+          "holds",
+          "W0",
+          [
+            "forall",
+            "X",
+            [
+              "forall",
+              "F",
+              [
+                "forall",
+                "T",
+                [
+                  "implies",
+                  [
+                    "and",
+                    [
+                      "isa",
+                      "person",
+                      "X"
+                    ],
+                    [
+                      "not",
+                      [
+                        "has property",
+                        "licensed",
+                        "X"
+                      ]
+                    ]
+                  ],
+                  [
+                    "not",
+                    [
+                      "can",
+                      "X",
+                      [
+                        "move",
+                        "X",
+                        "F",
+                        "T",
+                        "bus"
+                      ]
+                    ]
+                  ]
+                ]
+              ]
+            ]
+          ]
+        ]
+      ],
+      "scope": "denial",
+      "syntax": "supported",
+      "compile": "supported",
+      "clauses": {}
+    },
+    {
+      "id": "S6",
+      "text": "Ann can obtain a licence.",
+      "stage1": {
+        "type": "situation",
+        "entities": [
+          {
+            "id": "Ann 1",
+            "type": "concrete",
+            "category": "person"
+          }
+        ],
+        "actions": [
+          {
+            "root": "obtain",
+            "mode": "capability",
+            "roles": {
+              "target": "licence"
+            }
+          }
+        ],
+        "action_reading": "availability"
+      },
+      "stage2": [
+        "@id",
+        "S6",
+        [
+          "holds",
+          "W0",
+          [
+            "can",
+            "Ann 1",
+            [
+              "change",
+              "Ann 1",
+              "Ann 1",
+              "licensed",
+              "unspecified"
+            ]
+          ]
+        ]
+      ],
+      "scope": "availability",
+      "syntax": "supported",
+      "compile": "supported",
+      "clauses": {
+        "must_have": [
+          {
+            "role": "availability",
+            "unit": "S6",
+            "lit": [
+              "poss",
+              [
+                "change",
+                "Ann 1",
+                "Ann 1",
+                "licensed",
+                "unspecified"
+              ]
+            ],
+            "sign": "+",
+            "situation": "shared_current"
+          },
+          {
+            "role": "effect",
+            "unit": "library",
+            "lit": [
+              "has property",
+              "licensed",
+              "Ann 1"
+            ],
+            "sign": "+",
+            "situation": "successor",
+            "marker": true,
+            "note": "eff_change writes +licensed(Ann) at $do(change(Ann,Ann,licensed,unspecified),S); the signed-write metadata must record the positive write so the opposite sign stops persisting (A2.5)"
+          }
+        ]
+      }
+    }
+  ],
+  "queries": [
+    {
+      "id": "Q1",
+      "text": "How can Ann reach Tallinn?",
+      "stage1_reading": "plan_question",
+      "stage2": [
+        "@id",
+        "Q1",
+        [
+          "plan",
+          [
+            "is rel2",
+            "located_at",
+            "Ann 1",
+            "Tallinn 3"
+          ]
+        ]
+      ],
+      "view": "discovery",
+      "seed": "s^4(0)",
+      "expect": {
+        "outcome": "unsupported_backend_requirement",
+        "reason": "negative_persistence_unavailable",
+        "on_validated_backend": {
+          "outcome": "plan_found",
+          "answer": "Yes",
+          "plan": [
+            [
+              "change",
+              "Ann 1",
+              "Ann 1",
+              "licensed",
+              "unspecified"
+            ],
+            [
+              "move",
+              "Ann 1",
+              "Haapsalu 2",
+              "Tallinn 3",
+              "bus"
+            ]
+          ]
+        },
+        "evidence": "same dependency as c01: S5 is a denial that reads a negative fact, over a multi-step horizon. On a validated backend the plan is found and replays: step 1 writes +licensed(Ann), which stops the persistence of -licensed(Ann); S5 loses support at W0+1; the library default applies; step 2 is executable."
+      },
+      "backend": [
+        "negative_persistence"
+      ],
+      "replay": "covered",
+      "backend_note": "a backend with negative persistence must also validate that the signed positive write at W0+1 stops the persistence of -licensed(Ann); that is part of validating negative persistence, not a separate capability"
+    },
+    {
+      "id": "Q2",
+      "text": "After Ann obtains a licence, is Ann licensed?",
+      "stage1_reading": "verify_question",
+      "stage2": [
+        "@id",
+        "Q2",
+        [
+          "verify",
+          [
+            [
+              "change",
+              "Ann 1",
+              "Ann 1",
+              "licensed",
+              "unspecified"
+            ]
+          ],
+          [
+            "has property",
+            "licensed",
+            "Ann 1"
+          ]
+        ]
+      ],
+      "view": "verify",
+      "expect": {
+        "outcome": "verification_result",
+        "answer": "Yes",
+        "evidence": "poss(change) at W0 from S6's path (template tpl_change); +licensed(Ann) at W0+1 from eff_change. A direct effect needs no persistence."
+      },
+      "backend": [],
+      "replay": "covered"
+    },
+    {
+      "id": "Q3",
+      "text": "After Ann obtains a licence, is Ann not licensed?",
+      "stage1_reading": "verify_question",
+      "stage2": [
+        "@id",
+        "Q3",
+        [
+          "verify",
+          [
+            [
+              "change",
+              "Ann 1",
+              "Ann 1",
+              "licensed",
+              "unspecified"
+            ]
+          ],
+          [
+            "not",
+            [
+              "has property",
+              "licensed",
+              "Ann 1"
+            ]
+          ]
+        ]
+      ],
+      "view": "verify",
+      "expect": {
+        "outcome": "verification_result",
+        "answer": "No",
+        "evidence": "the positive write +licensed(Ann) at W0+1 is an explicit negation of Q after the established one-step sequence. On a backend whose negative frame propagated -licensed(Ann) to W0+1 without the add-marker the answer would be contested; this query pins that defect for such a backend.",
+        "forbidden_answers": [
+          "contested",
+          "Yes"
+        ]
+      },
+      "backend": [],
+      "replay": "covered",
+      "backend_note": "on the starting backend no negative frame exists, so -licensed(Ann) does not reach S1 and the answer is No without a further requirement; a backend with negative persistence must show the marker stopping the negative frame here, else the answer degrades to contested"
+    }
+  ],
+  "variants": [],
+  "candidates": [
+    {
+      "id": "K1",
+      "sequence": [
+        [
+          "change",
+          "Ann 1",
+          "Ann 1",
+          "licensed",
+          "unspecified"
+        ],
+        [
+          "move",
+          "Ann 1",
+          "Haapsalu 2",
+          "Tallinn 3",
+          "bus"
+        ]
+      ],
+      "states": [
+        {
+          "after": 0,
+          "facts": [
+            "+located_at(Ann,Haapsalu)",
+            "-licensed(Ann)"
+          ]
+        },
+        {
+          "after": 1,
+          "facts": [
+            "+located_at(Ann,Haapsalu)",
+            "+licensed(Ann)"
+          ],
+          "removed": [
+            "-licensed(Ann)"
+          ]
+        },
+        {
+          "after": 2,
+          "facts": [
+            "+located_at(Ann,Tallinn)",
+            "-located_at(Ann,Haapsalu)",
+            "+licensed(Ann)"
+          ]
+        }
+      ],
+      "verdict": "valid",
+      "reason": "step 1 permitted by S6; its positive write removes the opposite-sign fact; step 2 permitted by the library default with no defeater; the connection S3; the goal holds at W0+2"
+    },
+    {
+      "id": "K2",
+      "sequence": [
+        [
+          "move",
+          "Ann 1",
+          "Haapsalu 2",
+          "Tallinn 3",
+          "bus"
+        ]
+      ],
+      "states": [
+        {
+          "after": 0,
+          "facts": [
+            "-licensed(Ann)"
+          ]
+        }
+      ],
+      "verdict": "invalid",
+      "step": 1,
+      "reason": "S5 denial at W0"
+    }
+  ],
+  "support": {
+    "syntax": "supported",
+    "compile": "supported",
+    "backend_requirements": [
+      "negative_persistence for Q1"
+    ],
+    "replay_fragment": "covered"
+  },
+  "explain": "The positive control for c01. The action that removes the prohibition is a real write, not a lost fact. Two things must be visible in the compiler artifact: the positive write +licensed(Ann) in the signed-write metadata of change, and that this write, not the absence of a negative frame, is what lets S5 lose support. Q3 separates the two: with a negative frame and no add-marker, -licensed(Ann) would persist next to +licensed(Ann) and the answer would be contested instead of No.",
+  "notes": "'Obtain a licence' is change(Ann,Ann,licensed,unspecified): the actor changes its own property; nothing in A2.2 forbids X = A. The effect sentence 'After Ann obtains a licence, Ann is licensed' is deliberately absent so the write comes from the library law alone; a variant with the sentence would test duplicate removal (A4.4) and is not required here."
+}

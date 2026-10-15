@@ -196,7 +196,7 @@ def _shows_logic(options):
   return bool(o.get("show_logic_flag") or o.get("show_details_flag") or o.get("debug_print_flag"))
 
 
-_ACTION_KEYS = ("actions_flag", "plan_depth", "action_backend", "formal_flag")
+_ACTION_KEYS = ("actions_flag", "plan_depth", "action_backend", "formal_flag", "planning_summary_flag")
 _ROUTE_KEYS = _ACTION_KEYS + ("noactions_flag",)
 
 

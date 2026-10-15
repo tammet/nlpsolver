@@ -1,0 +1,42 @@
+{
+  "id": "c24_nested_places",
+  "purpose": "a city inside a country is not a physical inconsistency; a required spatial hierarchy is unsupported_location_granularity without dropping a level",
+  "contract": ["C24", "A2.2", "A2.7"],
+  "family": ["Physical consistency", "Unsupported meaning"],
+  "input_kind": "text",
+  "text": "Ann is a person. Ann is in Tallinn. Ann is in Estonia. Tallinn is in Estonia. There is a ferry from Tallinn to Helsinki.",
+  "profile": "physical_v1",
+  "entities": {"Ann 1": "person", "Tallinn 2": "place", "Estonia 3": "place", "Helsinki 4": "place", "Bob 5": "person"},
+  "units": [
+    {"id": "S1", "text": "Ann is a person.", "stage1": {"type": "real", "entities": [{"id": "Ann 1", "type": "concrete", "category": "person"}]}, "stage2": ["@id", "S1", ["holds", "W0", ["isa", "person", "Ann 1"]]], "scope": "static", "syntax": "supported", "compile": "supported", "clauses": {}},
+    {"id": "S2", "text": "Ann is in Tallinn.", "stage1": {"type": "situation", "entities": [{"id": "Ann 1", "type": "concrete", "category": "person"}, {"id": "Tallinn 2", "type": "concrete", "category": "place"}]}, "stage2": ["@id", "S2", ["holds", "W0", ["is rel2", "located_at", "Ann 1", "Tallinn 2"]]], "scope": "initial", "syntax": "supported", "compile": "supported", "clauses": {}},
+    {"id": "S3", "text": "Ann is in Estonia.", "stage1": {"type": "situation", "entities": [{"id": "Ann 1", "type": "concrete", "category": "person"}, {"id": "Estonia 3", "type": "concrete", "category": "place"}]}, "stage2": ["@id", "S3", ["holds", "W0", ["is rel2", "located_at", "Ann 1", "Estonia 3"]]], "scope": "initial", "syntax": "supported", "compile": "supported", "clauses": {}},
+    {"id": "S4", "text": "Tallinn is in Estonia.", "stage1": {"type": "situation", "entities": [{"id": "Tallinn 2", "type": "concrete", "category": "place"}, {"id": "Estonia 3", "type": "concrete", "category": "place"}]}, "stage2": ["@id", "S4", ["holds", "W0", ["is rel2", "located_at", "Tallinn 2", "Estonia 3"]]], "scope": "initial", "syntax": "supported", "compile": {"unsupported": "unsupported_location_granularity", "detail": "a located_at target (Tallinn) is itself located in another located_at target (Estonia) of the same actor: two spatial levels"}, "note": "place containment is written as located_at of a place in a place, an explicit input of this unsupported test (REVIEW.md disposition 3); it is not a general rule for English 'in' and is distinct from the physical container relation in. The compiler must detect the nesting whatever the form."},
+    {"id": "S5", "text": "There is a ferry from Tallinn to Helsinki.", "stage1": {"type": "real", "entities": [{"id": "Tallinn 2", "type": "concrete", "category": "place"}, {"id": "Helsinki 4", "type": "concrete", "category": "place"}]}, "stage2": ["@id", "S5", ["holds", "W0", ["connected", "Tallinn 2", "Helsinki 4", "ferry"]]], "scope": "static", "syntax": "supported", "compile": "supported", "note": "present in every source of this record; the base text is not trimmed to the nesting (review R4)"}
+  ],
+  "queries": [
+    {"id": "Q1", "text": "How can Ann get to Helsinki?", "stage1_reading": "plan_question", "stage2": ["@id", "Q1", ["plan", ["is rel2", "located_at", "Ann 1", "Helsinki 4"]]], "view": "discovery", "seed": "s^4(0)", "expect": {"outcome": "unsupported_translation", "reason": "unsupported_location_granularity", "units": ["S2", "S3", "S4"], "evidence": "not inconsistent_action_state (Tallinn and Estonia are not exclusive); not a plan that leaves located_at(Ann,Estonia) stale after the ferry; no level is dropped from the artifact The diagnostic has two instances: S2 and S3 place Ann at two places outside a declared flat set, and S4 places Tallinn itself in Estonia; all three units are named (WP06 review R2)."}, "backend": [], "replay": "n/a"}
+  ],
+  "variants": [
+    {"id": "flat_control",
+     "units_remove": ["S3", "S4"],
+     "queries": [
+      {"id": "Q1", "expect": {"outcome": "plan_found", "plan": [["move", "Ann 1", "Tallinn 2", "Helsinki 4", "ferry"]], "evidence": "one spatial level; the ferry route S5 and the library default"}}],
+     "text": "Ann is a person. Ann is in Tallinn. There is a ferry from Tallinn to Helsinki."},
+    {"id": "different_actors",
+     "text": "Ann is a person. Bob is a person. Ann is in Tallinn. Bob is in Estonia.",
+     "units": [
+      {"id": "S1", "text": "Ann is a person. Bob is a person. Ann is in Tallinn. Bob is in Estonia.", "stage1": {"type": "situation", "entities": [{"id": "Ann 1", "type": "concrete", "category": "person"}, {"id": "Bob 5", "type": "concrete", "category": "person"}, {"id": "Tallinn 2", "type": "concrete", "category": "place"}, {"id": "Estonia 3", "type": "concrete", "category": "place"}]}, "stage2": ["@id", "S1", ["holds", "W0", ["and", ["isa", "person", "Ann 1"], ["isa", "person", "Bob 5"], ["is rel2", "located_at", "Ann 1", "Tallinn 2"], ["is rel2", "located_at", "Bob 5", "Estonia 3"]]]], "scope": "initial", "syntax": "supported", "compile": "supported"}],
+     "queries": [
+      {"id": "Q2", "text": "Is Ann in Tallinn?", "stage2": ["@id", "Q2", ["question", ["is rel2", "located_at", "Ann 1", "Tallinn 2"]]], "view": "snapshot", "expect": {"answer": "Yes", "evidence": "no conflict: two actors; no containment stated; nothing is inferred about whether Tallinn and Estonia overlap"}, "backend": [], "replay": "n/a"}]},
+    {"id": "unstated_hierarchy",
+     "units_remove": ["S4"],
+     "queries": [
+      {"id": "Q1", "expect": {"outcome": "unsupported_translation", "reason": "unsupported_location_granularity", "units": ["S2", "S3"], "forbidden_outcomes": ["inconsistent_action_state", "plan_found"], "evidence": "one actor at two places with no declared flat set and no stated containment: the granularity diagnostic, not a conflict. Absence of the containment sentence is not evidence that Tallinn and Estonia exclude each other (review R4; c09 two_cities_undeclared is the same rule). No level is dropped."}}],
+     "text": "Ann is a person. Ann is in Tallinn. Ann is in Estonia. There is a ferry from Tallinn to Helsinki."}
+  ],
+  "candidates": [],
+  "support": {"syntax": "supported", "compile": "unsupported (base) / supported (controls)", "backend_requirements": [], "replay_fragment": "n/a"},
+  "explain": "Fable addenda point 10 with Astra's remedy: not a containment exception in the consistency check, but a granularity diagnostic when the source states two levels for one actor. The base text states the nesting, so the route reports it. The unstated_hierarchy variant records what v1 does when the nesting is not stated: the same diagnostic, because exclusivity is checked only within a declared flat set (c09). The ferry sentence is a unit in every source; the base is not trimmed.",
+  "notes": "Amended 2026-09-11 (review R4): S5 restored to the base source; unstated_hierarchy no longer expects a conflict. Amended 2026-09-20 (WP06 review R2: the base diagnostic names S2, S3 and S4)."
+}

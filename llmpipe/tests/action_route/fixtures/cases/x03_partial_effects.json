@@ -1,0 +1,716 @@
+{
+  "id": "x03_partial_effects",
+  "purpose": "conditional text effects are evaluated in the predecessor and written together; an unrelated fact is preserved; the negative write includes its marker",
+  "contract": [
+    "A2.5",
+    "A4.4",
+    "A5.1"
+  ],
+  "family": [
+    "Partial effects",
+    "Negative state: immediate effect"
+  ],
+  "input_kind": "text",
+  "text": "Ann has a lamp and a switch. The lamp is off. Ann can press the switch. If the lamp is off, after Ann presses the switch the lamp is on and not off. If the lamp is on, after Ann presses the switch the lamp is off and not on.",
+  "profile": "physical_v1",
+  "entities": {
+    "Ann 1": "person",
+    "lamp 2": "artifact",
+    "switch 3": "artifact"
+  },
+  "units": [
+    {
+      "id": "S1",
+      "text": "Ann has a lamp and a switch.",
+      "stage1": {
+        "type": "situation",
+        "entities": [
+          {
+            "id": "Ann 1",
+            "type": "concrete",
+            "category": "person"
+          },
+          {
+            "id": "lamp 2",
+            "type": "concrete",
+            "category": "artifact"
+          },
+          {
+            "id": "switch 3",
+            "type": "concrete",
+            "category": "artifact"
+          }
+        ]
+      },
+      "stage2": [
+        "@id",
+        "S1",
+        [
+          "holds",
+          "W0",
+          [
+            "and",
+            [
+              "isa",
+              "person",
+              "Ann 1"
+            ],
+            [
+              "have",
+              "Ann 1",
+              "lamp 2"
+            ],
+            [
+              "have",
+              "Ann 1",
+              "switch 3"
+            ]
+          ]
+        ]
+      ],
+      "scope": "initial",
+      "syntax": "supported",
+      "compile": "supported",
+      "clauses": {}
+    },
+    {
+      "id": "S2",
+      "text": "The lamp is off.",
+      "stage1": {
+        "type": "situation",
+        "entities": [
+          {
+            "id": "lamp 2",
+            "type": "concrete",
+            "category": "artifact"
+          }
+        ]
+      },
+      "stage2": [
+        "@id",
+        "S2",
+        [
+          "holds",
+          "W0",
+          [
+            "has property",
+            "off",
+            "lamp 2"
+          ]
+        ]
+      ],
+      "scope": "initial",
+      "syntax": "supported",
+      "compile": "supported",
+      "clauses": {}
+    },
+    {
+      "id": "S3",
+      "text": "Ann can press the switch.",
+      "stage1": {
+        "type": "situation",
+        "entities": [
+          {
+            "id": "Ann 1",
+            "type": "concrete",
+            "category": "person"
+          },
+          {
+            "id": "switch 3",
+            "type": "concrete",
+            "category": "artifact"
+          }
+        ],
+        "actions": [
+          {
+            "root": "press",
+            "mode": "capability",
+            "roles": {
+              "actor": "Ann 1",
+              "target": "switch 3"
+            }
+          }
+        ],
+        "action_reading": "availability"
+      },
+      "stage2": [
+        "@id",
+        "S3",
+        [
+          "holds",
+          "W0",
+          [
+            "can",
+            "Ann 1",
+            [
+              "change",
+              "Ann 1",
+              "switch 3",
+              "pressed",
+              "unspecified"
+            ]
+          ]
+        ]
+      ],
+      "scope": "availability",
+      "syntax": "supported",
+      "compile": "supported",
+      "clauses": {}
+    },
+    {
+      "id": "S4",
+      "text": "If the lamp is off, after Ann presses the switch the lamp is on and not off.",
+      "stage1": {
+        "type": "strict_rule",
+        "entities": [
+          {
+            "id": "lamp 2",
+            "type": "concrete",
+            "category": "artifact"
+          },
+          {
+            "id": "Ann 1",
+            "type": "concrete",
+            "category": "person"
+          },
+          {
+            "id": "switch 3",
+            "type": "concrete",
+            "category": "artifact"
+          }
+        ],
+        "actions": [
+          {
+            "root": "press",
+            "mode": "event",
+            "roles": {
+              "actor": "Ann 1",
+              "target": "switch 3"
+            }
+          }
+        ],
+        "action_reading": "effect"
+      },
+      "stage2": [
+        "@id",
+        "S4",
+        [
+          "holds",
+          "W0",
+          [
+            "implies",
+            [
+              "has property",
+              "off",
+              "lamp 2"
+            ],
+            [
+              "after",
+              [
+                "change",
+                "Ann 1",
+                "switch 3",
+                "pressed",
+                "unspecified"
+              ],
+              [
+                "and",
+                [
+                  "has property",
+                  "on",
+                  "lamp 2"
+                ],
+                [
+                  "not",
+                  [
+                    "has property",
+                    "off",
+                    "lamp 2"
+                  ]
+                ]
+              ]
+            ]
+          ]
+        ]
+      ],
+      "scope": "effect",
+      "syntax": "supported",
+      "compile": "supported",
+      "clauses": {
+        "must_have": [
+          {
+            "role": "effect",
+            "unit": "S4",
+            "lit": [
+              "has property",
+              "on",
+              "lamp 2"
+            ],
+            "sign": "+",
+            "situation": "successor",
+            "body": [
+              {
+                "lit": [
+                  "has property",
+                  "off",
+                  "lamp 2"
+                ],
+                "sign": "+",
+                "situation": "shared_current"
+              },
+              {
+                "lit": [
+                  "poss",
+                  [
+                    "change",
+                    "Ann 1",
+                    "switch 3",
+                    "pressed",
+                    "unspecified"
+                  ]
+                ],
+                "sign": "+",
+                "situation": "shared_current"
+              }
+            ]
+          },
+          {
+            "role": "effect",
+            "unit": "S4",
+            "lit": [
+              "has property",
+              "off",
+              "lamp 2"
+            ],
+            "sign": "-",
+            "situation": "successor",
+            "marker": true,
+            "body": [
+              {
+                "lit": [
+                  "has property",
+                  "off",
+                  "lamp 2"
+                ],
+                "sign": "+",
+                "situation": "shared_current"
+              }
+            ]
+          },
+          {
+            "role": "marker",
+            "unit": "S4",
+            "lit": [
+              "changed_property",
+              "off",
+              "lamp 2"
+            ],
+            "situation": "successor",
+            "body": [
+              {
+                "lit": [
+                  "has property",
+                  "off",
+                  "lamp 2"
+                ],
+                "sign": "+",
+                "situation": "shared_current"
+              }
+            ],
+            "note": "the marker is conditional like its write; an unconditional marker would be wrong (A4.4)"
+          }
+        ]
+      }
+    },
+    {
+      "id": "S5",
+      "text": "If the lamp is on, after Ann presses the switch the lamp is off and not on.",
+      "stage1": {
+        "type": "strict_rule",
+        "entities": [
+          {
+            "id": "lamp 2",
+            "type": "concrete",
+            "category": "artifact"
+          },
+          {
+            "id": "Ann 1",
+            "type": "concrete",
+            "category": "person"
+          },
+          {
+            "id": "switch 3",
+            "type": "concrete",
+            "category": "artifact"
+          }
+        ],
+        "actions": [
+          {
+            "root": "press",
+            "mode": "event",
+            "roles": {
+              "actor": "Ann 1",
+              "target": "switch 3"
+            }
+          }
+        ],
+        "action_reading": "effect"
+      },
+      "stage2": [
+        "@id",
+        "S5",
+        [
+          "holds",
+          "W0",
+          [
+            "implies",
+            [
+              "has property",
+              "on",
+              "lamp 2"
+            ],
+            [
+              "after",
+              [
+                "change",
+                "Ann 1",
+                "switch 3",
+                "pressed",
+                "unspecified"
+              ],
+              [
+                "and",
+                [
+                  "has property",
+                  "off",
+                  "lamp 2"
+                ],
+                [
+                  "not",
+                  [
+                    "has property",
+                    "on",
+                    "lamp 2"
+                  ]
+                ]
+              ]
+            ]
+          ]
+        ]
+      ],
+      "scope": "effect",
+      "syntax": "supported",
+      "compile": "supported",
+      "clauses": {}
+    }
+  ],
+  "queries": [
+    {
+      "id": "Q1",
+      "text": "After Ann presses the switch, is the lamp on?",
+      "stage1_reading": "verify_question",
+      "stage2": [
+        "@id",
+        "Q1",
+        [
+          "verify",
+          [
+            [
+              "change",
+              "Ann 1",
+              "switch 3",
+              "pressed",
+              "unspecified"
+            ]
+          ],
+          [
+            "has property",
+            "on",
+            "lamp 2"
+          ]
+        ]
+      ],
+      "view": "verify",
+      "expect": {
+        "answer": "Yes",
+        "evidence": "S4 with off(lamp) at W0"
+      },
+      "backend": [],
+      "replay": "covered"
+    },
+    {
+      "id": "Q2",
+      "text": "After Ann presses the switch, is the lamp off?",
+      "stage1_reading": "verify_question",
+      "stage2": [
+        "@id",
+        "Q2",
+        [
+          "verify",
+          [
+            [
+              "change",
+              "Ann 1",
+              "switch 3",
+              "pressed",
+              "unspecified"
+            ]
+          ],
+          [
+            "has property",
+            "off",
+            "lamp 2"
+          ]
+        ]
+      ],
+      "view": "verify",
+      "expect": {
+        "answer": "No",
+        "evidence": "S4's negative write at W0+1 with its marker; without the marker the frame would carry off(lamp) at 0.99 next to on(lamp) and the answer would be contested"
+      },
+      "backend": [],
+      "replay": "covered"
+    },
+    {
+      "id": "Q3",
+      "text": "After Ann presses the switch twice, is the lamp off?",
+      "stage1_reading": "verify_question",
+      "stage2": [
+        "@id",
+        "Q3",
+        [
+          "verify",
+          [
+            [
+              "change",
+              "Ann 1",
+              "switch 3",
+              "pressed",
+              "unspecified"
+            ],
+            [
+              "change",
+              "Ann 1",
+              "switch 3",
+              "pressed",
+              "unspecified"
+            ]
+          ],
+          [
+            "has property",
+            "off",
+            "lamp 2"
+          ]
+        ]
+      ],
+      "view": "verify",
+      "expect": {
+        "answer": "Yes",
+        "evidence": "the negative obligation of this Boolean verification reads -off(lamp) at W0+2; -off is written at step 1 and step 2 writes off only under a condition, so a No would need the negative carried, and the starting backend has none. A Yes needs no carried negative: the requirement has polarities [negative], the query runs, and the answer policy keeps the Yes and refuses every other answer. at W0 off(lamp) holds and on(lamp) is unknown (no fact); S4's condition is true and S5's is not established, so only S4 applies at step 1: on(lamp) written, off(lamp) removed with a marker. At W0+1 on(lamp) holds and -off(lamp) is explicit, so at step 2 only S5 applies. Each effect sees the predecessor only: S5 does not read S4's write in the same step (A5.1). Not established is not false: S5 does not apply at step 1 because its condition lacks positive support, not because on(lamp) was refuted."
+      },
+      "backend": [
+        "negative_persistence"
+      ],
+      "replay": "covered"
+    },
+    {
+      "id": "Q4",
+      "text": "After Ann presses the switch, does Ann have the lamp?",
+      "stage1_reading": "verify_question",
+      "stage2": [
+        "@id",
+        "Q4",
+        [
+          "verify",
+          [
+            [
+              "change",
+              "Ann 1",
+              "switch 3",
+              "pressed",
+              "unspecified"
+            ]
+          ],
+          [
+            "have",
+            "Ann 1",
+            "lamp 2"
+          ]
+        ]
+      ],
+      "view": "verify",
+      "expect": {
+        "answer": "Yes",
+        "confidence": 0.99,
+        "evidence": "unrelated fact preserved by frame_have"
+      },
+      "backend": [],
+      "replay": "covered"
+    }
+  ],
+  "variants": [
+    {
+      "id": "lamp_on",
+      "text": "Ann has a lamp and a switch. The lamp is on. The lamp is not off. Ann can press the switch. If the lamp is off, after Ann presses the switch the lamp is on and not off. If the lamp is on, after Ann presses the switch the lamp is off and not on.",
+      "units_replace": [
+        {
+          "id": "S2",
+          "text": "The lamp is on. The lamp is not off.",
+          "stage1": {
+            "type": "situation",
+            "entities": [
+              {
+                "id": "lamp 2",
+                "type": "concrete",
+                "category": "artifact"
+              }
+            ]
+          },
+          "stage2": [
+            "@id",
+            "S2",
+            [
+              "holds",
+              "W0",
+              [
+                "and",
+                [
+                  "has property",
+                  "on",
+                  "lamp 2"
+                ],
+                [
+                  "not",
+                  [
+                    "has property",
+                    "off",
+                    "lamp 2"
+                  ]
+                ]
+              ]
+            ]
+          ],
+          "scope": "initial",
+          "syntax": "supported",
+          "compile": "supported"
+        }
+      ],
+      "queries": [
+        {
+          "id": "Q1",
+          "expect": {
+            "answer": "No",
+            "evidence": "S5's condition on(lamp) at W0 is true; its negative write -on(lamp) at W0+1 with the marker; S4's condition off(lamp) at W0 is explicitly false, so S4 does not apply"
+          }
+        },
+        {
+          "id": "Q2",
+          "expect": {
+            "answer": "Yes",
+            "evidence": "the negative obligation reads -off(lamp) at W0+1; the initial -off is carried across a step that writes off only under a condition, so a No would need the negative carried; a Yes does not, and the query runs. S5 writes off(lamp) at W0+1"
+          },
+          "backend": [
+            "negative_persistence"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "lamp_unknown",
+      "text": "Ann has a lamp and a switch. Ann can press the switch. If the lamp is off, after Ann presses the switch the lamp is on and not off. If the lamp is on, after Ann presses the switch the lamp is off and not on.",
+      "units_remove": [
+        "S2"
+      ],
+      "queries": [
+        {
+          "id": "Q1",
+          "expect": {
+            "answer": "Unknown",
+            "forbidden_answers": [
+              "Yes",
+              "No"
+            ],
+            "evidence": "neither condition is established at W0, so neither effect applies; nothing about on(lamp) is stated at W0 either, so nothing persists: Unknown"
+          }
+        },
+        {
+          "id": "Q2",
+          "expect": {
+            "answer": "Unknown",
+            "forbidden_answers": [
+              "Yes",
+              "No"
+            ],
+            "evidence": "as Q1 for off(lamp)"
+          }
+        }
+      ]
+    }
+  ],
+  "candidates": [
+    {
+      "id": "K1",
+      "sequence": [
+        [
+          "change",
+          "Ann 1",
+          "switch 3",
+          "pressed",
+          "unspecified"
+        ],
+        [
+          "change",
+          "Ann 1",
+          "switch 3",
+          "pressed",
+          "unspecified"
+        ]
+      ],
+      "states": [
+        {
+          "after": 0,
+          "facts": [
+            "+off(lamp)",
+            "+have(Ann,lamp)",
+            "+have(Ann,switch)"
+          ]
+        },
+        {
+          "after": 1,
+          "facts": [
+            "+on(lamp)",
+            "-off(lamp)",
+            "+pressed(switch)",
+            "+have(Ann,lamp)"
+          ],
+          "removed": [
+            "+off(lamp)"
+          ]
+        },
+        {
+          "after": 2,
+          "facts": [
+            "+off(lamp)",
+            "-on(lamp)",
+            "+pressed(switch)",
+            "+have(Ann,lamp)"
+          ],
+          "removed": [
+            "+on(lamp)",
+            "-off(lamp)"
+          ]
+        }
+      ],
+      "verdict": "valid",
+      "reason": "conditions evaluated in the old state; writes applied together; opposite signs replaced"
+    }
+  ],
+  "support": {
+    "syntax": "supported",
+    "compile": "supported",
+    "backend_requirements": [],
+    "replay_fragment": "covered: strict conditional effects with signed writes"
+  },
+  "explain": "The dev-set switch case in the contract's form. Q3 is the simultaneity test: if the replay or the compiler let S5 read S4's write in the same step, both effects would fire on the first press and the state would hold both on and off. The variants are the three conditional-effect controls: condition true (base), condition false (lamp_on, where S4's condition is explicitly false and S5's true), condition unknown (lamp_unknown, where neither fires and the result is Unknown, not No). The pressed(switch) write from the library's eff_change is harmless and is listed in the replay state.",
+  "notes": "Stage 2 puts the condition outside after and the signed conjunction inside it, which is the A2.5 form P -> after(A, Q). Amended 2026-09-11 (review R8): an absent condition is unknown, not false; controls added."
+}

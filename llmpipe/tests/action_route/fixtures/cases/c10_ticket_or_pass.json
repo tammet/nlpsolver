@@ -1,0 +1,613 @@
+{
+  "id": "c10_ticket_or_pass",
+  "purpose": "two sufficient permissions for one action term are alternatives, not a method collision",
+  "contract": [
+    "C10",
+    "A2.6"
+  ],
+  "family": [
+    "Permission strength",
+    "Unsupported meaning"
+  ],
+  "input_kind": "text",
+  "text": "Robo is a robot. Robo is in Haapsalu. There is a bus route from Haapsalu to Tallinn. A robot with a ticket can travel by bus from Haapsalu to Tallinn. A robot with a pass can travel by bus from Haapsalu to Tallinn. Robo has a pass.",
+  "profile": "physical_v1",
+  "entities": {
+    "Robo 1": "robot",
+    "Haapsalu 2": "place",
+    "Tallinn 3": "place",
+    "pass 4": "artifact"
+  },
+  "units": [
+    {
+      "id": "S1",
+      "text": "Robo is a robot.",
+      "stage1": {
+        "type": "real",
+        "entities": [
+          {
+            "id": "Robo 1",
+            "type": "concrete",
+            "category": "artifact"
+          }
+        ]
+      },
+      "stage2": [
+        "@id",
+        "S1",
+        [
+          "holds",
+          "W0",
+          [
+            "isa",
+            "robot",
+            "Robo 1"
+          ]
+        ]
+      ],
+      "scope": "static",
+      "syntax": "supported",
+      "compile": "supported",
+      "clauses": {
+        "must_not_have": [
+          {
+            "role": "static",
+            "lit": [
+              "isa",
+              "person",
+              "Robo 1"
+            ],
+            "note": "no person typing for a robot (A2.2)"
+          }
+        ]
+      }
+    },
+    {
+      "id": "S2",
+      "text": "Robo is in Haapsalu.",
+      "stage1": {
+        "type": "situation",
+        "entities": [
+          {
+            "id": "Robo 1",
+            "type": "concrete",
+            "category": "artifact"
+          },
+          {
+            "id": "Haapsalu 2",
+            "type": "concrete",
+            "category": "place"
+          }
+        ]
+      },
+      "stage2": [
+        "@id",
+        "S2",
+        [
+          "holds",
+          "W0",
+          [
+            "is rel2",
+            "located_at",
+            "Robo 1",
+            "Haapsalu 2"
+          ]
+        ]
+      ],
+      "scope": "initial",
+      "syntax": "supported",
+      "compile": "supported",
+      "clauses": {}
+    },
+    {
+      "id": "S3",
+      "text": "There is a bus route from Haapsalu to Tallinn.",
+      "stage1": {
+        "type": "real",
+        "entities": [
+          {
+            "id": "Haapsalu 2",
+            "type": "concrete",
+            "category": "place"
+          },
+          {
+            "id": "Tallinn 3",
+            "type": "concrete",
+            "category": "place"
+          }
+        ]
+      },
+      "stage2": [
+        "@id",
+        "S3",
+        [
+          "holds",
+          "W0",
+          [
+            "connected",
+            "Haapsalu 2",
+            "Tallinn 3",
+            "bus"
+          ]
+        ]
+      ],
+      "scope": "static",
+      "syntax": "supported",
+      "compile": "supported",
+      "clauses": {}
+    },
+    {
+      "id": "S4",
+      "text": "A robot with a ticket can travel by bus from Haapsalu to Tallinn.",
+      "stage1": {
+        "type": "strict_rule",
+        "entities": [
+          {
+            "id": "Haapsalu 2",
+            "type": "concrete",
+            "category": "place"
+          },
+          {
+            "id": "Tallinn 3",
+            "type": "concrete",
+            "category": "place"
+          },
+          {
+            "id": "robot",
+            "type": "generic",
+            "category": "artifact"
+          },
+          {
+            "id": "ticket",
+            "type": "generic"
+          }
+        ],
+        "actions": [
+          {
+            "root": "travel",
+            "mode": "capability",
+            "roles": {
+              "actor": "robot",
+              "source": "Haapsalu 2",
+              "destination": "Tallinn 3",
+              "instrument": "bus"
+            }
+          }
+        ],
+        "action_reading": "availability"
+      },
+      "stage2": [
+        "@id",
+        "S4",
+        [
+          "holds",
+          "W0",
+          [
+            "forall",
+            "X",
+            [
+              "implies",
+              [
+                "and",
+                [
+                  "isa",
+                  "robot",
+                  "X"
+                ],
+                [
+                  "exists",
+                  "Y",
+                  [
+                    "and",
+                    [
+                      "isa",
+                      "ticket",
+                      "Y"
+                    ],
+                    [
+                      "have",
+                      "X",
+                      "Y"
+                    ]
+                  ]
+                ]
+              ],
+              [
+                "can",
+                "X",
+                [
+                  "move",
+                  "X",
+                  "Haapsalu 2",
+                  "Tallinn 3",
+                  "bus"
+                ]
+              ]
+            ]
+          ]
+        ]
+      ],
+      "scope": "availability",
+      "syntax": "supported",
+      "compile": "supported",
+      "clauses": {
+        "must_have": [
+          {
+            "role": "availability",
+            "unit": "S4",
+            "lit": [
+              "poss",
+              [
+                "move",
+                "X",
+                "Haapsalu 2",
+                "Tallinn 3",
+                "bus"
+              ]
+            ],
+            "sign": "+",
+            "situation": "shared_current"
+          },
+          {
+            "role": "availability",
+            "unit": "S4",
+            "lit": [
+              "poss",
+              [
+                "move",
+                "X",
+                "Haapsalu 2",
+                "Tallinn 3",
+                "bus"
+              ]
+            ],
+            "sign": "+",
+            "situation": "shared_current",
+            "body_absent": [
+              "connected"
+            ],
+            "note": "the stated-endpoint path: the rule's conditions, located_at, differ and the hook; no connected literal; actor X is source-bound by isa(robot,X) and the possession condition"
+          }
+        ]
+      }
+    },
+    {
+      "id": "S5",
+      "text": "A robot with a pass can travel by bus from Haapsalu to Tallinn.",
+      "stage1": {
+        "type": "strict_rule",
+        "entities": [
+          {
+            "id": "Haapsalu 2",
+            "type": "concrete",
+            "category": "place"
+          },
+          {
+            "id": "Tallinn 3",
+            "type": "concrete",
+            "category": "place"
+          },
+          {
+            "id": "robot",
+            "type": "generic",
+            "category": "artifact"
+          },
+          {
+            "id": "pass",
+            "type": "generic"
+          }
+        ],
+        "actions": [
+          {
+            "root": "travel",
+            "mode": "capability",
+            "roles": {
+              "actor": "robot",
+              "source": "Haapsalu 2",
+              "destination": "Tallinn 3",
+              "instrument": "bus"
+            }
+          }
+        ],
+        "action_reading": "availability"
+      },
+      "stage2": [
+        "@id",
+        "S5",
+        [
+          "holds",
+          "W0",
+          [
+            "forall",
+            "X",
+            [
+              "implies",
+              [
+                "and",
+                [
+                  "isa",
+                  "robot",
+                  "X"
+                ],
+                [
+                  "exists",
+                  "Y",
+                  [
+                    "and",
+                    [
+                      "isa",
+                      "pass",
+                      "Y"
+                    ],
+                    [
+                      "have",
+                      "X",
+                      "Y"
+                    ]
+                  ]
+                ]
+              ],
+              [
+                "can",
+                "X",
+                [
+                  "move",
+                  "X",
+                  "Haapsalu 2",
+                  "Tallinn 3",
+                  "bus"
+                ]
+              ]
+            ]
+          ]
+        ]
+      ],
+      "scope": "availability",
+      "syntax": "supported",
+      "compile": "supported",
+      "clauses": {
+        "must_have": [
+          {
+            "role": "availability",
+            "unit": "S5",
+            "lit": [
+              "poss",
+              [
+                "move",
+                "X",
+                "Haapsalu 2",
+                "Tallinn 3",
+                "bus"
+              ]
+            ],
+            "sign": "+",
+            "situation": "shared_current"
+          }
+        ],
+        "must_not_have": [
+          {
+            "role": "diagnostic",
+            "reason": "method_collision",
+            "note": "same term, same effects: alternatives (A2.6)"
+          }
+        ]
+      }
+    },
+    {
+      "id": "S6",
+      "text": "Robo has a pass.",
+      "stage1": {
+        "type": "situation",
+        "entities": [
+          {
+            "id": "pass 4",
+            "type": "concrete",
+            "category": "artifact"
+          },
+          {
+            "id": "Robo 1",
+            "type": "concrete",
+            "category": "artifact"
+          }
+        ]
+      },
+      "stage2": [
+        "@id",
+        "S6",
+        [
+          "holds",
+          "W0",
+          [
+            "and",
+            [
+              "isa",
+              "pass",
+              "pass 4"
+            ],
+            [
+              "have",
+              "Robo 1",
+              "pass 4"
+            ]
+          ]
+        ]
+      ],
+      "scope": "initial",
+      "syntax": "supported",
+      "compile": "supported",
+      "clauses": {}
+    }
+  ],
+  "queries": [
+    {
+      "id": "Q1",
+      "text": "How can Robo get to Tallinn?",
+      "stage1_reading": "plan_question",
+      "stage2": [
+        "@id",
+        "Q1",
+        [
+          "plan",
+          [
+            "is rel2",
+            "located_at",
+            "Robo 1",
+            "Tallinn 3"
+          ]
+        ]
+      ],
+      "view": "discovery",
+      "seed": "s^4(0)",
+      "expect": {
+        "outcome": "plan_found",
+        "plan": [
+          [
+            "move",
+            "Robo 1",
+            "Haapsalu 2",
+            "Tallinn 3",
+            "bus"
+          ]
+        ],
+        "evidence": "S5's stated-endpoint path with S6 (the pass); the path reads no connected fact, so S3 is not needed"
+      },
+      "backend": [],
+      "replay": "covered"
+    }
+  ],
+  "variants": [
+    {
+      "id": "ticket_only",
+      "units_replace": [
+        {
+          "id": "S6",
+          "text": "Robo has a ticket.",
+          "stage1": {
+            "type": "situation",
+            "entities": [
+              {
+                "id": "ticket 4",
+                "type": "concrete"
+              },
+              {
+                "id": "Robo 1",
+                "type": "concrete",
+                "category": "artifact"
+              }
+            ]
+          },
+          "stage2": [
+            "@id",
+            "S6",
+            [
+              "holds",
+              "W0",
+              [
+                "and",
+                [
+                  "isa",
+                  "ticket",
+                  "ticket 4"
+                ],
+                [
+                  "have",
+                  "Robo 1",
+                  "ticket 4"
+                ]
+              ]
+            ]
+          ],
+          "scope": "initial",
+          "syntax": "supported",
+          "compile": "supported",
+          "clauses": {}
+        }
+      ],
+      "queries": [
+        {
+          "id": "Q1",
+          "expect": {
+            "outcome": "plan_found",
+            "plan": [
+              [
+                "move",
+                "Robo 1",
+                "Haapsalu 2",
+                "Tallinn 3",
+                "bus"
+              ]
+            ],
+            "evidence": "S4's stated-endpoint path with S6 (a ticket); the path reads no connected fact, so S3 is not needed"
+          }
+        }
+      ],
+      "entities": {
+        "Robo 1": "robot",
+        "Haapsalu 2": "place",
+        "Tallinn 3": "place",
+        "ticket 4": "artifact"
+      },
+      "text": "Robo is a robot. Robo is in Haapsalu. There is a bus route from Haapsalu to Tallinn. A robot with a ticket can travel by bus from Haapsalu to Tallinn. A robot with a pass can travel by bus from Haapsalu to Tallinn. Robo has a ticket."
+    },
+    {
+      "id": "neither",
+      "units_remove": [
+        "S6"
+      ],
+      "queries": [
+        {
+          "id": "Q1",
+          "expect": {
+            "outcome": "not_found",
+            "evidence": "a robot has no library movement default; neither permission is supported",
+            "forbidden_outcomes": [
+              "plan_found"
+            ]
+          }
+        }
+      ],
+      "text": "Robo is a robot. Robo is in Haapsalu. There is a bus route from Haapsalu to Tallinn. A robot with a ticket can travel by bus from Haapsalu to Tallinn. A robot with a pass can travel by bus from Haapsalu to Tallinn."
+    }
+  ],
+  "candidates": [
+    {
+      "id": "K1",
+      "sequence": [
+        [
+          "move",
+          "Robo 1",
+          "Haapsalu 2",
+          "Tallinn 3",
+          "bus"
+        ]
+      ],
+      "states": [
+        {
+          "after": 0,
+          "facts": [
+            "+located_at(Robo,Haapsalu)",
+            "+have(Robo,pass)",
+            "isa(pass,pass)"
+          ]
+        },
+        {
+          "after": 1,
+          "facts": [
+            "+located_at(Robo,Tallinn)",
+            "-located_at(Robo,Haapsalu)"
+          ]
+        }
+      ],
+      "verdict": "valid",
+      "reason": "S5 permission"
+    }
+  ],
+  "support": {
+    "syntax": "supported",
+    "compile": "supported",
+    "backend_requirements": [],
+    "replay_fragment": "covered: two availability rules with existential possession conditions"
+  },
+  "explain": "A robot actor keeps the library default out of the picture, so the plan depends on the source permissions alone. Two rules with different conditions and the same conclusion are OR-ed; method_collision is for c11, where the same term would merge different effects.",
+  "notes": "The existential 'a ticket' inside the condition is an ordinary Stage-2 existential in an antecedent; the replay resolves it against the finite state."
+}

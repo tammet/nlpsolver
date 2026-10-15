@@ -1,0 +1,32 @@
+
+/opt/lingeling/lingeling --verbose=-1 -T 60 /tmp/gkc_prop_inXXXXXX > /tmp/gkc_prop_outXXXXXX
+{"result": "answer found",
+
+"answers": [
+{
+"answer": true,
+"planning_summary": {"schema": "planning_summary_output/1", "profile_id": "sha256:6680926c34f0b22b7238a65bdb57ebec9a455ffedfe47910ed7e2046b6dc38d0", "decorated": false, "reason": "not_applicable"},
+"confidence": 1.0000,
+"detail": {"support_for": 1.0000,
+"support_against": 0.0000,
+"conflict": 0.0000,
+"ignorance": 0.0000,
+"calculation": "proof_fallback",
+"coverage_status": "unsupported_fragment",
+"polarity_status": "not_guaranteed",
+"conflict_sources": [],
+"flags": ["CONTESTED", "PROOF_FALLBACK", "STRUCTURAL_UNSUPPORTED_PROOF"],
+"recursive_checks": 0},
+"positive proof":
+[
+[1, ["in", "frm_3", "axiom", 1], [["-q","?:X"], ["s","?:X"], ["r","?:X"]]],
+[2, ["in", "frm_4", "axiom", 1], [["-r","a"]]],
+[3, ["in", "frm_5", "goal", 1], [["-s","a"]]],
+[4, ["mp", [1,2], 2, 3, "fromgoal", 1], [["-q","a"]]],
+[5, ["in", "frm_2", "axiom", 1], [["-p","?:X"], ["q","?:X"]]],
+[6, ["in", "frm_1", "axiom", 1], [["p","a"]]],
+[7, ["mp", 5, 6, "fromaxiom", 1], [["q","a"]]],
+[8, ["inst", 7, "a", "fromaxiom", 1], 9]],
+[9, ["inst", 4, "a", 8, "fromgoal", 1], false]
+]}
+]}

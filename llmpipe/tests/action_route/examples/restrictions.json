@@ -1,0 +1,377 @@
+{
+ "example": "restrictions",
+ "gold": "c05_two_restrictions:base",
+ "text": "There are two robot hands, hand one and hand two. Block a is on the table. Block a is clear. Block a is red. Block a is not dry. Both hands are empty. A block can be taken only if it is red. Hand one can take a block only if the block is dry.",
+ "entities": {
+  "hand one 1": "hand",
+  "hand two 2": "hand",
+  "a 3": "block",
+  "table 4": "table",
+  "hand three 5": "hand",
+  "Robo 6": "robot"
+ },
+ "units": [
+  {
+   "id": "S1",
+   "text": "There are two robot hands, hand one and hand two.",
+   "stage1": {
+    "type": "real",
+    "entities": [
+     {
+      "id": "hand one 1",
+      "type": "concrete",
+      "category": "artifact"
+     },
+     {
+      "id": "hand two 2",
+      "type": "concrete",
+      "category": "artifact"
+     }
+    ]
+   },
+   "stage2": [
+    "@id",
+    "S1",
+    [
+     "holds",
+     "W0",
+     [
+      "and",
+      [
+       "isa",
+       "hand",
+       "hand one 1"
+      ],
+      [
+       "isa",
+       "hand",
+       "hand two 2"
+      ]
+     ]
+    ]
+   ]
+  },
+  {
+   "id": "S2",
+   "text": "Block a is on the table.",
+   "stage1": {
+    "type": "situation",
+    "entities": [
+     {
+      "id": "a 3",
+      "type": "concrete",
+      "category": "artifact"
+     },
+     {
+      "id": "table 4",
+      "type": "concrete",
+      "category": "artifact"
+     }
+    ]
+   },
+   "stage2": [
+    "@id",
+    "S2",
+    [
+     "holds",
+     "W0",
+     [
+      "and",
+      [
+       "isa",
+       "block",
+       "a 3"
+      ],
+      [
+       "isa",
+       "table",
+       "table 4"
+      ],
+      [
+       "is rel2",
+       "on",
+       "a 3",
+       "table 4"
+      ]
+     ]
+    ]
+   ]
+  },
+  {
+   "id": "S3",
+   "text": "Block a is clear.",
+   "stage1": {
+    "type": "situation",
+    "entities": [
+     {
+      "id": "a 3",
+      "type": "concrete",
+      "category": "artifact"
+     }
+    ]
+   },
+   "stage2": [
+    "@id",
+    "S3",
+    [
+     "holds",
+     "W0",
+     [
+      "has property",
+      "clear_top",
+      "a 3"
+     ]
+    ]
+   ]
+  },
+  {
+   "id": "S4",
+   "text": "Block a is red.",
+   "stage1": {
+    "type": "situation",
+    "entities": [
+     {
+      "id": "a 3",
+      "type": "concrete",
+      "category": "artifact"
+     }
+    ]
+   },
+   "stage2": [
+    "@id",
+    "S4",
+    [
+     "holds",
+     "W0",
+     [
+      "has property",
+      "red",
+      "a 3"
+     ]
+    ]
+   ]
+  },
+  {
+   "id": "S5",
+   "text": "Block a is not dry.",
+   "stage1": {
+    "type": "situation",
+    "entities": [
+     {
+      "id": "a 3",
+      "type": "concrete",
+      "category": "artifact"
+     }
+    ]
+   },
+   "stage2": [
+    "@id",
+    "S5",
+    [
+     "holds",
+     "W0",
+     [
+      "not",
+      [
+       "has property",
+       "dry",
+       "a 3"
+      ]
+     ]
+    ]
+   ]
+  },
+  {
+   "id": "S6",
+   "text": "Both hands are empty.",
+   "stage1": {
+    "type": "situation",
+    "entities": [
+     {
+      "id": "hand one 1",
+      "type": "concrete",
+      "category": "artifact"
+     },
+     {
+      "id": "hand two 2",
+      "type": "concrete",
+      "category": "artifact"
+     }
+    ]
+   },
+   "stage2": [
+    "@id",
+    "S6",
+    [
+     "holds",
+     "W0",
+     [
+      "and",
+      [
+       "has property",
+       "empty",
+       "hand one 1"
+      ],
+      [
+       "has property",
+       "empty",
+       "hand two 2"
+      ]
+     ]
+    ]
+   ]
+  },
+  {
+   "id": "S7",
+   "text": "A block can be taken only if it is red.",
+   "stage1": {
+    "type": "strict_rule",
+    "entities": [],
+    "actions": [
+     {
+      "root": "take",
+      "mode": "capability",
+      "roles": {
+       "target": "block"
+      }
+     }
+    ],
+    "action_reading": "restriction"
+   },
+   "stage2": [
+    "@id",
+    "S7",
+    [
+     "holds",
+     "W0",
+     [
+      "forall",
+      "H",
+      [
+       "forall",
+       "X",
+       [
+        "implies",
+        [
+         "executable",
+         [
+          "take",
+          "H",
+          "X"
+         ]
+        ],
+        [
+         "has property",
+         "red",
+         "X"
+        ]
+       ]
+      ]
+     ]
+    ]
+   ]
+  },
+  {
+   "id": "S8",
+   "text": "Hand one can take a block only if the block is dry.",
+   "stage1": {
+    "type": "strict_rule",
+    "entities": [
+     {
+      "id": "hand one 1",
+      "type": "concrete",
+      "category": "artifact"
+     },
+     {
+      "id": "block",
+      "type": "generic",
+      "category": "artifact"
+     }
+    ],
+    "actions": [
+     {
+      "root": "take",
+      "mode": "capability",
+      "roles": {
+       "actor": "hand one 1",
+       "target": "block"
+      }
+     }
+    ],
+    "action_reading": "restriction"
+   },
+   "stage2": [
+    "@id",
+    "S8",
+    [
+     "holds",
+     "W0",
+     [
+      "forall",
+      "X",
+      [
+       "implies",
+       [
+        "executable",
+        [
+         "take",
+         "hand one 1",
+         "X"
+        ]
+       ],
+       [
+        "has property",
+        "dry",
+        "X"
+       ]
+      ]
+     ]
+    ]
+   ]
+  }
+ ],
+ "queries": [
+  {
+   "stage2": [
+    "@id",
+    "Q1",
+    [
+     "question",
+     [
+      "executable",
+      [
+       "take",
+       "hand one 1",
+       "a 3"
+      ]
+     ]
+    ]
+   ],
+   "text": "Can hand one take block a now?",
+   "expect": {
+    "answer": "No"
+   }
+  },
+  {
+   "stage2": [
+    "@id",
+    "Q2",
+    [
+     "question",
+     [
+      "executable",
+      [
+       "take",
+       "hand two 2",
+       "a 3"
+      ]
+     ]
+    ]
+   ],
+   "text": "Can hand two take block a now?",
+   "expect": {
+    "answer": "Yes"
+   }
+  }
+ ]
+}

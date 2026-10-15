@@ -1,0 +1,26 @@
+{
+  "id": "c34_transport_per_root",
+  "purpose": "the transport diagnostic is computed per root from that root's facts",
+  "contract": ["A2.2", "A3.3"],
+  "family": ["Scope", "Transport"],
+  "input_kind": "formal_only",
+  "text": "Ann is a person. There is a bus service from Haapsalu to Tallinn. Ann and the cup are in Haapsalu, and Ann holds the cup. Later, Ann and the cup are in Haapsalu.",
+  "profile": "physical_v1",
+  "entities": {"Ann 1": "person", "cup 2": "cup", "Haapsalu 3": "place", "Tallinn 4": "place"},
+  "worlds": ["W0", "W1"],
+  "units": [
+    {"id": "S1", "text": "Ann is a person.", "stage2": ["@id", "S1", ["holds", "W0", ["isa", "person", "Ann 1"]]], "scope": "static", "syntax": "supported", "compile": "supported", "clauses": {}},
+    {"id": "S2", "text": "There is a bus service from Haapsalu to Tallinn.", "stage2": ["@id", "S2", ["holds", "W0", ["connected", "Haapsalu 3", "Tallinn 4", "bus"]]], "scope": "static", "syntax": "supported", "compile": "supported", "clauses": {}},
+    {"id": "S3", "text": "Ann and the cup are in Haapsalu, and Ann holds the cup.", "stage2": ["@id", "S3", ["holds", "W0", ["and", ["is rel2", "located_at", "Ann 1", "Haapsalu 3"], ["is rel2", "located_at", "cup 2", "Haapsalu 3"], ["is rel2", "holding", "Ann 1", "cup 2"]]]], "scope": "initial", "syntax": "supported", "compile": "supported", "clauses": {}},
+    {"id": "S4", "text": "Later, Ann and the cup are in Haapsalu.", "stage2": ["@id", "S4", ["holds", "W1", ["and", ["is rel2", "located_at", "Ann 1", "Haapsalu 3"], ["is rel2", "located_at", "cup 2", "Haapsalu 3"]]]], "scope": "initial", "syntax": "supported", "compile": "supported", "clauses": {}}
+  ],
+  "queries": [
+    {"id": "Q1", "text": "How can the cup get to Tallinn? (planning root W0)", "stage1_reading": "plan_question", "stage2": ["@id", "Q1", ["plan", ["is rel2", "located_at", "cup 2", "Tallinn 4"]]], "view": "discovery", "seed": "s^4(0)", "planning_root": "W0", "expect": {"outcome": "unsupported_translation", "reason": "unsupported_transport_dependency", "forbidden_outcomes": ["plan_found", "not_found"], "evidence": "at W0 Ann holds the cup and Ann may move (the person default); the goal reads the cup's location"}, "backend": [], "replay": "n/a"},
+    {"id": "Q2", "text": "How can the cup get to Tallinn? (planning root W1)", "stage1_reading": "plan_question", "stage2": ["@id", "Q2", ["plan", ["is rel2", "located_at", "cup 2", "Tallinn 4"]]], "view": "discovery", "seed": "s^4(0)", "planning_root": "W1", "expect": {"outcome": "not_found", "forbidden_outcomes": ["plan_found", "unsupported_translation"], "evidence": "at W1 no unit states a holding, so the W0 holding does not reach this root and no transport dependency exists; nothing moves the cup"}, "backend": [], "replay": "covered"}
+  ],
+  "variants": [],
+  "candidates": [],
+  "support": {"syntax": "supported", "compile": "supported", "backend_requirements": [], "replay_fragment": "n/a"},
+  "explain": "Encoding v2, migration step 0.5 (transport per root, Sol review c): the holding and the movement meet at W0 only.",
+  "notes": "Written 2026-09-23 before any GK run; runs from checkpoint 1b (REVIEW.md, encoding v2 rows)."
+}

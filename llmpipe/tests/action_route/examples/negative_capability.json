@@ -1,0 +1,226 @@
+{
+ "example": "negative_capability",
+ "gold": "c04_negative_capability:base",
+ "text": "Ann is a baby. Ann is in Haapsalu. There is a bus service from Haapsalu to Tallinn. Babies cannot take the bus.",
+ "entities": {
+  "Ann 1": "person",
+  "Haapsalu 2": "place",
+  "Tallinn 3": "place"
+ },
+ "units": [
+  {
+   "id": "S1",
+   "text": "Ann is a baby.",
+   "stage1": {
+    "type": "real",
+    "entities": [
+     {
+      "id": "Ann 1",
+      "type": "concrete",
+      "category": "person"
+     }
+    ]
+   },
+   "stage2": [
+    "@id",
+    "S1",
+    [
+     "holds",
+     "W0",
+     [
+      "and",
+      [
+       "isa",
+       "baby",
+       "Ann 1"
+      ],
+      [
+       "isa",
+       "person",
+       "Ann 1"
+      ]
+     ]
+    ]
+   ]
+  },
+  {
+   "id": "S2",
+   "text": "Ann is in Haapsalu.",
+   "stage1": {
+    "type": "situation",
+    "entities": [
+     {
+      "id": "Ann 1",
+      "type": "concrete",
+      "category": "person"
+     },
+     {
+      "id": "Haapsalu 2",
+      "type": "concrete",
+      "category": "place"
+     }
+    ]
+   },
+   "stage2": [
+    "@id",
+    "S2",
+    [
+     "holds",
+     "W0",
+     [
+      "is rel2",
+      "located_at",
+      "Ann 1",
+      "Haapsalu 2"
+     ]
+    ]
+   ]
+  },
+  {
+   "id": "S3",
+   "text": "There is a bus service from Haapsalu to Tallinn.",
+   "stage1": {
+    "type": "real",
+    "entities": [
+     {
+      "id": "Haapsalu 2",
+      "type": "concrete",
+      "category": "place"
+     },
+     {
+      "id": "Tallinn 3",
+      "type": "concrete",
+      "category": "place"
+     }
+    ]
+   },
+   "stage2": [
+    "@id",
+    "S3",
+    [
+     "holds",
+     "W0",
+     [
+      "connected",
+      "Haapsalu 2",
+      "Tallinn 3",
+      "bus"
+     ]
+    ]
+   ]
+  },
+  {
+   "id": "S4",
+   "text": "Babies cannot take the bus.",
+   "stage1": {
+    "type": "strict_rule",
+    "entities": [
+     {
+      "id": "baby",
+      "type": "generic"
+     }
+    ],
+    "actions": [
+     {
+      "root": "take",
+      "mode": "capability",
+      "roles": {
+       "target": "bus"
+      }
+     }
+    ],
+    "action_reading": "availability"
+   },
+   "stage2": [
+    "@id",
+    "S4",
+    [
+     "holds",
+     "W0",
+     [
+      "forall",
+      "X",
+      [
+       "forall",
+       "F",
+       [
+        "forall",
+        "T",
+        [
+         "implies",
+         [
+          "isa",
+          "baby",
+          "X"
+         ],
+         [
+          "not",
+          [
+           "can",
+           "X",
+           [
+            "move",
+            "X",
+            "F",
+            "T",
+            "bus"
+           ]
+          ]
+         ]
+        ]
+       ]
+      ]
+     ]
+    ]
+   ]
+  }
+ ],
+ "queries": [
+  {
+   "stage2": [
+    "@id",
+    "Q1",
+    [
+     "question",
+     [
+      "executable",
+      [
+       "move",
+       "Ann 1",
+       "Haapsalu 2",
+       "Tallinn 3",
+       "bus"
+      ]
+     ]
+    ]
+   ],
+   "text": "Can Ann take the bus from Haapsalu to Tallinn now?",
+   "expect": {
+    "answer": "No"
+   }
+  },
+  {
+   "stage2": [
+    "@id",
+    "Q3",
+    [
+     "plan",
+     [
+      "is rel2",
+      "located_at",
+      "Ann 1",
+      "Tallinn 3"
+     ]
+    ]
+   ],
+   "text": "How can Ann get to Tallinn?",
+   "expect": {
+    "outcome": "not_found",
+    "answer": "none",
+    "forbidden_outcomes": [
+     "plan_found"
+    ]
+   }
+  }
+ ]
+}

@@ -1,0 +1,149 @@
+{
+ "id": "two_leg_travel",
+ "purpose": "Ann in Lund, a bus to Malmo, a train to Oslo; goal: Ann in Oslo.",
+ "entities": {
+  "Ann 1": "person",
+  "Lund 2": "place",
+  "Malmo 3": "place",
+  "Oslo 4": "place"
+ },
+ "units": [
+  {
+   "id": "S1",
+   "stage2": [
+    "@id",
+    "S1",
+    [
+     "holds",
+     "W0",
+     [
+      "and",
+      [
+       "isa",
+       "person",
+       "Ann 1"
+      ],
+      [
+       "is rel2",
+       "located_at",
+       "Ann 1",
+       "Lund 2"
+      ]
+     ]
+    ]
+   ]
+  },
+  {
+   "id": "S2",
+   "stage2": [
+    "@id",
+    "S2",
+    [
+     "holds",
+     "W0",
+     [
+      "connected",
+      "Lund 2",
+      "Malmo 3",
+      "bus"
+     ]
+    ]
+   ]
+  },
+  {
+   "id": "S3",
+   "stage2": [
+    "@id",
+    "S3",
+    [
+     "holds",
+     "W0",
+     [
+      "connected",
+      "Malmo 3",
+      "Oslo 4",
+      "train"
+     ]
+    ]
+   ]
+  }
+ ],
+ "queries": [
+  {
+   "stage2": [
+    "@id",
+    "Q1",
+    [
+     "plan",
+     [
+      "is rel2",
+      "located_at",
+      "Ann 1",
+      "Oslo 4"
+     ]
+    ]
+   ]
+  }
+ ],
+ "summary": {
+  "choice": null,
+  "families": [
+   "rel:located_at"
+  ],
+  "template": "route_distance",
+  "sequence": [
+   [
+    "move",
+    "Ann 1",
+    "Lund 2",
+    "Malmo 3",
+    "bus"
+   ],
+   [
+    "move",
+    "Ann 1",
+    "Malmo 3",
+    "Oslo 4",
+    "train"
+   ]
+  ],
+  "prefixes": [
+   {
+    "world": [
+     [
+      "is rel2",
+      "located_at",
+      "#:Ann 1",
+      "#:Lund 2"
+     ]
+    ],
+    "progress": -2,
+    "lossy": false
+   },
+   {
+    "world": [
+     [
+      "is rel2",
+      "located_at",
+      "#:Ann 1",
+      "#:Malmo 3"
+     ]
+    ],
+    "progress": -1,
+    "lossy": false
+   },
+   {
+    "world": [
+     [
+      "is rel2",
+      "located_at",
+      "#:Ann 1",
+      "#:Oslo 4"
+     ]
+    ],
+    "progress": 0,
+    "lossy": false
+   }
+  ]
+ }
+}

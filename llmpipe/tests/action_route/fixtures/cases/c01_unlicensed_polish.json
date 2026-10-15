@@ -1,0 +1,649 @@
+{
+  "id": "c01_unlicensed_polish",
+  "purpose": "an unrelated action must not enable bus travel by losing the negative licence fact",
+  "contract": [
+    "C01",
+    "A2.3",
+    "A2.5",
+    "A4.2",
+    "A5.1",
+    "A6.3"
+  ],
+  "family": [
+    "Negative state: persisted condition, indirect prohibition/default exception",
+    "Permission strength"
+  ],
+  "input_kind": "text",
+  "text": "Ann is a person. Ann is in Haapsalu. There is a bus route from Haapsalu to Tallinn. Ann is not licensed. A person who is not licensed cannot travel by bus. Ann has a cup. Ann can polish the cup.",
+  "profile": "physical_v1",
+  "entities": {
+    "Ann 1": "person",
+    "Haapsalu 2": "place",
+    "Tallinn 3": "place",
+    "cup 4": "artifact"
+  },
+  "units": [
+    {
+      "id": "S1",
+      "text": "Ann is a person.",
+      "stage1": {
+        "type": "real",
+        "entities": [
+          {
+            "id": "Ann 1",
+            "type": "concrete",
+            "category": "person"
+          }
+        ]
+      },
+      "stage2": [
+        "@id",
+        "S1",
+        [
+          "holds",
+          "W0",
+          [
+            "isa",
+            "person",
+            "Ann 1"
+          ]
+        ]
+      ],
+      "scope": "static",
+      "syntax": "supported",
+      "compile": "supported",
+      "clauses": {
+        "must_have": [
+          {
+            "role": "static",
+            "unit": "S1",
+            "lit": [
+              "isa",
+              "person",
+              "Ann 1"
+            ],
+            "sign": "+",
+            "situation": "none"
+          }
+        ]
+      }
+    },
+    {
+      "id": "S2",
+      "text": "Ann is in Haapsalu.",
+      "stage1": {
+        "type": "situation",
+        "entities": [
+          {
+            "id": "Ann 1",
+            "type": "concrete",
+            "category": "person"
+          },
+          {
+            "id": "Haapsalu 2",
+            "type": "concrete",
+            "category": "place"
+          }
+        ]
+      },
+      "stage2": [
+        "@id",
+        "S2",
+        [
+          "holds",
+          "W0",
+          [
+            "is rel2",
+            "located_at",
+            "Ann 1",
+            "Haapsalu 2"
+          ]
+        ]
+      ],
+      "scope": "initial",
+      "syntax": "supported",
+      "compile": "supported",
+      "clauses": {
+        "must_have": [
+          {
+            "role": "initial_fact",
+            "unit": "S2",
+            "lit": [
+              "is rel2",
+              "located_at",
+              "Ann 1",
+              "Haapsalu 2"
+            ],
+            "sign": "+",
+            "situation": "named"
+          }
+        ]
+      }
+    },
+    {
+      "id": "S3",
+      "text": "There is a bus route from Haapsalu to Tallinn.",
+      "stage1": {
+        "type": "real",
+        "entities": [
+          {
+            "id": "Haapsalu 2",
+            "type": "concrete",
+            "category": "place"
+          },
+          {
+            "id": "Tallinn 3",
+            "type": "concrete",
+            "category": "place"
+          }
+        ]
+      },
+      "stage2": [
+        "@id",
+        "S3",
+        [
+          "holds",
+          "W0",
+          [
+            "connected",
+            "Haapsalu 2",
+            "Tallinn 3",
+            "bus"
+          ]
+        ]
+      ],
+      "scope": "static",
+      "syntax": "supported",
+      "compile": "supported",
+      "clauses": {
+        "must_have": [
+          {
+            "role": "static",
+            "unit": "S3",
+            "lit": [
+              "connected",
+              "Haapsalu 2",
+              "Tallinn 3",
+              "bus"
+            ],
+            "sign": "+",
+            "situation": "none"
+          }
+        ],
+        "must_not_have": [
+          {
+            "role": "availability",
+            "unit": "S3",
+            "body_absent": [
+              "connected"
+            ],
+            "note": "no stated-endpoint path; every movement path of the unit reads connected"
+          }
+        ]
+      }
+    },
+    {
+      "id": "S4",
+      "text": "Ann is not licensed.",
+      "stage1": {
+        "type": "situation",
+        "entities": [
+          {
+            "id": "Ann 1",
+            "type": "concrete",
+            "category": "person"
+          }
+        ]
+      },
+      "stage2": [
+        "@id",
+        "S4",
+        [
+          "holds",
+          "W0",
+          [
+            "not",
+            [
+              "has property",
+              "licensed",
+              "Ann 1"
+            ]
+          ]
+        ]
+      ],
+      "scope": "initial",
+      "syntax": "supported",
+      "compile": "supported",
+      "clauses": {
+        "must_have": [
+          {
+            "role": "initial_fact",
+            "unit": "S4",
+            "lit": [
+              "has property",
+              "licensed",
+              "Ann 1"
+            ],
+            "sign": "-",
+            "situation": "named"
+          }
+        ]
+      }
+    },
+    {
+      "id": "S5",
+      "text": "A person who is not licensed cannot travel by bus.",
+      "stage1": {
+        "type": "strict_rule",
+        "entities": [
+          {
+            "id": "person",
+            "type": "generic",
+            "category": "person"
+          }
+        ],
+        "actions": [
+          {
+            "root": "travel",
+            "mode": "capability",
+            "roles": {
+              "instrument": "bus"
+            }
+          }
+        ],
+        "action_reading": "availability"
+      },
+      "stage2": [
+        "@id",
+        "S5",
+        [
+          "holds",
+          "W0",
+          [
+            "forall",
+            "X",
+            [
+              "forall",
+              "F",
+              [
+                "forall",
+                "T",
+                [
+                  "implies",
+                  [
+                    "and",
+                    [
+                      "isa",
+                      "person",
+                      "X"
+                    ],
+                    [
+                      "not",
+                      [
+                        "has property",
+                        "licensed",
+                        "X"
+                      ]
+                    ]
+                  ],
+                  [
+                    "not",
+                    [
+                      "can",
+                      "X",
+                      [
+                        "move",
+                        "X",
+                        "F",
+                        "T",
+                        "bus"
+                      ]
+                    ]
+                  ]
+                ]
+              ]
+            ]
+          ]
+        ]
+      ],
+      "scope": "denial",
+      "syntax": "supported",
+      "compile": "supported",
+      "clauses": {
+        "must_have": [
+          {
+            "role": "denial",
+            "unit": "S5",
+            "lit": [
+              "execution_denied",
+              [
+                "move",
+                "X",
+                "F",
+                "T",
+                "bus"
+              ]
+            ],
+            "sign": "+",
+            "situation": "shared_current",
+            "body": [
+              {
+                "lit": [
+                  "isa",
+                  "person",
+                  "X"
+                ],
+                "sign": "+",
+                "situation": "none"
+              },
+              {
+                "lit": [
+                  "has property",
+                  "licensed",
+                  "X"
+                ],
+                "sign": "-",
+                "situation": "shared_current"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "S6",
+      "text": "Ann has a cup.",
+      "stage1": {
+        "type": "situation",
+        "entities": [
+          {
+            "id": "Ann 1",
+            "type": "concrete",
+            "category": "person"
+          },
+          {
+            "id": "cup 4",
+            "type": "concrete",
+            "category": "artifact"
+          }
+        ]
+      },
+      "stage2": [
+        "@id",
+        "S6",
+        [
+          "holds",
+          "W0",
+          [
+            "have",
+            "Ann 1",
+            "cup 4"
+          ]
+        ]
+      ],
+      "scope": "initial",
+      "syntax": "supported",
+      "compile": "supported",
+      "clauses": {
+        "must_have": [
+          {
+            "role": "initial_fact",
+            "unit": "S6",
+            "lit": [
+              "have",
+              "Ann 1",
+              "cup 4"
+            ],
+            "sign": "+",
+            "situation": "named"
+          }
+        ]
+      }
+    },
+    {
+      "id": "S7",
+      "text": "Ann can polish the cup.",
+      "stage1": {
+        "type": "situation",
+        "entities": [
+          {
+            "id": "Ann 1",
+            "type": "concrete",
+            "category": "person"
+          },
+          {
+            "id": "cup 4",
+            "type": "concrete",
+            "category": "artifact"
+          }
+        ],
+        "actions": [
+          {
+            "root": "polish",
+            "mode": "capability",
+            "roles": {
+              "target": "cup 4"
+            }
+          }
+        ],
+        "action_reading": "availability"
+      },
+      "stage2": [
+        "@id",
+        "S7",
+        [
+          "holds",
+          "W0",
+          [
+            "can",
+            "Ann 1",
+            [
+              "change",
+              "Ann 1",
+              "cup 4",
+              "polished",
+              "unspecified"
+            ]
+          ]
+        ]
+      ],
+      "scope": "availability",
+      "syntax": "supported",
+      "compile": "supported",
+      "clauses": {
+        "must_have": [
+          {
+            "role": "availability",
+            "unit": "S7",
+            "lit": [
+              "poss",
+              [
+                "change",
+                "Ann 1",
+                "cup 4",
+                "polished",
+                "unspecified"
+              ]
+            ],
+            "sign": "+",
+            "situation": "shared_current"
+          }
+        ]
+      }
+    }
+  ],
+  "queries": [
+    {
+      "id": "Q1",
+      "text": "How can Ann reach Tallinn?",
+      "stage1_reading": "plan_question",
+      "stage2": [
+        "@id",
+        "Q1",
+        [
+          "plan",
+          [
+            "is rel2",
+            "located_at",
+            "Ann 1",
+            "Tallinn 3"
+          ]
+        ]
+      ],
+      "view": "discovery",
+      "seed": "s^4(0)",
+      "expect": {
+        "outcome": "unsupported_backend_requirement",
+        "reason": "negative_persistence_unavailable",
+        "on_validated_backend": {
+          "outcome": "not_found",
+          "answer": "none"
+        },
+        "evidence": "S5 is a denial whose condition reads the negative fact -licensed(Ann); its marker blocks the library default poss_move_person. The plan horizon is 4 > 1, so -licensed(Ann) must be carried across a possible unrelated action (S7). A6.3 stops before search on a backend without validated negative persistence."
+      },
+      "backend": [
+        "negative_persistence"
+      ],
+      "replay": "covered"
+    },
+    {
+      "id": "Q2",
+      "text": "Can Ann take the bus from Haapsalu to Tallinn now?",
+      "stage1_reading": "executable_question",
+      "stage2": [
+        "@id",
+        "Q2",
+        [
+          "question",
+          [
+            "executable",
+            [
+              "move",
+              "Ann 1",
+              "Haapsalu 2",
+              "Tallinn 3",
+              "bus"
+            ]
+          ]
+        ]
+      ],
+      "view": "snapshot",
+      "expect": {
+        "answer": "No",
+        "evidence": "-licensed(Ann) at W0 [S4] with S5 gives the denial marker execution_denied(move(Ann,Haapsalu,Tallinn,bus)) at W0; the library's denied_not_poss gives -poss at W0. The library default poss_move_person is blocked by the marker."
+      },
+      "backend": [],
+      "replay": "n/a"
+    },
+    {
+      "id": "Q3",
+      "text": "Is Ann licensed?",
+      "stage1_reading": null,
+      "stage2": [
+        "@id",
+        "Q3",
+        [
+          "question",
+          [
+            "has property",
+            "licensed",
+            "Ann 1"
+          ]
+        ]
+      ],
+      "view": "snapshot",
+      "expect": {
+        "answer": "No",
+        "evidence": "S4 at W0"
+      },
+      "backend": [],
+      "replay": "n/a"
+    }
+  ],
+  "variants": [],
+  "candidates": [
+    {
+      "id": "K1",
+      "sequence": [
+        [
+          "change",
+          "Ann 1",
+          "cup 4",
+          "polished",
+          "unspecified"
+        ],
+        [
+          "move",
+          "Ann 1",
+          "Haapsalu 2",
+          "Tallinn 3",
+          "bus"
+        ]
+      ],
+      "states": [
+        {
+          "after": 0,
+          "facts": [
+            "+located_at(Ann,Haapsalu)",
+            "-licensed(Ann)",
+            "+have(Ann,cup)"
+          ]
+        },
+        {
+          "after": 1,
+          "facts": [
+            "+located_at(Ann,Haapsalu)",
+            "-licensed(Ann)",
+            "+have(Ann,cup)",
+            "+polished(cup)"
+          ]
+        },
+        {
+          "after": 2,
+          "facts": "not reached"
+        }
+      ],
+      "verdict": "invalid",
+      "step": 2,
+      "reason": "at W0+1 the negative fact -licensed(Ann) persists (no action wrote licensed); S5 gives execution_denied(move(Ann,...,bus)) and -poss; the library default is blocked; step 2 has no permission. Replay must not drop the negative fact and then call the plan valid (A5.1)."
+    },
+    {
+      "id": "K2",
+      "sequence": [
+        [
+          "move",
+          "Ann 1",
+          "Haapsalu 2",
+          "Tallinn 3",
+          "bus"
+        ]
+      ],
+      "states": [
+        {
+          "after": 0,
+          "facts": [
+            "+located_at(Ann,Haapsalu)",
+            "-licensed(Ann)"
+          ]
+        },
+        {
+          "after": 1,
+          "facts": "not reached"
+        }
+      ],
+      "verdict": "invalid",
+      "step": 1,
+      "reason": "explicit denial S5 at W0"
+    }
+  ],
+  "support": {
+    "syntax": "supported",
+    "compile": "supported",
+    "backend_requirements": [
+      "negative_persistence for Q1"
+    ],
+    "replay_fragment": "covered: negative initial fact, denial law, default with exception, change effect"
+  },
+  "explain": "The false plan is K1: polish the cup, then take the bus. A backend that keeps only positive facts across a step loses -licensed(Ann) after the polish, S5 loses its support, the library default gives Ann the bus, and GK can prove the plan. The contract makes this a backend limitation, not a plan: on the starting backend Q1 is stopped before search with negative_persistence_unavailable; on a backend with validated negative persistence Q1 is not_found and the replay rejects K1 at step 2. Q2 shows that the same negative fact answers an immediate question with No through S5's denial marker and denied_not_poss, which need no persistence. The dependency is indirect: the goal mentions no negative; S5 blocks a library default. The compiler's dependency metadata (A4.4) must list -licensed(Ann) as a negative fact that S5's denial reads; the denial blocks poss_move_person.",
+  "notes": "Astra's review section 2.1 counterexample, with Ann's personhood, location, the cup and the route stated so the text is self-contained. 'Polish' is change(Ann,cup,polished,unspecified): a property write on the cup with no tool named. Horizon rule (REVIEW.md disposition 8): the backend requirement applies because -licensed(Ann) is an established negative at W0, S5 reads it as a negative-dependent exception, and the discovery horizon (4) allows an unrelated action between W0 and the move."
+}

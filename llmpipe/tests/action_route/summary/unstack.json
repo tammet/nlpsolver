@@ -1,0 +1,232 @@
+{
+ "id": "unstack",
+ "purpose": "Reduced from the saved production source plan_unstack_then_take (elogs/planning_examples_2026_09_29); goal: the hand holds a.",
+ "entities": {
+  "hand 1": "artifact",
+  "a 2": "artifact",
+  "table 3": "artifact",
+  "c 4": "artifact"
+ },
+ "units": [
+  {
+   "id": "S1",
+   "stage2": [
+    "@id",
+    "S1",
+    [
+     "holds",
+     "W0",
+     [
+      "isa",
+      "hand",
+      "hand 1"
+     ]
+    ]
+   ]
+  },
+  {
+   "id": "S2",
+   "stage2": [
+    "@id",
+    "S2",
+    [
+     "holds",
+     "W0",
+     [
+      "and",
+      [
+       "isa",
+       "block",
+       "a 2"
+      ],
+      [
+       "isa",
+       "table",
+       "table 3"
+      ],
+      [
+       "is rel2",
+       "on",
+       "a 2",
+       "table 3"
+      ]
+     ]
+    ]
+   ]
+  },
+  {
+   "id": "S3",
+   "stage2": [
+    "@id",
+    "S3",
+    [
+     "holds",
+     "W0",
+     [
+      "and",
+      [
+       "isa",
+       "block",
+       "c 4"
+      ],
+      [
+       "is rel2",
+       "on",
+       "c 4",
+       "a 2"
+      ]
+     ]
+    ]
+   ]
+  },
+  {
+   "id": "S4",
+   "stage2": [
+    "@id",
+    "S4",
+    [
+     "holds",
+     "W0",
+     [
+      "has property",
+      "clear_top",
+      "c 4"
+     ]
+    ]
+   ]
+  },
+  {
+   "id": "S5",
+   "stage2": [
+    "@id",
+    "S5",
+    [
+     "holds",
+     "W0",
+     [
+      "has property",
+      "empty",
+      "hand 1"
+     ]
+    ]
+   ]
+  }
+ ],
+ "queries": [
+  {
+   "stage2": [
+    "@id",
+    "Q1",
+    [
+     "plan",
+     [
+      "is rel2",
+      "holding",
+      "hand 1",
+      "a 2"
+     ]
+    ]
+   ]
+  }
+ ],
+ "summary": {
+  "choice": null,
+  "families": [
+   "rel:holding",
+   "rel:on"
+  ],
+  "template": "blocks_links",
+  "sequence": [
+   [
+    "take",
+    "hand 1",
+    "c 4"
+   ],
+   [
+    "put_on",
+    "hand 1",
+    "c 4",
+    "table 3"
+   ],
+   [
+    "take",
+    "hand 1",
+    "a 2"
+   ]
+  ],
+  "prefixes": [
+   {
+    "world": [
+     [
+      "is rel2",
+      "on",
+      "#:a 2",
+      "#:table 3"
+     ],
+     [
+      "is rel2",
+      "on",
+      "#:c 4",
+      "#:a 2"
+     ]
+    ],
+    "progress": -2,
+    "lossy": false
+   },
+   {
+    "world": [
+     [
+      "is rel2",
+      "holding",
+      "#:hand 1",
+      "#:c 4"
+     ],
+     [
+      "is rel2",
+      "on",
+      "#:a 2",
+      "#:table 3"
+     ]
+    ],
+    "progress": -1,
+    "lossy": false
+   },
+   {
+    "world": [
+     [
+      "is rel2",
+      "on",
+      "#:a 2",
+      "#:table 3"
+     ],
+     [
+      "is rel2",
+      "on",
+      "#:c 4",
+      "#:table 3"
+     ]
+    ],
+    "progress": -1,
+    "lossy": false
+   },
+   {
+    "world": [
+     [
+      "is rel2",
+      "holding",
+      "#:hand 1",
+      "#:a 2"
+     ],
+     [
+      "is rel2",
+      "on",
+      "#:c 4",
+      "#:table 3"
+     ]
+    ],
+    "progress": 0,
+    "lossy": false
+   }
+  ]
+ }
+}

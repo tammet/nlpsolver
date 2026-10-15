@@ -1,0 +1,292 @@
+{
+ "id": "ticket_travel",
+ "purpose": "The two-leg travel with a ticket: the kiosk issue grants it, the bus requires and consumes it.  The ticket is one selected milestone at Lund.",
+ "entities": {
+  "Ann 1": "person",
+  "Lund 2": "place",
+  "Malmo 3": "place",
+  "Oslo 4": "place",
+  "ticket 5": "artifact",
+  "kiosk 6": "artifact"
+ },
+ "units": [
+  {
+   "id": "S1",
+   "stage2": [
+    "@id",
+    "S1",
+    [
+     "holds",
+     "W0",
+     [
+      "and",
+      [
+       "isa",
+       "person",
+       "Ann 1"
+      ],
+      [
+       "is rel2",
+       "located_at",
+       "Ann 1",
+       "Lund 2"
+      ]
+     ]
+    ]
+   ]
+  },
+  {
+   "id": "S2",
+   "stage2": [
+    "@id",
+    "S2",
+    [
+     "holds",
+     "W0",
+     [
+      "connected",
+      "Lund 2",
+      "Malmo 3",
+      "bus"
+     ]
+    ]
+   ]
+  },
+  {
+   "id": "S3",
+   "stage2": [
+    "@id",
+    "S3",
+    [
+     "holds",
+     "W0",
+     [
+      "connected",
+      "Malmo 3",
+      "Oslo 4",
+      "train"
+     ]
+    ]
+   ]
+  },
+  {
+   "id": "S4",
+   "stage2": [
+    "@id",
+    "S4",
+    [
+     "holds",
+     "W0",
+     [
+      "implies",
+      [
+       "executable",
+       [
+        "move",
+        "Ann 1",
+        "Lund 2",
+        "Malmo 3",
+        "bus"
+       ]
+      ],
+      [
+       "have",
+       "Ann 1",
+       "ticket 5"
+      ]
+     ]
+    ]
+   ]
+  },
+  {
+   "id": "S5",
+   "stage2": [
+    "@id",
+    "S5",
+    [
+     "holds",
+     "W0",
+     [
+      "after",
+      [
+       "move",
+       "Ann 1",
+       "Lund 2",
+       "Malmo 3",
+       "bus"
+      ],
+      [
+       "not",
+       [
+        "have",
+        "Ann 1",
+        "ticket 5"
+       ]
+      ]
+     ]
+    ]
+   ]
+  },
+  {
+   "id": "S6",
+   "stage2": [
+    "@id",
+    "S6",
+    [
+     "holds",
+     "W0",
+     [
+      "can",
+      "Ann 1",
+      [
+       "change",
+       "Ann 1",
+       "ticket 5",
+       "issued",
+       "kiosk 6"
+      ]
+     ]
+    ]
+   ]
+  },
+  {
+   "id": "S7",
+   "stage2": [
+    "@id",
+    "S7",
+    [
+     "holds",
+     "W0",
+     [
+      "after",
+      [
+       "change",
+       "Ann 1",
+       "ticket 5",
+       "issued",
+       "kiosk 6"
+      ],
+      [
+       "have",
+       "Ann 1",
+       "ticket 5"
+      ]
+     ]
+    ]
+   ]
+  }
+ ],
+ "queries": [
+  {
+   "stage2": [
+    "@id",
+    "Q1",
+    [
+     "plan",
+     [
+      "is rel2",
+      "located_at",
+      "Ann 1",
+      "Oslo 4"
+     ]
+    ]
+   ]
+  }
+ ],
+ "summary": {
+  "choice": {
+   "schema": 1,
+   "tracked": [
+    "rel:located_at",
+    "have"
+   ],
+   "score": "route_milestones",
+   "milestones": [
+    "ms:restriction_1_S4"
+   ]
+  },
+  "families": [
+   "have",
+   "rel:located_at"
+  ],
+  "template": "route_milestones",
+  "sequence": [
+   [
+    "change",
+    "Ann 1",
+    "ticket 5",
+    "issued",
+    "kiosk 6"
+   ],
+   [
+    "move",
+    "Ann 1",
+    "Lund 2",
+    "Malmo 3",
+    "bus"
+   ],
+   [
+    "move",
+    "Ann 1",
+    "Malmo 3",
+    "Oslo 4",
+    "train"
+   ]
+  ],
+  "prefixes": [
+   {
+    "world": [
+     [
+      "is rel2",
+      "located_at",
+      "#:Ann 1",
+      "#:Lund 2"
+     ]
+    ],
+    "progress": -4,
+    "lossy": false
+   },
+   {
+    "world": [
+     [
+      "have",
+      "#:Ann 1",
+      "#:ticket 5"
+     ],
+     [
+      "is rel2",
+      "located_at",
+      "#:Ann 1",
+      "#:Lund 2"
+     ]
+    ],
+    "progress": -3,
+    "lossy": false
+   },
+   {
+    "world": [
+     [
+      "is rel2",
+      "located_at",
+      "#:Ann 1",
+      "#:Malmo 3"
+     ]
+    ],
+    "progress": -2,
+    "lossy": false
+   },
+   {
+    "world": [
+     [
+      "is rel2",
+      "located_at",
+      "#:Ann 1",
+      "#:Oslo 4"
+     ]
+    ],
+    "progress": 0,
+    "lossy": false
+   }
+  ]
+ }
+}

@@ -1,0 +1,654 @@
+{
+  "id": "c23_variable_endpoints",
+  "purpose": "endpoint variables bound by the rule's own supported conditions yield a scoped route with all conditions; fresh universal or question-supplied endpoints yield none",
+  "contract": [
+    "C23",
+    "A2.4"
+  ],
+  "family": [
+    "Route scope"
+  ],
+  "input_kind": "text",
+  "text": "Ann is a person. Ann is in Haapsalu. Tallinn is a city. Tartu is a city. Tallinn is open. If a city is open, Ann can go from Haapsalu to that city by train.",
+  "profile": "physical_v1",
+  "entities": {
+    "Ann 1": "person",
+    "Haapsalu 2": "place",
+    "Tallinn 3": "place",
+    "Tartu 4": "place"
+  },
+  "units": [
+    {
+      "id": "S1",
+      "text": "Ann is a person.",
+      "stage1": {
+        "type": "real",
+        "entities": [
+          {
+            "id": "Ann 1",
+            "type": "concrete",
+            "category": "person"
+          }
+        ]
+      },
+      "stage2": [
+        "@id",
+        "S1",
+        [
+          "holds",
+          "W0",
+          [
+            "isa",
+            "person",
+            "Ann 1"
+          ]
+        ]
+      ],
+      "scope": "static",
+      "syntax": "supported",
+      "compile": "supported",
+      "clauses": {}
+    },
+    {
+      "id": "S2",
+      "text": "Ann is in Haapsalu.",
+      "stage1": {
+        "type": "situation",
+        "entities": [
+          {
+            "id": "Ann 1",
+            "type": "concrete",
+            "category": "person"
+          },
+          {
+            "id": "Haapsalu 2",
+            "type": "concrete",
+            "category": "place"
+          }
+        ]
+      },
+      "stage2": [
+        "@id",
+        "S2",
+        [
+          "holds",
+          "W0",
+          [
+            "is rel2",
+            "located_at",
+            "Ann 1",
+            "Haapsalu 2"
+          ]
+        ]
+      ],
+      "scope": "initial",
+      "syntax": "supported",
+      "compile": "supported",
+      "clauses": {}
+    },
+    {
+      "id": "S3",
+      "text": "Tallinn is a city.",
+      "stage1": {
+        "type": "real",
+        "entities": [
+          {
+            "id": "Tallinn 3",
+            "type": "concrete",
+            "category": "place"
+          }
+        ]
+      },
+      "stage2": [
+        "@id",
+        "S3",
+        [
+          "holds",
+          "W0",
+          [
+            "isa",
+            "city",
+            "Tallinn 3"
+          ]
+        ]
+      ],
+      "scope": "static",
+      "syntax": "supported",
+      "compile": "supported",
+      "clauses": {}
+    },
+    {
+      "id": "S4",
+      "text": "Tartu is a city.",
+      "stage1": {
+        "type": "real",
+        "entities": [
+          {
+            "id": "Tartu 4",
+            "type": "concrete",
+            "category": "place"
+          }
+        ]
+      },
+      "stage2": [
+        "@id",
+        "S4",
+        [
+          "holds",
+          "W0",
+          [
+            "isa",
+            "city",
+            "Tartu 4"
+          ]
+        ]
+      ],
+      "scope": "static",
+      "syntax": "supported",
+      "compile": "supported",
+      "clauses": {}
+    },
+    {
+      "id": "S5",
+      "text": "Tallinn is open.",
+      "stage1": {
+        "type": "situation",
+        "entities": [
+          {
+            "id": "Tallinn 3",
+            "type": "concrete",
+            "category": "place"
+          }
+        ]
+      },
+      "stage2": [
+        "@id",
+        "S5",
+        [
+          "holds",
+          "W0",
+          [
+            "has property",
+            "open",
+            "Tallinn 3"
+          ]
+        ]
+      ],
+      "scope": "initial",
+      "syntax": "supported",
+      "compile": "supported",
+      "clauses": {}
+    },
+    {
+      "id": "S6",
+      "text": "If a city is open, Ann can go from Haapsalu to that city by train.",
+      "stage1": {
+        "type": "strict_rule",
+        "entities": [
+          {
+            "id": "Ann 1",
+            "type": "concrete",
+            "category": "person"
+          },
+          {
+            "id": "Haapsalu 2",
+            "type": "concrete",
+            "category": "place"
+          },
+          {
+            "id": "city",
+            "type": "generic",
+            "category": "place"
+          }
+        ],
+        "actions": [
+          {
+            "root": "go",
+            "mode": "capability",
+            "roles": {
+              "source": "Haapsalu 2",
+              "destination": "city",
+              "instrument": "train"
+            }
+          }
+        ],
+        "action_reading": "availability"
+      },
+      "stage2": [
+        "@id",
+        "S6",
+        [
+          "holds",
+          "W0",
+          [
+            "forall",
+            "T",
+            [
+              "implies",
+              [
+                "and",
+                [
+                  "isa",
+                  "city",
+                  "T"
+                ],
+                [
+                  "has property",
+                  "open",
+                  "T"
+                ]
+              ],
+              [
+                "can",
+                "Ann 1",
+                [
+                  "move",
+                  "Ann 1",
+                  "Haapsalu 2",
+                  "T",
+                  "train"
+                ]
+              ]
+            ]
+          ]
+        ]
+      ],
+      "scope": "availability",
+      "syntax": "supported",
+      "compile": "supported",
+      "clauses": {
+        "must_have": [
+          {
+            "role": "availability",
+            "unit": "S6",
+            "lit": [
+              "poss",
+              [
+                "move",
+                "Ann 1",
+                "Haapsalu 2",
+                "T",
+                "train"
+              ]
+            ],
+            "sign": "+",
+            "situation": "shared_current",
+            "body": [
+              {
+                "lit": [
+                  "isa",
+                  "city",
+                  "T"
+                ],
+                "sign": "+",
+                "situation": "none"
+              },
+              {
+                "lit": [
+                  "has property",
+                  "open",
+                  "T"
+                ],
+                "sign": "+",
+                "situation": "shared_current"
+              }
+            ]
+          },
+          {
+            "role": "availability",
+            "unit": "S6",
+            "lit": [
+              "poss",
+              [
+                "move",
+                "Ann 1",
+                "Haapsalu 2",
+                "T",
+                "train"
+              ]
+            ],
+            "sign": "+",
+            "situation": "shared_current",
+            "body": [
+              {
+                "lit": [
+                  "isa",
+                  "city",
+                  "T"
+                ],
+                "sign": "+",
+                "situation": "none"
+              },
+              {
+                "lit": [
+                  "has property",
+                  "open",
+                  "T"
+                ],
+                "sign": "+",
+                "situation": "shared_current"
+              }
+            ],
+            "body_absent": [
+              "connected"
+            ],
+            "note": "the stated-endpoint path: the rule's conditions, located_at, differ and the hook; no connected literal; T is source-bound by the rule's own conditions; every condition is kept with the same variable correspondence"
+          }
+        ]
+      }
+    }
+  ],
+  "queries": [
+    {
+      "id": "Q1",
+      "text": "How can Ann get to Tallinn?",
+      "stage1_reading": "plan_question",
+      "stage2": [
+        "@id",
+        "Q1",
+        [
+          "plan",
+          [
+            "is rel2",
+            "located_at",
+            "Ann 1",
+            "Tallinn 3"
+          ]
+        ]
+      ],
+      "view": "discovery",
+      "seed": "s^4(0)",
+      "expect": {
+        "outcome": "plan_found",
+        "plan": [
+          [
+            "move",
+            "Ann 1",
+            "Haapsalu 2",
+            "Tallinn 3",
+            "train"
+          ]
+        ],
+        "evidence": "S6's stated-endpoint path (template tpl_move_stated) with T = Tallinn: isa city (S3) and open(Tallinn) at W0 (S5); the path reads no connected fact"
+      },
+      "backend": [],
+      "replay": "covered"
+    },
+    {
+      "id": "Q2",
+      "text": "How can Ann get to Tartu?",
+      "stage1_reading": "plan_question",
+      "stage2": [
+        "@id",
+        "Q2",
+        [
+          "plan",
+          [
+            "is rel2",
+            "located_at",
+            "Ann 1",
+            "Tartu 4"
+          ]
+        ]
+      ],
+      "view": "discovery",
+      "seed": "s^4(0)",
+      "expect": {
+        "outcome": "not_found",
+        "evidence": "open(Tartu) unsupported: no permission and no route for Tartu; the question's endpoint supplies no route",
+        "forbidden_outcomes": [
+          "plan_found"
+        ]
+      },
+      "backend": [],
+      "replay": "covered"
+    }
+  ],
+  "variants": [
+    {
+      "id": "fresh_universal",
+      "text": "Ann is a person. Ann is in Haapsalu. Tallinn is a city. Tartu is a city. Tallinn is open. Ann can go anywhere by train.",
+      "units_replace": [
+        {
+          "id": "S6",
+          "text": "Ann can go anywhere by train.",
+          "stage1": {
+            "type": "strict_rule",
+            "entities": [
+              {
+                "id": "Ann 1",
+                "type": "concrete",
+                "category": "person"
+              }
+            ],
+            "actions": [
+              {
+                "root": "go",
+                "mode": "capability",
+                "roles": {
+                  "actor": "Ann 1",
+                  "destination": "anywhere",
+                  "instrument": "train"
+                }
+              }
+            ],
+            "action_reading": "availability"
+          },
+          "stage2": [
+            "@id",
+            "S6",
+            [
+              "holds",
+              "W0",
+              [
+                "forall",
+                "F",
+                [
+                  "forall",
+                  "T",
+                  [
+                    "can",
+                    "Ann 1",
+                    [
+                      "move",
+                      "Ann 1",
+                      "F",
+                      "T",
+                      "train"
+                    ]
+                  ]
+                ]
+              ]
+            ]
+          ],
+          "scope": "availability",
+          "syntax": "supported",
+          "compile": "supported",
+          "clauses": {
+            "must_have": [
+              {
+                "role": "availability",
+                "unit": "S6",
+                "lit": [
+                  "poss",
+                  [
+                    "move",
+                    "Ann 1",
+                    "F",
+                    "T",
+                    "train"
+                  ]
+                ],
+                "sign": "+",
+                "situation": "shared_current"
+              }
+            ],
+            "must_not_have": [
+              {
+                "role": "availability",
+                "unit": "S6",
+                "body_absent": [
+                  "connected"
+                ],
+                "note": "no stated-endpoint path: fresh universally quantified endpoints give no route (A2.4)"
+              }
+            ]
+          }
+        }
+      ],
+      "queries": [
+        {
+          "id": "Q1",
+          "expect": {
+            "outcome": "not_found",
+            "evidence": "S6 gives public-template paths only (fresh universal endpoints), and no connected fact exists for the train",
+            "forbidden_outcomes": [
+              "plan_found"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "unclassified_relation",
+      "text": "Ann is a person. Ann is in Haapsalu. Tallinn is a city. Tartu is a city. Tallinn is open. If Haapsalu is next to a city, Ann can go from Haapsalu to that city by train.",
+      "units_replace": [
+        {
+          "id": "S6",
+          "text": "If Haapsalu is next to a city, Ann can go from Haapsalu to that city by train.",
+          "stage1": {
+            "type": "strict_rule",
+            "entities": [
+              {
+                "id": "Haapsalu 2",
+                "type": "concrete",
+                "category": "place"
+              },
+              {
+                "id": "Ann 1",
+                "type": "concrete",
+                "category": "person"
+              },
+              {
+                "id": "city",
+                "type": "generic",
+                "category": "place"
+              }
+            ],
+            "actions": [
+              {
+                "root": "go",
+                "mode": "capability",
+                "roles": {
+                  "actor": "Ann 1",
+                  "source": "Haapsalu 2",
+                  "destination": "city",
+                  "instrument": "train"
+                }
+              }
+            ],
+            "action_reading": "availability"
+          },
+          "stage2": [
+            "@id",
+            "S6",
+            [
+              "holds",
+              "W0",
+              [
+                "forall",
+                "T",
+                [
+                  "implies",
+                  [
+                    "and",
+                    [
+                      "isa",
+                      "city",
+                      "T"
+                    ],
+                    [
+                      "is rel2",
+                      "next_to",
+                      "Haapsalu 2",
+                      "T"
+                    ]
+                  ],
+                  [
+                    "can",
+                    "Ann 1",
+                    [
+                      "move",
+                      "Ann 1",
+                      "Haapsalu 2",
+                      "T",
+                      "train"
+                    ]
+                  ]
+                ]
+              ]
+            ]
+          ],
+          "scope": "availability",
+          "syntax": "supported",
+          "compile": {
+            "unsupported": "unsupported_relation_policy",
+            "detail": "next_to is neither a stored fluent nor a declared static relation (A2.2); the compiler cannot decide whether it changes and must not make it timeless by accident"
+          }
+        }
+      ],
+      "queries": [
+        {
+          "id": "Q1",
+          "expect": {
+            "outcome": "unsupported_translation",
+            "reason": "unsupported_relation_policy",
+            "unit": "S6",
+            "evidence": "an unclassified relation in an availability antecedent (REVIEW.md disposition 1: unsupported_relation_policy, not ambiguous_state_policy, which names a stored/computed conflict)"
+          }
+        }
+      ]
+    }
+  ],
+  "candidates": [
+    {
+      "id": "K1",
+      "sequence": [
+        [
+          "move",
+          "Ann 1",
+          "Haapsalu 2",
+          "Tallinn 3",
+          "train"
+        ]
+      ],
+      "states": [
+        {
+          "after": 0,
+          "facts": [
+            "+located_at(Ann,Haapsalu)",
+            "+open(Tallinn)",
+            "isa(city,Tallinn)"
+          ]
+        },
+        {
+          "after": 1,
+          "facts": [
+            "+located_at(Ann,Tallinn)",
+            "-located_at(Ann,Haapsalu)"
+          ]
+        }
+      ],
+      "verdict": "valid",
+      "reason": "S6 instance for Tallinn"
+    }
+  ],
+  "support": {
+    "syntax": "supported",
+    "compile": "supported (base); unsupported (unclassified_relation)",
+    "backend_requirements": [],
+    "replay_fragment": "covered: range-restricted availability rule"
+  },
+  "explain": "The dev-set elevator, charge, key_door and two_agents cases bind their endpoints through a relation the library does not classify (above, adjacent). This fixture keeps the binding pattern but uses a stored property (open) and a static class (city) so the route is representable. The unclassified_relation variant records what happens to the elevator pattern itself: a diagnostic, not a route and not a timeless fact.",
+  "notes": "Fable addenda point 8, accepted by Astra with the floor-adjacency qualification. Amended 2026-09-11: the unclassified-relation reason is unsupported_relation_policy."
+}

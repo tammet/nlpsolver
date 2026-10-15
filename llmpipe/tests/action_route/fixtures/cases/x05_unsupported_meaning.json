@@ -1,0 +1,1210 @@
+{
+  "id": "x05_unsupported_meaning",
+  "purpose": "occurrence and ability with the same verb keep their readings; creation, transport, transfer and a time-qualified permission are reported, not approximated",
+  "contract": [
+    "A2.3",
+    "A2.6",
+    "A7.1"
+  ],
+  "family": [
+    "Unsupported meaning"
+  ],
+  "input_kind": "text",
+  "text": "(each variant supplies its own text)",
+  "profile": "physical_v1",
+  "entities": {
+    "Ann 1": "person",
+    "Haapsalu 2": "place",
+    "Tallinn 3": "place",
+    "Helsinki 4": "place",
+    "flour 5": "substance",
+    "box 6": "artifact",
+    "book 7": "artifact",
+    "Bob 8": "person"
+  },
+  "units": [],
+  "queries": [],
+  "variants": [
+    {
+      "id": "same_verb",
+      "text": "Ann is a person. Ann travelled from Haapsalu to Tallinn by bus. Ann can travel from Tallinn to Helsinki by ship.",
+      "units": [
+        {
+          "id": "S1",
+          "text": "Ann is a person.",
+          "stage1": {
+            "type": "real",
+            "entities": [
+              {
+                "id": "Ann 1",
+                "type": "concrete",
+                "category": "person"
+              }
+            ]
+          },
+          "stage2": [
+            "@id",
+            "S1",
+            [
+              "holds",
+              "W0",
+              [
+                "isa",
+                "person",
+                "Ann 1"
+              ]
+            ]
+          ],
+          "scope": "static",
+          "syntax": "supported",
+          "compile": "supported"
+        },
+        {
+          "id": "S2",
+          "text": "Ann travelled from Haapsalu to Tallinn by bus.",
+          "stage1": {
+            "type": "situation",
+            "entities": [
+              {
+                "id": "Ann 1",
+                "type": "concrete",
+                "category": "person"
+              },
+              {
+                "id": "Haapsalu 2",
+                "type": "concrete",
+                "category": "place"
+              },
+              {
+                "id": "Tallinn 3",
+                "type": "concrete",
+                "category": "place"
+              },
+              {
+                "id": "activity",
+                "type": "generic"
+              }
+            ],
+            "actions": [
+              {
+                "root": "travel",
+                "mode": "event",
+                "roles": {
+                  "source": "Haapsalu 2",
+                  "destination": "Tallinn 3",
+                  "instrument": "bus"
+                }
+              }
+            ],
+            "action_reading": "occurrence"
+          },
+          "stage2": [
+            "@id",
+            "S2",
+            [
+              "holds",
+              "W0",
+              [
+                "exists",
+                "E",
+                [
+                  "and",
+                  [
+                    "isa",
+                    "activity",
+                    "E"
+                  ],
+                  [
+                    "has type",
+                    "E",
+                    "travel"
+                  ],
+                  [
+                    "has actor",
+                    "E",
+                    "Ann 1"
+                  ],
+                  [
+                    "has source",
+                    "E",
+                    "Haapsalu 2"
+                  ],
+                  [
+                    "has destination",
+                    "E",
+                    "Tallinn 3",
+                    "at"
+                  ],
+                  [
+                    "has instrument",
+                    "E",
+                    "bus"
+                  ],
+                  [
+                    "has time",
+                    "E",
+                    "past",
+                    "in"
+                  ]
+                ]
+              ]
+            ]
+          ],
+          "scope": "occurrence",
+          "syntax": "supported",
+          "compile": {
+            "unsupported": "occurrence",
+            "detail": "a narrative occurrence; not executed, not turned into an ability (A7.1: no same-verb mode synchronization)"
+          }
+        },
+        {
+          "id": "S3",
+          "text": "Ann can travel from Tallinn to Helsinki by ship.",
+          "stage1": {
+            "type": "situation",
+            "entities": [
+              {
+                "id": "Ann 1",
+                "type": "concrete",
+                "category": "person"
+              },
+              {
+                "id": "Tallinn 3",
+                "type": "concrete",
+                "category": "place"
+              },
+              {
+                "id": "Helsinki 4",
+                "type": "concrete",
+                "category": "place"
+              }
+            ],
+            "actions": [
+              {
+                "root": "travel",
+                "mode": "capability",
+                "roles": {
+                  "source": "Tallinn 3",
+                  "destination": "Helsinki 4",
+                  "instrument": "ship"
+                }
+              }
+            ],
+            "action_reading": "availability"
+          },
+          "stage2": [
+            "@id",
+            "S3",
+            [
+              "holds",
+              "W0",
+              [
+                "can",
+                "Ann 1",
+                [
+                  "move",
+                  "Ann 1",
+                  "Tallinn 3",
+                  "Helsinki 4",
+                  "ship"
+                ]
+              ]
+            ]
+          ],
+          "scope": "availability",
+          "syntax": "supported",
+          "compile": "supported"
+        }
+      ],
+      "queries": [
+        {
+          "id": "Q1",
+          "text": "How can Ann get to Helsinki?",
+          "stage1_reading": "plan_question",
+          "stage2": [
+            "@id",
+            "Q1",
+            [
+              "plan",
+              [
+                "is rel2",
+                "located_at",
+                "Ann 1",
+                "Helsinki 4"
+              ]
+            ]
+          ],
+          "view": "discovery",
+          "seed": "s^4(0)",
+          "expect": {
+            "outcome": "unsupported_translation",
+            "reason": "occurrence",
+            "unit": "S2",
+            "evidence": "the Stage-1 gold keeps mode event for S2 and capability for S3; the compiler stops on S2. It must not read S2 as located_at(Ann,Tallinn) at W0 and plan the ship leg."
+          },
+          "backend": [],
+          "replay": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "creation",
+      "text": "Ann has flour. Ann can bake a cake from the flour. Baking produces a cake.",
+      "units": [
+        {
+          "id": "S1",
+          "text": "Ann has flour.",
+          "stage1": {
+            "type": "situation",
+            "entities": [
+              {
+                "id": "Ann 1",
+                "type": "concrete",
+                "category": "person"
+              },
+              {
+                "id": "flour 5",
+                "type": "concrete",
+                "category": "substance"
+              }
+            ]
+          },
+          "stage2": [
+            "@id",
+            "S1",
+            [
+              "holds",
+              "W0",
+              [
+                "have",
+                "Ann 1",
+                "flour 5"
+              ]
+            ]
+          ],
+          "scope": "initial",
+          "syntax": "supported",
+          "compile": "supported"
+        },
+        {
+          "id": "S2",
+          "text": "Ann can bake a cake from the flour.",
+          "stage1": {
+            "type": "situation",
+            "entities": [
+              {
+                "id": "Ann 1",
+                "type": "concrete",
+                "category": "person"
+              },
+              {
+                "id": "flour 5",
+                "type": "concrete",
+                "category": "substance"
+              },
+              {
+                "id": "activity",
+                "type": "generic"
+              }
+            ],
+            "actions": [
+              {
+                "root": "bake",
+                "mode": "capability",
+                "roles": {
+                  "target": "cake",
+                  "source": "flour 5"
+                }
+              }
+            ],
+            "action_reading": "availability"
+          },
+          "stage2": [
+            "@id",
+            "S2",
+            [
+              "holds",
+              "W0",
+              [
+                "exists",
+                "E",
+                [
+                  "and",
+                  [
+                    "isa",
+                    "activity",
+                    "E"
+                  ],
+                  [
+                    "has type",
+                    "E",
+                    "bake"
+                  ],
+                  [
+                    "has actor",
+                    "E",
+                    "Ann 1"
+                  ],
+                  [
+                    "has target",
+                    "E",
+                    "cake"
+                  ],
+                  [
+                    "has source",
+                    "E",
+                    "flour 5"
+                  ],
+                  [
+                    "capability",
+                    "E"
+                  ]
+                ]
+              ]
+            ]
+          ],
+          "scope": "availability",
+          "syntax": "supported",
+          "compile": {
+            "unsupported": "unsupported_action_kind",
+            "detail": "creation: the target is not an existing entity; no constructor creates an object (A2.6)"
+          }
+        },
+        {
+          "id": "S3",
+          "text": "Baking produces a cake.",
+          "stage1": {
+            "type": "strict_rule",
+            "entities": [
+              {
+                "id": "activity",
+                "type": "generic"
+              },
+              {
+                "id": "cake",
+                "type": "generic"
+              }
+            ],
+            "actions": [
+              {
+                "root": "bake",
+                "mode": "habitual",
+                "roles": {
+                  "result": "cake"
+                }
+              }
+            ],
+            "action_reading": "effect"
+          },
+          "stage2": [
+            "@id",
+            "S3",
+            [
+              "holds",
+              "W0",
+              [
+                "forall",
+                "E",
+                [
+                  "implies",
+                  [
+                    "and",
+                    [
+                      "isa",
+                      "activity",
+                      "E"
+                    ],
+                    [
+                      "has type",
+                      "E",
+                      "bake"
+                    ]
+                  ],
+                  [
+                    "exists",
+                    "X",
+                    [
+                      "and",
+                      [
+                        "isa",
+                        "cake",
+                        "X"
+                      ],
+                      [
+                        "has result",
+                        "E",
+                        "X"
+                      ]
+                    ]
+                  ]
+                ]
+              ]
+            ]
+          ],
+          "scope": "effect",
+          "syntax": "supported",
+          "compile": {
+            "unsupported": "unsupported_action_kind",
+            "detail": "creation"
+          }
+        }
+      ],
+      "queries": [
+        {
+          "id": "Q1",
+          "text": "How can Ann get a cake?",
+          "stage1_reading": "plan_question",
+          "stage2": [
+            "@id",
+            "Q1",
+            [
+              "plan",
+              [
+                "exists",
+                "X",
+                [
+                  "and",
+                  [
+                    "isa",
+                    "cake",
+                    "X"
+                  ],
+                  [
+                    "have",
+                    "Ann 1",
+                    "X"
+                  ]
+                ]
+              ]
+            ]
+          ],
+          "view": "discovery",
+          "seed": "s^4(0)",
+          "expect": {
+            "outcome": "unsupported_translation",
+            "reason": "unsupported_action_kind",
+            "detail": "creation",
+            "units": [
+              "S2",
+              "S3"
+            ],
+            "evidence": "no constructor creates an object (A2.6); S2 and S3 are retained and marked; the route stops"
+          },
+          "backend": [],
+          "replay": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "transport",
+      "text": "Ann is in Haapsalu. The box is in Haapsalu. Ann can carry the box from Haapsalu to Tallinn.",
+      "units": [
+        {
+          "id": "S1",
+          "text": "Ann is in Haapsalu. The box is in Haapsalu.",
+          "stage1": {
+            "type": "situation",
+            "entities": [
+              {
+                "id": "Ann 1",
+                "type": "concrete",
+                "category": "person"
+              },
+              {
+                "id": "Haapsalu 2",
+                "type": "concrete",
+                "category": "place"
+              },
+              {
+                "id": "box 6",
+                "type": "concrete",
+                "category": "artifact"
+              }
+            ]
+          },
+          "stage2": [
+            "@id",
+            "S1",
+            [
+              "holds",
+              "W0",
+              [
+                "and",
+                [
+                  "isa",
+                  "person",
+                  "Ann 1"
+                ],
+                [
+                  "is rel2",
+                  "located_at",
+                  "Ann 1",
+                  "Haapsalu 2"
+                ],
+                [
+                  "is rel2",
+                  "located_at",
+                  "box 6",
+                  "Haapsalu 2"
+                ]
+              ]
+            ]
+          ],
+          "scope": "initial",
+          "syntax": "supported",
+          "compile": "supported"
+        },
+        {
+          "id": "S2",
+          "text": "Ann can carry the box from Haapsalu to Tallinn.",
+          "stage1": {
+            "type": "situation",
+            "entities": [
+              {
+                "id": "Ann 1",
+                "type": "concrete",
+                "category": "person"
+              },
+              {
+                "id": "box 6",
+                "type": "concrete",
+                "category": "artifact"
+              },
+              {
+                "id": "Haapsalu 2",
+                "type": "concrete",
+                "category": "place"
+              },
+              {
+                "id": "Tallinn 3",
+                "type": "concrete",
+                "category": "place"
+              },
+              {
+                "id": "activity",
+                "type": "generic"
+              }
+            ],
+            "actions": [
+              {
+                "root": "carry",
+                "mode": "capability",
+                "roles": {
+                  "target": "box 6",
+                  "source": "Haapsalu 2",
+                  "destination": "Tallinn 3"
+                }
+              }
+            ],
+            "action_reading": "availability"
+          },
+          "stage2": [
+            "@id",
+            "S2",
+            [
+              "holds",
+              "W0",
+              [
+                "exists",
+                "E",
+                [
+                  "and",
+                  [
+                    "isa",
+                    "activity",
+                    "E"
+                  ],
+                  [
+                    "has type",
+                    "E",
+                    "carry"
+                  ],
+                  [
+                    "has actor",
+                    "E",
+                    "Ann 1"
+                  ],
+                  [
+                    "has target",
+                    "E",
+                    "box 6"
+                  ],
+                  [
+                    "has source",
+                    "E",
+                    "Haapsalu 2"
+                  ],
+                  [
+                    "has destination",
+                    "E",
+                    "Tallinn 3",
+                    "at"
+                  ],
+                  [
+                    "capability",
+                    "E"
+                  ]
+                ]
+              ]
+            ]
+          ],
+          "scope": "availability",
+          "syntax": "supported",
+          "compile": {
+            "unsupported": "unsupported_action_kind",
+            "detail": "transport: move is self-movement; a separate patient is not an alias for move or change (A2.2, A10)"
+          }
+        }
+      ],
+      "queries": [
+        {
+          "id": "Q1",
+          "text": "How can the box get to Tallinn?",
+          "stage1_reading": "plan_question",
+          "stage2": [
+            "@id",
+            "Q1",
+            [
+              "plan",
+              [
+                "is rel2",
+                "located_at",
+                "box 6",
+                "Tallinn 3"
+              ]
+            ]
+          ],
+          "view": "discovery",
+          "seed": "s^4(0)",
+          "expect": {
+            "outcome": "unsupported_translation",
+            "reason": "unsupported_action_kind",
+            "detail": "transport",
+            "unit": "S2",
+            "evidence": "move is self-movement; a separate patient is not an alias for move or change (A2.2); the route stops on S2"
+          },
+          "backend": [],
+          "replay": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "transfer",
+      "text": "Ann has the book. Ann can give the book to Bob.",
+      "units": [
+        {
+          "id": "S1",
+          "text": "Ann has the book.",
+          "stage1": {
+            "type": "situation",
+            "entities": [
+              {
+                "id": "Ann 1",
+                "type": "concrete",
+                "category": "person"
+              },
+              {
+                "id": "Bob 8",
+                "type": "concrete",
+                "category": "person"
+              },
+              {
+                "id": "book 7",
+                "type": "concrete",
+                "category": "artifact"
+              }
+            ]
+          },
+          "stage2": [
+            "@id",
+            "S1",
+            [
+              "holds",
+              "W0",
+              [
+                "and",
+                [
+                  "isa",
+                  "person",
+                  "Ann 1"
+                ],
+                [
+                  "isa",
+                  "person",
+                  "Bob 8"
+                ],
+                [
+                  "have",
+                  "Ann 1",
+                  "book 7"
+                ]
+              ]
+            ]
+          ],
+          "scope": "initial",
+          "syntax": "supported",
+          "compile": "supported"
+        },
+        {
+          "id": "S2",
+          "text": "Ann can give the book to Bob.",
+          "stage1": {
+            "type": "situation",
+            "entities": [
+              {
+                "id": "Ann 1",
+                "type": "concrete",
+                "category": "person"
+              },
+              {
+                "id": "book 7",
+                "type": "concrete",
+                "category": "artifact"
+              },
+              {
+                "id": "Bob 8",
+                "type": "concrete",
+                "category": "person"
+              },
+              {
+                "id": "activity",
+                "type": "generic"
+              }
+            ],
+            "actions": [
+              {
+                "root": "give",
+                "mode": "capability",
+                "roles": {
+                  "target": "book 7",
+                  "recipient": "Bob 8"
+                }
+              }
+            ],
+            "action_reading": "availability"
+          },
+          "stage2": [
+            "@id",
+            "S2",
+            [
+              "holds",
+              "W0",
+              [
+                "exists",
+                "E",
+                [
+                  "and",
+                  [
+                    "isa",
+                    "activity",
+                    "E"
+                  ],
+                  [
+                    "has type",
+                    "E",
+                    "give"
+                  ],
+                  [
+                    "has actor",
+                    "E",
+                    "Ann 1"
+                  ],
+                  [
+                    "has target",
+                    "E",
+                    "book 7"
+                  ],
+                  [
+                    "has recipient",
+                    "E",
+                    "Bob 8"
+                  ],
+                  [
+                    "capability",
+                    "E"
+                  ]
+                ]
+              ]
+            ]
+          ],
+          "scope": "availability",
+          "syntax": "supported",
+          "compile": {
+            "unsupported": "unsupported_action_kind",
+            "detail": "transfer between actors"
+          }
+        }
+      ],
+      "queries": [
+        {
+          "id": "Q1",
+          "text": "How can Bob get the book?",
+          "stage1_reading": "plan_question",
+          "stage2": [
+            "@id",
+            "Q1",
+            [
+              "plan",
+              [
+                "have",
+                "Bob 8",
+                "book 7"
+              ]
+            ]
+          ],
+          "view": "discovery",
+          "seed": "s^4(0)",
+          "expect": {
+            "outcome": "unsupported_translation",
+            "reason": "unsupported_action_kind",
+            "detail": "transfer",
+            "unit": "S2",
+            "evidence": "no constructor transfers possession between actors; the route stops on S2"
+          },
+          "backend": [],
+          "replay": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "time_qualified",
+      "text": "Ann is a person. Ann is in Haapsalu. There is a bus service from Haapsalu to Tallinn. Ann can take the bus until noon.",
+      "units": [
+        {
+          "id": "S1",
+          "text": "Ann is a person. Ann is in Haapsalu. There is a bus service from Haapsalu to Tallinn.",
+          "stage1": {
+            "type": "situation",
+            "entities": [
+              {
+                "id": "Ann 1",
+                "type": "concrete",
+                "category": "person"
+              },
+              {
+                "id": "Haapsalu 2",
+                "type": "concrete",
+                "category": "place"
+              },
+              {
+                "id": "Tallinn 3",
+                "type": "concrete",
+                "category": "place"
+              }
+            ]
+          },
+          "stage2": [
+            "@id",
+            "S1",
+            [
+              "holds",
+              "W0",
+              [
+                "and",
+                [
+                  "isa",
+                  "person",
+                  "Ann 1"
+                ],
+                [
+                  "is rel2",
+                  "located_at",
+                  "Ann 1",
+                  "Haapsalu 2"
+                ],
+                [
+                  "connected",
+                  "Haapsalu 2",
+                  "Tallinn 3",
+                  "bus"
+                ]
+              ]
+            ]
+          ],
+          "scope": "initial",
+          "syntax": "supported",
+          "compile": "supported"
+        },
+        {
+          "id": "S2",
+          "text": "Ann can take the bus until noon.",
+          "stage1": {
+            "type": "situation",
+            "entities": [
+              {
+                "id": "Ann 1",
+                "type": "concrete",
+                "category": "person"
+              }
+            ],
+            "actions": [
+              {
+                "root": "take",
+                "mode": "capability",
+                "roles": {
+                  "target": "bus"
+                }
+              }
+            ],
+            "action_reading": "availability",
+            "time": "until noon"
+          },
+          "stage2": [
+            "@id",
+            "S2",
+            [
+              "holds",
+              "W0",
+              [
+                "@time",
+                "until noon",
+                [
+                  "forall",
+                  "F",
+                  [
+                    "forall",
+                    "T",
+                    [
+                      "can",
+                      "Ann 1",
+                      [
+                        "move",
+                        "Ann 1",
+                        "F",
+                        "T",
+                        "bus"
+                      ]
+                    ]
+                  ]
+                ]
+              ]
+            ]
+          ],
+          "scope": "availability",
+          "syntax": "supported",
+          "compile": {
+            "unsupported": "unexpressible_temporal_permission_scope",
+            "detail": "a validity interval this grammar cannot express (A2.3); not erased into an unrestricted law, not read as initial-only"
+          }
+        }
+      ],
+      "queries": [
+        {
+          "id": "Q1",
+          "text": "How can Ann get to Tallinn?",
+          "stage1_reading": "plan_question",
+          "stage2": [
+            "@id",
+            "Q1",
+            [
+              "plan",
+              [
+                "is rel2",
+                "located_at",
+                "Ann 1",
+                "Tallinn 3"
+              ]
+            ]
+          ],
+          "view": "discovery",
+          "seed": "s^4(0)",
+          "expect": {
+            "outcome": "unsupported_translation",
+            "reason": "unexpressible_temporal_permission_scope",
+            "unit": "S2",
+            "evidence": "the library default would find the plan without S2; the presence of an unsupported unit stops the run (A2.6)"
+          },
+          "backend": [],
+          "replay": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "now_is_not_initial_only",
+      "text": "Ann is a person. Ann is in Haapsalu. There is a bus service from Haapsalu to Tallinn. Ann can now take the bus from Haapsalu to Tallinn.",
+      "units": [
+        {
+          "id": "S1",
+          "text": "Ann is a person. Ann is in Haapsalu. There is a bus service from Haapsalu to Tallinn.",
+          "stage1": {
+            "type": "situation",
+            "entities": [
+              {
+                "id": "Ann 1",
+                "type": "concrete",
+                "category": "person"
+              },
+              {
+                "id": "Haapsalu 2",
+                "type": "concrete",
+                "category": "place"
+              },
+              {
+                "id": "Tallinn 3",
+                "type": "concrete",
+                "category": "place"
+              }
+            ]
+          },
+          "stage2": [
+            "@id",
+            "S1",
+            [
+              "holds",
+              "W0",
+              [
+                "and",
+                [
+                  "isa",
+                  "person",
+                  "Ann 1"
+                ],
+                [
+                  "is rel2",
+                  "located_at",
+                  "Ann 1",
+                  "Haapsalu 2"
+                ],
+                [
+                  "connected",
+                  "Haapsalu 2",
+                  "Tallinn 3",
+                  "bus"
+                ]
+              ]
+            ]
+          ],
+          "scope": "initial",
+          "syntax": "supported",
+          "compile": "supported"
+        },
+        {
+          "id": "S2",
+          "text": "Ann can now take the bus from Haapsalu to Tallinn.",
+          "stage1": {
+            "type": "situation",
+            "entities": [
+              {
+                "id": "Ann 1",
+                "type": "concrete",
+                "category": "person"
+              },
+              {
+                "id": "Haapsalu 2",
+                "type": "concrete",
+                "category": "place"
+              },
+              {
+                "id": "Tallinn 3",
+                "type": "concrete",
+                "category": "place"
+              }
+            ],
+            "actions": [
+              {
+                "root": "take",
+                "mode": "capability",
+                "roles": {
+                  "actor": "Ann 1",
+                  "target": "bus",
+                  "source": "Haapsalu 2",
+                  "destination": "Tallinn 3"
+                }
+              }
+            ],
+            "action_reading": "availability"
+          },
+          "stage2": [
+            "@id",
+            "S2",
+            [
+              "holds",
+              "W0",
+              [
+                "can",
+                "Ann 1",
+                [
+                  "move",
+                  "Ann 1",
+                  "Haapsalu 2",
+                  "Tallinn 3",
+                  "bus"
+                ]
+              ]
+            ]
+          ],
+          "scope": "availability",
+          "syntax": "supported",
+          "compile": "supported",
+          "clauses": {
+            "must_have": [
+              {
+                "role": "availability",
+                "unit": "S2",
+                "lit": [
+                  "poss",
+                  [
+                    "move",
+                    "Ann 1",
+                    "Haapsalu 2",
+                    "Tallinn 3",
+                    "bus"
+                  ]
+                ],
+                "sign": "+",
+                "situation": "shared_current",
+                "note": "'now' alone does not make the permission initial-only (A2.3)"
+              }
+            ]
+          }
+        }
+      ],
+      "queries": [
+        {
+          "id": "Q1",
+          "text": "How can Ann get to Tallinn?",
+          "stage1_reading": "plan_question",
+          "stage2": [
+            "@id",
+            "Q1",
+            [
+              "plan",
+              [
+                "is rel2",
+                "located_at",
+                "Ann 1",
+                "Tallinn 3"
+              ]
+            ]
+          ],
+          "view": "discovery",
+          "seed": "s^4(0)",
+          "expect": {
+            "outcome": "plan_found",
+            "plan": [
+              [
+                "move",
+                "Ann 1",
+                "Haapsalu 2",
+                "Tallinn 3",
+                "bus"
+              ]
+            ],
+            "evidence": "S2 is a law at every situation; 'now' does not make it initial-only (A2.3); the bus connection and the permission"
+          },
+          "backend": [],
+          "replay": "covered"
+        }
+      ]
+    }
+  ],
+  "candidates": [],
+  "support": {
+    "syntax": "supported",
+    "compile": "unsupported (five variants) / supported (now)",
+    "backend_requirements": [],
+    "replay_fragment": "n/a"
+  },
+  "explain": "The Stage-2 gold for the unsupported verbs is the ordinary Davidsonian event form, because no constructor fits and the prompt must not force one. The compiler recognizes the reading from the Stage-1 action_reading and the absence of a constructor, and reports the kind. The same_verb variant is the A7.1 requirement that occurrence and ability of one verb stay different readings in the same text.",
+  "notes": "Reason names decided in REVIEW.md disposition 1: unsupported_action_kind with details creation / transport / transfer, unexpressible_temporal_permission_scope, occurrence."
+}

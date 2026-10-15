@@ -245,6 +245,39 @@ The arithmetic README gives complete commands and examples. Additional
 `arith_inst_*` limit keys exist for controlled experiments, but the three modes
 above are the stable public interface.
 
+## Planning search
+
+These keys are experimental and act only in the primary search (depth 0,
+outside a negative-evidence search). Each one is an exact integer; another
+value is rejected. All are 0 by default, and with all of them 0 the search is
+the same as without the keys. [`planning.md`](planning.md) describes each
+key, its conditions, its input records and its output.
+
+| Key | Values | Effect when on |
+|---|---|---|
+| `ground_contextfree_negative_first` | 0, 1 | resolve first a negative ground literal with no `$ctxt` term |
+| `permission_pair_first` | 0, 1 | resolve first a negative `poss(B, ... $do(A, S))` with two known action terms |
+| `action_actor_type_first` | 0, 1 | resolve first a negative `isa(C, X)` where X is the actor of an action in the clause |
+| `reachable_known_head_first` | 0, 1 | resolve first a negative `reachable($do(A, S), N)` with a known action term A |
+| `blocker_unit_cut` | 0, 1 | drop a given or answer clause when a strict unit proves the content of one of its blockers |
+| `blocker_unit_cut_guards` | 0, 1 | with `blocker_unit_cut` 1: guarded strict rules can cut too |
+| `eager_condensation` | 0, 1 | condense each new clause before it is built |
+| `plan_filters` | 0, 1, 2 | drop a clause whose plan matches a `$planfilter` record; 2 also checks every `$do` term |
+| `plan_state` | 0, 1 | drop a clause with a subgoal that is false in a `$planstate` record |
+
+The four selection keys need pure query focus: the `query_focus` strategy
+without `negative_pref`, `positive_pref`, `hyperres`, `knuthbendix_pref` or
+`hardness_pref`.
+
+Example of a plan search:
+
+```json
+{"strategy": ["query_focus"], "query_preference": 1, "equality": 0,
+ "ground_contextfree_negative_first": 1, "reachable_known_head_first": 1,
+ "permission_pair_first": 1, "eager_condensation": 1,
+ "blocker_unit_cut": 1, "blocker_unit_cut_guards": 1}
+```
+
 ## Supplied strategy files
 
 | File | Contents |

@@ -164,6 +164,22 @@ the planning strategy. On the gold fixtures both builds give 251 of 254 scored
 queries correct, with the same three failures. GK 1.0.11 also finds the
 three-step plan of one planning row that the experimental build did not find.
 
+The route then moved to GK 1.1.0. Every launch gets the blocker-unit cut with
+guarded rules. The positive discovery launch also gets literal selection and
+eager condensation. On the 126 planning rows, gemini answers from the LLM cache
+with the same code gave 116 correct on GK 1.1.0 and 115 on GK 1.0.11:
+
+- the four-step tower (row 64) is now found;
+- 122 rows keep their answer and grade;
+- rows 41 and 43 stay wrong, with other plans;
+- row 71 stays correct, with the other listed order.
+
+GK time rose from 670 to 836 seconds (+25%). The cut removes answers with
+confidence 0, and GK counts such answers toward its stop on the number of
+answers. Without them, a search that used to stop on that count runs to its
+time limit. Verify steps and discoveries that used to end within a second now
+take about 6 seconds, with the same answers.
+
 **Decision.** Retained as an experimental pipeline, chosen automatically for
 texts with a strong sign of actions or plans. It does not change the ordinary
 pipeline.
@@ -181,7 +197,10 @@ its holder, and a question that reads such a location is reported as
 Provenance: the full run, the repairs, the routing measurement and the GK
 build comparison (local archive:
 `memos/MEMO_2026_09_30_planning_fixes_opus.md`, sections 13, 17, 19 and 21;
-`elogs/gk_build_comparison_2026_10_03/`).
+`elogs/gk_build_comparison_2026_10_03/`); the GK 1.1.0 comparison
+(`testresults/old/planning_basic_actions_gk1011_2026_10_15/` and
+`planning_basic_actions_gk1011_part2_2026_10_15/` for GK 1.0.11,
+`planning_basic_actions_gk110_2026_10_15/` for GK 1.1.0).
 
 ### Multiple-model portfolios and voting
 

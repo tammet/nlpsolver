@@ -330,6 +330,10 @@ REASON_SENTENCES = {
                                       "which its prover does not support yet",
   "capability_not_validated": "the route read the question as needing a prover capability, which is not validated "
                               "yet",
+  "planning_summary_unsupported": "the route read a request for a planning summary, which this prover build or "
+                                  "installation does not support",
+  "planning_summary_not_validated": "the route read a request for a planning summary, which the prover binary at the "
+                                    "registered path is not validated to give",
   "ambiguous_directive": "the route read the request in more than one way, which it does not resolve",
   "unsupported_request": "the route read the request as a task outside planning and question answering, which it "
                          "does not model",

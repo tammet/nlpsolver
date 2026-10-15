@@ -31,6 +31,21 @@ from proof_render import format_clause_traditional
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))    # llmpipe/
 
 
+
+def planning_summary_lines(ps):
+  """The planning summary of a plan answer (-planning-summary): a rough description that holds if the plan is
+  executable.  It is no part of the proof and decides nothing."""
+  if ps.get("summary_check") != "ok":
+    return ["Planning summary: not shown (%s%s)." % (ps.get("summary_check"), ", %s" % ps["disabled"] if ps.get("disabled") else
+                                                     ", %s" % ps["detail"] if isinstance(ps.get("detail"), str) else "")]
+  import action_gk
+  import action_replay
+  facts = None if ps["world"] is None else [action_replay.show_atom(action_gk.source_term(f)) for f in ps["world"]]
+  progress = "no score (%s)" % ps["progress_reason"] if ps["progress"] is None else "progress %d (%s)" % (ps["progress"], ps["units"])
+  return ["Planning summary (rough; holds if the plan is executable): %s%s; facts after the plan: %s."
+          % (progress, ", some facts may be lost" if ps["lossy"] else "",
+             "none listed (%s)" % ps["world_reason"] if facts is None else ", ".join(facts) or "none")]
+
 def levels(options):
   """The output levels of a call's options, each including the ones above it."""
   o = options or {}
@@ -285,6 +300,9 @@ def explain_result(res, rec, view, lv):
   rp = res.get("replay")
   if isinstance(rp, dict) and rp.get("verdict"):
     lines.append("Replay: %s: %s." % (rp["verdict"], rp.get("reason") or ""))
+  ps = res.get("planning_summary")
+  if isinstance(ps, dict):
+    lines += planning_summary_lines(ps)
   if lv["logic"]:
     for p in proofs:
       if p.get("proof"):

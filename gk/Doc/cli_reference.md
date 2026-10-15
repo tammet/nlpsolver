@@ -284,6 +284,34 @@ Give every automatically selected strategy the same short time to find its
 first proof. The first successful strategy receives the remaining query time.
 GK enables this mode automatically when `-seconds` exceeds 30.
 
+## Planning
+
+These options are experimental. [`planning.md`](planning.md) describes the
+profile format and the output. The planning strategy keys are listed in
+`strategy_reference.md`, section "Planning search".
+
+### `-planning-profile <file>`
+
+Load a planning-summary profile (`planning_summary_profile/2`). GK then
+prints World, a list of facts, and Progress, a score, after the plan argument
+of each plan answer. A profile that does not load gives
+`{"error": "planning_profile_error: ..."}` and exit code 1 before any search.
+
+### `-planning-trace <file>`
+
+Write one JSON line per observation of the planning-summary hook, and a last
+line of counters, to `file`. Needs `-planning-profile`.
+
+### `-planning-inspect`
+
+Test option: inspect the input clauses with the planning-summary hook, write
+the trace, and end before any search.
+
+### `-planning-test-fail-after <n>`
+
+Test option: the planning-summary allocation after `n` more allocations
+fails.
+
 ## Shared-memory knowledge bases
 
 A parsed knowledge base can be held in shared memory for repeated queries.

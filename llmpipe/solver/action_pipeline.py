@@ -81,7 +81,7 @@ assert set(READINGS) == apt.READINGS
 QUERY_KINDS = ("plan", "reachable", "verify", "question", "ask")
 
 # the action route's own option keys; they never enter globals.options
-ACTION_KEYS = ("actions_flag", "plan_depth", "action_backend", "formal_flag")
+ACTION_KEYS = ("actions_flag", "plan_depth", "action_backend", "formal_flag", "planning_summary_flag")
 STAGE_FLAGS = ("fallback_norm_flag", "fallback_hyp_flag", "critic_flag", "graphtrans_flag", "litbridge_flag",
                "graphbridge_flag")
 CANCEL_FLAGS = ("nofallback_norm_flag", "nofallback_hyp_flag", "nocritic_flag", "nographtrans_flag",
@@ -137,14 +137,20 @@ def resolve(options):
   depth = opts.get("plan_depth")
   if depth is not None and (isinstance(depth, bool) or not isinstance(depth, int) or depth < 0):
     raise OptionError("-plan-depth is a non-negative integer, got %r" % (depth,))
-  backend = opts.get("action_backend") or ag.DEFAULT_BACKEND
+  # -planning-summary needs the build with the summary module: it is used unless a build is named, and a named
+  # build without the module is refused here, before any model call
+  summary = bool(opts.get("planning_summary_flag"))
+  backend = opts.get("action_backend") or (ag.SUMMARY_BACKEND if summary else ag.DEFAULT_BACKEND)
   try:
-    ag.backend_profile(backend)
+    named = ag.backend_profile(backend)
   except ag.AdapterError as e:
     raise OptionError(str(e))
+  if summary and not named.get("summary"):
+    raise OptionError("-planning-summary needs a build with the planning-summary module; %r has none (the summary "
+                      "build is %r)" % (backend, ag.SUMMARY_BACKEND))
   seconds = opts["prover_seconds"] if opts.get("prover_seconds_cli") and opts.get("prover_seconds") else ag.DEFAULT_SECONDS
   return {"route": TAG, "plan_depth": depth, "limits": {"search_cap": depth, "explicit": True} if depth is not None else None,
-          "backend": backend, "seconds": int(seconds), "formal": bool(opts.get("formal_flag")),
+          "backend": backend, "seconds": int(seconds), "formal": bool(opts.get("formal_flag")), "summary": summary,
           "bundle": DEFAULT_BUNDLE, "disabled_stages": [k[:-5] for k in STAGE_FLAGS],
           "think": bool(opts.get("think_flag")), "nosolve": bool(opts.get("prover_nosolve_flag"))}
 
@@ -1092,12 +1098,19 @@ def run(text, options, collect=None, llm=None, version=None, max_tokens=None):
     prof = resolve(options)
     rec["profile"] = prof
     _TRACE = lv["debug"]
-    with call_settings(options), (ag.recording() if record else contextlib.nullcontext([])) as launches:
-      if prof["formal"]:
-        answer = _run_formal(text, prof, rec, ledger, view)
-      else:
-        answer = run_text(text, prof, rec, ledger, llm, version, max_tokens, view)
-    view["launches"] = launches
+    # a summary request on a build that cannot run it is refused here, before any model call
+    refused = ag.summary_preflight(prof["backend"]) if prof["summary"] and not prof["nosolve"] else None
+    if refused:
+      o = dict(refused)
+      rec["result"] = ar.result(o.pop("outcome"), diagnostics=[o])
+      answer = aen.answer_text(rec["result"])
+    else:
+      with call_settings(options), (ag.recording() if record else contextlib.nullcontext([])) as launches:
+        if prof["formal"]:
+          answer = _run_formal(text, prof, rec, ledger, view)
+        else:
+          answer = run_text(text, prof, rec, ledger, llm, version, max_tokens, view)
+      view["launches"] = launches
   except OptionError as e:
     rec["error"] = {"kind": "options", "message": str(e)}
     answer = "Error: incompatible options: %s" % e
@@ -1145,7 +1158,10 @@ def solve_one_query(source, query_pkg, prof, rec, ledger, view, selection=None, 
                   "outcome": qa["outcome"] and qa["outcome"]["outcome"]}
   if prof.get("nosolve"):
     return None
-  return aa.solve(source, qa, prof["backend"], {"seconds": prof["seconds"]}, ledger)
+  limits = {"seconds": prof["seconds"]}
+  if prof.get("summary"):
+    limits["summary"] = True          # a discovery question gets its profile; every other question runs unchanged
+  return aa.solve(source, qa, prof["backend"], limits, ledger)
 
 
 NOT_SOLVED = {"outcome": "not_solved", "detail": "-nosolve: the query was compiled and GK was not launched"}

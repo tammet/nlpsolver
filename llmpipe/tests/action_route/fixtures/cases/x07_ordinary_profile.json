@@ -1,0 +1,33 @@
+{
+  "id": "x07_ordinary_profile",
+  "purpose": "an ordinary text under the ordinary profile is untouched by the action route; the same text under the action profile is static-only and answers the same; a route text under the ordinary profile is not planned",
+  "contract": ["A6.1", "A6.4", "rule 1"],
+  "family": ["Ordinary-route regression", "Source reuse"],
+  "input_kind": "text",
+  "text": "Elephants are animals. John is an elephant.",
+  "profile": "ordinary",
+  "entities": {"John 1": "animal"},
+  "units": [
+    {"id": "S1", "text": "Elephants are animals.", "stage1": {"type": "strict_rule", "entities": [{"id": "elephant", "type": "generic"}, {"id": "animal", "type": "generic", "category": "animal"}]}, "stage2": ["@id", "S1", ["holds", "W0", ["forall", "X", ["implies", ["isa", "elephant", "X"], ["isa", "animal", "X"]]]]], "scope": "static", "syntax": "supported", "compile": "supported", "clauses": {"must_not_have": [{"role": "*", "situation": "named"}, {"role": "*", "situation": "shared_current"}, {"role": "hook"}, {"role": "seed"}], "note": "no situation argument anywhere; no library action clauses loaded; prompt bytes and cache keys equal the WP01 baseline"}},
+    {"id": "S2", "text": "John is an elephant.", "stage1": {"type": "real", "entities": [{"id": "John 1", "type": "concrete", "category": "animal"}]}, "stage2": ["@id", "S2", ["holds", "W0", ["isa", "elephant", "John 1"]]], "scope": "static", "syntax": "supported", "compile": "supported", "clauses": {}}
+  ],
+  "queries": [
+    {"id": "Q1", "text": "Is John an animal?", "stage2": ["@id", "Q1", ["question", ["isa", "animal", "John 1"]]], "view": "ordinary", "expect": {"answer": "Yes", "stage": "initial attempt", "evidence": "the ordinary pipeline's answer; the baseline stored parse of WP01 (case_0001) is the reference for prompts and cache keys"}, "backend": [], "replay": "n/a"}
+  ],
+  "variants": [
+    {"id": "action_profile_static_text",
+     "profile": "physical_v1",
+     "queries": [
+      {"id": "Q1", "expect": {"answer": "Yes", "evidence": "static source, static question; the snapshot view; no S added to isa (A4.1: stable type atoms remain static); the outcome record says which profile ran"}}]},
+    {"id": "ordinary_profile_route_text",
+     "profile": "ordinary",
+     "text": "Ann is in Haapsalu. There is a bus service from Haapsalu to Tallinn.",
+     "units": [],
+     "queries": [
+      {"id": "Q1", "text": "How can Ann get to Tallinn?", "stage2": null, "view": "ordinary", "expect": {"outcome": "ordinary_result", "not_outcome": ["plan_found", "source_compiled"], "evidence": "no planning route is automatic (rule 1); the ordinary pipeline handles the text as it does today, whatever its answer is. The fixture pins only that no action outcome, action prompt, or action clause appears in the record."}, "backend": [], "replay": "n/a"}]}
+  ],
+  "candidates": [],
+  "support": {"syntax": "supported", "compile": "supported", "backend_requirements": [], "replay_fragment": "n/a"},
+  "explain": "This is the isolation fixture WP14 and WP15 run through the shared entry points with the WP01 baseline as the reference. The action-profile variant also pins A4.1's boundary: a static text compiles to static clauses under the action profile and the answer does not change.",
+  "notes": "The ordinary-profile expectation for the route text is deliberately not an answer value: the ordinary pipeline's result on a planning question is whatever it is today and is not this package's concern."
+}

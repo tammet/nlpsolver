@@ -1,0 +1,790 @@
+{
+  "id": "c06_scoped_route",
+  "purpose": "a conditional movement availability with stated endpoints yields a stated-endpoint path for its actor that keeps the permit condition; a public connection stays an alternative",
+  "contract": [
+    "C06",
+    "A2.4",
+    "A4.3"
+  ],
+  "family": [
+    "Route scope"
+  ],
+  "input_kind": "text",
+  "text": "Ann is a person. Bob is a person. Ann is in Haapsalu. Bob is in Haapsalu. If Ann has the permit, Ann can go from Haapsalu to Tallinn by bus. Ann has the permit.",
+  "profile": "physical_v1",
+  "entities": {
+    "Ann 1": "person",
+    "Bob 2": "person",
+    "Haapsalu 3": "place",
+    "Tallinn 4": "place",
+    "permit 5": "artifact"
+  },
+  "units": [
+    {
+      "id": "S1",
+      "text": "Ann is a person.",
+      "stage1": {
+        "type": "real",
+        "entities": [
+          {
+            "id": "Ann 1",
+            "type": "concrete",
+            "category": "person"
+          }
+        ]
+      },
+      "stage2": [
+        "@id",
+        "S1",
+        [
+          "holds",
+          "W0",
+          [
+            "isa",
+            "person",
+            "Ann 1"
+          ]
+        ]
+      ],
+      "scope": "static",
+      "syntax": "supported",
+      "compile": "supported",
+      "clauses": {}
+    },
+    {
+      "id": "S2",
+      "text": "Bob is a person.",
+      "stage1": {
+        "type": "real",
+        "entities": [
+          {
+            "id": "Bob 2",
+            "type": "concrete",
+            "category": "person"
+          }
+        ]
+      },
+      "stage2": [
+        "@id",
+        "S2",
+        [
+          "holds",
+          "W0",
+          [
+            "isa",
+            "person",
+            "Bob 2"
+          ]
+        ]
+      ],
+      "scope": "static",
+      "syntax": "supported",
+      "compile": "supported",
+      "clauses": {}
+    },
+    {
+      "id": "S3",
+      "text": "Ann is in Haapsalu.",
+      "stage1": {
+        "type": "situation",
+        "entities": [
+          {
+            "id": "Ann 1",
+            "type": "concrete",
+            "category": "person"
+          },
+          {
+            "id": "Haapsalu 3",
+            "type": "concrete",
+            "category": "place"
+          }
+        ]
+      },
+      "stage2": [
+        "@id",
+        "S3",
+        [
+          "holds",
+          "W0",
+          [
+            "is rel2",
+            "located_at",
+            "Ann 1",
+            "Haapsalu 3"
+          ]
+        ]
+      ],
+      "scope": "initial",
+      "syntax": "supported",
+      "compile": "supported",
+      "clauses": {}
+    },
+    {
+      "id": "S4",
+      "text": "Bob is in Haapsalu.",
+      "stage1": {
+        "type": "situation",
+        "entities": [
+          {
+            "id": "Bob 2",
+            "type": "concrete",
+            "category": "person"
+          },
+          {
+            "id": "Haapsalu 3",
+            "type": "concrete",
+            "category": "place"
+          }
+        ]
+      },
+      "stage2": [
+        "@id",
+        "S4",
+        [
+          "holds",
+          "W0",
+          [
+            "is rel2",
+            "located_at",
+            "Bob 2",
+            "Haapsalu 3"
+          ]
+        ]
+      ],
+      "scope": "initial",
+      "syntax": "supported",
+      "compile": "supported",
+      "clauses": {}
+    },
+    {
+      "id": "S5",
+      "text": "If Ann has the permit, Ann can go from Haapsalu to Tallinn by bus.",
+      "stage1": {
+        "type": "strict_rule",
+        "entities": [
+          {
+            "id": "Ann 1",
+            "type": "concrete",
+            "category": "person"
+          },
+          {
+            "id": "permit 5",
+            "type": "concrete",
+            "category": "artifact"
+          },
+          {
+            "id": "Haapsalu 3",
+            "type": "concrete",
+            "category": "place"
+          },
+          {
+            "id": "Tallinn 4",
+            "type": "concrete",
+            "category": "place"
+          }
+        ],
+        "actions": [
+          {
+            "root": "go",
+            "mode": "capability",
+            "roles": {
+              "source": "Haapsalu 3",
+              "destination": "Tallinn 4",
+              "instrument": "bus"
+            }
+          }
+        ],
+        "action_reading": "availability"
+      },
+      "stage2": [
+        "@id",
+        "S5",
+        [
+          "holds",
+          "W0",
+          [
+            "implies",
+            [
+              "have",
+              "Ann 1",
+              "permit 5"
+            ],
+            [
+              "can",
+              "Ann 1",
+              [
+                "move",
+                "Ann 1",
+                "Haapsalu 3",
+                "Tallinn 4",
+                "bus"
+              ]
+            ]
+          ]
+        ]
+      ],
+      "scope": "availability",
+      "syntax": "supported",
+      "compile": "supported",
+      "clauses": {
+        "must_have": [
+          {
+            "role": "availability",
+            "unit": "S5",
+            "lit": [
+              "poss",
+              [
+                "move",
+                "Ann 1",
+                "Haapsalu 3",
+                "Tallinn 4",
+                "bus"
+              ]
+            ],
+            "sign": "+",
+            "situation": "shared_current",
+            "body": [
+              {
+                "lit": [
+                  "have",
+                  "Ann 1",
+                  "permit 5"
+                ],
+                "sign": "+",
+                "situation": "shared_current"
+              }
+            ]
+          },
+          {
+            "role": "availability",
+            "unit": "S5",
+            "lit": [
+              "poss",
+              [
+                "move",
+                "Ann 1",
+                "Haapsalu 3",
+                "Tallinn 4",
+                "bus"
+              ]
+            ],
+            "sign": "+",
+            "situation": "shared_current",
+            "body": [
+              {
+                "lit": [
+                  "have",
+                  "Ann 1",
+                  "permit 5"
+                ],
+                "sign": "+",
+                "situation": "shared_current"
+              }
+            ],
+            "body_absent": [
+              "connected"
+            ],
+            "note": "the stated-endpoint path: the rule's conditions, located_at, differ and the hook; no connected literal; same condition, same actor, same provenance"
+          }
+        ],
+        "must_not_have": [
+          {
+            "role": "static",
+            "unit": "S5",
+            "lit": [
+              "connected",
+              "Haapsalu 3",
+              "Tallinn 4",
+              "bus"
+            ],
+            "note": "a conditional private availability is not a public connection"
+          },
+          {
+            "role": "availability",
+            "lit": [
+              "poss",
+              [
+                "move",
+                "X",
+                "Haapsalu 3",
+                "Tallinn 4",
+                "bus"
+              ]
+            ],
+            "body_absent": [
+              "connected"
+            ],
+            "note": "no stated-endpoint path for a variable actor: pattern semantics (fixtures/README.md): an upper-case letter in a pattern matches a clause variable in that slot, never the constant Ann 1; this forbids a path whose actor slot was generalized to a variable, and does not match Ann's path"
+          }
+        ]
+      }
+    },
+    {
+      "id": "S6",
+      "text": "Ann has the permit.",
+      "stage1": {
+        "type": "situation",
+        "entities": [
+          {
+            "id": "Ann 1",
+            "type": "concrete",
+            "category": "person"
+          },
+          {
+            "id": "permit 5",
+            "type": "concrete",
+            "category": "artifact"
+          }
+        ]
+      },
+      "stage2": [
+        "@id",
+        "S6",
+        [
+          "holds",
+          "W0",
+          [
+            "have",
+            "Ann 1",
+            "permit 5"
+          ]
+        ]
+      ],
+      "scope": "initial",
+      "syntax": "supported",
+      "compile": "supported",
+      "clauses": {}
+    }
+  ],
+  "queries": [
+    {
+      "id": "Q1",
+      "text": "How can Ann get to Tallinn?",
+      "stage1_reading": "plan_question",
+      "stage2": [
+        "@id",
+        "Q1",
+        [
+          "plan",
+          [
+            "is rel2",
+            "located_at",
+            "Ann 1",
+            "Tallinn 4"
+          ]
+        ]
+      ],
+      "view": "discovery",
+      "seed": "s^4(0)",
+      "expect": {
+        "outcome": "plan_found",
+        "answer": "Yes",
+        "plan": [
+          [
+            "move",
+            "Ann 1",
+            "Haapsalu 3",
+            "Tallinn 4",
+            "bus"
+          ]
+        ],
+        "evidence": "S5's stated-endpoint path (template tpl_move_stated) for Ann: have(Ann,permit) at W0 from S6, located_at(Ann,Haapsalu) at W0, differ(Haapsalu,Tallinn) and the hook; the path reads no connected fact"
+      },
+      "backend": [],
+      "replay": "covered"
+    },
+    {
+      "id": "Q2",
+      "text": "How can Bob get to Tallinn?",
+      "stage1_reading": "plan_question",
+      "stage2": [
+        "@id",
+        "Q2",
+        [
+          "plan",
+          [
+            "is rel2",
+            "located_at",
+            "Bob 2",
+            "Tallinn 4"
+          ]
+        ]
+      ],
+      "view": "discovery",
+      "seed": "s^4(0)",
+      "expect": {
+        "outcome": "not_found",
+        "answer": "none",
+        "evidence": "Bob has the library default poss_move_person, which needs connected(Haapsalu,Tallinn,bus); no unit states it, and S5's stated-endpoint path is Ann's"
+      },
+      "backend": [],
+      "replay": "covered"
+    },
+    {
+      "id": "Q3",
+      "text": "Can Bob take the bus from Haapsalu to Tallinn now?",
+      "stage1_reading": "executable_question",
+      "stage2": [
+        "@id",
+        "Q3",
+        [
+          "question",
+          [
+            "executable",
+            [
+              "move",
+              "Bob 2",
+              "Haapsalu 3",
+              "Tallinn 4",
+              "bus"
+            ]
+          ]
+        ]
+      ],
+      "view": "snapshot",
+      "expect": {
+        "answer": "Unknown",
+        "evidence": "Bob has no path: a missing positive, not an explicit negative"
+      },
+      "backend": [],
+      "replay": "n/a"
+    }
+  ],
+  "variants": [
+    {
+      "id": "missing_permit",
+      "text": "Ann is a person. Bob is a person. Ann is in Haapsalu. Bob is in Haapsalu. If Ann has the permit, Ann can go from Haapsalu to Tallinn by bus.",
+      "units_remove": [
+        "S6"
+      ],
+      "queries": [
+        {
+          "id": "Q1",
+          "expect": {
+            "outcome": "not_found",
+            "answer": "none",
+            "evidence": "have(Ann,permit) unsupported: S5's path lacks its condition, so it gives no poss for Ann"
+          }
+        },
+        {
+          "id": "Q4",
+          "text": "Can Ann take the bus from Haapsalu to Tallinn now?",
+          "stage1_reading": "executable_question",
+          "stage2": [
+            "@id",
+            "Q4",
+            [
+              "question",
+              [
+                "executable",
+                [
+                  "move",
+                  "Ann 1",
+                  "Haapsalu 3",
+                  "Tallinn 4",
+                  "bus"
+                ]
+              ]
+            ]
+          ],
+          "view": "snapshot",
+          "expect": {
+            "answer": "Unknown",
+            "evidence": "the library default poss_move_person applies to Ann as a person but needs a connected fact, which no unit states; S5's path needs the permit, which is unknown"
+          },
+          "backend": [],
+          "replay": "n/a"
+        }
+      ],
+      "queries_keep": [
+        "Q2",
+        "Q3"
+      ]
+    },
+    {
+      "id": "public_route",
+      "text": "Ann is a person. Bob is a person. Ann is in Haapsalu. Bob is in Haapsalu. There is a bus route from Haapsalu to Tallinn. If Ann has the permit, Ann can go from Haapsalu to Tallinn by bus. Ann has the permit.",
+      "units_add": [
+        {
+          "id": "S7",
+          "text": "There is a bus route from Haapsalu to Tallinn.",
+          "stage1": {
+            "type": "real",
+            "entities": [
+              {
+                "id": "Haapsalu 3",
+                "type": "concrete",
+                "category": "place"
+              },
+              {
+                "id": "Tallinn 4",
+                "type": "concrete",
+                "category": "place"
+              }
+            ]
+          },
+          "stage2": [
+            "@id",
+            "S7",
+            [
+              "holds",
+              "W0",
+              [
+                "connected",
+                "Haapsalu 3",
+                "Tallinn 4",
+                "bus"
+              ]
+            ]
+          ],
+          "scope": "static",
+          "syntax": "supported",
+          "compile": "supported",
+          "clauses": {}
+        }
+      ],
+      "queries": [
+        {
+          "id": "Q2",
+          "expect": {
+            "outcome": "plan_found",
+            "plan": [
+              [
+                "move",
+                "Bob 2",
+                "Haapsalu 3",
+                "Tallinn 4",
+                "bus"
+              ]
+            ],
+            "evidence": "public connected + library default; S5 does not prohibit that alternative (A2.4)",
+            "answer": "Yes"
+          }
+        },
+        {
+          "id": "Q1",
+          "expect": {
+            "outcome": "plan_found",
+            "plan": [
+              [
+                "move",
+                "Ann 1",
+                "Haapsalu 3",
+                "Tallinn 4",
+                "bus"
+              ]
+            ],
+            "evidence": "either path; both check can, location, distinctness and the same restrictions",
+            "answer": "Yes"
+          }
+        },
+        {
+          "id": "Q3",
+          "expect": {
+            "answer": "Yes",
+            "evidence": "with the public connection the library default poss_move_person gives Bob the bus at W0; location and distinctness hold"
+          }
+        }
+      ]
+    },
+    {
+      "id": "public_route_no_permit",
+      "text": "Ann is a person. Bob is a person. Ann is in Haapsalu. Bob is in Haapsalu. There is a bus route from Haapsalu to Tallinn. If Ann has the permit, Ann can go from Haapsalu to Tallinn by bus.",
+      "units_add": [
+        {
+          "id": "S7",
+          "text": "There is a bus route from Haapsalu to Tallinn.",
+          "stage1": {
+            "type": "real",
+            "entities": [
+              {
+                "id": "Haapsalu 3",
+                "type": "concrete",
+                "category": "place"
+              },
+              {
+                "id": "Tallinn 4",
+                "type": "concrete",
+                "category": "place"
+              }
+            ]
+          },
+          "stage2": [
+            "@id",
+            "S7",
+            [
+              "holds",
+              "W0",
+              [
+                "connected",
+                "Haapsalu 3",
+                "Tallinn 4",
+                "bus"
+              ]
+            ]
+          ],
+          "scope": "static",
+          "syntax": "supported",
+          "compile": "supported",
+          "clauses": {}
+        }
+      ],
+      "units_remove": [
+        "S6"
+      ],
+      "queries": [
+        {
+          "id": "Q1",
+          "expect": {
+            "outcome": "plan_found",
+            "plan": [
+              [
+                "move",
+                "Ann 1",
+                "Haapsalu 3",
+                "Tallinn 4",
+                "bus"
+              ]
+            ],
+            "evidence": "the public connection with the library default poss_move_person; a merely sufficient source condition does not prohibit the alternative",
+            "answer": "Yes"
+          }
+        },
+        {
+          "id": "Q2",
+          "expect": {
+            "outcome": "plan_found",
+            "answer": "Yes",
+            "plan": [
+              [
+                "move",
+                "Bob 2",
+                "Haapsalu 3",
+                "Tallinn 4",
+                "bus"
+              ]
+            ],
+            "evidence": "the public connection and the library default for Bob"
+          }
+        },
+        {
+          "id": "Q4",
+          "text": "Can Ann take the bus from Haapsalu to Tallinn now?",
+          "stage1_reading": "executable_question",
+          "stage2": [
+            "@id",
+            "Q4",
+            [
+              "question",
+              [
+                "executable",
+                [
+                  "move",
+                  "Ann 1",
+                  "Haapsalu 3",
+                  "Tallinn 4",
+                  "bus"
+                ]
+              ]
+            ]
+          ],
+          "view": "snapshot",
+          "expect": {
+            "answer": "Yes",
+            "evidence": "the public connection with the library default; S5's unmet condition removes only S5's own path"
+          },
+          "backend": [],
+          "replay": "n/a"
+        }
+      ]
+    }
+  ],
+  "candidates": [
+    {
+      "id": "K1",
+      "sequence": [
+        [
+          "move",
+          "Ann 1",
+          "Haapsalu 3",
+          "Tallinn 4",
+          "bus"
+        ]
+      ],
+      "states": [
+        {
+          "after": 0,
+          "facts": [
+            "+located_at(Ann,Haapsalu)",
+            "+have(Ann,permit)"
+          ]
+        },
+        {
+          "after": 1,
+          "facts": [
+            "+located_at(Ann,Tallinn)",
+            "-located_at(Ann,Haapsalu)",
+            "+have(Ann,permit)"
+          ]
+        }
+      ],
+      "verdict": "valid",
+      "reason": "S5's stated-endpoint path with the permit"
+    },
+    {
+      "id": "K2",
+      "sequence": [
+        [
+          "move",
+          "Bob 2",
+          "Haapsalu 3",
+          "Tallinn 4",
+          "bus"
+        ]
+      ],
+      "states": [
+        {
+          "after": 0,
+          "facts": [
+            "+located_at(Bob,Haapsalu)"
+          ]
+        }
+      ],
+      "verdict": "invalid",
+      "step": 1,
+      "reason": "no path for Bob (base text)"
+    },
+    {
+      "id": "K3",
+      "variant": "missing_permit",
+      "sequence": [
+        [
+          "move",
+          "Ann 1",
+          "Haapsalu 3",
+          "Tallinn 4",
+          "bus"
+        ]
+      ],
+      "states": [
+        {
+          "after": 0,
+          "facts": [
+            "+located_at(Ann,Haapsalu)"
+          ]
+        }
+      ],
+      "verdict": "invalid",
+      "step": 1,
+      "reason": "permit unsupported; S5's path does not apply"
+    }
+  ],
+  "support": {
+    "syntax": "supported",
+    "compile": "supported",
+    "backend_requirements": [],
+    "replay_fragment": "covered: conditional availability with a stated-endpoint path"
+  },
+  "explain": "S5 is fully specified (actor Ann, endpoints, means), so the compiler emits one stated-endpoint path (template tpl_move_stated) for Ann under the have(Ann,permit) condition; the path reads no connected fact. Bob shows that the path is not public; the missing-permit variant shows that the condition is kept; the public-route variants show that a public connection plus the library default remains a legitimate alternative for both actors.",
+  "notes": "Companion c13_uncertain_scoped_route pins the confidence behavior of the split; c23_variable_endpoints pins source-bound variable endpoints. Amended 2026-09-20 (WP04: the forbidden public connection names its unit S5; the public_route variants state that connection in S7)."
+}

@@ -1,0 +1,1139 @@
+{
+  "id": "x01_identity",
+  "purpose": "two owners and two tools stay distinct; a pronoun alias is one entity; no actor is invented for an agentless sentence; self-placement is never validated",
+  "contract": [
+    "A2.2",
+    "A4.3",
+    "A5.1"
+  ],
+  "family": [
+    "Actor/object identity"
+  ],
+  "input_kind": "text",
+  "text": "Ann and Bob are persons. Ann has whisk one. Bob has whisk two. Ann has the egg. The egg is broken. If a person has a whisk, the person can whisk the egg with that whisk. She can also break the egg.",
+  "profile": "physical_v1",
+  "entities": {
+    "Ann 1": "person",
+    "Bob 2": "person",
+    "whisk one 3": "artifact",
+    "whisk two 4": "artifact",
+    "egg 5": "food",
+    "table 7": "table",
+    "hand 8": "hand",
+    "a 9": "block",
+    "cook 10": "person"
+  },
+  "units": [
+    {
+      "id": "S1",
+      "text": "Ann and Bob are persons.",
+      "stage1": {
+        "type": "real",
+        "entities": [
+          {
+            "id": "Ann 1",
+            "type": "concrete",
+            "category": "person"
+          },
+          {
+            "id": "Bob 2",
+            "type": "concrete",
+            "category": "person"
+          }
+        ]
+      },
+      "stage2": [
+        "@id",
+        "S1",
+        [
+          "holds",
+          "W0",
+          [
+            "and",
+            [
+              "isa",
+              "person",
+              "Ann 1"
+            ],
+            [
+              "isa",
+              "person",
+              "Bob 2"
+            ]
+          ]
+        ]
+      ],
+      "scope": "static",
+      "syntax": "supported",
+      "compile": "supported",
+      "clauses": {
+        "must_have": [
+          {
+            "role": "distinct",
+            "pairs": [
+              [
+                "Ann 1",
+                "Bob 2"
+              ],
+              [
+                "whisk one 3",
+                "whisk two 4"
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "S2",
+      "text": "Ann has whisk one.",
+      "stage1": {
+        "type": "situation",
+        "entities": [
+          {
+            "id": "whisk one 3",
+            "type": "concrete",
+            "category": "artifact"
+          },
+          {
+            "id": "Ann 1",
+            "type": "concrete",
+            "category": "person"
+          }
+        ]
+      },
+      "stage2": [
+        "@id",
+        "S2",
+        [
+          "holds",
+          "W0",
+          [
+            "and",
+            [
+              "isa",
+              "whisk",
+              "whisk one 3"
+            ],
+            [
+              "have",
+              "Ann 1",
+              "whisk one 3"
+            ]
+          ]
+        ]
+      ],
+      "scope": "initial",
+      "syntax": "supported",
+      "compile": "supported",
+      "clauses": {}
+    },
+    {
+      "id": "S3",
+      "text": "Bob has whisk two.",
+      "stage1": {
+        "type": "situation",
+        "entities": [
+          {
+            "id": "whisk two 4",
+            "type": "concrete",
+            "category": "artifact"
+          },
+          {
+            "id": "Bob 2",
+            "type": "concrete",
+            "category": "person"
+          }
+        ]
+      },
+      "stage2": [
+        "@id",
+        "S3",
+        [
+          "holds",
+          "W0",
+          [
+            "and",
+            [
+              "isa",
+              "whisk",
+              "whisk two 4"
+            ],
+            [
+              "have",
+              "Bob 2",
+              "whisk two 4"
+            ]
+          ]
+        ]
+      ],
+      "scope": "initial",
+      "syntax": "supported",
+      "compile": "supported",
+      "clauses": {}
+    },
+    {
+      "id": "S4",
+      "text": "Ann has the egg. The egg is broken.",
+      "stage1": {
+        "type": "situation",
+        "entities": [
+          {
+            "id": "Ann 1",
+            "type": "concrete",
+            "category": "person"
+          },
+          {
+            "id": "egg 5",
+            "type": "concrete"
+          }
+        ]
+      },
+      "stage2": [
+        "@id",
+        "S4",
+        [
+          "holds",
+          "W0",
+          [
+            "and",
+            [
+              "have",
+              "Ann 1",
+              "egg 5"
+            ],
+            [
+              "has property",
+              "broken",
+              "egg 5"
+            ]
+          ]
+        ]
+      ],
+      "scope": "initial",
+      "syntax": "supported",
+      "compile": "supported",
+      "clauses": {}
+    },
+    {
+      "id": "S5",
+      "text": "If a person has a whisk, the person can whisk the egg with that whisk.",
+      "stage1": {
+        "type": "strict_rule",
+        "entities": [
+          {
+            "id": "egg 5",
+            "type": "concrete"
+          },
+          {
+            "id": "person",
+            "type": "generic",
+            "category": "person"
+          },
+          {
+            "id": "whisk",
+            "type": "generic"
+          }
+        ],
+        "actions": [
+          {
+            "root": "whisk",
+            "mode": "capability",
+            "roles": {
+              "actor": "person",
+              "target": "egg 5",
+              "instrument": "whisk"
+            }
+          }
+        ],
+        "action_reading": "availability"
+      },
+      "stage2": [
+        "@id",
+        "S5",
+        [
+          "holds",
+          "W0",
+          [
+            "forall",
+            "P",
+            [
+              "forall",
+              "W",
+              [
+                "implies",
+                [
+                  "and",
+                  [
+                    "isa",
+                    "person",
+                    "P"
+                  ],
+                  [
+                    "isa",
+                    "whisk",
+                    "W"
+                  ],
+                  [
+                    "have",
+                    "P",
+                    "W"
+                  ]
+                ],
+                [
+                  "can",
+                  "P",
+                  [
+                    "change",
+                    "P",
+                    "egg 5",
+                    "whisked",
+                    "W"
+                  ]
+                ]
+              ]
+            ]
+          ]
+        ]
+      ],
+      "scope": "availability",
+      "syntax": "supported",
+      "compile": "supported",
+      "clauses": {
+        "must_have": [
+          {
+            "role": "availability",
+            "unit": "S5",
+            "lit": [
+              "poss",
+              [
+                "change",
+                "P",
+                "egg 5",
+                "whisked",
+                "W"
+              ]
+            ],
+            "sign": "+",
+            "situation": "shared_current",
+            "note": "actor and tool are the rule's own variables; the compiler does not substitute Ann or a whisk"
+          }
+        ]
+      }
+    },
+    {
+      "id": "S6",
+      "text": "She can also break the egg.",
+      "stage1": {
+        "type": "situation",
+        "entities": [
+          {
+            "id": "Ann 1",
+            "type": "concrete",
+            "category": "person"
+          },
+          {
+            "id": "egg 5",
+            "type": "concrete"
+          }
+        ],
+        "actions": [
+          {
+            "root": "break",
+            "mode": "capability",
+            "roles": {
+              "actor": "Ann 1",
+              "target": "egg 5"
+            }
+          }
+        ],
+        "action_reading": "availability"
+      },
+      "stage2": [
+        "@id",
+        "S6",
+        [
+          "holds",
+          "W0",
+          [
+            "can",
+            "Ann 1",
+            [
+              "change",
+              "Ann 1",
+              "egg 5",
+              "broken",
+              "unspecified"
+            ]
+          ]
+        ]
+      ],
+      "scope": "availability",
+      "syntax": "supported",
+      "compile": "supported",
+      "clauses": {
+        "must_not_have": [
+          {
+            "role": "*",
+            "lit": [
+              "isa",
+              "person",
+              "She 6"
+            ],
+            "note": "the pronoun is resolved by Stage 1 to Ann 1; no new entity"
+          }
+        ]
+      }
+    }
+  ],
+  "queries": [
+    {
+      "id": "Q1",
+      "text": "Can Ann whisk the egg with whisk two now?",
+      "stage1_reading": "executable_question",
+      "stage2": [
+        "@id",
+        "Q1",
+        [
+          "question",
+          [
+            "executable",
+            [
+              "change",
+              "Ann 1",
+              "egg 5",
+              "whisked",
+              "whisk two 4"
+            ]
+          ]
+        ]
+      ],
+      "view": "snapshot",
+      "expect": {
+        "answer": "Unknown",
+        "evidence": "have(Ann,whisk two) unsupported; owners are not merged"
+      },
+      "backend": [],
+      "replay": "n/a"
+    },
+    {
+      "id": "Q2",
+      "text": "Can Ann whisk the egg with whisk one now?",
+      "stage1_reading": "executable_question",
+      "stage2": [
+        "@id",
+        "Q2",
+        [
+          "question",
+          [
+            "executable",
+            [
+              "change",
+              "Ann 1",
+              "egg 5",
+              "whisked",
+              "whisk one 3"
+            ]
+          ]
+        ]
+      ],
+      "view": "snapshot",
+      "expect": {
+        "answer": "Yes",
+        "evidence": "S5's path (template tpl_change) with P = Ann 1, W = whisk one 3: isa person Ann, isa whisk whisk one, have(Ann,whisk one) at W0"
+      },
+      "backend": [],
+      "replay": "n/a"
+    },
+    {
+      "id": "Q3",
+      "text": "Can Bob whisk the egg with whisk two now?",
+      "stage1_reading": "executable_question",
+      "stage2": [
+        "@id",
+        "Q3",
+        [
+          "question",
+          [
+            "executable",
+            [
+              "change",
+              "Bob 2",
+              "egg 5",
+              "whisked",
+              "whisk two 4"
+            ]
+          ]
+        ]
+      ],
+      "view": "snapshot",
+      "expect": {
+        "answer": "Yes",
+        "evidence": "S5 says nothing about who has the egg"
+      },
+      "backend": [],
+      "replay": "n/a"
+    },
+    {
+      "id": "Q4",
+      "text": "Who can whisk the egg with whisk one now?",
+      "stage2": [
+        "@id",
+        "Q4",
+        [
+          "ask",
+          "P",
+          [
+            "executable",
+            [
+              "change",
+              "P",
+              "egg 5",
+              "whisked",
+              "whisk one 3"
+            ]
+          ]
+        ]
+      ],
+      "view": "snapshot",
+      "expect": {
+        "answer": "Ann 1",
+        "not_answer": [
+          "Bob 2"
+        ],
+        "evidence": "S5's executability path at the planning root binds P to a person who has whisk one: Ann; Bob has whisk two only, so Bob is not an answer; owners are not merged"
+      },
+      "backend": [],
+      "replay": "n/a"
+    }
+  ],
+  "variants": [
+    {
+      "id": "agentless",
+      "text": "The egg is on the table. The egg can be whisked.",
+      "units": [
+        {
+          "id": "S1",
+          "text": "The egg is on the table.",
+          "stage1": {
+            "type": "situation",
+            "entities": [
+              {
+                "id": "table 7",
+                "type": "concrete",
+                "category": "artifact"
+              },
+              {
+                "id": "egg 5",
+                "type": "concrete"
+              }
+            ]
+          },
+          "stage2": [
+            "@id",
+            "S1",
+            [
+              "holds",
+              "W0",
+              [
+                "and",
+                [
+                  "isa",
+                  "table",
+                  "table 7"
+                ],
+                [
+                  "is rel2",
+                  "on",
+                  "egg 5",
+                  "table 7"
+                ]
+              ]
+            ]
+          ],
+          "scope": "initial",
+          "syntax": "supported",
+          "compile": "supported"
+        },
+        {
+          "id": "S2",
+          "text": "The egg can be whisked.",
+          "stage1": {
+            "type": "situation",
+            "entities": [
+              {
+                "id": "egg 5",
+                "type": "concrete"
+              }
+            ],
+            "actions": [
+              {
+                "root": "whisk",
+                "mode": "capability",
+                "roles": {
+                  "target": "egg 5"
+                }
+              }
+            ],
+            "action_reading": "availability"
+          },
+          "stage2": [
+            "@id",
+            "S2",
+            [
+              "holds",
+              "W0",
+              [
+                "exists",
+                "A",
+                [
+                  "can",
+                  "A",
+                  [
+                    "change",
+                    "A",
+                    "egg 5",
+                    "whisked",
+                    "unspecified"
+                  ]
+                ]
+              ]
+            ]
+          ],
+          "scope": "availability",
+          "syntax": "supported",
+          "compile": {
+            "unsupported": "existential_availability_head",
+            "detail": "an existential actor inside an availability: lifted over situations the rule reads forall S exists A: poss(ACTION(A, ...), C(S)), so the witness may depend on S; treating it as one world-independent Skolem constant exchanges the quantifiers (review R5). Outside the first executable fragment until a scope decision is recorded; a source existential actor is not banned."
+          },
+          "clauses": {
+            "must_not_have": [
+              {
+                "role": "availability",
+                "unit": "S2",
+                "lit": [
+                  "poss",
+                  [
+                    "change",
+                    "sk_A",
+                    "egg 5",
+                    "whisked",
+                    "unspecified"
+                  ]
+                ],
+                "situation": "shared_current",
+                "note": "a situation-free witness would be the quantifier exchange"
+              },
+              {
+                "role": "*",
+                "lit": [
+                  "poss",
+                  [
+                    "change",
+                    "Ann 1",
+                    "egg 5",
+                    "whisked",
+                    "unspecified"
+                  ]
+                ],
+                "note": "no named actor is invented"
+              }
+            ]
+          }
+        }
+      ],
+      "queries": [
+        {
+          "id": "Q1",
+          "text": "How can the egg get whisked?",
+          "stage1_reading": "plan_question",
+          "stage2": [
+            "@id",
+            "Q1",
+            [
+              "plan",
+              [
+                "has property",
+                "whisked",
+                "egg 5"
+              ]
+            ]
+          ],
+          "view": "discovery",
+          "seed": "s^4(0)",
+          "expect": {
+            "outcome": "unsupported_translation",
+            "reason": "existential_availability_head",
+            "unit": "S2",
+            "forbidden_outcomes": [
+              "plan_found"
+            ],
+            "evidence": "S2 is retained and marked unsupported; the route stops before search. It must not produce a plan whose actor is an invented constant, nor a plan by Ann."
+          },
+          "backend": [],
+          "replay": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "introduced_actor",
+      "text": "The egg is on the table. A cook is present. Every cook can whisk the egg.",
+      "units": [
+        {
+          "id": "S1",
+          "text": "The egg is on the table.",
+          "stage1": {
+            "type": "situation",
+            "entities": [
+              {
+                "id": "table 7",
+                "type": "concrete",
+                "category": "artifact"
+              },
+              {
+                "id": "egg 5",
+                "type": "concrete"
+              }
+            ]
+          },
+          "stage2": [
+            "@id",
+            "S1",
+            [
+              "holds",
+              "W0",
+              [
+                "and",
+                [
+                  "isa",
+                  "table",
+                  "table 7"
+                ],
+                [
+                  "is rel2",
+                  "on",
+                  "egg 5",
+                  "table 7"
+                ]
+              ]
+            ]
+          ],
+          "scope": "initial",
+          "syntax": "supported",
+          "compile": "supported"
+        },
+        {
+          "id": "S2",
+          "text": "A cook is present.",
+          "stage1": {
+            "type": "situation",
+            "entities": [
+              {
+                "id": "cook",
+                "type": "generic"
+              }
+            ]
+          },
+          "stage2": [
+            "@id",
+            "S2",
+            [
+              "holds",
+              "W0",
+              [
+                "exists",
+                "A",
+                [
+                  "isa",
+                  "cook",
+                  "A"
+                ]
+              ]
+            ]
+          ],
+          "scope": "static",
+          "syntax": "supported",
+          "compile": "supported",
+          "clauses": {
+            "must_have": [
+              {
+                "role": "static",
+                "unit": "S2",
+                "lit": [
+                  "isa",
+                  "cook",
+                  "sk_A"
+                ],
+                "sign": "+",
+                "situation": "none",
+                "note": "a static existential description: its witness is a constant with no situation argument, because the formula has no fluent and is not lifted over situations (A4.1)"
+              }
+            ]
+          },
+          "note": "the actor is introduced independently of any situation-dependent rule (review R5)"
+        },
+        {
+          "id": "S3",
+          "text": "Every cook can whisk the egg.",
+          "stage1": {
+            "type": "strict_rule",
+            "entities": [
+              {
+                "id": "egg 5",
+                "type": "concrete"
+              },
+              {
+                "id": "cook",
+                "type": "generic"
+              }
+            ],
+            "actions": [
+              {
+                "root": "whisk",
+                "mode": "capability",
+                "roles": {
+                  "actor": "cook",
+                  "target": "egg 5"
+                }
+              }
+            ],
+            "action_reading": "availability"
+          },
+          "stage2": [
+            "@id",
+            "S3",
+            [
+              "holds",
+              "W0",
+              [
+                "forall",
+                "A",
+                [
+                  "implies",
+                  [
+                    "isa",
+                    "cook",
+                    "A"
+                  ],
+                  [
+                    "can",
+                    "A",
+                    [
+                      "change",
+                      "A",
+                      "egg 5",
+                      "whisked",
+                      "unspecified"
+                    ]
+                  ]
+                ]
+              ]
+            ]
+          ],
+          "scope": "availability",
+          "syntax": "supported",
+          "compile": "supported",
+          "clauses": {
+            "must_have": [
+              {
+                "role": "availability",
+                "unit": "S3",
+                "lit": [
+                  "poss",
+                  [
+                    "change",
+                    "A",
+                    "egg 5",
+                    "whisked",
+                    "unspecified"
+                  ]
+                ],
+                "sign": "+",
+                "situation": "shared_current",
+                "body": [
+                  {
+                    "lit": [
+                      "isa",
+                      "cook",
+                      "A"
+                    ],
+                    "sign": "+",
+                    "situation": "none"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "queries": [
+        {
+          "id": "Q1",
+          "text": "How can the egg get whisked?",
+          "stage1_reading": "plan_question",
+          "stage2": [
+            "@id",
+            "Q1",
+            [
+              "plan",
+              [
+                "has property",
+                "whisked",
+                "egg 5"
+              ]
+            ]
+          ],
+          "view": "discovery",
+          "seed": "s^4(0)",
+          "expect": {
+            "outcome": "plan_found",
+            "answer": "Yes",
+            "plan": [
+              [
+                "change",
+                "sk_A",
+                "egg 5",
+                "whisked",
+                "unspecified"
+              ]
+            ],
+            "render": "The cook whisks the egg",
+            "evidence": "the actor is the witness of S2, a ground constant, so the candidate is ground and rooted in W0 and eligible (A5.2); S3's path gives it poss at every situation; eff_change writes whisked. Rendering names it by its class, never as a named entity."
+          },
+          "backend": [],
+          "replay": "covered"
+        }
+      ]
+    },
+    {
+      "id": "self_placement",
+      "text": "There is a robot hand. Block a is on the table. Block a is clear. The hand is empty.",
+      "units": [
+        {
+          "id": "S1",
+          "text": "There is a robot hand. Block a is on the table. Block a is clear. The hand is empty.",
+          "stage1": {
+            "type": "situation",
+            "entities": [
+              {
+                "id": "hand 8",
+                "type": "concrete",
+                "category": "artifact"
+              },
+              {
+                "id": "a 9",
+                "type": "concrete",
+                "category": "artifact"
+              },
+              {
+                "id": "table 7",
+                "type": "concrete",
+                "category": "artifact"
+              }
+            ]
+          },
+          "stage2": [
+            "@id",
+            "S1",
+            [
+              "holds",
+              "W0",
+              [
+                "and",
+                [
+                  "isa",
+                  "hand",
+                  "hand 8"
+                ],
+                [
+                  "isa",
+                  "block",
+                  "a 9"
+                ],
+                [
+                  "isa",
+                  "table",
+                  "table 7"
+                ],
+                [
+                  "is rel2",
+                  "on",
+                  "a 9",
+                  "table 7"
+                ],
+                [
+                  "has property",
+                  "clear_top",
+                  "a 9"
+                ],
+                [
+                  "has property",
+                  "empty",
+                  "hand 8"
+                ]
+              ]
+            ]
+          ],
+          "scope": "initial",
+          "syntax": "supported",
+          "compile": "supported"
+        }
+      ],
+      "queries": [
+        {
+          "id": "Q1",
+          "text": "After taking block a, can the hand put block a on block a?",
+          "stage1_reading": "verify_question",
+          "stage2": [
+            "@id",
+            "Q1",
+            [
+              "verify",
+              [
+                [
+                  "take",
+                  "hand 8",
+                  "a 9"
+                ]
+              ],
+              [
+                "executable",
+                [
+                  "put_on",
+                  "hand 8",
+                  "a 9",
+                  "a 9"
+                ]
+              ]
+            ]
+          ],
+          "view": "verify",
+          "expect": {
+            "answer": "Unknown",
+            "forbidden_answers": [
+              "Yes",
+              "No"
+            ],
+            "evidence": "the placement law requires differ(a,a), which no fact supplies; the block branch also needs clear_top(a) at W0+1 (true: nothing was put on a). Positive proof impossible; a negative proof would need an explicit 'a block is not distinct from itself' law, which the library has not. Replay: invalid (self-placement), a validation result."
+          },
+          "backend": [],
+          "replay": "covered"
+        },
+        {
+          "id": "Q2",
+          "text": "How can block a be on block a?",
+          "stage1_reading": "plan_question",
+          "stage2": [
+            "@id",
+            "Q2",
+            [
+              "plan",
+              [
+                "is rel2",
+                "on",
+                "a 9",
+                "a 9"
+              ]
+            ]
+          ],
+          "view": "discovery",
+          "seed": "s^4(0)",
+          "expect": {
+            "outcome": "not_found",
+            "forbidden_outcomes": [
+              "plan_found",
+              "goal_already_holds"
+            ],
+            "alternative": {
+              "outcome": "candidate_not_validated",
+              "when": "GK returns an eligible candidate containing put_on(hand,a,a); the replay rejects it as K1"
+            },
+            "evidence": "GK cannot prove put_on(hand,a,a) (differ(a,a) is absent), so no candidate is expected and the outcome is not_found; if a backend produced one, the replay's self-placement check rejects it and the outcome is candidate_not_validated"
+          },
+          "backend": [],
+          "replay": "covered"
+        }
+      ]
+    }
+  ],
+  "candidates": [
+    {
+      "id": "K1",
+      "variant": "self_placement",
+      "sequence": [
+        [
+          "take",
+          "hand 8",
+          "a 9"
+        ],
+        [
+          "put_on",
+          "hand 8",
+          "a 9",
+          "a 9"
+        ]
+      ],
+      "states": [
+        {
+          "after": 0,
+          "facts": [
+            "+on(a,table)",
+            "+clear_top(a)",
+            "+empty(hand)"
+          ]
+        },
+        {
+          "after": 1,
+          "facts": [
+            "+holding(hand,a)",
+            "-empty(hand)",
+            "-on(a,table)",
+            "+clear_top(a)"
+          ]
+        }
+      ],
+      "verdict": "invalid",
+      "step": 2,
+      "reason": "X = Y in put_on"
+    },
+    {
+      "id": "K2",
+      "variant": "introduced_actor",
+      "sequence": [
+        [
+          "change",
+          "sk_A",
+          "egg 5",
+          "whisked",
+          "unspecified"
+        ]
+      ],
+      "states": [
+        {
+          "after": 0,
+          "facts": [
+            "+on(egg,table)",
+            "isa(cook,sk_A)"
+          ]
+        },
+        {
+          "after": 1,
+          "facts": [
+            "+on(egg,table)",
+            "+whisked(egg)"
+          ]
+        }
+      ],
+      "verdict": "valid",
+      "reason": "S3 permission for the witness; change needs no physical precondition beyond the permission"
+    }
+  ],
+  "support": {
+    "syntax": "supported",
+    "compile": "supported",
+    "backend_requirements": [],
+    "replay_fragment": "covered"
+  },
+  "explain": "The distinctness policy is: every pair of distinct #: ids from Stage 1 gets differ facts in both orders; a pronoun already resolved to an id is that id; an existential witness is a Skolem constant that gets no differ facts and is never unified with a named entity. The agentless variant is now unsupported: an existential actor inside an availability would need a situation-dependent witness once the formula is lifted over situations, and the fixture does not decide that scope (review R5). introduced_actor is the supported control: the actor comes from a static existential description, so its witness is one constant, and the permission is a universal over the class. Self-placement is blocked in the library by differ and in the replay by an explicit check; neither gives a No without a further law.",
+  "notes": "A8.1 family 'Actor/object identity' plus the alias test the plan asks to retain. Amended 2026-09-11 (review R5, R8): agentless marked unsupported with introduced_actor as the control; 'not Yes' replaced by exact Unknown with forbidden answers. Amended 2026-09-23 (encoding v2, gold review 0.4): Q4 asks executable in place of can; the answer Ann 1 is re-derived from S5's executability path."
+}

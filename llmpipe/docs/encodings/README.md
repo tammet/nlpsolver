@@ -94,6 +94,7 @@ loses or adds distinctions.
 | action readings and the action Stage-2 envelope | the action route's two model calls (experimental) | [action-prompts.md](action-prompts.md) |
 | action clauses: `poss`, `$do`, markers, query questions | the action compiler | [action-clauses.md](action-clauses.md) |
 | the action library `axioms_action.js` | maintained by hand | [action-library.md](action-library.md) |
+| the planning-summary profile, the rendered answer and the annotation | the profile compiler, the summary build of GK, the adapter | [action-planning-summary.md](action-planning-summary.md) |
 | source, query, evidence and result records of the action route | the action compiler, the GK adapter, the answer policy | [action-artifacts.md](action-artifacts.md) |
 | one worked case, end to end | — | [end-to-end-example.md](end-to-end-example.md) |
 | one worked action case, end to end | — | [action-end-to-end-example.md](action-end-to-end-example.md) |

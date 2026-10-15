@@ -1,0 +1,25 @@
+{
+  "id": "c30_uncertain_put_on",
+  "purpose": "an uncertain put_on rule compiles to two paths that each hold the unit's evidence; a single question uses one path at 0.6; a target that is both a block and a surface gives two proofs",
+  "contract": ["A2.3", "A2.4", "A4.2"],
+  "family": ["Probability", "Permission strength"],
+  "input_kind": "formal_only",
+  "text": "Robo is a robot. Block a and block b are blocks. Robo holds block a. Block b is clear. Robo can probably put block a on block b.",
+  "profile": "physical_v1",
+  "entities": {"Robo 1": "robot", "a 2": "block", "b 3": "block"},
+  "units": [
+    {"id": "S1", "text": "Robo is a robot. Block a and block b are blocks.", "stage2": ["@id", "S1", ["holds", "W0", ["and", ["isa", "robot", "Robo 1"], ["isa", "block", "a 2"], ["isa", "block", "b 3"]]]], "scope": "static", "syntax": "supported", "compile": "supported", "clauses": {}},
+    {"id": "S2", "text": "Robo holds block a. Block b is clear.", "stage2": ["@id", "S2", ["holds", "W0", ["and", ["is rel2", "holding", "Robo 1", "a 2"], ["has property", "clear_top", "b 3"]]]], "scope": "initial", "syntax": "supported", "compile": "supported", "clauses": {}},
+    {"id": "S3", "text": "Robo can probably put block a on block b.", "stage2": ["@id", "S3", ["and", ["holds", "W0", ["can", "Robo 1", ["put_on", "Robo 1", "a 2", "b 3"]]], ["@p", "S3", 0.8]]], "scope": "availability", "syntax": "supported", "compile": "supported", "confidence": {"source_probability": 0.8, "compiled_evidence": 0.6, "convention": "e = 2p - 1 for 0.5 < p < 1 (solver/lc_packages.py, _process_assertion)"}, "clauses": {}}
+  ],
+  "queries": [
+    {"id": "Q1", "text": "Can Robo put block a on block b now?", "stage1_reading": "executable_question", "stage2": ["@id", "Q1", ["question", ["executable", ["put_on", "Robo 1", "a 2", "b 3"]]]], "view": "snapshot", "expect": {"answer": "Yes", "confidence": {"layer": "backend", "value": 0.6, "tolerance": 0.005}, "evidence": "S3's block path (holding, isa block b, clear_top b, differ a b, the default hook) holds S3's evidence 0.6; the surface path needs surface(b), which no unit states; a robot has no library default"}, "backend": [], "replay": "n/a"}
+  ],
+  "variants": [
+    {"id": "overlap", "text": "Robo is a robot. Block a and block b are blocks. Robo holds block a. Block b is clear. Robo can probably put block a on block b. Block b is also a table.", "units_add": [{"id": "S4", "text": "Block b is also a table.", "stage2": ["@id", "S4", ["holds", "W0", ["isa", "table", "b 3"]]], "scope": "static", "syntax": "supported", "compile": "supported", "clauses": {}}], "queries": [{"id": "Q1", "expect": {"answer": "Yes", "confidence": {"layer": "backend", "recorded": true, "note": "b is a block and a surface: both paths of S3 apply, two proofs of one application from one source; the value is recorded, not pinned, and is not validated semantics (Astra's review of 2026-09-24)"}, "evidence": "S3's block path and S3's surface path (surface(b) from isa(table, b)), each holding 0.6"}}]}
+  ],
+  "candidates": [],
+  "support": {"syntax": "supported", "compile": "supported", "backend_requirements": [], "replay_fragment": "n/a"},
+  "explain": "Encoding v2, migration step 0.5 (uncertain put_on rule). The actor is a typed robot, not a hand, so no library default proves the action at 1.0, and no second source rule licenses it. The overlap variant measures what GK does with two proofs of one application from two paths of one unit. The two proofs share one source, so their evidence is not independent: GK's pooled value (0.84 at checkpoint 2) is recorded as a measurement, not as validated source-confidence semantics.",
+  "notes": "Written 2026-09-23 before any GK run of the migration (REVIEW.md, encoding v2 rows)."
+}

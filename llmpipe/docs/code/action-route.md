@@ -40,6 +40,7 @@ length of the call (`action_pipeline.call_settings`), and then restores them.
 | proof search | `action_gk` | `run_query`, `extract`, `planned_launches`, `check_prerequisites`, `recording` | one GK launch per question; the typed evidence |
 | decision | `action_answer` | `solve`, `decide`, `paired`, `confidence_parts` | the answer policy over the evidence |
 | replay | `action_replay` | `replay`, `verification`, `evaluate` | the independent check of a plan or a supplied sequence |
+| planning summary (optional) | `lc_action_summary`, `action_summary`, `action_gk`, `action_answer` | `compile_profile`; `load`, `Context.get`, `Context.observe`, `validate`, `term_defect`; `summary_preflight`, `summary_capability`, `extract`; `summary_check` | the profile of one plan question, read from the clauses of its view; the reference interpreter of a profile; the build check and the decoding; the comparison with the reference and the replay |
 | answer text | `action_english` | `answer_text`, `render`, `plan_steps`, `plan_named`, `answered` | the answer forms, the English of plans and facts |
 | output | `action_display` | `show`, `explanation`, `summary_record`, `write_gkin`, `raw_result` | what `solve.py` prints at each output level |
 | hashes | `digests` | `canonical`, `digest`, `sha256_text`, `sha256_file` | the canonical JSON and SHA-256 of the artifacts |
@@ -68,8 +69,9 @@ operations as a library interface; the checks use them.
 | `action_gk.DEFAULT_SECONDS` | 30 | seconds per GK launch (`-seconds`) |
 | `action_gk.EXTRA` | 15 | the external margin over `-seconds` |
 | `action_gk.CUTOFF` | 0.10 | the smallest confidence of a candidate |
-| `action_gk.PLANNING_STRATEGY` | query focus | the GK strategy of the registered build |
-| `action_gk.BACKENDS` | `gk` | the registered GK builds |
+| `action_gk.PLANNING_STRATEGY` | query focus, blocker-unit cut | the GK strategy of every launch |
+| `action_gk.DISCOVERY_KEYS` | literal selection, eager condensation | the keys added for the positive discovery launch (`ROLE_STRATEGY`) |
+| `action_gk.BACKENDS` | `gk`, `gk_summary` | the registered GK builds; both run the installed GK 1.1.0, and `gk_summary` adds planning summaries |
 | `action_english.PROBABLY` | 0.95 | below this stated confidence the answer says "Probably" |
 
 ## Where to change what

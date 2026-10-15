@@ -66,7 +66,7 @@ action route for texts about actions and plans.
 `-formal` alone also selects the action route. Without these keys, a
 classifier reads the text with no model call: a strong sign of actions or
 plans selects the action route, and every other text the ordinary pipeline. The route's own keys (`-formal`, `-plan-depth`,
-`-action-backend`) and its answer forms are on the
+`-action-backend`, `-planning-summary`) and its answer forms are on the
 [experimental options](experimental-options.md#the-action-route) page. The
 retry configuration below applies to the ordinary pipeline only.
 

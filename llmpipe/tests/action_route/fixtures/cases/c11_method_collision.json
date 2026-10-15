@@ -1,0 +1,792 @@
+{
+ "id": "c11_method_collision",
+ "purpose": "two source-distinguished methods with different effects mapped to one indistinguishable action term are a method collision; tool-distinguished methods are not",
+ "contract": [
+  "C11",
+  "A2.6",
+  "A4.4"
+ ],
+ "family": [
+  "Unsupported meaning"
+ ],
+ "input_kind": "text",
+ "text": "Ann has an egg. Ann can boil the egg. Ann can fry the egg. After Ann boils the egg, the egg is cooked and the egg is wet. After Ann fries the egg, the egg is cooked and the egg is crisp.",
+ "profile": "physical_v1",
+ "entities": {
+  "Ann 1": "person",
+  "egg 2": "food",
+  "pot 3": "artifact",
+  "pan 4": "artifact"
+ },
+ "units": [
+  {
+   "id": "S1",
+   "text": "Ann has an egg.",
+   "stage1": {
+    "type": "situation",
+    "entities": [
+     {
+      "id": "Ann 1",
+      "type": "concrete",
+      "category": "person"
+     },
+     {
+      "id": "egg 2",
+      "type": "concrete"
+     }
+    ]
+   },
+   "stage2": [
+    "@id",
+    "S1",
+    [
+     "holds",
+     "W0",
+     [
+      "and",
+      [
+       "isa",
+       "person",
+       "Ann 1"
+      ],
+      [
+       "have",
+       "Ann 1",
+       "egg 2"
+      ]
+     ]
+    ]
+   ],
+   "scope": "initial",
+   "syntax": "supported",
+   "compile": "supported",
+   "clauses": {}
+  },
+  {
+   "id": "S2",
+   "text": "Ann can boil the egg.",
+   "stage1": {
+    "type": "situation",
+    "entities": [
+     {
+      "id": "Ann 1",
+      "type": "concrete",
+      "category": "person"
+     },
+     {
+      "id": "egg 2",
+      "type": "concrete"
+     }
+    ],
+    "actions": [
+     {
+      "root": "boil",
+      "mode": "capability",
+      "roles": {
+       "target": "egg 2"
+      }
+     }
+    ],
+    "action_reading": "availability"
+   },
+   "stage2": [
+    "@id",
+    "S2",
+    [
+     "holds",
+     "W0",
+     [
+      "can",
+      "Ann 1",
+      [
+       "change",
+       "Ann 1",
+       "egg 2",
+       "cooked",
+       "unspecified"
+      ]
+     ]
+    ]
+   ],
+   "scope": "availability",
+   "syntax": "supported",
+   "compile": {
+    "unsupported": "method_collision",
+    "detail": "S2/S4 (boil) and S3/S5 (fry) compile to the same term change(Ann,egg,cooked,unspecified) with different effect sets"
+   }
+  },
+  {
+   "id": "S3",
+   "text": "Ann can fry the egg.",
+   "stage1": {
+    "type": "situation",
+    "entities": [
+     {
+      "id": "Ann 1",
+      "type": "concrete",
+      "category": "person"
+     },
+     {
+      "id": "egg 2",
+      "type": "concrete"
+     }
+    ],
+    "actions": [
+     {
+      "root": "fry",
+      "mode": "capability",
+      "roles": {
+       "target": "egg 2"
+      }
+     }
+    ],
+    "action_reading": "availability"
+   },
+   "stage2": [
+    "@id",
+    "S3",
+    [
+     "holds",
+     "W0",
+     [
+      "can",
+      "Ann 1",
+      [
+       "change",
+       "Ann 1",
+       "egg 2",
+       "cooked",
+       "unspecified"
+      ]
+     ]
+    ]
+   ],
+   "scope": "availability",
+   "syntax": "supported",
+   "compile": {
+    "unsupported": "method_collision"
+   }
+  },
+  {
+   "id": "S4",
+   "text": "After Ann boils the egg, the egg is cooked and the egg is wet.",
+   "stage1": {
+    "type": "strict_rule",
+    "entities": [
+     {
+      "id": "Ann 1",
+      "type": "concrete",
+      "category": "person"
+     },
+     {
+      "id": "egg 2",
+      "type": "concrete"
+     }
+    ],
+    "actions": [
+     {
+      "root": "boil",
+      "mode": "event",
+      "roles": {
+       "target": "egg 2"
+      }
+     }
+    ],
+    "action_reading": "effect"
+   },
+   "stage2": [
+    "@id",
+    "S4",
+    [
+     "holds",
+     "W0",
+     [
+      "after",
+      [
+       "change",
+       "Ann 1",
+       "egg 2",
+       "cooked",
+       "unspecified"
+      ],
+      [
+       "and",
+       [
+        "has property",
+        "cooked",
+        "egg 2"
+       ],
+       [
+        "has property",
+        "wet",
+        "egg 2"
+       ]
+      ]
+     ]
+    ]
+   ],
+   "scope": "effect",
+   "syntax": "supported",
+   "compile": {
+    "unsupported": "method_collision"
+   }
+  },
+  {
+   "id": "S5",
+   "text": "After Ann fries the egg, the egg is cooked and the egg is crisp.",
+   "stage1": {
+    "type": "strict_rule",
+    "entities": [
+     {
+      "id": "Ann 1",
+      "type": "concrete",
+      "category": "person"
+     },
+     {
+      "id": "egg 2",
+      "type": "concrete"
+     }
+    ],
+    "actions": [
+     {
+      "root": "fry",
+      "mode": "event",
+      "roles": {
+       "target": "egg 2"
+      }
+     }
+    ],
+    "action_reading": "effect"
+   },
+   "stage2": [
+    "@id",
+    "S5",
+    [
+     "holds",
+     "W0",
+     [
+      "after",
+      [
+       "change",
+       "Ann 1",
+       "egg 2",
+       "cooked",
+       "unspecified"
+      ],
+      [
+       "and",
+       [
+        "has property",
+        "cooked",
+        "egg 2"
+       ],
+       [
+        "has property",
+        "crisp",
+        "egg 2"
+       ]
+      ]
+     ]
+    ]
+   ],
+   "scope": "effect",
+   "syntax": "supported",
+   "compile": {
+    "unsupported": "method_collision"
+   }
+  }
+ ],
+ "queries": [
+  {
+   "id": "Q1",
+   "text": "How can Ann get the egg cooked and crisp?",
+   "stage1_reading": "plan_question",
+   "stage2": [
+    "@id",
+    "Q1",
+    [
+     "plan",
+     [
+      "and",
+      [
+       "has property",
+       "cooked",
+       "egg 2"
+      ],
+      [
+       "has property",
+       "crisp",
+       "egg 2"
+      ]
+     ]
+    ]
+   ],
+   "view": "discovery",
+   "seed": "s^4(0)",
+   "expect": {
+    "outcome": "unsupported_translation",
+    "reason": "method_collision",
+    "units": [
+     "S2",
+     "S3",
+     "S4",
+     "S5"
+    ],
+    "evidence": "the compiler must detect that one action term contains the effects of two source verbs and stop before search; no plan may use wet and crisp from one action"
+   },
+   "backend": [],
+   "replay": "n/a"
+  }
+ ],
+ "variants": [
+  {
+   "id": "tools_distinguish",
+   "text": "Ann has an egg, a pot and a pan. Ann can boil the egg in the pot. Ann can fry the egg in the pan. After Ann boils the egg in the pot, the egg is cooked and wet. After Ann fries the egg in the pan, the egg is cooked and crisp.",
+   "units": [
+    {
+     "id": "S1",
+     "text": "Ann has an egg, a pot and a pan.",
+     "stage1": {
+      "type": "situation",
+      "entities": [
+       {
+        "id": "Ann 1",
+        "type": "concrete",
+        "category": "person"
+       },
+       {
+        "id": "egg 2",
+        "type": "concrete"
+       },
+       {
+        "id": "pot 3",
+        "type": "concrete",
+        "category": "artifact"
+       },
+       {
+        "id": "pan 4",
+        "type": "concrete",
+        "category": "artifact"
+       }
+      ]
+     },
+     "stage2": [
+      "@id",
+      "S1",
+      [
+       "holds",
+       "W0",
+       [
+        "and",
+        [
+         "isa",
+         "person",
+         "Ann 1"
+        ],
+        [
+         "have",
+         "Ann 1",
+         "egg 2"
+        ],
+        [
+         "have",
+         "Ann 1",
+         "pot 3"
+        ],
+        [
+         "have",
+         "Ann 1",
+         "pan 4"
+        ]
+       ]
+      ]
+     ],
+     "scope": "initial",
+     "syntax": "supported",
+     "compile": "supported"
+    },
+    {
+     "id": "S2",
+     "text": "Ann can boil the egg in the pot.",
+     "stage1": {
+      "type": "situation",
+      "entities": [
+       {
+        "id": "Ann 1",
+        "type": "concrete",
+        "category": "person"
+       },
+       {
+        "id": "egg 2",
+        "type": "concrete"
+       },
+       {
+        "id": "pot 3",
+        "type": "concrete",
+        "category": "artifact"
+       }
+      ],
+      "actions": [
+       {
+        "root": "boil",
+        "mode": "capability",
+        "roles": {
+         "target": "egg 2",
+         "location": "pot 3"
+        }
+       }
+      ],
+      "action_reading": "availability"
+     },
+     "stage2": [
+      "@id",
+      "S2",
+      [
+       "holds",
+       "W0",
+       [
+        "can",
+        "Ann 1",
+        [
+         "change",
+         "Ann 1",
+         "egg 2",
+         "cooked",
+         "pot 3"
+        ]
+       ]
+      ]
+     ],
+     "scope": "availability",
+     "syntax": "supported",
+     "compile": "supported"
+    },
+    {
+     "id": "S3",
+     "text": "Ann can fry the egg in the pan.",
+     "stage1": {
+      "type": "situation",
+      "entities": [
+       {
+        "id": "Ann 1",
+        "type": "concrete",
+        "category": "person"
+       },
+       {
+        "id": "egg 2",
+        "type": "concrete"
+       },
+       {
+        "id": "pan 4",
+        "type": "concrete",
+        "category": "artifact"
+       }
+      ],
+      "actions": [
+       {
+        "root": "fry",
+        "mode": "capability",
+        "roles": {
+         "target": "egg 2",
+         "location": "pan 4"
+        }
+       }
+      ],
+      "action_reading": "availability"
+     },
+     "stage2": [
+      "@id",
+      "S3",
+      [
+       "holds",
+       "W0",
+       [
+        "can",
+        "Ann 1",
+        [
+         "change",
+         "Ann 1",
+         "egg 2",
+         "cooked",
+         "pan 4"
+        ]
+       ]
+      ]
+     ],
+     "scope": "availability",
+     "syntax": "supported",
+     "compile": "supported"
+    },
+    {
+     "id": "S4",
+     "text": "After Ann boils the egg in the pot, the egg is cooked and wet.",
+     "stage1": {
+      "type": "strict_rule",
+      "entities": [
+       {
+        "id": "Ann 1",
+        "type": "concrete",
+        "category": "person"
+       },
+       {
+        "id": "egg 2",
+        "type": "concrete"
+       },
+       {
+        "id": "pot 3",
+        "type": "concrete",
+        "category": "artifact"
+       }
+      ],
+      "actions": [
+       {
+        "root": "boil",
+        "mode": "event",
+        "roles": {
+         "target": "egg 2",
+         "location": "pot 3"
+        }
+       }
+      ],
+      "action_reading": "effect"
+     },
+     "stage2": [
+      "@id",
+      "S4",
+      [
+       "holds",
+       "W0",
+       [
+        "after",
+        [
+         "change",
+         "Ann 1",
+         "egg 2",
+         "cooked",
+         "pot 3"
+        ],
+        [
+         "and",
+         [
+          "has property",
+          "cooked",
+          "egg 2"
+         ],
+         [
+          "has property",
+          "wet",
+          "egg 2"
+         ]
+        ]
+       ]
+      ]
+     ],
+     "scope": "effect",
+     "syntax": "supported",
+     "compile": "supported",
+     "clauses": {
+      "must_have": [
+       {
+        "role": "effect",
+        "unit": "S4",
+        "lit": [
+         "has property",
+         "wet",
+         "egg 2"
+        ],
+        "sign": "+",
+        "situation": "successor",
+        "action": [
+         "change",
+         "Ann 1",
+         "egg 2",
+         "cooked",
+         "pot 3"
+        ]
+       }
+      ],
+      "must_not_have": [
+       {
+        "role": "effect",
+        "unit": "S4",
+        "action": [
+         "change",
+         "Ann 1",
+         "egg 2",
+         "cooked",
+         "pan 4"
+        ]
+       }
+      ]
+     }
+    },
+    {
+     "id": "S5",
+     "text": "After Ann fries the egg in the pan, the egg is cooked and crisp.",
+     "stage1": {
+      "type": "strict_rule",
+      "entities": [
+       {
+        "id": "Ann 1",
+        "type": "concrete",
+        "category": "person"
+       },
+       {
+        "id": "egg 2",
+        "type": "concrete"
+       },
+       {
+        "id": "pan 4",
+        "type": "concrete",
+        "category": "artifact"
+       }
+      ],
+      "actions": [
+       {
+        "root": "fry",
+        "mode": "event",
+        "roles": {
+         "target": "egg 2",
+         "location": "pan 4"
+        }
+       }
+      ],
+      "action_reading": "effect"
+     },
+     "stage2": [
+      "@id",
+      "S5",
+      [
+       "holds",
+       "W0",
+       [
+        "after",
+        [
+         "change",
+         "Ann 1",
+         "egg 2",
+         "cooked",
+         "pan 4"
+        ],
+        [
+         "and",
+         [
+          "has property",
+          "cooked",
+          "egg 2"
+         ],
+         [
+          "has property",
+          "crisp",
+          "egg 2"
+         ]
+        ]
+       ]
+      ]
+     ],
+     "scope": "effect",
+     "syntax": "supported",
+     "compile": "supported"
+    }
+   ],
+   "queries": [
+    {
+     "id": "Q1",
+     "expect": {
+      "outcome": "plan_found",
+      "plan": [
+       [
+        "change",
+        "Ann 1",
+        "egg 2",
+        "cooked",
+        "pan 4"
+       ]
+      ],
+      "evidence": "S3 + S5; the cooked write is also the library's eff_change and may be deduplicated against S5's cooked conjunct with provenance for both"
+     },
+     "backend": [],
+     "replay": "covered"
+    },
+    {
+     "id": "Q2",
+     "text": "After Ann fries the egg in the pan, is the egg wet?",
+     "stage1_reading": "verify_question",
+     "stage2": [
+      "@id",
+      "Q2",
+      [
+       "verify",
+       [
+        [
+         "change",
+         "Ann 1",
+         "egg 2",
+         "cooked",
+         "pan 4"
+        ]
+       ],
+       [
+        "has property",
+        "wet",
+        "egg 2"
+       ]
+      ]
+     ],
+     "view": "verify",
+     "expect": {
+      "answer": "Unknown",
+      "evidence": "the wet effect belongs to the pot action only"
+     },
+     "backend": [],
+     "replay": "covered"
+    }
+   ]
+  }
+ ],
+ "candidates": [
+  {
+   "id": "K1",
+   "variant": "tools_distinguish",
+   "sequence": [
+    [
+     "change",
+     "Ann 1",
+     "egg 2",
+     "cooked",
+     "pan 4"
+    ]
+   ],
+   "states": [
+    {
+     "after": 0,
+     "facts": [
+      "+have(Ann,egg)",
+      "+have(Ann,pan)",
+      "+have(Ann,pot)"
+     ]
+    },
+    {
+     "after": 1,
+     "facts": [
+      "+cooked(egg)",
+      "+crisp(egg)"
+     ],
+     "not_written": [
+      "wet(egg)"
+     ]
+    }
+   ],
+   "verdict": "valid",
+   "reason": "pan action; only S5's writes"
+  }
+ ],
+ "support": {
+  "syntax": "supported",
+  "compile": "unsupported (base) / supported (tools_distinguish)",
+  "backend_requirements": [],
+  "replay_fragment": "covered"
+ },
+ "explain": "The base text is a collision because the tool slot is unspecified for both verbs, so both compile to one term and their effect laws would fire together. Naming the tools makes the terms distinct and the effects separate. The compiler detects a collision by comparing source verbs (Stage-1 roots) that share one compiled term and have different effect sets; A2.6 says to report it, not to pick one.",
+ "notes": "Astra review 5.2: a second availability rule for the same term is not by itself a collision (c10); differing effects are. The Stage-1 projection supplies the roots (boil, fry) and roles the collision check compares; a fixture label would not."
+}

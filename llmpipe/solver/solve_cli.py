@@ -479,6 +479,8 @@ def parse_cmd_line():
       opts["noactions_flag"] = True
     elif el in ["-formal", "--formal"]:
       opts["formal_flag"] = True
+    elif el in ["-planning-summary", "--planning-summary"]:
+      opts["planning_summary_flag"] = True
     elif el in ["-plan-depth", "--plan-depth"]:
       if elpos + 1 >= len(params) or not params[elpos + 1].isdigit():
         print("-plan-depth requires a non-negative whole number of steps")
@@ -784,6 +786,11 @@ experimental action route (reads action and planning texts):
                   (default 4).
  -action-backend NAME : on the action route: a registered GK build (default
                   gk, the installed prover).  -seconds sets its per-launch time (default 30).
+ -planning-summary : on the action route (experimental): a plan answer also
+                  gets a planning summary, a list of positive facts after
+                  the plan and one rough progress number, checked against the
+                  replay.  Uses the build gk_summary (the installed GK); the answer,
+                  its confidence and its proof do not change.
  On the action route the output levels show: -explain the sentences and
  library laws the deciding proof used, the plan steps and the replay verdict;
  -logic the source clauses of each sentence, the query and its obligations,

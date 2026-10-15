@@ -75,11 +75,12 @@ import action_route as ar
 import lc_action_query as lq
 
 CUTOFF = ag.CUTOFF
-INCONCLUSIVE = ("search_limit", "not_diagnosed", "diagnostic_error", "diagnostic_differs")
+INCONCLUSIVE = ("search_limit", "not_diagnosed", "diagnostic_error", "diagnostic_differs", "diagnostic_not_launched")
 NONEGATIVE = ("a -nonegative run gives candidates only: GK skips its search for negative evidence, so the answer "
               "policy decides nothing from it; use action_gk.run_query for a diagnostic run")
 PASS_THROUGH = ("translation_invalid", "unsupported_translation", "insufficient_search_allowance",
-                "unsupported_backend_requirement", "backend_unavailable", "backend_incompatible", "call_limit")
+                "unsupported_backend_requirement", "backend_unavailable", "backend_incompatible", "call_limit",
+                "planning_profile_error")
 
 
 # ---------------------------------------------------------------------------
@@ -435,6 +436,95 @@ def bind_witnesses(goal, names, values):
   return sub(drop(goal))
 
 
+def _replay_comparison(records, r, n):
+  """(replay_check, prefixes compared, problems): the reference list of each state the replay validated against
+  the replay's export of that state.
+
+  The replay validated the root and its first `checked_prefix` steps (all n steps for a valid replay).  Each of those
+  states needs an exported list; an empty list is an empty state, a missing or malformed one is not.  Nothing is
+  replayed again.  replay_check: subset | not_subset | export_incomplete | root_not_validated."""
+  import action_summary as asum
+  import lc_action_summary as ls
+  cp = r.get("checked_prefix")
+  if not (isinstance(cp, int) and not isinstance(cp, bool) and 0 <= cp <= n) or (r.get("verdict") == "valid" and cp != n):
+    return "export_incomplete", None, []
+  # a failure at step 0, or a replay error before any step was validated, leaves the root unvalidated
+  if r.get("step") == 0 or (r.get("step") is None and r.get("verdict") == "not_checked" and cp == 0):
+    return "root_not_validated", None, []
+  ex = r.get("export")
+  if not isinstance(ex, list) or len(ex) < cp + 1:
+    return "export_incomplete", None, []
+  problems, compared = [], 0
+  for i in range(cp + 1):
+    state = ex[i]
+    try:
+      if not (isinstance(state, list) and all(isinstance(a, list) and a and isinstance(a[0], str) for a in state)):
+        raise TypeError("an exported state is a list of atoms")
+      have = {asum.freeze(ls._gk(a)) for a in state}
+    except (TypeError, ValueError, KeyError, AttributeError, IndexError):
+      return "export_incomplete", None, []
+    if records is None or records[i].world is None:
+      continue
+    compared += 1
+    extra = [f for f in records[i].facts() if asum.freeze(f) not in have]
+    if extra:
+      problems.append({"kind": "not_a_subset_of_the_replay", "prefix": i, "facts": extra})
+  return ("not_subset" if problems else "subset"), compared, problems
+
+
+def summary_check(ev, candidate, r):
+  """The planning-summary annotation of one replayed candidate, or None when the launch had no summary request.
+
+  Two comparisons.  `reference_check`: the native values of the candidate's deciding entry against the reference
+  interpreter on the same profile (agrees | differs).  `replay_check`: the reference list of every state the replay
+  validated must be a subset of the replay's export of that state (`_replay_comparison`); `replay_prefixes` is the
+  number of states compared.  `summary_check`: ok (both hold) | summary_mismatch (a difference: the annotation is
+  disabled, the evidence is kept in `detail`) | annotation_disabled (no usable annotation, or `disabled`
+  replay_export_incomplete / replay_root_not_validated: the replay comparison could not be made) | unavailable.
+  The check reads no confidence and changes no verdict: `gk_disposition` and `replay_verdict` stay separate
+  statements.  A candidate that is not replayed gets no check."""
+  s = ev.get("summary")
+  if not s:
+    return None
+  out = {"profile_id": s.get("profile_id"), "profile_status": s["status"], "replay_verdict": r["verdict"], "gk_disposition": None,
+         "world": None, "progress": None, "calculation": None, "lossy": None, "world_reason": None, "progress_reason": None,
+         "template": None, "units": None, "disabled": None, "reference_check": None, "replay_check": None,
+         "replay_prefixes": None, "summary_check": "unavailable", "detail": s["reason"]}
+  if s.get("profile") is None:
+    return out
+  import action_summary as asum
+  import lc_action_summary as ls
+  ann = ev["accepted"][candidate["confidence_entry"]].get("summary")
+  if not ann or not ann.get("decorated") or ann.get("disabled"):
+    return dict(out, summary_check="annotation_disabled", disabled=(ann or {}).get("disabled") or (ann or {}).get("reason") or "no_annotation",
+                gk_disposition=(ann or {}).get("gk_disposition"), detail=None)
+  ctx = asum.load(s["profile"])
+  acts = [ls._gk(a) for a in candidate["plan"]]
+  try:
+    records = [ctx.get_actions(acts[:i]) for i in range(len(acts) + 1)]
+  except ValueError as e:
+    records = None
+    native = {k: ann.get(k) for k in ("world", "progress", "calculation", "lossy", "world_reason", "progress_reason")}
+    want = {"world": None, "progress": None, "calculation": "unavailable", "lossy": None, "world_reason": str(e), "progress_reason": str(e)}
+  if records is not None:
+    last = records[-1]
+    native = {k: ann.get(k) for k in ("world", "progress", "calculation", "lossy", "world_reason", "progress_reason", "template", "units")}
+    want = dict(last.as_json(), template=ctx.template, units=ctx.units)
+  problems = []
+  if native != want:
+    problems.append({"kind": "native_differs_from_reference", "native": native, "reference": want})
+  replay, compared, more = _replay_comparison(records, r, len(acts))
+  problems.extend(more)
+  base = dict(out, gk_disposition=ann["gk_disposition"], reference_check="differs" if native != want else "agrees",
+              replay_check=replay, replay_prefixes=compared)
+  if problems:
+    return dict(base, summary_check="summary_mismatch", disabled="summary_mismatch", detail=problems)
+  if replay != "subset":
+    return dict(base, summary_check="annotation_disabled", disabled="replay_" + replay, detail=None)
+  return dict(base, summary_check="ok", detail=None,
+              **{k: ann.get(k) for k in ("world", "progress", "calculation", "lossy", "world_reason", "progress_reason", "template", "units")})
+
+
 def _discovery(source, query, evidence, sel):
   q = query["query"]
   ob = _obligations(evidence)["plan"]
@@ -456,10 +546,13 @@ def _discovery(source, query, evidence, sel):
   tried, found = [], None
   for c in ev["candidates"]:
     goal = bind_witnesses(q["goal"], names, c["witnesses"]) if names else q["goal"]
-    r = rp.replay(source, c["plan"], goal=goal, steps=q["steps"], **sel)
+    # with a summary request the replay also exports its state at each prefix, in this one execution
+    r = rp.replay(source, c["plan"], goal=goal, steps=q["steps"], export=bool(ev.get("summary")), **sel)
     row = {"plan": c["plan"], "witnesses": c["witnesses"], "term": c["term"], "confidence": c["confidence"],
            "confidence_status": c["confidence_status"], "verdict": r["verdict"], "step": r["step"],
            "reason": r["reason"], "uncovered": r["uncovered"]}
+    if ev.get("summary"):
+      row["planning_summary"] = summary_check(ev, c, r)
     tried.append(row)
     if r["verdict"] == "valid":
       found = (c, r)
@@ -473,6 +566,10 @@ def _discovery(source, query, evidence, sel):
   res = _base(source, query, evidence, outcome, answer="Yes", plan=c["plan"], candidates=tried,
               witnesses=dict(zip(names, c["witnesses"])) if names else None,
               replay=_replay_summary(r), diagnostics=notes, **aen.plan_fields(source, c["plan"], r["steps"]))
+  if ev.get("summary"):
+    res["planning_summary"] = tried[-1]["planning_summary"]
+    if res["planning_summary"]["summary_check"] == "summary_mismatch":
+      res["diagnostics"].append("summary_mismatch: the planning-summary annotation is disabled; the answer is unchanged")
   return _with_confidence(res, c, proof_of(ev, c))
 
 

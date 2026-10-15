@@ -1,0 +1,28 @@
+{
+  "id": "c31_two_world_scope",
+  "purpose": "a conditional initial description binds its own world; a standing law applies at every root",
+  "contract": ["A2.8", "A3.3"],
+  "family": ["Scope"],
+  "input_kind": "formal_only",
+  "text": "Block a is on the table. Initially, every block on the table is red. Later, block a is on the table.",
+  "profile": "physical_v1",
+  "entities": {"a 2": "block", "table 3": "table"},
+  "worlds": ["W0", "W1"],
+  "units": [
+    {"id": "S1", "text": "Block a is a block. The table is a table.", "stage2": ["@id", "S1", ["holds", "W0", ["and", ["isa", "block", "a 2"], ["isa", "table", "table 3"]]]], "scope": "static", "syntax": "supported", "compile": "supported", "clauses": {}},
+    {"id": "S2", "text": "Block a is on the table.", "stage2": ["@id", "S2", ["holds", "W0", ["is rel2", "on", "a 2", "table 3"]]], "scope": "initial", "syntax": "supported", "compile": "supported", "clauses": {}},
+    {"id": "S3", "text": "Initially, every block on the table is red.", "stage2": ["@id", "S3", ["holds", "W0", ["forall", "X", ["implies", ["and", ["isa", "block", "X"], ["is rel2", "on", "X", "table 3"]], ["has property", "red", "X"]]]]], "scope": "initial", "syntax": "supported", "compile": "supported", "note": "a conditional initial description of W0: the constant W0 in every literal, never a law over situations", "clauses": {}},
+    {"id": "S4", "text": "Later, block a is on the table.", "stage2": ["@id", "S4", ["holds", "W1", ["is rel2", "on", "a 2", "table 3"]]], "scope": "initial", "syntax": "supported", "compile": "supported", "clauses": {}}
+  ],
+  "queries": [
+    {"id": "Q1", "text": "Is block a red? (planning root W1)", "stage2": ["@id", "Q1", ["question", ["has property", "red", "a 2"]]], "view": "snapshot", "planning_root": "W1", "expect": {"answer": "Unknown", "forbidden_answers": ["Yes", "No"], "evidence": "S3 describes W0 only; at W1 block a is on the table (S4) but no W1 fact or law makes it red, and S3 is not moved to W1"}, "backend": [], "replay": "n/a"},
+    {"id": "Q2", "text": "Is block a red? (planning root W0)", "stage2": ["@id", "Q2", ["question", ["has property", "red", "a 2"]]], "view": "snapshot", "planning_root": "W0", "expect": {"answer": "Yes", "evidence": "S3 at W0 with S2: block a is a block on the table at W0"}, "backend": [], "replay": "n/a"}
+  ],
+  "variants": [
+    {"id": "standing_law", "text": "Block a is on the table. At all times, every block on the table is red. Later, block a is on the table.", "units_replace": [{"id": "S3", "text": "At all times, every block on the table is red.", "stage2": ["@id", "S3", ["holds", "W0", ["state_law", ["forall", "X", ["implies", ["and", ["isa", "block", "X"], ["is rel2", "on", "X", "table 3"]], ["has property", "red", "X"]]]]]], "scope": "standing", "syntax": "supported", "compile": "supported", "clauses": {}}], "queries": [{"id": "Q1", "expect": {"answer": "Yes", "evidence": "the standing law applies at W1 with S4 (the snapshot binds it to the root W1)"}}, {"id": "Q2", "expect": {"answer": "Yes", "evidence": "the standing law applies at W0 with S2"}}]}
+  ],
+  "candidates": [],
+  "support": {"syntax": "supported", "compile": "supported", "backend_requirements": [], "replay_fragment": "n/a"},
+  "explain": "Encoding v2, migration step 0.5 (two-world scope case, Sol review point 1). The conditional description of W0 is a fact of W0; at the root W1 it gives nothing. The same sentence as a state_law holds at both roots.",
+  "notes": "Written 2026-09-23 before any GK run; runs from checkpoint 1b (REVIEW.md, encoding v2 rows)."
+}

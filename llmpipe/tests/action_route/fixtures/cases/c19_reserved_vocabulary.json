@@ -1,0 +1,1303 @@
+{
+  "id": "c19_reserved_vocabulary",
+  "purpose": "reserved clear-top, empty, types and modes map exactly; new values remain open; unspecified does not bypass a named tool or mode; non-standard means need a source permission",
+  "contract": [
+    "C19",
+    "A2.2",
+    "A7.2"
+  ],
+  "family": [
+    "Open property values",
+    "Unsupported meaning"
+  ],
+  "input_kind": "text",
+  "text": "(each variant supplies its own text)",
+  "profile": "physical_v1",
+  "entities": {
+    "hand 1": "hand",
+    "a 2": "block",
+    "Ann 3": "person",
+    "Haapsalu 4": "place",
+    "Tallinn 5": "place",
+    "Bunny 6": "rabbit",
+    "forest 7": "place",
+    "egg 8": "food",
+    "whisk 9": "artifact",
+    "shelf 10": "shelf",
+    "Robo 11": "robot"
+  },
+  "units": [],
+  "queries": [],
+  "variants": [
+    {
+      "id": "clear_forms",
+      "text": "Block a is clear. Nothing is on block a. The hand is empty. The hand holds nothing.",
+      "units": [
+        {
+          "id": "S1",
+          "text": "Block a is clear.",
+          "stage1": {
+            "type": "situation",
+            "entities": [
+              {
+                "id": "a 2",
+                "type": "concrete",
+                "category": "artifact"
+              }
+            ]
+          },
+          "stage2": [
+            "@id",
+            "S1",
+            [
+              "holds",
+              "W0",
+              [
+                "has property",
+                "clear_top",
+                "a 2"
+              ]
+            ]
+          ],
+          "scope": "initial",
+          "syntax": "supported",
+          "compile": "supported"
+        },
+        {
+          "id": "S2",
+          "text": "Nothing is on block a.",
+          "stage1": {
+            "type": "situation",
+            "entities": [
+              {
+                "id": "a 2",
+                "type": "concrete",
+                "category": "artifact"
+              }
+            ]
+          },
+          "stage2": [
+            "@id",
+            "S2",
+            [
+              "holds",
+              "W0",
+              [
+                "has property",
+                "clear_top",
+                "a 2"
+              ]
+            ]
+          ],
+          "scope": "initial",
+          "syntax": "supported",
+          "compile": "supported",
+          "note": "same reserved value; duplicate removal keeps provenance for S1 and S2"
+        },
+        {
+          "id": "S3",
+          "text": "The hand is empty.",
+          "stage1": {
+            "type": "situation",
+            "entities": [
+              {
+                "id": "hand 1",
+                "type": "concrete",
+                "category": "artifact"
+              }
+            ]
+          },
+          "stage2": [
+            "@id",
+            "S3",
+            [
+              "holds",
+              "W0",
+              [
+                "has property",
+                "empty",
+                "hand 1"
+              ]
+            ]
+          ],
+          "scope": "initial",
+          "syntax": "supported",
+          "compile": "supported"
+        },
+        {
+          "id": "S4",
+          "text": "The hand holds nothing.",
+          "stage1": {
+            "type": "situation",
+            "entities": [
+              {
+                "id": "hand 1",
+                "type": "concrete",
+                "category": "artifact"
+              }
+            ]
+          },
+          "stage2": [
+            "@id",
+            "S4",
+            [
+              "holds",
+              "W0",
+              [
+                "has property",
+                "empty",
+                "hand 1"
+              ]
+            ]
+          ],
+          "scope": "initial",
+          "syntax": "supported",
+          "compile": "supported",
+          "clauses": {
+            "must_not_have": [
+              {
+                "role": "*",
+                "lit": [
+                  "has property",
+                  "clean",
+                  "a 2"
+                ]
+              },
+              {
+                "role": "*",
+                "lit": [
+                  "has property",
+                  "empty",
+                  "a 2"
+                ],
+                "note": "clear is not cleanliness; empty is only for a hand"
+              }
+            ]
+          }
+        }
+      ],
+      "queries": [
+        {
+          "id": "Q1",
+          "text": "Is block a clear?",
+          "stage2": [
+            "@id",
+            "Q1",
+            [
+              "question",
+              [
+                "has property",
+                "clear_top",
+                "a 2"
+              ]
+            ]
+          ],
+          "view": "snapshot",
+          "expect": {
+            "answer": "Yes",
+            "evidence": "S1 (and S2, the same reserved value) at W0"
+          },
+          "backend": [],
+          "replay": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "surface_classes",
+      "text": "There is a robot hand. Block a is a block. The hand holds block a. There is a shelf.",
+      "units": [
+        {
+          "id": "S1",
+          "text": "There is a robot hand. Block a is a block. The hand holds block a. There is a shelf.",
+          "stage1": {
+            "type": "situation",
+            "entities": [
+              {
+                "id": "hand 1",
+                "type": "concrete",
+                "category": "artifact"
+              },
+              {
+                "id": "a 2",
+                "type": "concrete",
+                "category": "artifact"
+              },
+              {
+                "id": "shelf 10",
+                "type": "concrete",
+                "category": "artifact"
+              }
+            ]
+          },
+          "stage2": [
+            "@id",
+            "S1",
+            [
+              "holds",
+              "W0",
+              [
+                "and",
+                [
+                  "isa",
+                  "hand",
+                  "hand 1"
+                ],
+                [
+                  "isa",
+                  "block",
+                  "a 2"
+                ],
+                [
+                  "is rel2",
+                  "holding",
+                  "hand 1",
+                  "a 2"
+                ],
+                [
+                  "isa",
+                  "shelf",
+                  "shelf 10"
+                ]
+              ]
+            ]
+          ],
+          "scope": "initial",
+          "syntax": "supported",
+          "compile": "supported"
+        }
+      ],
+      "queries": [
+        {
+          "id": "Q1",
+          "text": "Can the hand put block a on the shelf now?",
+          "stage1_reading": "executable_question",
+          "stage2": [
+            "@id",
+            "Q1",
+            [
+              "question",
+              [
+                "executable",
+                [
+                  "put_on",
+                  "hand 1",
+                  "a 2",
+                  "shelf 10"
+                ]
+              ]
+            ]
+          ],
+          "view": "snapshot",
+          "expect": {
+            "answer": "Yes",
+            "evidence": "surface(shelf) from the library; the library default poss_put_on_hand_surface"
+          },
+          "backend": [],
+          "replay": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "non_standard_means",
+      "text": "Bunny is a rabbit. Bunny is in Haapsalu. There is a bus service from Haapsalu to Tallinn. Rabbits can run from Haapsalu to the forest.",
+      "units": [
+        {
+          "id": "S1",
+          "text": "Bunny is a rabbit.",
+          "stage1": {
+            "type": "real",
+            "entities": [
+              {
+                "id": "Bunny 6",
+                "type": "concrete",
+                "category": "animal"
+              }
+            ]
+          },
+          "stage2": [
+            "@id",
+            "S1",
+            [
+              "holds",
+              "W0",
+              [
+                "isa",
+                "rabbit",
+                "Bunny 6"
+              ]
+            ]
+          ],
+          "scope": "static",
+          "syntax": "supported",
+          "compile": "supported",
+          "clauses": {
+            "must_not_have": [
+              {
+                "role": "static",
+                "lit": [
+                  "isa",
+                  "person",
+                  "Bunny 6"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "id": "S2",
+          "text": "Bunny is in Haapsalu.",
+          "stage1": {
+            "type": "situation",
+            "entities": [
+              {
+                "id": "Bunny 6",
+                "type": "concrete",
+                "category": "animal"
+              },
+              {
+                "id": "Haapsalu 4",
+                "type": "concrete",
+                "category": "place"
+              }
+            ]
+          },
+          "stage2": [
+            "@id",
+            "S2",
+            [
+              "holds",
+              "W0",
+              [
+                "is rel2",
+                "located_at",
+                "Bunny 6",
+                "Haapsalu 4"
+              ]
+            ]
+          ],
+          "scope": "initial",
+          "syntax": "supported",
+          "compile": "supported"
+        },
+        {
+          "id": "S3",
+          "text": "There is a bus service from Haapsalu to Tallinn.",
+          "stage1": {
+            "type": "real",
+            "entities": [
+              {
+                "id": "Haapsalu 4",
+                "type": "concrete",
+                "category": "place"
+              },
+              {
+                "id": "Tallinn 5",
+                "type": "concrete",
+                "category": "place"
+              }
+            ]
+          },
+          "stage2": [
+            "@id",
+            "S3",
+            [
+              "holds",
+              "W0",
+              [
+                "connected",
+                "Haapsalu 4",
+                "Tallinn 5",
+                "bus"
+              ]
+            ]
+          ],
+          "scope": "static",
+          "syntax": "supported",
+          "compile": "supported"
+        },
+        {
+          "id": "S4",
+          "text": "Rabbits can run from Haapsalu to the forest.",
+          "stage1": {
+            "type": "strict_rule",
+            "entities": [
+              {
+                "id": "Haapsalu 4",
+                "type": "concrete",
+                "category": "place"
+              },
+              {
+                "id": "forest 7",
+                "type": "concrete",
+                "category": "place"
+              },
+              {
+                "id": "rabbit",
+                "type": "generic",
+                "category": "animal"
+              }
+            ],
+            "actions": [
+              {
+                "root": "run",
+                "mode": "capability",
+                "roles": {
+                  "source": "Haapsalu 4",
+                  "destination": "forest 7"
+                }
+              }
+            ],
+            "action_reading": "availability"
+          },
+          "stage2": [
+            "@id",
+            "S4",
+            [
+              "holds",
+              "W0",
+              [
+                "forall",
+                "X",
+                [
+                  "implies",
+                  [
+                    "isa",
+                    "rabbit",
+                    "X"
+                  ],
+                  [
+                    "can",
+                    "X",
+                    [
+                      "move",
+                      "X",
+                      "Haapsalu 4",
+                      "forest 7",
+                      "run"
+                    ]
+                  ]
+                ]
+              ]
+            ]
+          ],
+          "scope": "availability",
+          "syntax": "supported",
+          "compile": "supported",
+          "clauses": {
+            "must_have": [
+              {
+                "role": "availability",
+                "unit": "S4",
+                "lit": [
+                  "poss",
+                  [
+                    "move",
+                    "X",
+                    "Haapsalu 4",
+                    "forest 7",
+                    "run"
+                  ]
+                ],
+                "sign": "+",
+                "situation": "shared_current"
+              },
+              {
+                "role": "availability",
+                "unit": "S4",
+                "lit": [
+                  "poss",
+                  [
+                    "move",
+                    "X",
+                    "Haapsalu 4",
+                    "forest 7",
+                    "run"
+                  ]
+                ],
+                "sign": "+",
+                "situation": "shared_current",
+                "body_absent": [
+                  "connected"
+                ],
+                "note": "the stated-endpoint path: the rule's conditions, located_at, differ and the hook; no connected literal"
+              }
+            ],
+            "must_not_have": [
+              {
+                "role": "*",
+                "lit": [
+                  "poss",
+                  [
+                    "move",
+                    "X",
+                    "Haapsalu 4",
+                    "forest 7",
+                    "foot"
+                  ]
+                ],
+                "note": "run is not normalized to foot"
+              }
+            ]
+          }
+        }
+      ],
+      "queries": [
+        {
+          "id": "Q1",
+          "text": "How can Bunny get to the forest?",
+          "stage1_reading": "plan_question",
+          "stage2": [
+            "@id",
+            "Q1",
+            [
+              "plan",
+              [
+                "is rel2",
+                "located_at",
+                "Bunny 6",
+                "forest 7"
+              ]
+            ]
+          ],
+          "view": "discovery",
+          "seed": "s^4(0)",
+          "expect": {
+            "outcome": "plan_found",
+            "plan": [
+              [
+                "move",
+                "Bunny 6",
+                "Haapsalu 4",
+                "forest 7",
+                "run"
+              ]
+            ],
+            "evidence": "S4's stated-endpoint path for the means run; the library default does not apply to a rabbit and is not needed"
+          },
+          "backend": [],
+          "replay": "covered"
+        },
+        {
+          "id": "Q2",
+          "text": "How can Bunny get to Tallinn?",
+          "stage1_reading": "plan_question",
+          "stage2": [
+            "@id",
+            "Q2",
+            [
+              "plan",
+              [
+                "is rel2",
+                "located_at",
+                "Bunny 6",
+                "Tallinn 5"
+              ]
+            ]
+          ],
+          "view": "discovery",
+          "seed": "s^4(0)",
+          "expect": {
+            "outcome": "not_found",
+            "evidence": "a rabbit has no bus default; a connection alone licenses no mover"
+          },
+          "backend": [],
+          "replay": "covered"
+        }
+      ]
+    },
+    {
+      "id": "unspecified_tool",
+      "text": "Ann has an egg and a whisk. The egg is broken. If the egg is broken, Ann can whisk it with the whisk.",
+      "units": [
+        {
+          "id": "S1",
+          "text": "Ann has an egg and a whisk. The egg is broken.",
+          "stage1": {
+            "type": "situation",
+            "entities": [
+              {
+                "id": "Ann 3",
+                "type": "concrete",
+                "category": "person"
+              },
+              {
+                "id": "egg 8",
+                "type": "concrete"
+              },
+              {
+                "id": "whisk 9",
+                "type": "concrete",
+                "category": "artifact"
+              }
+            ]
+          },
+          "stage2": [
+            "@id",
+            "S1",
+            [
+              "holds",
+              "W0",
+              [
+                "and",
+                [
+                  "isa",
+                  "person",
+                  "Ann 3"
+                ],
+                [
+                  "have",
+                  "Ann 3",
+                  "egg 8"
+                ],
+                [
+                  "have",
+                  "Ann 3",
+                  "whisk 9"
+                ],
+                [
+                  "has property",
+                  "broken",
+                  "egg 8"
+                ]
+              ]
+            ]
+          ],
+          "scope": "initial",
+          "syntax": "supported",
+          "compile": "supported"
+        },
+        {
+          "id": "S2",
+          "text": "If the egg is broken, Ann can whisk it with the whisk.",
+          "stage1": {
+            "type": "strict_rule",
+            "entities": [
+              {
+                "id": "egg 8",
+                "type": "concrete"
+              },
+              {
+                "id": "Ann 3",
+                "type": "concrete",
+                "category": "person"
+              },
+              {
+                "id": "whisk 9",
+                "type": "concrete",
+                "category": "artifact"
+              }
+            ],
+            "actions": [
+              {
+                "root": "whisk",
+                "mode": "capability",
+                "roles": {
+                  "actor": "Ann 3",
+                  "target": "egg 8",
+                  "instrument": "whisk 9"
+                }
+              }
+            ],
+            "action_reading": "availability"
+          },
+          "stage2": [
+            "@id",
+            "S2",
+            [
+              "holds",
+              "W0",
+              [
+                "implies",
+                [
+                  "and",
+                  [
+                    "has property",
+                    "broken",
+                    "egg 8"
+                  ],
+                  [
+                    "have",
+                    "Ann 3",
+                    "whisk 9"
+                  ]
+                ],
+                [
+                  "can",
+                  "Ann 3",
+                  [
+                    "change",
+                    "Ann 3",
+                    "egg 8",
+                    "whisked",
+                    "whisk 9"
+                  ]
+                ]
+              ]
+            ]
+          ],
+          "scope": "availability",
+          "syntax": "supported",
+          "compile": "supported"
+        }
+      ],
+      "queries": [
+        {
+          "id": "Q1",
+          "text": "(formal: whisk with an unspecified tool)",
+          "stage1_reading": "executable_question",
+          "stage2": [
+            "@id",
+            "Q1",
+            [
+              "question",
+              [
+                "executable",
+                [
+                  "change",
+                  "Ann 3",
+                  "egg 8",
+                  "whisked",
+                  "unspecified"
+                ]
+              ]
+            ]
+          ],
+          "view": "snapshot",
+          "expect": {
+            "answer": "Unknown",
+            "evidence": "the permission names whisk 9; unspecified is a distinct constant, not a wildcard (A2.2)"
+          },
+          "backend": [],
+          "replay": "n/a"
+        },
+        {
+          "id": "Q2",
+          "text": "Can Ann whisk the egg with the whisk now?",
+          "stage1_reading": "executable_question",
+          "stage2": [
+            "@id",
+            "Q2",
+            [
+              "question",
+              [
+                "executable",
+                [
+                  "change",
+                  "Ann 3",
+                  "egg 8",
+                  "whisked",
+                  "whisk 9"
+                ]
+              ]
+            ]
+          ],
+          "view": "snapshot",
+          "expect": {
+            "answer": "Yes",
+            "evidence": "S2's path (template tpl_change) at W0 with broken(egg) and have(Ann,whisk) at W0"
+          },
+          "backend": [],
+          "replay": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "unspecified_mode",
+      "text": "Ann is a person. Ann is in Haapsalu. There is a bus service from Haapsalu to Tallinn. A person can travel from Haapsalu to Tallinn.",
+      "units": [
+        {
+          "id": "S1",
+          "text": "Ann is a person. Ann is in Haapsalu. There is a bus service from Haapsalu to Tallinn.",
+          "stage1": {
+            "type": "situation",
+            "entities": [
+              {
+                "id": "Ann 3",
+                "type": "concrete",
+                "category": "person"
+              },
+              {
+                "id": "Haapsalu 4",
+                "type": "concrete",
+                "category": "place"
+              },
+              {
+                "id": "Tallinn 5",
+                "type": "concrete",
+                "category": "place"
+              }
+            ]
+          },
+          "stage2": [
+            "@id",
+            "S1",
+            [
+              "holds",
+              "W0",
+              [
+                "and",
+                [
+                  "isa",
+                  "person",
+                  "Ann 3"
+                ],
+                [
+                  "is rel2",
+                  "located_at",
+                  "Ann 3",
+                  "Haapsalu 4"
+                ],
+                [
+                  "connected",
+                  "Haapsalu 4",
+                  "Tallinn 5",
+                  "bus"
+                ]
+              ]
+            ]
+          ],
+          "scope": "initial",
+          "syntax": "supported",
+          "compile": "supported"
+        },
+        {
+          "id": "S2",
+          "text": "A person can travel from Haapsalu to Tallinn.",
+          "stage1": {
+            "type": "strict_rule",
+            "entities": [
+              {
+                "id": "Haapsalu 4",
+                "type": "concrete",
+                "category": "place"
+              },
+              {
+                "id": "Tallinn 5",
+                "type": "concrete",
+                "category": "place"
+              },
+              {
+                "id": "person",
+                "type": "generic",
+                "category": "person"
+              }
+            ],
+            "actions": [
+              {
+                "root": "travel",
+                "mode": "capability",
+                "roles": {
+                  "actor": "person",
+                  "source": "Haapsalu 4",
+                  "destination": "Tallinn 5"
+                }
+              }
+            ],
+            "action_reading": "availability"
+          },
+          "stage2": [
+            "@id",
+            "S2",
+            [
+              "holds",
+              "W0",
+              [
+                "forall",
+                "X",
+                [
+                  "implies",
+                  [
+                    "isa",
+                    "person",
+                    "X"
+                  ],
+                  [
+                    "can",
+                    "X",
+                    [
+                      "move",
+                      "X",
+                      "Haapsalu 4",
+                      "Tallinn 5",
+                      "unspecified"
+                    ]
+                  ]
+                ]
+              ]
+            ]
+          ],
+          "scope": "availability",
+          "syntax": "supported",
+          "compile": "supported",
+          "clauses": {
+            "must_have": [
+              {
+                "role": "availability",
+                "unit": "S2",
+                "lit": [
+                  "poss",
+                  [
+                    "move",
+                    "X",
+                    "Haapsalu 4",
+                    "Tallinn 5",
+                    "unspecified"
+                  ]
+                ],
+                "sign": "+",
+                "situation": "shared_current",
+                "body_absent": [
+                  "connected"
+                ],
+                "note": "the stated-endpoint path: the rule's conditions, located_at, differ and the hook; no connected literal"
+              }
+            ]
+          }
+        }
+      ],
+      "queries": [
+        {
+          "id": "Q1",
+          "text": "(formal: move by unspecified means)",
+          "stage1_reading": "executable_question",
+          "stage2": [
+            "@id",
+            "Q1",
+            [
+              "question",
+              [
+                "executable",
+                [
+                  "move",
+                  "Ann 3",
+                  "Haapsalu 4",
+                  "Tallinn 5",
+                  "unspecified"
+                ]
+              ]
+            ]
+          ],
+          "view": "snapshot",
+          "expect": {
+            "answer": "Yes",
+            "evidence": "S2's stated-endpoint path for the unspecified means; the bus connection is not used and does not have to be"
+          },
+          "backend": [],
+          "replay": "n/a"
+        },
+        {
+          "id": "Q2",
+          "text": "(formal: move by bus)",
+          "stage1_reading": "executable_question",
+          "stage2": [
+            "@id",
+            "Q2",
+            [
+              "question",
+              [
+                "executable",
+                [
+                  "move",
+                  "Ann 3",
+                  "Haapsalu 4",
+                  "Tallinn 5",
+                  "bus"
+                ]
+              ]
+            ]
+          ],
+          "view": "snapshot",
+          "expect": {
+            "answer": "Yes",
+            "evidence": "library default + connected; the unspecified permission does not become a bus permission and does not need to"
+          },
+          "backend": [],
+          "replay": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "unspecified_mode_no_permission",
+      "text": "Ann is a person. Ann is in Haapsalu. There is a bus service from Haapsalu to Tallinn.",
+      "units": [
+        {
+          "id": "S1",
+          "text": "Ann is a person. Ann is in Haapsalu. There is a bus service from Haapsalu to Tallinn.",
+          "stage1": {
+            "type": "situation",
+            "entities": [
+              {
+                "id": "Ann 3",
+                "type": "concrete",
+                "category": "person"
+              },
+              {
+                "id": "Haapsalu 4",
+                "type": "concrete",
+                "category": "place"
+              },
+              {
+                "id": "Tallinn 5",
+                "type": "concrete",
+                "category": "place"
+              }
+            ]
+          },
+          "stage2": [
+            "@id",
+            "S1",
+            [
+              "holds",
+              "W0",
+              [
+                "and",
+                [
+                  "isa",
+                  "person",
+                  "Ann 3"
+                ],
+                [
+                  "is rel2",
+                  "located_at",
+                  "Ann 3",
+                  "Haapsalu 4"
+                ],
+                [
+                  "connected",
+                  "Haapsalu 4",
+                  "Tallinn 5",
+                  "bus"
+                ]
+              ]
+            ]
+          ],
+          "scope": "initial",
+          "syntax": "supported",
+          "compile": "supported"
+        }
+      ],
+      "queries": [
+        {
+          "id": "Q3",
+          "text": "(formal: move by unspecified means, permission removed)",
+          "stage1_reading": "executable_question",
+          "stage2": [
+            "@id",
+            "Q3",
+            [
+              "question",
+              [
+                "executable",
+                [
+                  "move",
+                  "Ann 3",
+                  "Haapsalu 4",
+                  "Tallinn 5",
+                  "unspecified"
+                ]
+              ]
+            ]
+          ],
+          "view": "snapshot",
+          "expect": {
+            "answer": "Unknown",
+            "evidence": "no default for the sentinel; no path for it"
+          },
+          "backend": [],
+          "replay": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "robot_no_default",
+      "text": "Robo is a robot. Robo is in Haapsalu. There is a bus service from Haapsalu to Tallinn.",
+      "units": [
+        {
+          "id": "S1",
+          "text": "Robo is a robot. Robo is in Haapsalu. There is a bus service from Haapsalu to Tallinn.",
+          "stage1": {
+            "type": "situation",
+            "entities": [
+              {
+                "id": "Robo 11",
+                "type": "concrete",
+                "category": "artifact"
+              },
+              {
+                "id": "Haapsalu 4",
+                "type": "concrete",
+                "category": "place"
+              },
+              {
+                "id": "Tallinn 5",
+                "type": "concrete",
+                "category": "place"
+              }
+            ]
+          },
+          "stage2": [
+            "@id",
+            "S1",
+            [
+              "holds",
+              "W0",
+              [
+                "and",
+                [
+                  "isa",
+                  "robot",
+                  "Robo 11"
+                ],
+                [
+                  "is rel2",
+                  "located_at",
+                  "Robo 11",
+                  "Haapsalu 4"
+                ],
+                [
+                  "connected",
+                  "Haapsalu 4",
+                  "Tallinn 5",
+                  "bus"
+                ]
+              ]
+            ]
+          ],
+          "scope": "initial",
+          "syntax": "supported",
+          "compile": "supported"
+        }
+      ],
+      "queries": [
+        {
+          "id": "Q1",
+          "text": "How can Robo get to Tallinn?",
+          "stage1_reading": "plan_question",
+          "stage2": [
+            "@id",
+            "Q1",
+            [
+              "plan",
+              [
+                "is rel2",
+                "located_at",
+                "Robo 11",
+                "Tallinn 5"
+              ]
+            ]
+          ],
+          "view": "discovery",
+          "seed": "s^4(0)",
+          "expect": {
+            "outcome": "not_found",
+            "evidence": "no default for a robot; nothing is silently typed as a person"
+          },
+          "backend": [],
+          "replay": "covered"
+        }
+      ]
+    },
+    {
+      "id": "open_value_no_behavior",
+      "text": "Ann has an egg. The egg is glazed.",
+      "units": [
+        {
+          "id": "S1",
+          "text": "Ann has an egg. The egg is glazed.",
+          "stage1": {
+            "type": "situation",
+            "entities": [
+              {
+                "id": "Ann 3",
+                "type": "concrete",
+                "category": "person"
+              },
+              {
+                "id": "egg 8",
+                "type": "concrete"
+              }
+            ]
+          },
+          "stage2": [
+            "@id",
+            "S1",
+            [
+              "holds",
+              "W0",
+              [
+                "and",
+                [
+                  "isa",
+                  "person",
+                  "Ann 3"
+                ],
+                [
+                  "have",
+                  "Ann 3",
+                  "egg 8"
+                ],
+                [
+                  "has property",
+                  "glazed",
+                  "egg 8"
+                ]
+              ]
+            ]
+          ],
+          "scope": "initial",
+          "syntax": "supported",
+          "compile": "supported",
+          "clauses": {
+            "must_have": [
+              {
+                "role": "initial_fact",
+                "unit": "S1",
+                "lit": [
+                  "has property",
+                  "glazed",
+                  "egg 8"
+                ],
+                "sign": "+",
+                "situation": "named"
+              }
+            ]
+          }
+        }
+      ],
+      "queries": [
+        {
+          "id": "Q1",
+          "text": "Is the egg glazed?",
+          "stage2": [
+            "@id",
+            "Q1",
+            [
+              "question",
+              [
+                "has property",
+                "glazed",
+                "egg 8"
+              ]
+            ]
+          ],
+          "view": "snapshot",
+          "expect": {
+            "answer": "Yes",
+            "evidence": "an open value is legal and stored; it has no library behavior"
+          },
+          "backend": [],
+          "replay": "n/a"
+        }
+      ]
+    }
+  ],
+  "candidates": [],
+  "support": {
+    "syntax": "supported",
+    "compile": "supported",
+    "backend_requirements": [],
+    "replay_fragment": "covered"
+  },
+  "explain": "Each variant is one line of the A2.2 reserved list plus the two sentinel rules. The non_standard_means variant is the travel_rabbit / travel_rabbit_forest pair of the September 5 pilot: a permission with a non-standard means works through its stated-endpoint path, and the bus connection alone gives a rabbit nothing.",
+  "notes": "This is the fixture the Stage-2 prompt task (WP17) reads for its vocabulary section. Amended 2026-09-11 (review R3): the query that removed the permission is now its own source variant."
+}

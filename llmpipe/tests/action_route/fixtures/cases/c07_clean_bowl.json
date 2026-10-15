@@ -1,0 +1,50 @@
+{
+  "id": "c07_clean_bowl",
+  "purpose": "an initial clean bowl plus a standing sufficient washing law needs an explicit stored/computed policy; with a stored policy the fact persists after an unrelated action",
+  "contract": ["C07", "A2.5", "A2.8", "A3.2"],
+  "family": ["Derived state", "Situation scope"],
+  "input_kind": "text",
+  "text": "Ann is a person. Ann is in Haapsalu. There is a bus route from Haapsalu to Tallinn. Ann has a bowl. The bowl is clean. If the bowl has been washed, the bowl is clean.",
+  "profile": "physical_v1",
+  "entities": {"Ann 1": "person", "Haapsalu 2": "place", "Tallinn 3": "place", "bowl 4": "artifact"},
+  "units": [
+    {"id": "S1", "text": "Ann is a person.", "stage1": {"type": "real", "entities": [{"id": "Ann 1", "type": "concrete", "category": "person"}]}, "stage2": ["@id", "S1", ["holds", "W0", ["isa", "person", "Ann 1"]]], "scope": "static", "syntax": "supported", "compile": "supported", "clauses": {}},
+    {"id": "S2", "text": "Ann is in Haapsalu.", "stage1": {"type": "situation", "entities": [{"id": "Ann 1", "type": "concrete", "category": "person"}, {"id": "Haapsalu 2", "type": "concrete", "category": "place"}]}, "stage2": ["@id", "S2", ["holds", "W0", ["is rel2", "located_at", "Ann 1", "Haapsalu 2"]]], "scope": "initial", "syntax": "supported", "compile": "supported", "clauses": {}},
+    {"id": "S3", "text": "There is a bus route from Haapsalu to Tallinn.", "stage1": {"type": "real", "entities": [{"id": "Haapsalu 2", "type": "concrete", "category": "place"}, {"id": "Tallinn 3", "type": "concrete", "category": "place"}]}, "stage2": ["@id", "S3", ["holds", "W0", ["connected", "Haapsalu 2", "Tallinn 3", "bus"]]], "scope": "static", "syntax": "supported", "compile": "supported", "clauses": {}},
+    {"id": "S4", "text": "Ann has a bowl.", "stage1": {"type": "situation", "entities": [{"id": "Ann 1", "type": "concrete", "category": "person"}, {"id": "bowl 4", "type": "concrete", "category": "artifact"}]}, "stage2": ["@id", "S4", ["holds", "W0", ["have", "Ann 1", "bowl 4"]]], "scope": "initial", "syntax": "supported", "compile": "supported", "clauses": {}},
+    {"id": "S5", "text": "The bowl is clean.", "stage1": {"type": "situation", "entities": [{"id": "bowl 4", "type": "concrete", "category": "artifact"}]}, "stage2": ["@id", "S5", ["holds", "W0", ["has property", "clean", "bowl 4"]]], "scope": "initial", "syntax": "supported", "compile": "supported", "clauses": {"must_have": [{"role": "initial_fact", "unit": "S5", "lit": ["has property", "clean", "bowl 4"], "sign": "+", "situation": "named"}]}},
+    {"id": "S6", "text": "If the bowl has been washed, the bowl is clean.", "stage1": {"type": "strict_rule", "entities": [{"id": "bowl 4", "type": "concrete", "category": "artifact"}]}, "stage2": ["@id", "S6", ["holds", "W0", ["state_law", ["implies", ["has property", "washed", "bowl 4"], ["has property", "clean", "bowl 4"]]]]], "scope": "standing", "syntax": "supported", "compile": {"unsupported": "ambiguous_state_policy", "detail": "clean occurs as a standing-law head (S6) and as an independent initial assertion (S5); no policy is declared"}}
+  ],
+  "queries": [
+    {"id": "Q1", "text": "After Ann takes the bus to Tallinn, is the bowl clean?", "stage1_reading": "verify_question", "stage2": ["@id", "Q1", ["verify", [["move", "Ann 1", "Haapsalu 2", "Tallinn 3", "bus"]], ["has property", "clean", "bowl 4"]]], "view": "verify", "expect": {"outcome": "unsupported_translation", "reason": "ambiguous_state_policy", "unit": "S6", "evidence": "no policy; the route must not silently choose"}, "backend": [], "replay": "n/a"}
+  ],
+  "variants": [
+    {"id": "stored_policy",
+     "profile": {"name": "physical_v1", "policy": {"stored": ["clean"]}},
+     "queries": [
+      {"id": "Q1", "expect": {"outcome": "verification_result", "answer": "Yes", "confidence": {"layer": "backend", "frames_crossed": 1, "per_frame": 0.99, "pin": "above the 0.10 cutoff; the one-frame value is the library's 0.99"}, "evidence": "S5 at W0 persists through frame_property (no marker for clean at W0+1); S6 is an additional source of cleanliness, not the only one"}, "backend": [], "replay": "covered"},
+      {"id": "Q2", "text": "Is the bowl clean?", "stage2": ["@id", "Q2", ["question", ["has property", "clean", "bowl 4"]]], "view": "snapshot", "expect": {"answer": "Yes", "confidence": 1.0, "evidence": "S5"}, "backend": [], "replay": "n/a"}],
+     "units_patch": [
+      {"id": "S6", "compile": "supported", "clauses": {"must_have": [{"role": "standing_law", "unit": "S6", "lit": ["has property", "clean", "bowl 4"], "sign": "+", "situation": "shared_current", "body": [{"lit": ["has property", "washed", "bowl 4"], "sign": "+", "situation": "shared_current"}], "note": "the standing law as a clause over one shared situation, under the declared stored policy"}]}}]},
+    {"id": "computed_policy",
+     "profile": {"name": "physical_v1", "policy": {"computed": ["clean"]}},
+     "queries": [
+      {"id": "Q1", "expect": {"outcome": "verification_result", "answer": "Unknown", "evidence": "clean has no inertia under the computed policy; washed(bowl) is unsupported at W0+1; the initial fact holds only at W0"}, "backend": [], "replay": "covered"},
+      {"id": "Q2", "text": "Is the bowl clean?", "stage2": ["@id", "Q2", ["question", ["has property", "clean", "bowl 4"]]], "view": "snapshot", "expect": {"answer": "Yes", "evidence": "S5 at W0 is still a fact at W0"}, "backend": [], "replay": "n/a"}],
+     "units_patch": [
+      {"id": "S6", "compile": "supported", "clauses": {"must_have": [{"role": "derived_no_inertia", "lit": ["derived_property", "clean"]}]}}]},
+    {"id": "law_only",
+     "text": "Ann is a person. Ann is in Haapsalu. There is a bus route from Haapsalu to Tallinn. Ann has a bowl. If the bowl has been washed, the bowl is clean.",
+     "units_remove": ["S5"],
+     "queries": [
+      {"id": "Q2", "text": "Is the bowl clean?", "stage2": ["@id", "Q2", ["question", ["has property", "clean", "bowl 4"]]], "view": "snapshot", "expect": {"answer": "Unknown", "evidence": "computed-only convention (A2.5): washed unsupported at W0"}, "backend": [], "replay": "n/a"}],
+     "units_patch": [
+      {"id": "S6", "compile": "supported", "clauses": {"must_have": [{"role": "derived_no_inertia", "lit": ["derived_property", "clean"]}], "must_not_have": [{"role": "initial_fact", "lit": ["has property", "clean", "bowl 4"]}]}}]}
+  ],
+  "candidates": [
+    {"id": "K1", "variant": "stored_policy", "sequence": [["move", "Ann 1", "Haapsalu 2", "Tallinn 3", "bus"]], "states": [{"after": 0, "facts": ["+clean(bowl)", "+have(Ann,bowl)", "+located_at(Ann,Haapsalu)"]}, {"after": 1, "facts": ["+clean(bowl)", "+have(Ann,bowl)", "+located_at(Ann,Tallinn)", "-located_at(Ann,Haapsalu)"]}], "verdict": "valid", "reason": "clean is stored and unaffected"}
+  ],
+  "support": {"syntax": "supported", "compile": "unsupported without a policy; supported with one", "backend_requirements": [], "replay_fragment": "covered: stored property persistence; computed property recomputation"},
+  "explain": "Being in the head of an implication does not make a property computed (Astra review 4.1). The base text has no policy, so the route stops with ambiguous_state_policy and names S6. The stored_policy variant is the A8.1 requirement that an explicitly stored clean property persists after an unrelated action. The law_only variant is the plain computed-only convention. The policy is a profile setting on the case, not a model-generated registry.",
+  "notes": "Stage 2 shows the standing scope with state_law; 'has been washed' is read as the current state washed(bowl), not an occurrence. Amended 2026-09-20 (re-review RR5 rule: the base S6 clause expectation moved to stored_policy)."
+}

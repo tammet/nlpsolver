@@ -12,7 +12,8 @@ the final confidences and the result strings.  Yes, No, Unknown, contested and
 the plan outcomes are the policy's decisions.
 
 Backend.  A backend is a registered GK build: a path, the strategy, the
-command parameters and the capabilities validated for it.  A caller names a
+strategy keys added for a launch role, the command parameters and the
+capabilities validated for it.  A caller names a
 build of `BACKENDS`; the registry is the trust boundary, and the adapter runs
 no other binary.  Like the ordinary pipeline, the adapter does not check which
 build is at the path: it records the SHA-256 of the binary it runs, and a
@@ -118,9 +119,17 @@ STAGE = "actions"           # the stage name of the route's GK calls in a run co
 FLAGS = ("-nonegative",)    # the only extra flag; a run with it gives candidates only
 PRINTLEVEL = 12
 
-# the planning strategy: query focus; a $ctxt term and a blocker literal of a rule weigh one constant
+# the planning strategy of every launch: query focus; a $ctxt term and a blocker literal of a rule weigh one
+# constant; a clause whose answers would all have confidence 0 is dropped (the blocker-unit cut, with guarded rules)
 PLANNING_STRATEGY = {"strategy": ["query_focus"], "query_preference": 1, "equality": 0,
-       "weight_select_ratio": 20, "weight_blocker_const": 2, "weight_ctxt_const": 1}
+       "weight_select_ratio": 20, "weight_blocker_const": 2, "weight_ctxt_const": 1,
+       "blocker_unit_cut": 1, "blocker_unit_cut_guards": 1}
+# the keys added for a plan search (the positive discovery launch): literal selection and eager condensation.  GK
+# applies them in every primary search and cannot tell a plan search from another one, so the adapter gives them only
+# to this role.  ../gk/Doc/planning.md describes each key.
+DISCOVERY_KEYS = {"ground_contextfree_negative_first": 1, "reachable_known_head_first": 1,
+                  "permission_pair_first": 1, "eager_condensation": 1}
+ROLE_STRATEGY = {"discovery:positive": DISCOVERY_KEYS}
 PIPELINE_PARAMS = ["-taxonomy", "-confidence", "0.1", "-keepconfidence", "0.1"]
 DATAFOLDER = os.path.join(os.path.dirname(ROOT), "gk")
 
@@ -130,12 +139,13 @@ NO_ANSWER_RESULTS = ("no answers found", "no information", "time limit, proof no
 INCOMPATIBLE = "unknown setting in the strategy"
 
 BACKENDS = {
-  # the installed prover, gk 1.0.11 (the binary of the gkreasoner release), with the planning strategy
+  # the installed prover, gk 1.1.0 (branch planning of the gk repository), with the planning strategy
   "gk": {
     "name": "gk",
     "path": os.path.join(DATAFOLDER, "gk"),
     "status": "installed",
     "strategy": PLANNING_STRATEGY,
+    "role_strategy": ROLE_STRATEGY,
     "params": PIPELINE_PARAMS,
     "datafolder": DATAFOLDER,
     # capability records: {"capability", "binary_sha256", "library", "strategy_sha256", "evidence"}
@@ -160,6 +170,34 @@ BACKENDS = {
   },
 }
 DEFAULT_BACKEND = "gk"
+# The build with planning summaries (`-planning-profile`): the installed gk 1.1.0 has the read-only summary module.
+# Same binary, strategies, parameters and data folder as DEFAULT_BACKEND.  A call that asks for summaries uses this
+# entry, and every other call uses DEFAULT_BACKEND.
+SUMMARY_BACKEND = "gk_summary"
+SUMMARY_OUTPUT = "planning_summary_output/1"
+SUMMARY_CAPABILITY = "planning_summary"
+BACKENDS[SUMMARY_BACKEND] = dict(copy.deepcopy(BACKENDS["gk"]), name=SUMMARY_BACKEND, summary=True)
+# The summary capability counts only for the binary, library, strategy and summary contract that were tested; a
+# rebuilt binary at the same path needs its own record.  The unmet requirements and known failures of `gk` stay.
+BACKENDS[SUMMARY_BACKEND]["validated"] = [{
+  "capability": SUMMARY_CAPABILITY,
+  "binary_sha256": "d2985bcf3e73e9a48e78b03c7b3b7cd9a2d4db464006663d9b13bb34255f81b9",
+  "library": {"id": "axioms_action.js", "version": "2.0.1",
+              "hash": "fa3347058f0175b3e2d0907c828eb3d22fc1e2ae25e7f7f9255c4b91b60a4474",
+              "roles_hash": "b389587cbcd000318f81c4d16ed03b826e00ee02eb491b47f1ba74161256da2f",
+              "templates_hash": "0c49cec76553c3f620a9a78004aad031e538286e985e0db701a8b770f64143a6", "status": "selected"},
+  "strategy_sha256": "cedd9a2dd157cd70832a14bb9565cb49e164d0874cb905f9fe136625cd2a5974",
+  "contract": {"profile": "planning_summary_profile/2", "summary": "planning_summary/1", "output": SUMMARY_OUTPUT},
+  "evidence": "on this binary, gk 1.1.0, with these strategies: 18 route launches give 6 controls (unstack, "
+              "two_leg_travel, ticket_travel, reverse_tower, ystad, witness) equal with and without the summary and "
+              "on gk, each summary check ok; 19 hand-written clauses give 527 observations equal to the hand-written "
+              "table (inspect-only runs); the backend prerequisites give 4 of 4.  The summary evaluator is the same "
+              "source as in the build that agreed with the reference interpreter on 133 profiles and 2837 requests.  "
+              "Not shown: negative persistence and the per-application confidence (the unmet requirements of gk)"}]
+
+
+class SummaryError(Exception):
+  """A planning-summary sidecar that does not belong to its input, or a staged file whose bytes changed."""
 
 
 class AdapterError(Exception):
@@ -173,6 +211,18 @@ class AdapterError(Exception):
 def strategy_sha256(strategy):
   # ASCII-escaped JSON, unlike `digests.canonical`: the recorded strategy hashes read this form
   return sha256_text(json.dumps(strategy, sort_keys=True, separators=(",", ":")))
+
+
+def strategy_for(profile, role):
+  """The strategy of one launch: the backend's strategy plus the keys that `role_strategy` adds for this role."""
+  return dict(profile["strategy"], **(profile.get("role_strategy") or {}).get(role, {}))
+
+
+def profile_strategy_sha256(profile):
+  """The hash of the backend's strategies: the strategy alone, or the strategy and the keys of each role."""
+  if not profile.get("role_strategy"):
+    return strategy_sha256(profile["strategy"])
+  return strategy_sha256({"strategy": profile["strategy"], "roles": profile["role_strategy"]})
 
 
 def binary_sha256(path):
@@ -202,7 +252,8 @@ def backend_identity(profile, library=None):
   """What an evidence record says about the backend it used."""
   return {"name": profile["name"], "path": profile["path"], "sha256": profile["sha256"],
           "status": profile.get("status"), "strategy": copy.deepcopy(profile["strategy"]),
-          "strategy_sha256": strategy_sha256(profile["strategy"]), "params": list(profile["params"]),
+          "role_strategy": copy.deepcopy(profile.get("role_strategy") or {}),
+          "strategy_sha256": profile_strategy_sha256(profile), "params": list(profile["params"]),
           "library": copy.deepcopy(library)}
 
 
@@ -222,17 +273,63 @@ def availability(profile):
   return None
 
 
-def capability(profile, name, library):
-  """{"capability", "validated", "reason", "policy", "evidence"} for this build, library identity and strategy."""
-  want = strategy_sha256(profile["strategy"])
+def capability(profile, name, library, contract=None):
+  """{"capability", "validated", "reason", "policy", "evidence"} for this build, library identity and strategy, and
+  for the interface versions `contract` when the capability has them."""
+  want = profile_strategy_sha256(profile)
   for v in profile["validated"]:
     if v["capability"] == name and v["binary_sha256"] == profile["sha256"] and v["library"] == library \
-       and v["strategy_sha256"] == want:
+       and v["strategy_sha256"] == want and v.get("contract") == contract:
       return {"capability": name, "validated": True, "reason": None, "policy": None, "evidence": v.get("evidence")}
   u = profile["unmet"].get(name) or {"reason": "capability_not_validated", "policy": "refuse",
                                      "evidence": "no validation record for this build"}
   return {"capability": name, "validated": False, "reason": u["reason"], "policy": u["policy"],
           "evidence": u.get("evidence")}
+
+
+def summary_contract():
+  """The planning-summary interface versions this adapter reads: profile schema, summary contract, output schema."""
+  import action_summary as asum
+  return {"profile": asum.SCHEMA, "summary": asum.CONTRACT, "output": SUMMARY_OUTPUT}
+
+
+def summary_capability(profile, library, any_library=False):
+  """None when the build may run planning-summary launches for this library, else the refusal outcome.  The build
+  needs the summary module and a validation record that names this binary, library, strategy and
+  `summary_contract()`; another binary at the same path has no record.  With `any_library` the record may name any
+  library (`summary_preflight`, before a source exists)."""
+  base = {"outcome": "unsupported_backend_requirement", "capabilities": [SUMMARY_CAPABILITY], "units": [],
+          "backend": profile["name"]}
+  if not profile.get("summary"):
+    return dict(base, reason="planning_summary_unsupported",
+                detail="the build %r has no planning-summary module; the summary build is %r" % (profile["name"], SUMMARY_BACKEND))
+  try:
+    import action_summary  # noqa: F401
+    import lc_action_summary  # noqa: F401
+  except ImportError as e:
+    return dict(base, reason="planning_summary_unsupported",
+                detail="the pipeline's planning-summary modules are not present: %s" % e)
+  contract = summary_contract()
+  if any_library:
+    strategy = profile_strategy_sha256(profile)
+    ok = any(v["capability"] == SUMMARY_CAPABILITY and v["binary_sha256"] == profile["sha256"]
+             and v["strategy_sha256"] == strategy and v.get("contract") == contract for v in profile["validated"])
+  else:
+    ok = capability(profile, SUMMARY_CAPABILITY, library, contract)["validated"]
+  if not ok:
+    return dict(base, reason="planning_summary_not_validated",
+                detail="no planning-summary validation record names the binary %s at %s with this %sstrategy and "
+                       "summary contract" % (profile["sha256"], profile["path"], "" if any_library else "library, "))
+  return None
+
+
+def summary_preflight(backend):
+  """The checks of a planning-summary request that need no source: None, or the outcome that `run_query` would give
+  before its first launch.  The binary and its data folder are present, the summary modules import, and a
+  validation record names the binary now at the path, the strategy and the summary contract.  The action route
+  runs this before any model call; `run_query` checks again, with the source's library."""
+  profile = backend_profile(backend)
+  return availability(profile) or summary_capability(profile, None, any_library=True)
 
 
 def requirements(query_artifact, profile, library):
@@ -256,7 +353,7 @@ def normalize_limits(limits):
   """{"seconds": N or {role: N, "default": N}, "max_launches": N or None, "termination": bool, "flags": [...],
   "keep": directory or None}."""
   limits = dict(limits or {})
-  bad = set(limits) - {"seconds", "max_launches", "termination", "flags", "keep"}
+  bad = set(limits) - {"seconds", "max_launches", "termination", "flags", "keep", "summary", "summary_choice"}
   if bad:
     raise AdapterError("unknown limits %s" % sorted(bad))
   secs = limits.get("seconds", DEFAULT_SECONDS)
@@ -270,7 +367,8 @@ def normalize_limits(limits):
   if set(flags) - set(FLAGS):
     raise AdapterError("unknown flags %s; the adapter accepts %s" % (sorted(set(flags) - set(FLAGS)), list(FLAGS)))
   return {"seconds": secs, "max_launches": cap, "termination": bool(limits.get("termination", True)),
-          "flags": flags, "keep": limits.get("keep")}
+          "flags": flags, "keep": limits.get("keep"), "summary": bool(limits.get("summary")),
+          "summary_choice": copy.deepcopy(limits.get("summary_choice"))}
 
 
 def seconds_for(limits, role):
@@ -280,10 +378,14 @@ def seconds_for(limits, role):
   return s
 
 
-def command(profile, input_path, seconds, flags=(), printlevel=None):
-  """The GK command of one launch: the registered binary, strategy and parameters, nothing else."""
-  cmd = [profile["path"], "-strategytext", json.dumps(profile["strategy"]), "-seconds", str(seconds), input_path] \
+def command(profile, input_path, seconds, flags=(), printlevel=None, sidecar_path=None, role=None):
+  """The GK command of one launch: the registered binary, the strategy of the launch's role and the parameters,
+  nothing else.  With `sidecar_path`, the one planning-summary profile of this input; no other file and no other
+  flag is added."""
+  cmd = [profile["path"], "-strategytext", json.dumps(strategy_for(profile, role)), "-seconds", str(seconds), input_path] \
     + list(profile["params"]) + list(flags) + ["-datafolder", profile["datafolder"], "-detail", "-outformat", "json"]
+  if sidecar_path is not None:
+    cmd += ["-planning-profile", sidecar_path]
   if printlevel is not None:
     cmd += ["-printlevel", str(printlevel)]
   return cmd
@@ -342,12 +444,15 @@ def _serial():
 # The open recordings of `recording()`: lists that receive every launch's input text, command and raw output.  The
 # output levels of the route read them; the evidence records never hold the raw text.
 _RECORDINGS = []
+_TAMPER = []      # tests only: a function (input path, profile path) called between staging and verification
 
 
 @contextlib.contextmanager
 def recording():
-  """Collect the full text of every launch in this block: [{"label", "role", "command", "input", "stdout", "stderr",
-  "elapsed", "relaunch"}], in launch order.  `command` has "<input>" where the input file's path stands."""
+  """Collect the full text of every launch in this block: [{"label", "role", "command", "input", "profile",
+  "profile_sha256", "stdout", "stderr", "elapsed", "relaunch"}], in launch order.  `command` has "<input>" where the
+  input file's path stands and "<profile>" for a planning-summary profile, whose exact text is `profile` (None
+  without one)."""
   got = []
   _RECORDINGS.append(got)
   try:
@@ -361,12 +466,89 @@ def _record_launch(entry):
     got.append(entry)
 
 
-def launch(profile, objs, seconds, role, flags=(), termination=True, ledger=None, keep=None, label=None):
+def summary_binding_error(sidecar, source_artifact, query_artifact, oid, pol, objs):
+  """None when the profile belongs to exactly this launch, else the reason.  Checked before any launch: the
+  profile's own identity, then the source, query, view, root, obligation, polarity, question name and input bytes
+  that its binding records."""
+  import action_summary as asum
+  try:
+    asum.validate(sidecar)
+  except asum.ProfileError as e:
+    return "profile_invalid: %s" % e
+  b, sem = sidecar["binding"], sidecar["semantic"]
+  question = [o for o in objs if isinstance(o, dict) and "@question" in o]
+  checks = (("source", b.get("source_hashes") == source_artifact["hashes"]),
+            ("query", b.get("query_hash") == query_artifact["hash"]),
+            ("view", b.get("view_hash") == query_artifact.get("view_hash")),
+            ("root", sem["root"] == query_artifact["planning_root"]
+             and (b.get("selection") or {}).get("planning_root") == query_artifact["planning_root"]),
+            ("obligation", b.get("obligation") == oid and b.get("polarity") == pol),
+            ("question", len(question) == 1 and b.get("question") == question[0].get("@name")),
+            ("input_bytes", b.get("input_sha256") == sha256_text(input_text(objs))))
+  bad = [name for name, ok in checks if not ok]
+  return "binding_mismatch: %s" % ", ".join(bad) if bad else None
+
+
+def _verify_staged(path, text, sidecar_path, sidecar_text):
+  """Read both staged files back and compare their bytes with what the adapter wrote.  Raises SummaryError
+  `staged_input_changed`, `staged_profile_changed`, or `staged_input_unreadable` / `staged_profile_unreadable` for
+  a file that is missing or cannot be read."""
+  for p, want, what in ((path, text, "input"), (sidecar_path, sidecar_text, "profile")):
+    if p is None:
+      continue
+    try:
+      got = sha256_file(p)
+    except OSError:
+      raise SummaryError("staged_%s_unreadable" % what)
+    if got != sha256_text(want):
+      raise SummaryError("staged_%s_changed" % what)
+
+
+def _staged_problem(path, text, sidecar_path, sidecar_text):
+  """None when both staged files hold the bytes the adapter wrote, else the reason."""
+  try:
+    _verify_staged(path, text, sidecar_path, sidecar_text)
+  except SummaryError as e:
+    return str(e)
+  except OSError as e:
+    return "staged_file_unreadable: %s" % type(e).__name__
+  return None
+
+
+TAXONOMY_FILES = ("gk_name_number.txt", "gk_taxonomy_packed.txt")
+
+
+def data_fingerprints(profile):
+  """The taxonomy-priority files that GK reads from the data folder with -taxonomy: {name: {"status", "sha256"}},
+  status `present`, `absent`, `unreadable`, or `not_used` when the registered parameters have no -taxonomy."""
+  used = "-taxonomy" in profile["params"]
+  out = {}
+  for name in TAXONOMY_FILES:
+    p = os.path.join(profile["datafolder"], name)
+    if not used:
+      out[name] = {"status": "not_used", "sha256": None}
+    elif not os.path.isfile(p):
+      out[name] = {"status": "absent", "sha256": None}
+    else:
+      try:
+        out[name] = {"status": "present", "sha256": sha256_file(p)}
+      except OSError:
+        out[name] = {"status": "unreadable", "sha256": None}
+  return out
+
+
+def launch(profile, objs, seconds, role, flags=(), termination=True, ledger=None, keep=None, label=None, sidecar=None):
   """Run GK once on `objs` (and once more for the termination reason when no answer is accepted).
 
   Returns the raw launch record: command, hashes, elapsed time, exit status, stdout, stderr and, when a relaunch
   ran, its termination lines.  Extraction is `extract`.  With `keep`, the input, output and error text are saved
-  under `keep` as LABEL.input.json, LABEL.out and LABEL.err, and a relaunch's as LABEL.relaunch.out and .err.
+  under `keep` as LABEL.input.json, LABEL.out and LABEL.err, a relaunch's as LABEL.relaunch.out and .err, and a
+  planning-summary profile as LABEL.profile.json.
+
+  With `sidecar`, both staged files are verified inside the serial lock, immediately before each process.  A file
+  that is missing or changed before the launch raises SummaryError (phase `launch`): no process ran.  Before the
+  diagnostic relaunch it does not raise: the completed launch is returned with its output and its count, and
+  `relaunch` says that the relaunch was not made and why (`launched` false, `staged_error`).
   """
   text = input_text(objs)
   clauses = sum(1 for o in objs if isinstance(o, dict))
@@ -375,37 +557,70 @@ def launch(profile, objs, seconds, role, flags=(), termination=True, ledger=None
     path = os.path.join(tmp, "input.json")
     with open(path, "w") as f:
       f.write(text)
-    cmd = command(profile, path, seconds, flags)
+    # the sidecar is staged beside the input, in this launch's private directory; the diagnostic relaunch reads
+    # the same two files
+    spath = stext = None
+    if sidecar is not None:
+      spath, stext = os.path.join(tmp, "profile.json"), json.dumps(sidecar, ensure_ascii=False)
+      with open(spath, "w") as f:
+        f.write(stext)
+    shown = lambda c: ["<input>" if x == path else "<profile>" if x == spath else x for x in c]
+    cmd = command(profile, path, seconds, flags, sidecar_path=spath, role=role)
+    data = data_fingerprints(profile) if sidecar is not None else None
     with _serial():
-      out, err, code, timed_out, elapsed, failed = _execute(cmd, profile["datafolder"], seconds + EXTRA)
+      if _TAMPER:
+        _TAMPER[0](path, spath, "launch")
+      bad = _staged_problem(path, text, spath, stext)
+      if bad is None:
+        out, err, code, timed_out, elapsed, failed = _execute(cmd, profile["datafolder"], seconds + EXTRA)
+    if bad is not None:
+      e = SummaryError(bad)
+      e.phase = "launch"
+      raise e
     _count(ledger, role, profile, elapsed, clauses)
-    rec = {"role": role, "command": [x if x != path else "<input>" for x in cmd], "seconds": seconds,
+    rec = {"role": role, "command": shown(cmd), "seconds": seconds,
+           "strategy_sha256": strategy_sha256(strategy_for(profile, role)),
+           "summary": None if sidecar is None else {"profile_id": sidecar["profile_id"], "profile_sha256": sha256_text(stext),
+                                                    "output_schema": SUMMARY_OUTPUT, "data_files": data},
            "external_timeout": seconds + EXTRA, "input_sha256": sha256_text(text),
            "clauses": clauses, "binary_sha256": profile["sha256"], "elapsed": elapsed, "exit": code,
            "timed_out": timed_out, "launch_error": failed, "stdout": out, "stderr": err, "relaunch": None}
     parsed = parse_output(out, err, code, timed_out, failed)
     out2 = err2 = None
     if termination and parsed["status"] == "completed" and not parsed["answers"]:
-      cmd2 = command(profile, path, seconds, flags, printlevel=PRINTLEVEL)
+      cmd2 = command(profile, path, seconds, flags, printlevel=PRINTLEVEL, sidecar_path=spath, role=role)
       with _serial():
-        out2, err2, code2, timed2, elapsed2, failed2 = _execute(cmd2, profile["datafolder"], seconds + EXTRA)
-      _count(ledger, "termination", profile, elapsed2, clauses)
-      rec["relaunch"] = relaunch_record(out2, err2, code2, timed2, failed2)
-      rec["relaunch"].update(command=[x if x != path else "<input>" for x in cmd2], elapsed=elapsed2)
+        if _TAMPER:
+          _TAMPER[0](path, spath, "relaunch")
+        bad = _staged_problem(path, text, spath, stext)
+        if bad is None:
+          out2, err2, code2, timed2, elapsed2, failed2 = _execute(cmd2, profile["datafolder"], seconds + EXTRA)
+      if bad is not None:
+        rec["relaunch"] = {"launched": False, "staged_error": bad, "command": shown(cmd2), "elapsed": None, "exit": None,
+                           "timed_out": False, "launch_error": None, "status": "not_launched", "error": bad,
+                           "result": None, "accepted": 0, "lines": []}
+      else:
+        _count(ledger, "termination", profile, elapsed2, clauses)
+        rec["relaunch"] = relaunch_record(out2, err2, code2, timed2, failed2)
+        rec["relaunch"].update(command=shown(cmd2), elapsed=elapsed2)
     if _RECORDINGS:
-      _record_launch({"label": label or role, "role": role, "command": rec["command"], "input": text, "stdout": out,
-                      "stderr": err, "elapsed": elapsed,
+      _record_launch({"label": label or role, "role": role, "command": rec["command"], "input": text,
+                      "profile": stext, "profile_sha256": None if stext is None else sha256_text(stext),
+                      "stdout": out, "stderr": err, "elapsed": elapsed,
                       "relaunch": None if rec["relaunch"] is None else dict(rec["relaunch"], stdout=out2 or "")})
     if keep:
       os.makedirs(keep, exist_ok=True)
       base = os.path.join(keep, (label or role).replace(":", "_"))
       with open(base + ".input.json", "w") as f:
         f.write(text)
+      if stext is not None:
+        with open(base + ".profile.json", "w") as f:
+          f.write(stext)
       with open(base + ".out", "w") as f:
         f.write(out)
       with open(base + ".err", "w") as f:
         f.write(err)
-      if rec["relaunch"] is not None:
+      if rec["relaunch"] is not None and rec["relaunch"]["status"] != "not_launched":
         # the termination relaunch reads the same input; its raw output is kept beside the launch's
         with open(base + ".relaunch.out", "w") as f:
           f.write(out2 or "")
@@ -645,7 +860,7 @@ def _entry(a, i, where, names):
           "conflict": det.get("conflict"), "support_for": det.get("support_for"),
           "support_against": det.get("support_against"), "recursive_checks": det.get("recursive_checks"),
           "flags": copy.deepcopy(det.get("flags")),
-          "both_proofs": bool(proof_steps(pos)) and bool(proof_steps(neg)),
+          "both_proofs": bool(proof_steps(pos)) and bool(proof_steps(neg)), "summary": copy.deepcopy(a.get("_summary")),
           "reuse": evidence_reuse(pos, names), "units": proof_units(pos, names)}
 
 
@@ -666,20 +881,157 @@ def _entry_status(e, experimental_units):
   return sorted(why)
 
 
+def _world_list(term):
+  """The JSON array of a rendered $list chain, or None for another term."""
+  out = []
+  while term != "$nil":
+    if not (isinstance(term, list) and len(term) == 3 and term[0] == "$list"):
+      return None
+    out.append(term[1])
+    term = term[2]
+  return out
+
+
+SUMMARY_SLOTS = {"plan": 1, "world": 2, "progress": 3}
+UNDECORATED = ("not_applicable", "allocation_failed")
+
+
+def _exact_int(x):
+  return isinstance(x, int) and not isinstance(x, bool)
+
+
+def _summary_layout(meta, ans, sidecar):
+  """None when an entry's metadata and answer have the layout of the output contract, else the problem.  The
+  layout decides which answer positions are witnesses, so a problem here stops the decoding."""
+  if not (isinstance(meta, dict) and meta.get("schema") == SUMMARY_OUTPUT and meta.get("profile_id") == sidecar["profile_id"]
+          and isinstance(meta.get("decorated"), bool)):
+    return "an entry has no planning_summary of this profile and schema: %r" % (meta,)
+  if not meta["decorated"]:
+    reason = meta.get("reason")
+    if not (isinstance(reason, str) and reason in UNDECORATED):
+      return "an entry that is not decorated has the reason %r" % (reason,)
+    return None
+  slots, arity = meta.get("slots"), meta.get("core_arity")
+  if not (isinstance(slots, dict) and sorted(slots) == sorted(SUMMARY_SLOTS)
+          and all(_exact_int(slots[k]) and slots[k] == v for k, v in SUMMARY_SLOTS.items())
+          and _exact_int(arity) and arity >= 1
+          and isinstance(ans, list) and len(ans) == 1 and isinstance(ans[0], list) and len(ans[0]) == arity + 3
+          and ans[0][0] == "$ans"):
+    return "a decorated entry does not fit its slot map: core_arity %r, slots %r, answer %r" % (arity, slots, str(ans)[:200])
+  return None
+
+
+def _world_fact(f, families):
+  """True for a World fact of the output contract: a ground fact of one of `families` (`action_summary.term_defect`,
+  `family_of`) in which every compound term is a nonempty list with a string functor and every string can be
+  encoded as UTF-8 (no lone surrogate).  Checked before any order key is built."""
+  import action_summary as asum
+  if asum.term_defect(f) is not None or asum.family_of(f) not in families:
+    return False
+  stack = [f]
+  while stack:
+    x = stack.pop()
+    if isinstance(x, list):
+      if not (x and isinstance(x[0], str)):
+        return False
+      stack.extend(x)
+    elif isinstance(x, str):
+      try:
+        x.encode("utf-8")
+      except UnicodeEncodeError:
+        return False
+  return True
+
+
+def _summary_payload(meta, world_term, world, progress, sidecar):
+  """True when the rendered World, Progress and their metadata have the forms of the output contract: World a
+  strictly ordered list of facts of the profile's families (`_world_fact`), Progress an integer in the portable
+  range, and the calculation, lossy bit, reasons, template and units consistent with them."""
+  import action_summary as asum
+  reasons = {r for rs in asum.REASONS.values() for r in rs} | {"allocation_failed"}
+  reason_ok = lambda x: isinstance(x, str) and x in reasons
+  calc, lossy, score = meta.get("calculation"), meta.get("lossy"), sidecar["semantic"]["score"]
+  if not (isinstance(calc, str) and calc in ("computed", "partial", "unavailable")):
+    return False
+  if not (lossy is True or lossy is False or (lossy is None and calc == "unavailable")):
+    return False
+  if (calc == "unavailable") != (world_term is None) or (calc == "computed") != (progress is not None):
+    return False
+  if world_term is not None:
+    fams = sidecar["semantic"]["families"]
+    if world is None or meta.get("world_reason") is not None or not all(_world_fact(f, fams) for f in world):
+      return False
+    keys = [asum.order_key(f) for f in world]
+    if any(a >= b for a, b in zip(keys, keys[1:])):
+      return False
+  elif not reason_ok(meta.get("world_reason")):
+    return False
+  if progress is not None:
+    if not (_exact_int(progress) and -asum.MAX_INT <= progress <= asum.MAX_INT) or meta.get("progress_reason") is not None:
+      return False
+  elif not reason_ok(meta.get("progress_reason")):
+    return False
+  return meta.get("template") == score["template"] and meta.get("units") == score.get("units")
+
+
+def _undecorate(p, sidecar):
+  """Remove the two rendered positions from every entry of a parsed output and keep them as `_summary`.
+
+  Returns None, or the error text when the layout cannot be trusted (`_summary_layout`): no metadata, another
+  schema or profile, an unknown reason, or an arity or slot map that does not fit the answer.  Then no answer is
+  decoded.  A decorated entry whose payload has another form (`_summary_payload`) keeps its answer and gets a
+  disabled annotation."""
+  for where, lst in (("accepted", p["answers"]), ("rejected", p["rejected"])):
+    for a in lst:
+      meta = a.pop("planning_summary", None)
+      ans = a.get("answer")
+      bad = _summary_layout(meta, ans, sidecar)
+      if bad:
+        return bad
+      # an entry's annotation is never checked here: the answer policy checks the candidates it replays
+      ann = {"gk_disposition": where, "decorated": meta["decorated"], "profile_id": meta["profile_id"], "summary_check": "not_checked"}
+      if not meta["decorated"]:
+        ann.update(reason=meta["reason"], disabled=None)
+        a["_summary"] = ann
+        continue
+      world_term, progress = ans[0][2], ans[0][3]
+      a["answer"] = [ans[0][:2] + ans[0][4:]]
+      world = None if world_term is None else _world_list(world_term)
+      fields = ("calculation", "lossy", "world_reason", "progress_reason", "template", "units")
+      if _summary_payload(meta, world_term, world, progress, sidecar):
+        ann.update({k: meta.get(k) for k in fields}, core_arity=meta["core_arity"], world=world, progress=progress, disabled=None)
+      else:
+        # values of another form are not kept: the raw output is in the launch record
+        ann.update(dict.fromkeys(fields), core_arity=meta["core_arity"], world=None, progress=None, disabled="malformed_payload")
+      a["_summary"] = ann
+  return None
+
+
 def extract(stdout, stderr="", exit_code=0, timed_out=False, kind="boolean", askvars=0, root=None, names=None,
-            experimental_units=(), candidates_only=False, launch_error=None):
+            experimental_units=(), candidates_only=False, launch_error=None, summary=None):
   """The answers of one launch.
 
   `kind` is `boolean` (a snapshot, verify or joint question), `ask` or `discovery`; `askvars` the number of
   variables the question reports; `root` the planning root; `names` the view's source records by clause name;
-  `experimental_units` maps each unmet experimental capability to its units.
+  `experimental_units` maps each unmet experimental capability to its units.  `summary` is the planning-summary
+  profile the launch was given: every entry is then checked against it, its two rendered positions are removed
+  before any other decoding, and the entry gets the annotation `summary`.  World and Progress are never witnesses.
+  Extra statuses with `summary`: `planning_profile_error` (the build refused the profile) and
+  `summary_output_error` (the output's layout cannot be trusted).
   Returns {"status", "error", "result", "warnings", "accepted", "rejected", "candidates"}.
   """
   p = parse_output(stdout, stderr, exit_code, timed_out, launch_error)
   out = {"status": p["status"], "error": p["error"], "result": p["result"], "warnings": p["warnings"],
          "accepted": [], "rejected": [], "candidates": []}
+  if summary is not None and p["status"] == "prover_error" and (p["error"] or "").startswith("planning_profile_error"):
+    out["status"] = "planning_profile_error"
   if p["status"] != "completed":
     return out
+  if summary is not None:
+    bad = _undecorate(p, summary)
+    if bad:
+      out.update(status="summary_output_error", error=bad)
+      return out
   for i, a in enumerate(p["rejected"]):
     e = _entry(a, i, "rejected_answers", names)
     e["eligible"], e["reasons"] = False, ["rejected_entry"]
@@ -741,7 +1093,8 @@ def extract(stdout, stderr="", exit_code=0, timed_out=False, kind="boolean", ask
 def termination(rec, extracted):
   """Why a launch ended.  The launch's own record decides proof, timeout and error; the relaunch only explains a
   completed launch with no accepted entry, and only when the relaunch itself completed with no accepted entry:
-  a failed relaunch is `diagnostic_error`, one that found an answer the launch did not is `diagnostic_differs`."""
+  a failed relaunch is `diagnostic_error`, one that found an answer the launch did not is `diagnostic_differs`, and
+  one that was not made because a staged file changed is `diagnostic_not_launched`."""
   if rec["timed_out"]:
     return "timeout"
   if extracted["status"] != "completed":
@@ -751,6 +1104,8 @@ def termination(rec, extracted):
   r = rec.get("relaunch")
   if r is None:
     return "not_diagnosed"
+  if r.get("status") == "not_launched":
+    return "diagnostic_not_launched"
   if r.get("status") != "completed" or r.get("timed_out") or r.get("exit") != 0:
     return "diagnostic_error"
   if r.get("accepted"):
@@ -834,6 +1189,12 @@ def run_query(source_artifact, query_artifact, backend=None, limits=None, ledger
   if gone:
     return _record(query_artifact, source_artifact, profile, lim, reqs, gone)
   # a requirement that only the negative polarity reads is decided at answer time (action_answer.decide)
+  if lim["summary"]:
+    # a build without the summary module, or a binary without a validation record: an explicit refusal, never a
+    # run that pretends to summarize
+    refused = summary_capability(profile, library)
+    if refused:
+      return _record(query_artifact, source_artifact, profile, lim, reqs, refused)
   refused = [r for r in reqs if not r["validated"] and r["policy"] == "refuse"
              and "positive" in r.get("polarities", ["positive"])]
   if refused:
@@ -852,6 +1213,9 @@ def run_query(source_artifact, query_artifact, backend=None, limits=None, ledger
                                                                            lim["max_launches"])},
                    planned)
   rec = _record(query_artifact, source_artifact, profile, lim, reqs, None, planned)
+  if lim["summary"]:
+    rec["backend"]["summary_capability"] = dict(capability(profile, SUMMARY_CAPABILITY, library, summary_contract()),
+                                                contract=summary_contract())
   names = _names(source_artifact, query_artifact)
   exper = [(r["reason"] if r["capability"] != lq.SHARED_CONFIDENCE else "shared_source_confidence_unmet", r["units"])
            for r in reqs if not r["validated"] and r["policy"] == "experimental"]
@@ -863,12 +1227,32 @@ def run_query(source_artifact, query_artifact, backend=None, limits=None, ledger
   for oid, pol, role, question in plan:
     objs = ar.query_input(source_artifact, query_artifact, oid, pol)
     tag = "%s:%s" % (role, pol)
-    raw = launch(profile, objs, seconds_for(lim, role), tag, lim["flags"], lim["termination"], local, lim["keep"],
-                 label="%s.%s.%s" % (query_artifact["query"]["id"], oid, pol))
+    sidecar, compiled = None, None
+    if lim["summary"] and role == "discovery" and pol == "positive":
+      # the profile of exactly this input; a query the compiler cannot summarize runs unchanged
+      import lc_action_summary
+      compiled = lc_action_summary.compile_profile(source_artifact, query_artifact, lim["summary_choice"])
+      sidecar = compiled["profile"]
+      why = sidecar and summary_binding_error(sidecar, source_artifact, query_artifact, oid, pol, objs)
+      if why:
+        rec["outcome"] = {"outcome": "planning_profile_error", "reason": why, "backend": profile["name"],
+                          "detail": "the profile does not belong to this launch; no launch was made"}
+        break
+    try:
+      raw = launch(profile, objs, seconds_for(lim, role), tag, lim["flags"], lim["termination"], local, lim["keep"],
+                   label="%s.%s.%s" % (query_artifact["query"]["id"], oid, pol), sidecar=sidecar)
+    except SummaryError as e:
+      rec["outcome"] = {"outcome": "planning_profile_error", "reason": str(e), "backend": profile["name"],
+                        "phase": getattr(e, "phase", "launch"), "launch": tag,
+                        "detail": "a staged file was missing or changed before the launch; this launch did not run"}
+      break
     ex = extract(raw["stdout"], raw["stderr"], raw["exit"], raw["timed_out"], _kind(query_artifact, role),
                  question.get("@askvars", 0), query_artifact["planning_root"], names, exper,
-                 candidates_only="-nonegative" in lim["flags"], launch_error=raw["launch_error"])
+                 candidates_only="-nonegative" in lim["flags"], launch_error=raw["launch_error"], summary=sidecar)
     ev = dict(raw, obligation=oid, polarity=pol, **ex)
+    if compiled is not None:
+      ev["summary"] = dict(raw["summary"] or {}, status=compiled["status"], reason=compiled["reason"], families=compiled.get("families"),
+                           choice=compiled.get("choice"), profile=sidecar)
     ev["termination"] = termination(raw, ex)
     if oid == "joint":
       rec["joint"] = ev
@@ -881,9 +1265,20 @@ def run_query(source_artifact, query_artifact, backend=None, limits=None, ledger
       # every later launch of this build ignores the same setting: stop
       rec["outcome"] = {"outcome": "backend_incompatible", "backend": profile["name"], "detail": ex["error"]}
       break
+    if ex["status"] in ("planning_profile_error", "summary_output_error"):
+      rec["outcome"] = {"outcome": "planning_profile_error", "reason": ex["status"], "backend": profile["name"],
+                        "detail": ex["error"]}
+      break
     if ex["status"] == "launch_failed":
       rec["outcome"] = {"outcome": "backend_unavailable", "reason": "launch_failed", "backend": profile["name"],
                         "detail": ex["error"]}
+      break
+    if (raw["relaunch"] or {}).get("status") == "not_launched":
+      # the launch completed and its evidence stays in this record; only the diagnostic relaunch was not made
+      rec["outcome"] = {"outcome": "planning_profile_error", "reason": raw["relaunch"]["staged_error"],
+                        "backend": profile["name"], "phase": "relaunch", "launch": tag,
+                        "detail": "a staged file was missing or changed before the diagnostic relaunch; the launch "
+                                  "completed and is kept, the relaunch was not made"}
       break
   for c in local["gk_calls"]:
     rec["calls"]["gk"] += 1

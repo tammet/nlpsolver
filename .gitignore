@@ -27,6 +27,7 @@ secrets/*secrets*
 /llmpipe/examine.py
 /llmpipe/DEBUGGING.md
 /llmpipe/compare_runtests_json.py
+/llmpipe/tests/action_route/regression/
 /nlp/
 /llama/
 /full_gpt/

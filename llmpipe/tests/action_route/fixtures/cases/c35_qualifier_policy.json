@@ -1,0 +1,35 @@
+{
+  "id": "c35_qualifier_policy",
+  "purpose": "location provenance, location scope, knower selection and tense as unit context records, through the production compiler",
+  "contract": ["A3.2", "A3.3"],
+  "family": ["Context qualifiers"],
+  "input_kind": "formal_only",
+  "text": "There is a robot hand. Block a and block b are blocks, the table is a table, and block b is on the table. Block a is on the table. Block a is clear. The hand is empty. The hand can take a block only if the block is red. Block a is red.",
+  "profile": "physical_v1",
+  "entities": {"hand 1": "hand", "a 2": "block", "b 3": "block", "table 4": "table", "kitchen 5": "place", "hall 6": "place", "Bob 7": "person"},
+  "units": [
+    {"id": "S1", "text": "There is a robot hand.", "stage2": ["@id", "S1", ["holds", "W0", ["isa", "hand", "hand 1"]]], "scope": "static", "syntax": "supported", "compile": "supported", "clauses": {}},
+    {"id": "S2", "text": "Block a and block b are blocks, the table is a table, and block b is on the table.", "stage2": ["@id", "S2", ["holds", "W0", ["and", ["isa", "block", "a 2"], ["isa", "block", "b 3"], ["isa", "table", "table 4"], ["is rel2", "on", "b 3", "table 4"]]]], "scope": "initial", "syntax": "supported", "compile": "supported", "clauses": {}},
+    {"id": "S3", "text": "Block a is on the table.", "stage2": ["@id", "S3", ["holds", "W0", ["is rel2", "on", "a 2", "table 4"]]], "scope": "initial", "syntax": "supported", "compile": "supported", "clauses": {}},
+    {"id": "S4", "text": "Block a is clear.", "stage2": ["@id", "S4", ["holds", "W0", ["has property", "clear_top", "a 2"]]], "scope": "initial", "syntax": "supported", "compile": "supported", "clauses": {}},
+    {"id": "S5", "text": "The hand is empty.", "stage2": ["@id", "S5", ["holds", "W0", ["has property", "empty", "hand 1"]]], "scope": "initial", "syntax": "supported", "compile": "supported", "clauses": {}},
+    {"id": "S6", "text": "The hand can take a block only if the block is red.", "stage2": ["@id", "S6", ["holds", "W0", ["forall", "X", ["implies", ["executable", ["take", "hand 1", "X"]], ["has property", "red", "X"]]]]], "scope": "restriction", "syntax": "supported", "compile": "supported", "clauses": {}},
+    {"id": "S7", "text": "Block a is red.", "stage2": ["@id", "S7", ["holds", "W0", ["has property", "red", "a 2"]]], "scope": "initial", "syntax": "supported", "compile": "supported", "clauses": {}}
+  ],
+  "queries": [
+    {"id": "Q1", "text": "Can the hand take block a now?", "stage1_reading": "executable_question", "stage2": ["@id", "Q1", ["question", ["executable", ["take", "hand 1", "a 2"]]]], "view": "snapshot", "expect": {"answer": "Yes", "evidence": "Q-L0: no qualifier; the default take path with the restriction check (red)"}, "backend": [], "replay": "n/a"}
+  ],
+  "variants": [
+    {"id": "provenance", "units_patch": [{"id": "S3", "context": {"location": "kitchen 5", "location_role": "provenance"}}, {"id": "S4", "context": {"location": "hall 6", "location_role": "provenance"}}], "queries": [{"id": "Q1", "expect": {"answer": "Yes", "evidence": "Q-L+: provenance locations are replaced by fresh variables; the facts combine"}}]},
+    {"id": "scope", "units_patch": [{"id": "S3", "context": {"location": "kitchen 5", "location_role": "scope"}}, {"id": "S4", "context": {"location": "hall 6", "location_role": "scope"}}], "queries": [{"id": "Q1", "expect": {"answer": "Unknown", "forbidden_answers": ["Yes"], "evidence": "Q-L-: ambient kitchen; S4 (scope hall) is excluded (scope_location_mismatch), so clear_top(a) is not established"}, "ambient": "kitchen 5"}]},
+    {"id": "knower_objective", "units_patch": [{"id": "S4", "context": {"knower": "Bob 7"}}], "queries": [{"id": "Q1", "expect": {"answer": "Unknown", "forbidden_answers": ["Yes"], "evidence": "Q-K obj: S4 is Bob's; an objective query excludes it (knower_mismatch)"}}]},
+    {"id": "knower_selected", "units_patch": [{"id": "S4", "context": {"knower": "Bob 7"}}], "queries": [{"id": "Q1", "expect": {"answer": "Yes", "evidence": "Q-K sel: a Bob-relative query keeps S4 and gives the laws the knower Bob; objective facts hold for Bob"}, "knower": "Bob 7"}]},
+    {"id": "objective_control", "units_patch": [], "queries": [{"id": "Q1", "expect": {"answer": "Yes", "evidence": "Q-K pos: the objective positive control, the same source as the base"}}]},
+    {"id": "location_without_role", "units_patch": [{"id": "S3", "context": {"location": "kitchen 5"}, "compile": {"unsupported": "unsupported_contextual_location"}}], "queries": [{"id": "Q1", "expect": {"outcome": "unsupported_translation", "reason": "unsupported_contextual_location", "unit": "S3", "evidence": "a stated location without a location_role; the whole source is unsupported; offline expectation"}}]},
+    {"id": "past_fact", "units_patch": [{"id": "S4", "context": {"tense": "past"}}], "queries": [{"id": "Q1", "expect": {"answer": "Unknown", "forbidden_answers": ["Yes"], "evidence": "S4 has tense past: it names no situation and enters no planning view (underspecified_temporal_root)"}}]}
+  ],
+  "candidates": [],
+  "support": {"syntax": "supported", "compile": "supported", "backend_requirements": [], "replay_fragment": "n/a"},
+  "explain": "Encoding v2, migration step 0.5: the six C2 rows of the layout experiment (Q-L+, Q-L-, Q-L0 = base, Q-K obj, Q-K sel, Q-K pos) as gold with context records, plus two offline controls (a location without a role, a past-tense fact).",
+  "notes": "Written 2026-09-23 before any GK run; runs from checkpoint 1b (REVIEW.md, encoding v2 rows)."
+}

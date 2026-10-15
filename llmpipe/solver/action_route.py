@@ -61,7 +61,7 @@ DEFAULT_SEARCH_CAP = 4
 # reviewed fixtures use; `not_implemented` is not an outcome of the route
 OUTCOMES = ("source_compiled", "plan_found", "goal_already_holds", "verification_result",
             "not_found", "candidate_not_validated", "inconsistent_action_state",
-            "unsupported_backend_requirement", "unsupported_translation",
+            "unsupported_backend_requirement", "planning_profile_error", "unsupported_translation",
             "translation_invalid", "call_limit", "model_timeout", "prover_timeout",
             "prover_error", "backend_incompatible", "backend_unavailable", "model_error",
             "insufficient_search_allowance", "ordinary_result")

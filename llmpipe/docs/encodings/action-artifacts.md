@@ -248,6 +248,7 @@ The outcomes:
 | `insufficient_search_allowance` | an explicit search cap below the exact step bound or below the length of the supplied sequence |
 | `source_compiled` | a text without a question was compiled |
 | `call_limit`, `model_timeout`, `model_error` | a model call failed or was refused; `call_limit` also when the worst-case GK launch count exceeds the launch limit |
+| `planning_profile_error` | a planning-summary request failed before a launch, before its diagnostic relaunch, or in the output ([planning summary](action-planning-summary.md)); the route gives no answer, and a completed launch stays in the evidence |
 | `prover_timeout`, `prover_error`, `backend_unavailable`, `backend_incompatible` | a GK launch failed, or the registered build is missing or did not run its strategy |
 
 `not_implemented` is no outcome of the route. It marks a missing prompt bundle,

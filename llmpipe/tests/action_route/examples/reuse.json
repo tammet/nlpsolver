@@ -1,0 +1,282 @@
+{
+ "example": "reuse",
+ "gold": "c14_source_reuse:base",
+ "text": "Ann is a person. Ann is in Haapsalu. There is a bus service from Haapsalu to Tallinn. There is a ship service from Tallinn to Helsinki.",
+ "entities": {
+  "Ann 1": "person",
+  "Haapsalu 2": "place",
+  "Tallinn 3": "place",
+  "Helsinki 4": "place"
+ },
+ "units": [
+  {
+   "id": "S1",
+   "text": "Ann is a person.",
+   "stage1": {
+    "type": "real",
+    "entities": [
+     {
+      "id": "Ann 1",
+      "type": "concrete",
+      "category": "person"
+     }
+    ]
+   },
+   "stage2": [
+    "@id",
+    "S1",
+    [
+     "holds",
+     "W0",
+     [
+      "isa",
+      "person",
+      "Ann 1"
+     ]
+    ]
+   ]
+  },
+  {
+   "id": "S2",
+   "text": "Ann is in Haapsalu.",
+   "stage1": {
+    "type": "situation",
+    "entities": [
+     {
+      "id": "Ann 1",
+      "type": "concrete",
+      "category": "person"
+     },
+     {
+      "id": "Haapsalu 2",
+      "type": "concrete",
+      "category": "place"
+     }
+    ]
+   },
+   "stage2": [
+    "@id",
+    "S2",
+    [
+     "holds",
+     "W0",
+     [
+      "is rel2",
+      "located_at",
+      "Ann 1",
+      "Haapsalu 2"
+     ]
+    ]
+   ]
+  },
+  {
+   "id": "S3",
+   "text": "There is a bus service from Haapsalu to Tallinn.",
+   "stage1": {
+    "type": "real",
+    "entities": [
+     {
+      "id": "Haapsalu 2",
+      "type": "concrete",
+      "category": "place"
+     },
+     {
+      "id": "Tallinn 3",
+      "type": "concrete",
+      "category": "place"
+     }
+    ]
+   },
+   "stage2": [
+    "@id",
+    "S3",
+    [
+     "holds",
+     "W0",
+     [
+      "connected",
+      "Haapsalu 2",
+      "Tallinn 3",
+      "bus"
+     ]
+    ]
+   ]
+  },
+  {
+   "id": "S4",
+   "text": "There is a ship service from Tallinn to Helsinki.",
+   "stage1": {
+    "type": "real",
+    "entities": [
+     {
+      "id": "Tallinn 3",
+      "type": "concrete",
+      "category": "place"
+     },
+     {
+      "id": "Helsinki 4",
+      "type": "concrete",
+      "category": "place"
+     }
+    ]
+   },
+   "stage2": [
+    "@id",
+    "S4",
+    [
+     "holds",
+     "W0",
+     [
+      "connected",
+      "Tallinn 3",
+      "Helsinki 4",
+      "ship"
+     ]
+    ]
+   ]
+  }
+ ],
+ "queries": [
+  {
+   "stage2": [
+    "@id",
+    "Q1",
+    [
+     "plan",
+     [
+      "is rel2",
+      "located_at",
+      "Ann 1",
+      "Helsinki 4"
+     ]
+    ]
+   ],
+   "text": "How can Ann get to Helsinki?",
+   "expect": {
+    "outcome": "plan_found",
+    "plan": [
+     [
+      "move",
+      "Ann 1",
+      "Haapsalu 2",
+      "Tallinn 3",
+      "bus"
+     ],
+     [
+      "move",
+      "Ann 1",
+      "Tallinn 3",
+      "Helsinki 4",
+      "ship"
+     ]
+    ],
+    "source_hash_after": "H"
+   }
+  },
+  {
+   "stage2": [
+    "@id",
+    "Q2",
+    [
+     "reachable",
+     [
+      "is rel2",
+      "located_at",
+      "Ann 1",
+      "Tallinn 3"
+     ],
+     [
+      "steps",
+      "at_most",
+      1
+     ]
+    ]
+   ],
+   "text": "Can Ann reach Tallinn in at most one action?",
+   "expect": {
+    "answer": "Yes",
+    "plan": [
+     [
+      "move",
+      "Ann 1",
+      "Haapsalu 2",
+      "Tallinn 3",
+      "bus"
+     ]
+    ],
+    "source_hash_after": "H"
+   }
+  },
+  {
+   "stage2": [
+    "@id",
+    "Q4",
+    [
+     "verify",
+     [
+      [
+       "move",
+       "Ann 1",
+       "Haapsalu 2",
+       "Tallinn 3",
+       "bus"
+      ],
+      [
+       "move",
+       "Ann 1",
+       "Tallinn 3",
+       "Helsinki 4",
+       "ship"
+      ]
+     ],
+     [
+      "is rel2",
+      "located_at",
+      "Ann 1",
+      "Helsinki 4"
+     ]
+    ]
+   ],
+   "text": "After Ann takes the bus to Tallinn and the ship to Helsinki, is Ann in Helsinki?",
+   "expect": {
+    "answer": "Yes",
+    "source_hash_after": "H"
+   }
+  },
+  {
+   "stage2": [
+    "@id",
+    "Q6",
+    [
+     "reachable",
+     [
+      "exists",
+      "X",
+      [
+       "and",
+       [
+        "isa",
+        "port",
+        "X"
+       ],
+       [
+        "is rel2",
+        "located_at",
+        "Ann 1",
+        "X"
+       ]
+      ]
+     ]
+    ]
+   ],
+   "text": "Can Ann reach some port?",
+   "expect": {
+    "answer": "Unknown",
+    "outcome": "not_found",
+    "forbidden_outcomes": [
+     "plan_found"
+    ]
+   }
+  }
+ ]
+}

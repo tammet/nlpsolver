@@ -1,0 +1,816 @@
+{
+ "id": "c13_uncertain_scoped_route",
+ "purpose": "one uncertain availability compiles to one stated-endpoint path that holds its evidence, measured against a strict control with no alternative support",
+ "contract": [
+  "C13",
+  "A2.4",
+  "A4.3"
+ ],
+ "family": [
+  "Route scope"
+ ],
+ "input_kind": "text",
+ "text": "Robo is a robot. Robo is in Haapsalu. Robo can probably go from Haapsalu to Tallinn by bus.",
+ "profile": "physical_v1",
+ "entities": {
+  "Robo 1": "robot",
+  "Haapsalu 2": "place",
+  "Tallinn 3": "place",
+  "Ann 4": "person"
+ },
+ "units": [
+  {
+   "id": "S1",
+   "text": "Robo is a robot.",
+   "stage1": {
+    "type": "real",
+    "entities": [
+     {
+      "id": "Robo 1",
+      "type": "concrete",
+      "category": "artifact"
+     }
+    ]
+   },
+   "stage2": [
+    "@id",
+    "S1",
+    [
+     "holds",
+     "W0",
+     [
+      "isa",
+      "robot",
+      "Robo 1"
+     ]
+    ]
+   ],
+   "scope": "static",
+   "syntax": "supported",
+   "compile": "supported",
+   "clauses": {
+    "must_not_have": [
+     {
+      "role": "static",
+      "lit": [
+       "isa",
+       "person",
+       "Robo 1"
+      ],
+      "note": "no library movement default for a robot: S3 is the only support for both consequences"
+     }
+    ]
+   }
+  },
+  {
+   "id": "S2",
+   "text": "Robo is in Haapsalu.",
+   "stage1": {
+    "type": "situation",
+    "entities": [
+     {
+      "id": "Robo 1",
+      "type": "concrete",
+      "category": "artifact"
+     },
+     {
+      "id": "Haapsalu 2",
+      "type": "concrete",
+      "category": "place"
+     }
+    ]
+   },
+   "stage2": [
+    "@id",
+    "S2",
+    [
+     "holds",
+     "W0",
+     [
+      "is rel2",
+      "located_at",
+      "Robo 1",
+      "Haapsalu 2"
+     ]
+    ]
+   ],
+   "scope": "initial",
+   "syntax": "supported",
+   "compile": "supported"
+  },
+  {
+   "id": "S3",
+   "text": "Robo can probably go from Haapsalu to Tallinn by bus.",
+   "stage1": {
+    "type": "situation",
+    "entities": [
+     {
+      "id": "Robo 1",
+      "type": "concrete",
+      "category": "artifact"
+     },
+     {
+      "id": "Haapsalu 2",
+      "type": "concrete",
+      "category": "place"
+     },
+     {
+      "id": "Tallinn 3",
+      "type": "concrete",
+      "category": "place"
+     }
+    ],
+    "actions": [
+     {
+      "root": "go",
+      "mode": "capability",
+      "roles": {
+       "source": "Haapsalu 2",
+       "destination": "Tallinn 3",
+       "instrument": "bus"
+      }
+     }
+    ],
+    "action_reading": "availability",
+    "confidence": 0.8
+   },
+   "stage2": [
+    "@id",
+    "S3",
+    [
+     "and",
+     [
+      "holds",
+      "W0",
+      [
+       "can",
+       "Robo 1",
+       [
+        "move",
+        "Robo 1",
+        "Haapsalu 2",
+        "Tallinn 3",
+        "bus"
+       ]
+      ]
+     ],
+     [
+      "@p",
+      "S3",
+      0.8
+     ]
+    ]
+   ],
+   "scope": "availability",
+   "syntax": "supported",
+   "compile": "supported",
+   "clauses": {
+    "must_have": [
+     {
+      "role": "availability",
+      "unit": "S3",
+      "lit": [
+       "poss",
+       [
+        "move",
+        "Robo 1",
+        "Haapsalu 2",
+        "Tallinn 3",
+        "bus"
+       ]
+      ],
+      "sign": "+",
+      "situation": "shared_current",
+      "provenance": "S3",
+      "confidence": 0.6
+     },
+     {
+      "role": "availability",
+      "unit": "S3",
+      "lit": [
+       "poss",
+       [
+        "move",
+        "Robo 1",
+        "Haapsalu 2",
+        "Tallinn 3",
+        "bus"
+       ]
+      ],
+      "sign": "+",
+      "situation": "shared_current",
+      "provenance": "S3",
+      "body_absent": [
+       "connected"
+      ],
+      "note": "the stated-endpoint path: the rule's conditions, located_at, differ and the hook; no connected literal",
+      "confidence": 0.6
+     }
+    ],
+    "note": "the unit compiles to one stated-endpoint path that holds the evidence 0.6 itself; no helper clause (encoding v2)"
+   },
+   "confidence": {
+    "source_probability": 0.8,
+    "compiled_evidence": 0.6,
+    "convention": "e = 2p - 1 for 0.5 < p < 1 (solver/lc_packages.py, _process_assertion); the backend reports evidence, not the Stage-2 probability"
+   }
+  }
+ ],
+ "queries": [
+  {
+   "id": "Q2",
+   "text": "Can Robo take the bus from Haapsalu to Tallinn now?",
+   "stage1_reading": "executable_question",
+   "stage2": [
+    "@id",
+    "Q2",
+    [
+     "question",
+     [
+      "executable",
+      [
+       "move",
+       "Robo 1",
+       "Haapsalu 2",
+       "Tallinn 3",
+       "bus"
+      ]
+     ]
+    ]
+   ],
+   "view": "snapshot",
+   "expect": {
+    "answer": "Yes",
+    "confidence": {
+     "layer": "backend",
+     "value": 0.6,
+     "tolerance": 0.005,
+     "forbidden": {
+      "value": 0.36,
+      "meaning": "the two-application score of the counting rule; a one-step question applies S3 once, so 0.36 cannot arise here"
+     }
+    },
+    "evidence": "S3 compiles to one stated-endpoint executability path holding S3's evidence 0.6 (2p - 1 for p = 0.8); a robot has no library default, so the path is the only support and the proof applies S3 once"
+   },
+   "backend": [],
+   "replay": "n/a"
+  },
+  {
+   "id": "Q3",
+   "text": "How can Robo get to Tallinn?",
+   "stage1_reading": "plan_question",
+   "stage2": [
+    "@id",
+    "Q3",
+    [
+     "plan",
+     [
+      "is rel2",
+      "located_at",
+      "Robo 1",
+      "Tallinn 3"
+     ]
+    ]
+   ],
+   "view": "discovery",
+   "seed": "s^4(0)",
+   "expect": {
+    "outcome": "plan_found",
+    "answer": "Yes",
+    "plan": [
+     [
+      "move",
+      "Robo 1",
+      "Haapsalu 2",
+      "Tallinn 3",
+      "bus"
+     ]
+    ],
+    "confidence": {
+     "layer": "backend",
+     "value": 0.6,
+     "tolerance": 0.005,
+     "forbidden": {
+      "value": 0.36,
+      "meaning": "a one-step plan applies S3 once; 0.36 would count one application twice"
+     }
+    },
+    "evidence": "as Q2, then the strict library effect; the plan applies S3 once, so its confidence is S3's evidence"
+   },
+   "backend": [
+    "shared_source_confidence"
+   ],
+   "replay": "covered"
+  }
+ ],
+ "variants": [
+  {
+   "id": "strict_control",
+   "text": "Robo is a robot. Robo is in Haapsalu. Robo can go from Haapsalu to Tallinn by bus.",
+   "units_replace": [
+    {
+     "id": "S3",
+     "text": "Robo can go from Haapsalu to Tallinn by bus.",
+     "stage1": {
+      "type": "situation",
+      "entities": [
+       {
+        "id": "Robo 1",
+        "type": "concrete",
+        "category": "artifact"
+       },
+       {
+        "id": "Haapsalu 2",
+        "type": "concrete",
+        "category": "place"
+       },
+       {
+        "id": "Tallinn 3",
+        "type": "concrete",
+        "category": "place"
+       }
+      ],
+      "actions": [
+       {
+        "root": "go",
+        "mode": "capability",
+        "roles": {
+         "source": "Haapsalu 2",
+         "destination": "Tallinn 3",
+         "instrument": "bus"
+        }
+       }
+      ],
+      "action_reading": "availability"
+     },
+     "stage2": [
+      "@id",
+      "S3",
+      [
+       "holds",
+       "W0",
+       [
+        "can",
+        "Robo 1",
+        [
+         "move",
+         "Robo 1",
+         "Haapsalu 2",
+         "Tallinn 3",
+         "bus"
+        ]
+       ]
+      ]
+     ],
+     "scope": "availability",
+     "syntax": "supported",
+     "compile": "supported"
+    }
+   ],
+   "queries": [
+    {
+     "id": "Q2",
+     "expect": {
+      "answer": "Yes",
+      "confidence": 1.0,
+      "evidence": "strict source: both consequences at full confidence; no uncertain unit, so the shared_source_confidence requirement of the base Q2 does not apply and the query runs on the starting backend"
+     },
+     "backend": []
+    }
+   ]
+  },
+  {
+   "id": "alternative_support",
+   "text": "Ann is a person. Ann is in Haapsalu. Ann can probably go from Haapsalu to Tallinn by bus.",
+   "units": [
+    {
+     "id": "S1",
+     "text": "Ann is a person.",
+     "stage1": {
+      "type": "real",
+      "entities": [
+       {
+        "id": "Ann 4",
+        "type": "concrete",
+        "category": "person"
+       }
+      ]
+     },
+     "stage2": [
+      "@id",
+      "S1",
+      [
+       "holds",
+       "W0",
+       [
+        "isa",
+        "person",
+        "Ann 4"
+       ]
+      ]
+     ],
+     "scope": "static",
+     "syntax": "supported",
+     "compile": "supported"
+    },
+    {
+     "id": "S2",
+     "text": "Ann is in Haapsalu.",
+     "stage1": {
+      "type": "situation",
+      "entities": [
+       {
+        "id": "Ann 4",
+        "type": "concrete",
+        "category": "person"
+       },
+       {
+        "id": "Haapsalu 2",
+        "type": "concrete",
+        "category": "place"
+       }
+      ]
+     },
+     "stage2": [
+      "@id",
+      "S2",
+      [
+       "holds",
+       "W0",
+       [
+        "is rel2",
+        "located_at",
+        "Ann 4",
+        "Haapsalu 2"
+       ]
+      ]
+     ],
+     "scope": "initial",
+     "syntax": "supported",
+     "compile": "supported"
+    },
+    {
+     "id": "S3",
+     "text": "Ann can probably go from Haapsalu to Tallinn by bus.",
+     "stage1": {
+      "type": "situation",
+      "entities": [
+       {
+        "id": "Ann 4",
+        "type": "concrete",
+        "category": "person"
+       },
+       {
+        "id": "Haapsalu 2",
+        "type": "concrete",
+        "category": "place"
+       },
+       {
+        "id": "Tallinn 3",
+        "type": "concrete",
+        "category": "place"
+       }
+      ],
+      "actions": [
+       {
+        "root": "go",
+        "mode": "capability",
+        "roles": {
+         "source": "Haapsalu 2",
+         "destination": "Tallinn 3",
+         "instrument": "bus"
+        }
+       }
+      ],
+      "action_reading": "availability",
+      "confidence": 0.8
+     },
+     "stage2": [
+      "@id",
+      "S3",
+      [
+       "and",
+       [
+        "holds",
+        "W0",
+        [
+         "can",
+         "Ann 4",
+         [
+          "move",
+          "Ann 4",
+          "Haapsalu 2",
+          "Tallinn 3",
+          "bus"
+         ]
+        ]
+       ],
+       [
+        "@p",
+        "S3",
+        0.8
+       ]
+      ]
+     ],
+     "scope": "availability",
+     "syntax": "supported",
+     "compile": "supported",
+     "clauses": {
+      "must_have": [
+       {
+        "role": "availability",
+        "unit": "S3",
+        "lit": [
+         "poss",
+         [
+          "move",
+          "Ann 4",
+          "Haapsalu 2",
+          "Tallinn 3",
+          "bus"
+         ]
+        ],
+        "sign": "+",
+        "situation": "shared_current",
+        "provenance": "S3",
+        "body_absent": [
+         "connected"
+        ],
+        "note": "the stated-endpoint path: the rule's conditions, located_at, differ and the hook; no connected literal",
+        "confidence": 0.6
+       }
+      ]
+     }
+    }
+   ],
+   "queries": [
+    {
+     "id": "Q2",
+     "text": "Can Ann take the bus from Haapsalu to Tallinn now?",
+     "stage1_reading": "executable_question",
+     "stage2": [
+      "@id",
+      "Q2",
+      [
+       "question",
+       [
+        "executable",
+        [
+         "move",
+         "Ann 4",
+         "Haapsalu 2",
+         "Tallinn 3",
+         "bus"
+        ]
+       ]
+      ]
+     ],
+     "view": "snapshot",
+     "expect": {
+      "answer": "Yes",
+      "evidence": "S3's stated-endpoint path (evidence 0.6) is the only support: the library default poss_move_person needs a connected fact, which this text lacks. The variant is a control without a numeric pin; the main test uses a robot so that no default can add a second proof."
+     },
+     "backend": [],
+     "replay": "n/a"
+    }
+   ]
+  },
+  {
+   "id": "probably_not_available",
+   "text": "Robo is a robot. Robo is in Haapsalu. Robo can probably not go from Haapsalu to Tallinn by bus.",
+   "units_replace": [
+    {
+     "id": "S3",
+     "text": "Robo can probably not go from Haapsalu to Tallinn by bus.",
+     "stage1": {
+      "type": "situation",
+      "entities": [
+       {
+        "id": "Robo 1",
+        "type": "concrete",
+        "category": "artifact"
+       },
+       {
+        "id": "Haapsalu 2",
+        "type": "concrete",
+        "category": "place"
+       },
+       {
+        "id": "Tallinn 3",
+        "type": "concrete",
+        "category": "place"
+       }
+      ],
+      "actions": [
+       {
+        "root": "go",
+        "mode": "capability",
+        "roles": {
+         "source": "Haapsalu 2",
+         "destination": "Tallinn 3",
+         "instrument": "bus"
+        }
+       }
+      ],
+      "action_reading": "availability",
+      "confidence": 0.8
+     },
+     "stage2": [
+      "@id",
+      "S3",
+      [
+       "and",
+       [
+        "holds",
+        "W0",
+        [
+         "not",
+         [
+          "can",
+          "Robo 1",
+          [
+           "move",
+           "Robo 1",
+           "Haapsalu 2",
+           "Tallinn 3",
+           "bus"
+          ]
+         ]
+        ]
+       ],
+       [
+        "@p",
+        "S3",
+        0.8
+       ]
+      ]
+     ],
+     "scope": "denial",
+     "syntax": "supported",
+     "compile": "supported",
+     "clauses": {
+      "must_have": [
+       {
+        "role": "denial",
+        "unit": "S3",
+        "lit": [
+         "execution_denied",
+         [
+          "move",
+          "Robo 1",
+          "Haapsalu 2",
+          "Tallinn 3",
+          "bus"
+         ]
+        ],
+        "sign": "+",
+        "situation": "shared_current",
+        "note": "the probable denial: execution_denied with the unit's evidence 0.6 (2p - 1 for p = 0.8)"
+       }
+      ]
+     }
+    }
+   ],
+   "queries": [
+    {
+     "id": "Q2",
+     "expect": {
+      "outcome": "verification_result",
+      "answer": "No",
+      "forbidden_outcomes": [
+       "plan_found",
+       "not_found"
+      ],
+      "forbidden_answers": [
+       "Yes"
+      ],
+      "evidence": "\"Robo can probably not go\" is the denial of the move with probability 0.8 (T2 of the planning fixes, 2026-09-30): S3 compiles to execution_denied with evidence 0.6, and the executability question is No with the stated uncertainty shown as Probably no."
+     },
+     "backend": []
+    }
+   ]
+  },
+  {
+   "id": "uninformative_location",
+   "text": "Robo is a robot. Robo is perhaps in Haapsalu. Robo can probably go from Haapsalu to Tallinn by bus.",
+   "units_replace": [
+    {
+     "id": "S2",
+     "text": "Robo is perhaps in Haapsalu.",
+     "stage1": {
+      "type": "situation",
+      "entities": [
+       {
+        "id": "Robo 1",
+        "type": "concrete",
+        "category": "artifact"
+       },
+       {
+        "id": "Haapsalu 2",
+        "type": "concrete",
+        "category": "place"
+       }
+      ],
+      "confidence": 0.5
+     },
+     "stage2": [
+      "@id",
+      "S2",
+      [
+       "and",
+       [
+        "holds",
+        "W0",
+        [
+         "is rel2",
+         "located_at",
+         "Robo 1",
+         "Haapsalu 2"
+        ]
+       ],
+       [
+        "@p",
+        "S2",
+        0.5
+       ]
+      ]
+     ],
+     "scope": "initial",
+     "syntax": "supported",
+     "compile": {
+      "unsupported": "unsupported_confidence_form",
+      "detail": "an initial state description with p = 0.5: no information either way; it is kept and reported, not dropped and not used as evidence"
+     },
+     "clauses": {
+      "must_not_have": [
+       {
+        "role": "*",
+        "unit": "S2",
+        "note": "no initial fact, positive or negative"
+       }
+      ]
+     }
+    }
+   ],
+   "queries": [
+    {
+     "id": "Q2",
+     "expect": {
+      "outcome": "unsupported_translation",
+      "reason": "unsupported_confidence_form",
+      "unit": "S2",
+      "forbidden_outcomes": [
+       "plan_found",
+       "not_found"
+      ],
+      "forbidden_answers": [
+       "Yes",
+       "No"
+      ],
+      "evidence": "S2 has source probability 0.5. The unit is retained and reported; the source is unsupported, so no query of it is answered, including an executability question."
+     },
+     "backend": []
+    }
+   ]
+  }
+ ],
+ "candidates": [
+  {
+   "id": "K1",
+   "sequence": [
+    [
+     "move",
+     "Robo 1",
+     "Haapsalu 2",
+     "Tallinn 3",
+     "bus"
+    ]
+   ],
+   "states": [
+    {
+     "after": 0,
+     "facts": [
+      "+located_at(Robo,Haapsalu)"
+     ]
+    },
+    {
+     "after": 1,
+     "facts": [
+      "+located_at(Robo,Tallinn)",
+      "-located_at(Robo,Haapsalu)"
+     ]
+    }
+   ],
+   "verdict": "valid",
+   "reason": "replay does not compute confidence; S3's path is Robo's and unconditional"
+  }
+ ],
+ "support": {
+  "syntax": "supported",
+  "compile": "supported",
+  "backend_requirements": [],
+  "replay_fragment": "covered"
+ },
+ "explain": "'Probably' gives the unit probability 0.8 in the ordinary Stage-2 way, which the pipeline converts to evidence 0.6 before clausification; the fixture records the three layers separately (source probability, compiled evidence, backend-reported confidence). The actor is a robot so that no library default supplies a second proof: S3's stated-endpoint path is the sole support. Under encoding v2 the unit compiles to one executability path that holds the evidence itself, with no helper clause, and an uncertain rule counts once per action application: Q2 and the one-step plan Q3 report 0.6. The alternative_support variant is the original Ann text, kept as a control without a numeric pin.",
+ "notes": "Amended 2026-09-11 (review R1): actor changed from Ann to Robo; probability and evidence layers separated; the per-clause 0.8 assertion and the 0.64 story removed. Astra review 5.3. Inspect _distribute_clause_confidence in solver/lc_packages.py before reuse. Amended 2026-09-20 (re-review RR3: strict_control Q2 backend []). Amended 2026-09-20 (WP06 review R3: variants probably_not_available and uninformative_location pin the p <= 0.5 boundary of physical_v1). Amended 2026-09-23 (encoding v2, gold review 0.4): Q1 (capability) is removed from the base, strict_control and alternative_support; the two unsupported-confidence variants ask the executable question Q2 with the same source-level diagnostic; Q2 and Q3 pin 0.6 directly and lose the shared_source_confidence requirement, because v2 has no helper and a one-step proof applies S3 once."
+}

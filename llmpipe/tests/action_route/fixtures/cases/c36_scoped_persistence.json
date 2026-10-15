@@ -1,0 +1,27 @@
+{
+  "id": "c36_scoped_persistence",
+  "purpose": "a location-scoped fact persists across an unrelated action at its own location and does not appear at another location",
+  "contract": ["A2.8", "A3.3", "A3.4"],
+  "family": ["Context qualifiers", "Persistence"],
+  "input_kind": "formal_only",
+  "text": "Ann is a person. Ann is in Haapsalu. There is a bus service from Haapsalu to Tallinn. In the kitchen, the lamp is on.",
+  "profile": "physical_v1",
+  "entities": {"Ann 1": "person", "Haapsalu 2": "place", "Tallinn 3": "place", "lamp 4": "artifact", "kitchen 5": "place", "hall 6": "place"},
+  "units": [
+    {"id": "S1", "text": "Ann is a person.", "stage2": ["@id", "S1", ["holds", "W0", ["isa", "person", "Ann 1"]]], "scope": "static", "syntax": "supported", "compile": "supported", "clauses": {}},
+    {"id": "S2", "text": "Ann is in Haapsalu.", "stage2": ["@id", "S2", ["holds", "W0", ["is rel2", "located_at", "Ann 1", "Haapsalu 2"]]], "scope": "initial", "syntax": "supported", "compile": "supported", "clauses": {}},
+    {"id": "S3", "text": "There is a bus service from Haapsalu to Tallinn.", "stage2": ["@id", "S3", ["holds", "W0", ["connected", "Haapsalu 2", "Tallinn 3", "bus"]]], "scope": "static", "syntax": "supported", "compile": "supported", "clauses": {}},
+    {"id": "S4", "text": "In the kitchen, the lamp is on.", "stage2": ["@id", "S4", ["holds", "W0", ["has property", "on", "lamp 4"]]], "scope": "initial", "context": {"location": "kitchen 5", "location_role": "scope"}, "syntax": "supported", "compile": "supported", "clauses": {"must_have": [{"role": "initial_fact", "unit": "S4", "lit": ["has property", "on", "lamp 4"], "sign": "+", "situation": "named"}]}, "note": "a scope location: the constant stays in the fact's location slot"}
+  ],
+  "queries": [
+    {"id": "Q1", "text": "After Ann takes the bus to Tallinn, is the lamp on? (ambient kitchen)", "stage1_reading": "verify_question", "stage2": ["@id", "Q1", ["verify", [["move", "Ann 1", "Haapsalu 2", "Tallinn 3", "bus"]], ["has property", "on", "lamp 4"]]], "view": "verify", "ambient": "kitchen 5", "expect": {"outcome": "verification_result", "answer": "Yes", "evidence": "S4 is kept at the ambient kitchen; frame_property carries it across the move with its own location (premise, conclusion and blocker share one location variable); the move writes nothing about the lamp; the confidence 0.99 of one frame is recorded, not pinned"}, "backend": [], "replay": "covered"},
+    {"id": "Q2", "text": "After Ann takes the bus to Tallinn, is the lamp on? (ambient hall)", "stage1_reading": "verify_question", "stage2": ["@id", "Q2", ["verify", [["move", "Ann 1", "Haapsalu 2", "Tallinn 3", "bus"]], ["has property", "on", "lamp 4"]]], "view": "verify", "ambient": "hall 6", "expect": {"outcome": "verification_result", "answer": "Unknown", "forbidden_answers": ["Yes"], "evidence": "ambient hall: S4 (scope kitchen) is excluded, scope_location_mismatch; nothing else states the lamp"}, "backend": [], "replay": "covered"},
+    {"id": "Q3", "text": "Is the lamp on? (ambient kitchen)", "stage2": ["@id", "Q3", ["question", ["has property", "on", "lamp 4"]]], "view": "snapshot", "ambient": "kitchen 5", "expect": {"answer": "Yes", "evidence": "S4 at the root, ambient kitchen"}, "backend": [], "replay": "n/a"},
+    {"id": "Q4", "text": "Is the lamp on? (ambient hall)", "stage2": ["@id", "Q4", ["question", ["has property", "on", "lamp 4"]]], "view": "snapshot", "ambient": "hall 6", "expect": {"answer": "Unknown", "forbidden_answers": ["Yes"], "evidence": "S4 is excluded at the ambient hall"}, "backend": [], "replay": "n/a"}
+  ],
+  "variants": [],
+  "candidates": [],
+  "support": {"syntax": "supported", "compile": "supported", "backend_requirements": [], "replay_fragment": "n/a"},
+  "explain": "Sol's checkpoint-2 review: the production frame keeps a scope-bearing fact at its own location (the agreement rule of plan section 5), where the layout experiment's frame gave the conclusion a fresh location variable. A query literal stands at the query's ambient, and the view drops a scope fact of another ambient, so Q2 and Q4 test the exclusion. The frame itself is tested by a harness-built GK input: Q1's input (the kitchen fact kept) with the final question asked at the hall. The production frame gives Unknown there; the same input with the experiment's frame (a fresh location in the conclusion and the blocker) gives Yes. Those two inputs are diagnostic rows, not queries of this case.",
+  "notes": "Written 2026-09-23 after checkpoint 2, before any GK run of this case (REVIEW.md, encoding v2 rows)."
+}

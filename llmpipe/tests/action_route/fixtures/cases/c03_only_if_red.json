@@ -1,0 +1,53 @@
+{
+  "id": "c03_only_if_red",
+  "purpose": "a strict necessary condition gives Yes / No / Unknown / contested for immediate executability, with the proof obligations named",
+  "contract": ["C03", "A2.1", "A2.3", "A3.2", "A4.2"],
+  "family": ["Condition evidence", "Necessary/sufficient conditions"],
+  "input_kind": "text",
+  "text": "There is a robot hand. Block a is on the table. Block a is clear. The hand is empty. The hand can take a block only if the block is red.",
+  "profile": "physical_v1",
+  "entities": {"hand 1": "hand", "a 2": "block", "table 3": "table"},
+  "units": [
+    {"id": "S1", "text": "There is a robot hand.", "stage1": {"type": "real", "entities": [{"id": "hand 1", "type": "concrete", "category": "artifact"}]}, "stage2": ["@id", "S1", ["holds", "W0", ["isa", "hand", "hand 1"]]], "scope": "static", "syntax": "supported", "compile": "supported", "clauses": {"must_have": [{"role": "static", "unit": "S1", "lit": ["isa", "hand", "hand 1"], "sign": "+", "situation": "none"}]}},
+    {"id": "S2", "text": "Block a is on the table.", "stage1": {"type": "situation", "entities": [{"id": "a 2", "type": "concrete", "category": "artifact"}, {"id": "table 3", "type": "concrete", "category": "artifact"}]}, "stage2": ["@id", "S2", ["holds", "W0", ["and", ["isa", "block", "a 2"], ["isa", "table", "table 3"], ["is rel2", "on", "a 2", "table 3"]]]], "scope": "initial", "syntax": "supported", "compile": "supported", "clauses": {"must_have": [{"role": "static", "unit": "S2", "lit": ["isa", "block", "a 2"], "sign": "+", "situation": "none"}, {"role": "static", "unit": "S2", "lit": ["isa", "table", "table 3"], "sign": "+", "situation": "none"}, {"role": "initial_fact", "unit": "S2", "lit": ["is rel2", "on", "a 2", "table 3"], "sign": "+", "situation": "named"}]}},
+    {"id": "S3", "text": "Block a is clear.", "stage1": {"type": "situation", "entities": [{"id": "a 2", "type": "concrete", "category": "artifact"}]}, "stage2": ["@id", "S3", ["holds", "W0", ["has property", "clear_top", "a 2"]]], "scope": "initial", "syntax": "supported", "compile": "supported", "clauses": {"must_have": [{"role": "initial_fact", "unit": "S3", "lit": ["has property", "clear_top", "a 2"], "sign": "+", "situation": "named"}]}},
+    {"id": "S4", "text": "The hand is empty.", "stage1": {"type": "situation", "entities": [{"id": "hand 1", "type": "concrete", "category": "artifact"}]}, "stage2": ["@id", "S4", ["holds", "W0", ["has property", "empty", "hand 1"]]], "scope": "initial", "syntax": "supported", "compile": "supported", "clauses": {"must_have": [{"role": "initial_fact", "unit": "S4", "lit": ["has property", "empty", "hand 1"], "sign": "+", "situation": "named"}]}},
+    {"id": "S5", "text": "The hand can take a block only if the block is red.", "stage1": {"type": "strict_rule", "entities": [{"id": "hand 1", "type": "concrete", "category": "artifact"}], "actions": [{"root": "take", "mode": "capability", "roles": {"target": "block"}}], "action_reading": "restriction"}, "stage2": ["@id", "S5", ["holds", "W0", ["forall", "X", ["implies", ["executable", ["take", "hand 1", "X"]], ["has property", "red", "X"]]]]], "scope": "restriction", "syntax": "supported", "compile": "supported", "clauses": {"must_have": [{"role": "restriction_check", "unit": "S5", "constructor": "take", "pattern": ["take", "hand 1", "X"], "condition": [{"lit": ["has property", "red", "X"], "sign": "+", "situation": "shared_current"}]}, {"role": "hook", "constructor": "take", "requires": ["S5"]}, {"role": "path_coverage", "constructor": "take", "requires": ["S5"], "note": "every clause with a positive poss(take(...)) head conjoins the ok_take hook, and ok_take requires restriction_S5; this replaces a blanket ban on positive poss heads, which would also match the correct rule"}, {"role": "necessity_restriction", "unit": "S5", "lit": ["poss", ["take", "hand 1", "X"]], "sign": "-", "situation": "shared_current", "body": [{"lit": ["has property", "red", "X"], "sign": "-", "situation": "shared_current"}], "body_exact": true}], "must_not_have": [{"role": "availability", "unit": "S5", "note": "the restriction must not be rewritten to can (A4.2)"}]}}
+  ],
+  "queries": [
+    {"id": "Q1", "text": "Can the hand take block a now?", "stage1_reading": "executable_question", "stage2": ["@id", "Q1", ["question", ["executable", ["take", "hand 1", "a 2"]]]], "view": "snapshot", "expect": {"answer": "Unknown", "evidence": "base text: red(a) is unsupported. The positive path needs the check restriction_1_S5, which needs +red(a) at W0; the negative path needs -red(a) at W0. Neither exists. Absence is not No (A2.3)."}, "backend": [], "replay": "n/a"}
+  ],
+  "variants": [
+    {"id": "true",
+     "text": "There is a robot hand. Block a is on the table. Block a is clear. Block a is red. The hand is empty. The hand can take a block only if the block is red.",
+     "units_add": [
+      {"id": "S6", "text": "Block a is red.", "stage1": {"type": "situation", "entities": [{"id": "a 2", "type": "concrete", "category": "artifact"}]}, "stage2": ["@id", "S6", ["holds", "W0", ["has property", "red", "a 2"]]], "scope": "initial", "syntax": "supported", "compile": "supported", "clauses": {"must_have": [{"role": "initial_fact", "unit": "S6", "lit": ["has property", "red", "a 2"], "sign": "+", "situation": "named"}]}}],
+     "queries": [
+      {"id": "Q1", "expect": {"outcome": "verification_result", "answer": "Yes", "evidence": "the library default poss_take_hand: isa block a, empty(hand), clear_top(a) and on(a,table) at W0, and ok_take through restriction_1_S5 with +red(a) at W0"}}]},
+    {"id": "false",
+     "text": "There is a robot hand. Block a is on the table. Block a is clear. Block a is not red. The hand is empty. The hand can take a block only if the block is red.",
+     "units_add": [
+      {"id": "S6", "text": "Block a is not red.", "stage1": {"type": "situation", "entities": [{"id": "a 2", "type": "concrete", "category": "artifact"}]}, "stage2": ["@id", "S6", ["holds", "W0", ["not", ["has property", "red", "a 2"]]]], "scope": "initial", "syntax": "supported", "compile": "supported", "clauses": {"must_have": [{"role": "initial_fact", "unit": "S6", "lit": ["has property", "red", "a 2"], "sign": "-", "situation": "named"}]}}],
+     "queries": [
+      {"id": "Q1", "expect": {"outcome": "verification_result", "answer": "No", "evidence": "the necessity_restriction clause of S5 with -red(a) at W0. No positive poss path exists (the hook fails). The No comes from an accepted negative proof, not from the missing positive proof."}}]},
+    {"id": "unknown",
+     "queries": [
+      {"id": "Q1", "expect": {"outcome": "verification_result", "answer": "Unknown", "evidence": "as the base text"}}]},
+    {"id": "both",
+     "text": "There is a robot hand. Block a is on the table. Block a is clear. Block a is red. Block a is not red. The hand is empty. The hand can take a block only if the block is red.",
+     "units_add": [
+      {"id": "S6", "text": "Block a is red.", "stage1": {"type": "situation", "entities": [{"id": "a 2", "type": "concrete", "category": "artifact"}]}, "stage2": ["@id", "S6", ["holds", "W0", ["has property", "red", "a 2"]]], "scope": "initial", "syntax": "supported", "compile": "supported", "clauses": {}},
+      {"id": "S7", "text": "Block a is not red.", "stage1": {"type": "situation", "entities": [{"id": "a 2", "type": "concrete", "category": "artifact"}]}, "stage2": ["@id", "S7", ["holds", "W0", ["not", ["has property", "red", "a 2"]]]], "scope": "initial", "syntax": "supported", "compile": "supported", "clauses": {}}],
+     "queries": [
+      {"id": "Q1", "expect": {"outcome": "verification_result", "answer": "contested", "evidence": "both +poss (via +red) and -poss (via -red) have accepted support; A2.3: contested permission is not a validated action; the answer is neither Yes nor No. GK's contradiction tolerance may report either proof; the route must report both."}}]}
+  ],
+  "candidates": [
+    {"id": "K1", "variant": "true", "sequence": [["take", "hand 1", "a 2"]], "states": [{"after": 0, "facts": ["+on(a,table)", "+clear_top(a)", "+empty(hand)", "+red(a)"]}, {"after": 1, "facts": ["+holding(hand,a)", "+have(hand,a)", "-empty(hand)", "-on(a,table)", "+clear_top(a)", "+red(a)"]}], "verdict": "valid", "reason": "restriction satisfied (red true); mechanical preconditions true"},
+    {"id": "K2", "variant": "false", "sequence": [["take", "hand 1", "a 2"]], "states": [{"after": 0, "facts": ["-red(a)"]}], "verdict": "invalid", "step": 1, "reason": "restriction S5 explicitly false"},
+    {"id": "K3", "variant": "unknown", "sequence": [["take", "hand 1", "a 2"]], "states": [{"after": 0, "facts": []}], "verdict": "invalid", "step": 1, "reason": "restriction S5 unsupported; replay needs positive support for every applicable restriction (A5.1); the candidate is not validated. This is 'not validated', not 'proved impossible'."},
+    {"id": "K4", "variant": "both", "sequence": [["take", "hand 1", "a 2"]], "states": [{"after": 0, "facts": ["+red(a)", "-red(a)"]}], "verdict": "contested", "step": 1, "reason": "contradictory required support"}
+  ],
+  "support": {"syntax": "supported", "compile": "supported", "backend_requirements": [], "replay_fragment": "covered"},
+  "explain": "The Stage-2 form follows A3.2's own example for this sentence: executable(take(hand 1,X)) -> red(X), with no isa(block,X) in the antecedent. The class scope is supplied by take's own applicability law, which already requires isa(block,X) on every positive path; a translation that adds isa(block,X) to the antecedent is also accepted, and then the guard is preserved in the compiled clauses (REVIEW.md disposition 9; the class-scoped form is tested in c05). The four variants differ in one sentence and pin the four rows of A4.2's table. The structural expectation is path coverage: every positive applicability path of take conjoins the hook, and the necessity clause keeps exactly its condition.",
+  "notes": "Four variants, one query each. The contested variant is the one where GK's report may differ between builds; the fixture pins that the route reports contested, not whichever proof GK lists first. Amended 2026-09-23 (encoding v2, gold review 0.4): Q2, the underlying-ability contrast, is removed from the base and from all four variants; v2 has one planning predicate and Q1 already tests executability."
+}

@@ -1,0 +1,775 @@
+{
+  "id": "c20_verify",
+  "purpose": "verify: a valid sequence, an explicitly false first step, an unknown prefix before a denied step, a false final goal, the empty sequence, and an explicit allowance below the sequence length",
+  "contract": [
+    "C20",
+    "A3.4",
+    "A5.3"
+  ],
+  "family": [
+    "Queries",
+    "Negative state: immediate effect"
+  ],
+  "input_kind": "text",
+  "text": "There is a robot hand. Block a is on the table. Block b is on the table. Block a is clear. Block b is clear. The hand is empty. The hand can take a block only if the block is red. Block b is not red.",
+  "profile": "physical_v1",
+  "entities": {
+    "hand 1": "hand",
+    "a 2": "block",
+    "b 3": "block",
+    "table 4": "table"
+  },
+  "units": [
+    {
+      "id": "S1",
+      "text": "There is a robot hand.",
+      "stage1": {
+        "type": "real",
+        "entities": [
+          {
+            "id": "hand 1",
+            "type": "concrete",
+            "category": "artifact"
+          }
+        ]
+      },
+      "stage2": [
+        "@id",
+        "S1",
+        [
+          "holds",
+          "W0",
+          [
+            "isa",
+            "hand",
+            "hand 1"
+          ]
+        ]
+      ],
+      "scope": "static",
+      "syntax": "supported",
+      "compile": "supported",
+      "clauses": {}
+    },
+    {
+      "id": "S2",
+      "text": "Block a is on the table. Block b is on the table.",
+      "stage1": {
+        "type": "situation",
+        "entities": [
+          {
+            "id": "a 2",
+            "type": "concrete",
+            "category": "artifact"
+          },
+          {
+            "id": "b 3",
+            "type": "concrete",
+            "category": "artifact"
+          },
+          {
+            "id": "table 4",
+            "type": "concrete",
+            "category": "artifact"
+          }
+        ]
+      },
+      "stage2": [
+        "@id",
+        "S2",
+        [
+          "holds",
+          "W0",
+          [
+            "and",
+            [
+              "isa",
+              "block",
+              "a 2"
+            ],
+            [
+              "isa",
+              "block",
+              "b 3"
+            ],
+            [
+              "isa",
+              "table",
+              "table 4"
+            ],
+            [
+              "is rel2",
+              "on",
+              "a 2",
+              "table 4"
+            ],
+            [
+              "is rel2",
+              "on",
+              "b 3",
+              "table 4"
+            ]
+          ]
+        ]
+      ],
+      "scope": "initial",
+      "syntax": "supported",
+      "compile": "supported",
+      "clauses": {}
+    },
+    {
+      "id": "S3",
+      "text": "Block a is clear. Block b is clear. The hand is empty.",
+      "stage1": {
+        "type": "situation",
+        "entities": [
+          {
+            "id": "a 2",
+            "type": "concrete",
+            "category": "artifact"
+          },
+          {
+            "id": "b 3",
+            "type": "concrete",
+            "category": "artifact"
+          },
+          {
+            "id": "hand 1",
+            "type": "concrete",
+            "category": "artifact"
+          }
+        ]
+      },
+      "stage2": [
+        "@id",
+        "S3",
+        [
+          "holds",
+          "W0",
+          [
+            "and",
+            [
+              "has property",
+              "clear_top",
+              "a 2"
+            ],
+            [
+              "has property",
+              "clear_top",
+              "b 3"
+            ],
+            [
+              "has property",
+              "empty",
+              "hand 1"
+            ]
+          ]
+        ]
+      ],
+      "scope": "initial",
+      "syntax": "supported",
+      "compile": "supported",
+      "clauses": {}
+    },
+    {
+      "id": "S4",
+      "text": "The hand can take a block only if the block is red.",
+      "stage1": {
+        "type": "strict_rule",
+        "entities": [
+          {
+            "id": "hand 1",
+            "type": "concrete",
+            "category": "artifact"
+          },
+          {
+            "id": "block",
+            "type": "generic",
+            "category": "artifact"
+          }
+        ],
+        "actions": [
+          {
+            "root": "take",
+            "mode": "capability",
+            "roles": {
+              "actor": "hand 1",
+              "target": "block"
+            }
+          }
+        ],
+        "action_reading": "restriction"
+      },
+      "stage2": [
+        "@id",
+        "S4",
+        [
+          "holds",
+          "W0",
+          [
+            "forall",
+            "X",
+            [
+              "implies",
+              [
+                "executable",
+                [
+                  "take",
+                  "hand 1",
+                  "X"
+                ]
+              ],
+              [
+                "has property",
+                "red",
+                "X"
+              ]
+            ]
+          ]
+        ]
+      ],
+      "scope": "restriction",
+      "syntax": "supported",
+      "compile": "supported",
+      "clauses": {}
+    },
+    {
+      "id": "S5",
+      "text": "Block b is not red.",
+      "stage1": {
+        "type": "situation",
+        "entities": [
+          {
+            "id": "b 3",
+            "type": "concrete",
+            "category": "artifact"
+          }
+        ]
+      },
+      "stage2": [
+        "@id",
+        "S5",
+        [
+          "holds",
+          "W0",
+          [
+            "not",
+            [
+              "has property",
+              "red",
+              "b 3"
+            ]
+          ]
+        ]
+      ],
+      "scope": "initial",
+      "syntax": "supported",
+      "compile": "supported",
+      "clauses": {}
+    }
+  ],
+  "queries": [
+    {
+      "id": "Q2",
+      "text": "Does taking b make the hand hold b?",
+      "stage1_reading": "verify_question",
+      "stage2": [
+        "@id",
+        "Q2",
+        [
+          "verify",
+          [
+            [
+              "take",
+              "hand 1",
+              "b 3"
+            ]
+          ],
+          [
+            "is rel2",
+            "holding",
+            "hand 1",
+            "b 3"
+          ]
+        ]
+      ],
+      "view": "verify",
+      "expect": {
+        "answer": "No",
+        "evidence": "explicit non-executability of step 1 at the established prefix W0: -red(b) at W0 with the S4 necessity clause"
+      },
+      "backend": [],
+      "replay": "covered"
+    },
+    {
+      "id": "Q5",
+      "text": "Is a on the table?",
+      "stage1_reading": "verify_question",
+      "stage2": [
+        "@id",
+        "Q5",
+        [
+          "verify",
+          [],
+          [
+            "is rel2",
+            "on",
+            "a 2",
+            "table 4"
+          ]
+        ]
+      ],
+      "view": "verify",
+      "expect": {
+        "answer": "Yes",
+        "evidence": "verify([],Q) is the initial-state question; snapshot view; no GK obligation beyond Q at W0"
+      },
+      "backend": [],
+      "replay": "covered"
+    }
+  ],
+  "variants": [
+    {
+      "id": "a_red",
+      "text": "There is a robot hand. Block a is on the table. Block b is on the table. Block a is clear. Block b is clear. The hand is empty. The hand can take a block only if the block is red. Block b is not red. Block a is red.",
+      "units_add": [
+        {
+          "id": "S6",
+          "text": "Block a is red.",
+          "stage1": {
+            "type": "situation",
+            "entities": [
+              {
+                "id": "a 2",
+                "type": "concrete",
+                "category": "artifact"
+              }
+            ]
+          },
+          "stage2": [
+            "@id",
+            "S6",
+            [
+              "holds",
+              "W0",
+              [
+                "has property",
+                "red",
+                "a 2"
+              ]
+            ]
+          ],
+          "scope": "initial",
+          "syntax": "supported",
+          "compile": "supported"
+        }
+      ],
+      "queries": [
+        {
+          "id": "Q1",
+          "text": "Does taking a and putting a on b achieve a on b?",
+          "stage1_reading": "verify_question",
+          "stage2": [
+            "@id",
+            "Q1",
+            [
+              "verify",
+              [
+                [
+                  "take",
+                  "hand 1",
+                  "a 2"
+                ],
+                [
+                  "put_on",
+                  "hand 1",
+                  "a 2",
+                  "b 3"
+                ]
+              ],
+              [
+                "is rel2",
+                "on",
+                "a 2",
+                "b 3"
+              ]
+            ]
+          ],
+          "view": "verify",
+          "expect": {
+            "answer": "Yes",
+            "obligations": [
+              "poss(take(hand,a),W0)",
+              "poss(put_on(hand,a,b),W0+1)",
+              "on(a,b,W0+2)"
+            ],
+            "evidence": "each obligation proved; replay validates both steps and the final state"
+          },
+          "backend": [],
+          "replay": "covered"
+        },
+        {
+          "id": "Q4",
+          "text": "After taking a, is a on the table?",
+          "stage1_reading": "verify_question",
+          "stage2": [
+            "@id",
+            "Q4",
+            [
+              "verify",
+              [
+                [
+                  "take",
+                  "hand 1",
+                  "a 2"
+                ]
+              ],
+              [
+                "is rel2",
+                "on",
+                "a 2",
+                "table 4"
+              ]
+            ]
+          ],
+          "view": "verify",
+          "expect": {
+            "answer": "No",
+            "evidence": "the sequence is established (step 1 proved and replayed); -on(a,table) at W0+1 is the strict effect eff_take_not_on: an explicit negation of Q after the whole sequence"
+          },
+          "backend": [],
+          "replay": "covered"
+        },
+        {
+          "id": "Q6",
+          "text": "(formal: the Q1 sequence with an explicit allowance of one)",
+          "stage1_reading": "verify_question",
+          "stage2": [
+            "@id",
+            "Q6",
+            [
+              "verify",
+              [
+                [
+                  "take",
+                  "hand 1",
+                  "a 2"
+                ],
+                [
+                  "put_on",
+                  "hand 1",
+                  "a 2",
+                  "b 3"
+                ]
+              ],
+              [
+                "is rel2",
+                "on",
+                "a 2",
+                "b 3"
+              ]
+            ]
+          ],
+          "limits": {
+            "search_cap": 1,
+            "explicit": true
+          },
+          "view": "verify",
+          "expect": {
+            "outcome": "insufficient_search_allowance",
+            "evidence": "an explicit allowance below the sequence length produces the diagnostic before any obligation is checked; the default four does not truncate a supplied sequence. A run limit, not a translation defect."
+          },
+          "backend": [],
+          "replay": "n/a"
+        },
+        {
+          "id": "Q7",
+          "text": "After taking a and putting a on b, can the hand take b?",
+          "stage1_reading": "verify_question",
+          "stage2": [
+            "@id",
+            "Q7",
+            [
+              "verify",
+              [
+                [
+                  "take",
+                  "hand 1",
+                  "a 2"
+                ],
+                [
+                  "put_on",
+                  "hand 1",
+                  "a 2",
+                  "b 3"
+                ]
+              ],
+              [
+                "executable",
+                [
+                  "take",
+                  "hand 1",
+                  "b 3"
+                ]
+              ]
+            ]
+          ],
+          "view": "verify",
+          "expect": {
+            "outcome": "unsupported_backend_requirement",
+            "reason": "negative_persistence_unavailable",
+            "on_validated_backend": {
+              "answer": "No"
+            },
+            "evidence": "Q may ask executable in the resulting situation (A3.4). After the established two-step sequence, take(hand,b) fails for two reasons: -clear_top(b) at W0+2 is a strict library effect, and -red(b) violates S4. Only the second gives a necessity clause (-red -> -poss(take(hand 1,X))), and it needs -red(b), established at W0, carried across two steps to W0+2: the horizon rule of REVIEW.md disposition 8 applies. On the starting backend the route stops with the negative-persistence diagnostic; on a validated backend the answer is No. The clearance failure alone gives no No because block-top clearance is a precondition of one library path, not a necessity clause (c05b)."
+          },
+          "backend": [
+            "negative_persistence"
+          ],
+          "replay": "covered"
+        }
+      ]
+    },
+    {
+      "id": "unknown_prefix",
+      "text": "There is a robot hand. Block a is on the table. Block b is on the table. Block a is clear. Block b is clear. The hand is empty. The hand can take a block only if the block is red. Block b is not red. The hand cannot take block b.",
+      "units_add": [
+        {
+          "id": "S6",
+          "text": "The hand cannot take block b.",
+          "stage1": {
+            "type": "situation",
+            "entities": [
+              {
+                "id": "hand 1",
+                "type": "concrete",
+                "category": "artifact"
+              },
+              {
+                "id": "b 3",
+                "type": "concrete",
+                "category": "artifact"
+              }
+            ],
+            "actions": [
+              {
+                "root": "take",
+                "mode": "capability",
+                "roles": {
+                  "target": "b 3"
+                }
+              }
+            ],
+            "action_reading": "availability"
+          },
+          "stage2": [
+            "@id",
+            "S6",
+            [
+              "holds",
+              "W0",
+              [
+                "not",
+                [
+                  "can",
+                  "hand 1",
+                  [
+                    "take",
+                    "hand 1",
+                    "b 3"
+                  ]
+                ]
+              ]
+            ]
+          ],
+          "scope": "denial",
+          "syntax": "supported",
+          "compile": "supported",
+          "clauses": {
+            "must_have": [
+              {
+                "role": "denial",
+                "unit": "S6",
+                "lit": [
+                  "execution_denied",
+                  [
+                    "take",
+                    "hand 1",
+                    "b 3"
+                  ]
+                ],
+                "sign": "+",
+                "situation": "shared_current"
+              }
+            ]
+          },
+          "note": "a timeless explicit denial: the later step is refuted without any negative fact being carried (review R8)"
+        }
+      ],
+      "queries": [
+        {
+          "id": "Q3",
+          "text": "Does taking a and then taking b make the hand hold b?",
+          "stage1_reading": "verify_question",
+          "stage2": [
+            "@id",
+            "Q3",
+            [
+              "verify",
+              [
+                [
+                  "take",
+                  "hand 1",
+                  "a 2"
+                ],
+                [
+                  "take",
+                  "hand 1",
+                  "b 3"
+                ]
+              ],
+              [
+                "is rel2",
+                "holding",
+                "hand 1",
+                "b 3"
+              ]
+            ]
+          ],
+          "view": "verify",
+          "expect": {
+            "answer": "Unknown",
+            "forbidden_answers": [
+              "No",
+              "Yes",
+              "contested"
+            ],
+            "evidence": "step 1 is unknown: red(a) is unsupported, so the S4 check for take(hand,a) has no positive support and no negative proof. Step 2 is explicitly denied by S6 at every situation (a timeless denial with the necessity clause; nothing has to persist). A negative for step 2 at the unestablished S1 is not sufficient for No (A3.4). Not contested: nothing supports step 1 either way."
+          },
+          "backend": [],
+          "replay": "covered"
+        }
+      ]
+    }
+  ],
+  "candidates": [
+    {
+      "id": "K1",
+      "sequence": [
+        [
+          "take",
+          "hand 1",
+          "a 2"
+        ],
+        [
+          "put_on",
+          "hand 1",
+          "a 2",
+          "b 3"
+        ]
+      ],
+      "states": [
+        {
+          "after": 0,
+          "facts": [
+            "+on(a,table)",
+            "+on(b,table)",
+            "+clear_top(a)",
+            "+clear_top(b)",
+            "+empty(hand)",
+            "+red(a)",
+            "-red(b)"
+          ]
+        },
+        {
+          "after": 1,
+          "facts": [
+            "+holding(hand,a)",
+            "+have(hand,a)",
+            "-empty(hand)",
+            "-on(a,table)",
+            "+clear_top(a)",
+            "+clear_top(b)",
+            "+on(b,table)",
+            "+red(a)",
+            "-red(b)"
+          ]
+        },
+        {
+          "after": 2,
+          "facts": [
+            "+on(a,b)",
+            "-holding(hand,a)",
+            "+empty(hand)",
+            "-clear_top(b)",
+            "+have(hand,a)",
+            "+red(a)",
+            "-red(b)"
+          ]
+        }
+      ],
+      "verdict": "valid",
+      "reason": "a_red Q1",
+      "variant": "a_red"
+    },
+    {
+      "id": "K2",
+      "sequence": [
+        [
+          "take",
+          "hand 1",
+          "b 3"
+        ]
+      ],
+      "states": [
+        {
+          "after": 0,
+          "facts": [
+            "-red(b)"
+          ]
+        }
+      ],
+      "verdict": "invalid",
+      "step": 1,
+      "reason": "Q2: S4 explicitly false"
+    },
+    {
+      "id": "K3",
+      "sequence": [
+        [
+          "take",
+          "hand 1",
+          "a 2"
+        ],
+        [
+          "take",
+          "hand 1",
+          "b 3"
+        ]
+      ],
+      "states": [
+        {
+          "after": 0,
+          "facts": [
+            "+empty(hand)",
+            "+clear_top(a)"
+          ]
+        }
+      ],
+      "verdict": "invalid",
+      "step": 1,
+      "reason": "unknown_prefix Q3: S4 unsupported for a (red(a) unknown); the candidate is not validated at step 1; the route answer is Unknown, not No, because the replay verdict is a validation result and GK has no negative proof for step 1",
+      "variant": "unknown_prefix"
+    }
+  ],
+  "support": {
+    "syntax": "supported",
+    "compile": "supported",
+    "backend_requirements": [
+      "negative_persistence for a_red Q7"
+    ],
+    "replay_fragment": "covered"
+  },
+  "explain": "Q2 versus Q3 is the prefix rule of A3.4: an explicit negative at an established prefix gives No; an explicit denial behind an unknown step gives Unknown. Q3's second step is refuted by a timeless denial so that the query depends on no carried negative; the prefix alone decides. Q4 is the false-final-goal case through a strict library effect. Q7 shows that a verify question about executability in the final situation can itself depend on negative persistence; the fixture pins the diagnostic on the starting backend rather than an optimistic No. The source variants a_red and unknown_prefix are complete sources; no query adds a fact (A3.1).",
+  "notes": "Amended 2026-09-11 (review R3, R8): the red-a fact moved from query-level additions into the source variant a_red; Q3 now uses a timeless denial instead of an unlisted negative-persistence dependency. c25 Q5 replays against a_red."
+}

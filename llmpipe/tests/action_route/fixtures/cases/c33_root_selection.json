@@ -1,0 +1,30 @@
+{
+  "id": "c33_root_selection",
+  "purpose": "one source artifact, two named worlds: the planning root selects the seed and the question world, and a fact of another world never shortens a plan",
+  "contract": ["A3.3", "A3.4", "A2.8"],
+  "family": ["Queries", "Scope"],
+  "input_kind": "formal_only",
+  "text": "Ann is a person. Ann is in Haapsalu. Later, Ann is in Tallinn. There is a bus service from Haapsalu to Tallinn. There is a ship service from Tallinn to Helsinki.",
+  "profile": "physical_v1",
+  "entities": {"Ann 1": "person", "Haapsalu 2": "place", "Tallinn 3": "place", "Helsinki 4": "place"},
+  "worlds": ["W0", "W1"],
+  "units": [
+    {"id": "S1", "text": "Ann is a person.", "stage2": ["@id", "S1", ["holds", "W0", ["isa", "person", "Ann 1"]]], "scope": "static", "syntax": "supported", "compile": "supported", "clauses": {}},
+    {"id": "S2", "text": "Ann is in Haapsalu.", "stage2": ["@id", "S2", ["holds", "W0", ["is rel2", "located_at", "Ann 1", "Haapsalu 2"]]], "scope": "initial", "syntax": "supported", "compile": "supported", "clauses": {}},
+    {"id": "S3", "text": "Later, Ann is in Tallinn.", "stage2": ["@id", "S3", ["holds", "W1", ["is rel2", "located_at", "Ann 1", "Tallinn 3"]]], "scope": "initial", "syntax": "supported", "compile": "supported", "clauses": {}},
+    {"id": "S4", "text": "There is a bus service from Haapsalu to Tallinn.", "stage2": ["@id", "S4", ["holds", "W0", ["connected", "Haapsalu 2", "Tallinn 3", "bus"]]], "scope": "static", "syntax": "supported", "compile": "supported", "clauses": {}},
+    {"id": "S5", "text": "There is a ship service from Tallinn to Helsinki.", "stage2": ["@id", "S5", ["holds", "W0", ["connected", "Tallinn 3", "Helsinki 4", "ship"]]], "scope": "static", "syntax": "supported", "compile": "supported", "clauses": {}}
+  ],
+  "queries": [
+    {"id": "Q1", "text": "How can Ann get to Helsinki in at most two steps?", "stage1_reading": "plan_question", "stage2": ["@id", "Q1", ["plan", ["is rel2", "located_at", "Ann 1", "Helsinki 4"], ["steps", "at_most", 2]]], "view": "discovery", "seed": "s^2(0)", "expect": {"outcome": "plan_found", "answer": "Yes", "plan": [["move", "Ann 1", "Tallinn 3", "Helsinki 4", "ship"]], "evidence": "R-late of the layout experiment: no planning_root, so the root is the last declared world W1, where Ann is in Tallinn; one ship step"}, "backend": [], "replay": "covered"},
+    {"id": "Q2", "text": "How can Ann get to Helsinki in at most two steps? (planning root W0)", "stage1_reading": "plan_question", "stage2": ["@id", "Q2", ["plan", ["is rel2", "located_at", "Ann 1", "Helsinki 4"], ["steps", "at_most", 2]]], "view": "discovery", "seed": "s^2(0)", "planning_root": "W0", "expect": {"outcome": "plan_found", "answer": "Yes", "plan": [["move", "Ann 1", "Haapsalu 2", "Tallinn 3", "bus"], ["move", "Ann 1", "Tallinn 3", "Helsinki 4", "ship"]], "evidence": "R-early: the root W0, where Ann is in Haapsalu; bus, then ship"}, "backend": [], "replay": "covered"},
+    {"id": "Q3", "text": "How can Ann get to Helsinki in at most two steps? (planning root W0, leak check)", "stage1_reading": "plan_question", "stage2": ["@id", "Q3", ["plan", ["is rel2", "located_at", "Ann 1", "Helsinki 4"], ["steps", "at_most", 2]]], "view": "discovery", "seed": "s^2(0)", "planning_root": "W0", "expect": {"outcome": "plan_found", "answer": "Yes", "plan": [["move", "Ann 1", "Haapsalu 2", "Tallinn 3", "bus"], ["move", "Ann 1", "Tallinn 3", "Helsinki 4", "ship"]], "forbidden_plans": [[["move", "Ann 1", "Tallinn 3", "Helsinki 4", "ship"]]], "evidence": "R-leak: the W1 fact that Ann is in Tallinn must not shorten the W0-rooted plan to one step"}, "backend": [], "replay": "covered"},
+    {"id": "Q4", "text": "Where is Ann? (planning root W0)", "stage2": ["@id", "Q4", ["ask", "X", ["is rel2", "located_at", "Ann 1", "X"]]], "view": "snapshot", "planning_root": "W0", "expect": {"answer": "Haapsalu 2", "not_answer": ["Tallinn 3"], "evidence": "same source, root W0: S2 only"}, "backend": [], "replay": "n/a"},
+    {"id": "Q5", "text": "Where is Ann? (planning root W1)", "stage2": ["@id", "Q5", ["ask", "X", ["is rel2", "located_at", "Ann 1", "X"]]], "view": "snapshot", "planning_root": "W1", "expect": {"answer": "Tallinn 3", "not_answer": ["Haapsalu 2"], "evidence": "same source, root W1: S3 only; the source artifact is compiled once for Q4 and Q5"}, "backend": [], "replay": "n/a"}
+  ],
+  "variants": [],
+  "candidates": [],
+  "support": {"syntax": "supported", "compile": "supported", "backend_requirements": [], "replay_fragment": "n/a"},
+  "explain": "Encoding v2, migration step 0.5: the C3 rows of the layout experiment (R-late, R-early, R-leak) as gold, without the experiment's flat-location workaround (location checks are per world), plus the same-source two-roots question (Q4, Q5).",
+  "notes": "Written 2026-09-23 before any GK run; runs from checkpoint 1b (REVIEW.md, encoding v2 rows)."
+}

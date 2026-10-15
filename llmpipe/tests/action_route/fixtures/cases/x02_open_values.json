@@ -1,0 +1,25 @@
+{
+  "id": "x02_open_values",
+  "purpose": "renamed objects and an unfamiliar property sequence work with the same constructors; nothing in the route keys on egg, whisk or cooked",
+  "contract": ["A2.2", "A5.1"],
+  "family": ["Open property values"],
+  "input_kind": "text",
+  "text": "Zed has a gronk and a flim. Zed can frob the gronk with the flim. If the gronk is frobbed, Zed can zap it with the flim.",
+  "profile": "physical_v1",
+  "entities": {"Zed 1": "person", "gronk 2": "artifact", "flim 3": "artifact"},
+  "units": [
+    {"id": "S1", "text": "Zed has a gronk and a flim.", "stage1": {"type": "situation", "entities": [{"id": "Zed 1", "type": "concrete", "category": "person"}, {"id": "gronk 2", "type": "concrete", "category": "artifact"}, {"id": "flim 3", "type": "concrete", "category": "artifact"}]}, "stage2": ["@id", "S1", ["holds", "W0", ["and", ["have", "Zed 1", "gronk 2"], ["have", "Zed 1", "flim 3"]]]], "scope": "initial", "syntax": "supported", "compile": "supported", "clauses": {}},
+    {"id": "S2", "text": "Zed can frob the gronk with the flim.", "stage1": {"type": "situation", "entities": [{"id": "Zed 1", "type": "concrete", "category": "person"}, {"id": "flim 3", "type": "concrete", "category": "artifact"}, {"id": "gronk 2", "type": "concrete", "category": "artifact"}], "actions": [{"root": "frob", "mode": "capability", "roles": {"target": "gronk 2", "instrument": "flim 3"}}], "action_reading": "availability"}, "stage2": ["@id", "S2", ["holds", "W0", ["implies", ["have", "Zed 1", "flim 3"], ["can", "Zed 1", ["change", "Zed 1", "gronk 2", "frobbed", "flim 3"]]]]], "scope": "availability", "syntax": "supported", "compile": "supported", "clauses": {}, "note": "the instrument phrase becomes a possession condition of the availability, as in the food pilot (S3/S4 there); the result value is the verb's participle"},
+    {"id": "S3", "text": "If the gronk is frobbed, Zed can zap it with the flim.", "stage1": {"type": "strict_rule", "entities": [{"id": "gronk 2", "type": "concrete", "category": "artifact"}, {"id": "Zed 1", "type": "concrete", "category": "person"}, {"id": "flim 3", "type": "concrete", "category": "artifact"}], "actions": [{"root": "zap", "mode": "capability", "roles": {"actor": "Zed 1", "target": "gronk 2", "instrument": "flim 3"}}], "action_reading": "availability"}, "stage2": ["@id", "S3", ["holds", "W0", ["implies", ["and", ["has property", "frobbed", "gronk 2"], ["have", "Zed 1", "flim 3"]], ["can", "Zed 1", ["change", "Zed 1", "gronk 2", "zapped", "flim 3"]]]]], "scope": "availability", "syntax": "supported", "compile": "supported", "clauses": {}}
+  ],
+  "queries": [
+    {"id": "Q1", "text": "How can Zed get the gronk zapped?", "stage1_reading": "plan_question", "stage2": ["@id", "Q1", ["plan", ["has property", "zapped", "gronk 2"]]], "view": "discovery", "seed": "s^4(0)", "expect": {"outcome": "plan_found", "plan": [["change", "Zed 1", "gronk 2", "frobbed", "flim 3"], ["change", "Zed 1", "gronk 2", "zapped", "flim 3"]], "render": "Zed frobs the gronk with the flim, then zaps the gronk with the flim", "evidence": "S2's path, eff_change, S3's path at W0+1, eff_change"}, "backend": [], "replay": "covered"}
+  ],
+  "variants": [],
+  "candidates": [
+    {"id": "K1", "sequence": [["change", "Zed 1", "gronk 2", "frobbed", "flim 3"], ["change", "Zed 1", "gronk 2", "zapped", "flim 3"]], "states": [{"after": 0, "facts": ["+have(Zed,gronk)", "+have(Zed,flim)"]}, {"after": 1, "facts": ["+frobbed(gronk)", "+have(Zed,flim)"]}, {"after": 2, "facts": ["+frobbed(gronk)", "+zapped(gronk)"]}], "verdict": "valid", "reason": "generic change replay; no hardcoded names (A5.1)"}
+  ],
+  "support": {"syntax": "supported", "compile": "supported", "backend_requirements": [], "replay_fragment": "covered"},
+  "explain": "The food pilot with every content word replaced. If any component passes the food pilot and fails this, it keys on vocabulary. Rendering uses the source verbs because provenance identifies them unambiguously (A5.3).",
+  "notes": "Zed has no stated class; change needs none. The Stage-1 category is left unpinned."
+}

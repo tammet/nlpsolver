@@ -1,0 +1,268 @@
+{
+ "example": "tower_steps",
+ "gold": "p02_tower:after_take_b",
+ "text": "There is a robot hand. Blocks a, b and c are on the table. Nothing is on top of any block. The hand is empty.",
+ "entities": {
+  "hand 1": "hand",
+  "a 2": "block",
+  "b 3": "block",
+  "c 4": "block",
+  "table 5": "table"
+ },
+ "units": [
+  {
+   "id": "S1",
+   "text": "There is a robot hand.",
+   "stage1": {
+    "type": "real",
+    "entities": [
+     {
+      "id": "hand 1",
+      "type": "concrete",
+      "category": "artifact"
+     }
+    ]
+   },
+   "stage2": [
+    "@id",
+    "S1",
+    [
+     "holds",
+     "W0",
+     [
+      "isa",
+      "hand",
+      "hand 1"
+     ]
+    ]
+   ]
+  },
+  {
+   "id": "S2",
+   "text": "Blocks a, b and c are on the table.",
+   "stage1": {
+    "type": "situation",
+    "entities": [
+     {
+      "id": "a 2",
+      "type": "concrete",
+      "category": "artifact"
+     },
+     {
+      "id": "b 3",
+      "type": "concrete",
+      "category": "artifact"
+     },
+     {
+      "id": "c 4",
+      "type": "concrete",
+      "category": "artifact"
+     },
+     {
+      "id": "table 5",
+      "type": "concrete",
+      "category": "artifact"
+     }
+    ]
+   },
+   "stage2": [
+    "@id",
+    "S2",
+    [
+     "holds",
+     "W0",
+     [
+      "and",
+      [
+       "isa",
+       "block",
+       "a 2"
+      ],
+      [
+       "isa",
+       "block",
+       "b 3"
+      ],
+      [
+       "isa",
+       "block",
+       "c 4"
+      ],
+      [
+       "isa",
+       "table",
+       "table 5"
+      ],
+      [
+       "is rel2",
+       "on",
+       "a 2",
+       "table 5"
+      ],
+      [
+       "is rel2",
+       "on",
+       "b 3",
+       "table 5"
+      ],
+      [
+       "is rel2",
+       "on",
+       "c 4",
+       "table 5"
+      ]
+     ]
+    ]
+   ]
+  },
+  {
+   "id": "S3",
+   "text": "Nothing is on top of any block.",
+   "stage1": {
+    "type": "strict_rule",
+    "entities": [
+     {
+      "id": "block",
+      "type": "generic",
+      "category": "artifact"
+     }
+    ]
+   },
+   "stage2": [
+    "@id",
+    "S3",
+    [
+     "holds",
+     "W0",
+     [
+      "forall",
+      "X",
+      [
+       "implies",
+       [
+        "isa",
+        "block",
+        "X"
+       ],
+       [
+        "has property",
+        "clear_top",
+        "X"
+       ]
+      ]
+     ]
+    ]
+   ]
+  },
+  {
+   "id": "S4",
+   "text": "The hand is empty.",
+   "stage1": {
+    "type": "situation",
+    "entities": [
+     {
+      "id": "hand 1",
+      "type": "concrete",
+      "category": "artifact"
+     }
+    ]
+   },
+   "stage2": [
+    "@id",
+    "S4",
+    [
+     "holds",
+     "W0",
+     [
+      "has property",
+      "empty",
+      "hand 1"
+     ]
+    ]
+   ]
+  }
+ ],
+ "queries": [
+  {
+   "stage2": [
+    "@id",
+    "Q2",
+    [
+     "verify",
+     [
+      [
+       "take",
+       "hand 1",
+       "b 3"
+      ]
+     ],
+     [
+      "has property",
+      "clear_top",
+      "a 2"
+     ]
+    ]
+   ],
+   "text": "After taking b, is a clear?",
+   "expect": {
+    "answer": "Yes",
+    "confidence": 0.99
+   }
+  },
+  {
+   "stage2": [
+    "@id",
+    "Q3",
+    [
+     "verify",
+     [
+      [
+       "take",
+       "hand 1",
+       "b 3"
+      ]
+     ],
+     [
+      "not",
+      [
+       "has property",
+       "empty",
+       "hand 1"
+      ]
+     ]
+    ]
+   ],
+   "text": "After taking b, is the hand not empty?",
+   "expect": {
+    "answer": "Yes",
+    "confidence": 1.0
+   }
+  },
+  {
+   "stage2": [
+    "@id",
+    "Q4",
+    [
+     "verify",
+     [
+      [
+       "take",
+       "hand 1",
+       "b 3"
+      ]
+     ],
+     [
+      "is rel2",
+      "on",
+      "b 3",
+      "table 5"
+     ]
+    ]
+   ],
+   "text": "After taking b, is b on the table?",
+   "expect": {
+    "answer": "No"
+   }
+  }
+ ]
+}

@@ -1,0 +1,240 @@
+{
+ "example": "tower_sequence",
+ "gold": "p02_tower:base",
+ "text": "There is a robot hand. Blocks a, b and c are on the table. Nothing is on top of any block. The hand is empty.",
+ "entities": {
+  "hand 1": "hand",
+  "a 2": "block",
+  "b 3": "block",
+  "c 4": "block",
+  "table 5": "table"
+ },
+ "units": [
+  {
+   "id": "S1",
+   "text": "There is a robot hand.",
+   "stage1": {
+    "type": "real",
+    "entities": [
+     {
+      "id": "hand 1",
+      "type": "concrete",
+      "category": "artifact"
+     }
+    ]
+   },
+   "stage2": [
+    "@id",
+    "S1",
+    [
+     "holds",
+     "W0",
+     [
+      "isa",
+      "hand",
+      "hand 1"
+     ]
+    ]
+   ]
+  },
+  {
+   "id": "S2",
+   "text": "Blocks a, b and c are on the table.",
+   "stage1": {
+    "type": "situation",
+    "entities": [
+     {
+      "id": "a 2",
+      "type": "concrete",
+      "category": "artifact"
+     },
+     {
+      "id": "b 3",
+      "type": "concrete",
+      "category": "artifact"
+     },
+     {
+      "id": "c 4",
+      "type": "concrete",
+      "category": "artifact"
+     },
+     {
+      "id": "table 5",
+      "type": "concrete",
+      "category": "artifact"
+     }
+    ]
+   },
+   "stage2": [
+    "@id",
+    "S2",
+    [
+     "holds",
+     "W0",
+     [
+      "and",
+      [
+       "isa",
+       "block",
+       "a 2"
+      ],
+      [
+       "isa",
+       "block",
+       "b 3"
+      ],
+      [
+       "isa",
+       "block",
+       "c 4"
+      ],
+      [
+       "isa",
+       "table",
+       "table 5"
+      ],
+      [
+       "is rel2",
+       "on",
+       "a 2",
+       "table 5"
+      ],
+      [
+       "is rel2",
+       "on",
+       "b 3",
+       "table 5"
+      ],
+      [
+       "is rel2",
+       "on",
+       "c 4",
+       "table 5"
+      ]
+     ]
+    ]
+   ]
+  },
+  {
+   "id": "S3",
+   "text": "Nothing is on top of any block.",
+   "stage1": {
+    "type": "strict_rule",
+    "entities": [
+     {
+      "id": "block",
+      "type": "generic",
+      "category": "artifact"
+     }
+    ]
+   },
+   "stage2": [
+    "@id",
+    "S3",
+    [
+     "holds",
+     "W0",
+     [
+      "forall",
+      "X",
+      [
+       "implies",
+       [
+        "isa",
+        "block",
+        "X"
+       ],
+       [
+        "has property",
+        "clear_top",
+        "X"
+       ]
+      ]
+     ]
+    ]
+   ]
+  },
+  {
+   "id": "S4",
+   "text": "The hand is empty.",
+   "stage1": {
+    "type": "situation",
+    "entities": [
+     {
+      "id": "hand 1",
+      "type": "concrete",
+      "category": "artifact"
+     }
+    ]
+   },
+   "stage2": [
+    "@id",
+    "S4",
+    [
+     "holds",
+     "W0",
+     [
+      "has property",
+      "empty",
+      "hand 1"
+     ]
+    ]
+   ]
+  }
+ ],
+ "queries": [
+  {
+   "stage2": [
+    "@id",
+    "QV",
+    [
+     "verify",
+     [
+      [
+       "take",
+       "hand 1",
+       "b 3"
+      ],
+      [
+       "put_on",
+       "hand 1",
+       "b 3",
+       "a 2"
+      ],
+      [
+       "take",
+       "hand 1",
+       "c 4"
+      ],
+      [
+       "put_on",
+       "hand 1",
+       "c 4",
+       "b 3"
+      ]
+     ],
+     [
+      "and",
+      [
+       "is rel2",
+       "on",
+       "b 3",
+       "a 2"
+      ],
+      [
+       "is rel2",
+       "on",
+       "c 4",
+       "b 3"
+      ]
+     ]
+    ]
+   ],
+   "text": "Does the supplied sequence build the tower?",
+   "expect": {
+    "answer": "Yes",
+    "derived_from": "p02_tower:base Q1: the gold plan as a supplied sequence"
+   }
+  }
+ ]
+}

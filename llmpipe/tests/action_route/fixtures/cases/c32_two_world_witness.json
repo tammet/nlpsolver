@@ -1,0 +1,27 @@
+{
+  "id": "c32_two_world_witness",
+  "purpose": "a witness of an initial description stays tied to its stated world; a standing existential head is unsupported",
+  "contract": ["A4.1", "A3.3"],
+  "family": ["Scope", "Actor/object identity"],
+  "input_kind": "formal_only",
+  "text": "The table is a table. Some block is on the table. Later, the lamp is on.",
+  "profile": "physical_v1",
+  "entities": {"table 1": "table", "lamp 2": "lamp"},
+  "worlds": ["W0", "W1"],
+  "units": [
+    {"id": "S1", "text": "The table is a table.", "stage2": ["@id", "S1", ["holds", "W0", ["isa", "table", "table 1"]]], "scope": "static", "syntax": "supported", "compile": "supported", "clauses": {}},
+    {"id": "S2", "text": "Some block is on the table.", "stage2": ["@id", "S2", ["holds", "W0", ["exists", "X", ["and", ["isa", "block", "X"], ["is rel2", "on", "X", "table 1"]]]]], "scope": "initial", "syntax": "supported", "compile": "supported", "note": "an initial existential: a Skolem constant that depends on no situation; its on-fact is a fact of W0", "clauses": {}},
+    {"id": "S3", "text": "Later, the lamp is on.", "stage2": ["@id", "S3", ["holds", "W1", ["has property", "on", "lamp 2"]]], "scope": "initial", "syntax": "supported", "compile": "supported", "clauses": {}}
+  ],
+  "queries": [
+    {"id": "Q1", "text": "Is some block on the table? (planning root W0)", "stage2": ["@id", "Q1", ["question", ["exists", "X", ["and", ["isa", "block", "X"], ["is rel2", "on", "X", "table 1"]]]]], "view": "snapshot", "planning_root": "W0", "expect": {"answer": "Yes", "evidence": "the witness of S2 at W0"}, "backend": [], "replay": "n/a"},
+    {"id": "Q2", "text": "Is some block on the table? (planning root W1)", "stage2": ["@id", "Q2", ["question", ["exists", "X", ["and", ["isa", "block", "X"], ["is rel2", "on", "X", "table 1"]]]]], "view": "snapshot", "planning_root": "W1", "expect": {"answer": "Unknown", "forbidden_answers": ["Yes"], "evidence": "the witness of S2 is on the table at W0 only; nothing moves that fact to W1"}, "backend": [], "replay": "n/a"}
+  ],
+  "variants": [
+    {"id": "standing_existential", "text": "The table is a table. At all times, some block is on the table. Later, the lamp is on.", "units_replace": [{"id": "S2", "text": "At all times, some block is on the table.", "stage2": ["@id", "S2", ["holds", "W0", ["state_law", ["exists", "X", ["and", ["isa", "block", "X"], ["is rel2", "on", "X", "table 1"]]]]]], "scope": "standing", "syntax": "supported", "compile": {"unsupported": "existential_state_law_head"}, "clauses": {}}], "queries": [{"id": "Q1", "expect": {"outcome": "unsupported_translation", "reason": "existential_state_law_head", "unit": "S2", "evidence": "a standing law with an existential head is outside the fragment; offline expectation only, no GK row"}}]}
+  ],
+  "candidates": [],
+  "support": {"syntax": "supported", "compile": "supported", "backend_requirements": [], "replay_fragment": "n/a"},
+  "explain": "Encoding v2, migration step 0.5 (two-world witness case, Sol reviews b and c). Only initial and static descriptions produce Skolem terms in the supported fragment.",
+  "notes": "Written 2026-09-23 before any GK run; runs from checkpoint 1b (REVIEW.md, encoding v2 rows)."
+}

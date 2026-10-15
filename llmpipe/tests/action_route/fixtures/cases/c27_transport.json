@@ -1,0 +1,37 @@
+{
+  "id": "c27_transport",
+  "purpose": "possession is not accompaniment; a physically held object's location after its holder moves is unsupported_transport_dependency, never a validated stale position",
+  "contract": ["C27", "A2.2", "A2.6"],
+  "family": ["Unsupported meaning"],
+  "input_kind": "text",
+  "text": "Tom is a person. Tom is in the hall. The key is in the hall. Tom holds the key. Tom can walk from the hall to the garden.",
+  "profile": "physical_v1",
+  "entities": {"Tom 1": "person", "hall 2": "place", "key 3": "artifact", "garden 4": "place"},
+  "units": [
+    {"id": "S1", "text": "Tom is a person. Tom is in the hall.", "stage1": {"type": "situation", "entities": [{"id": "Tom 1", "type": "concrete", "category": "person"}, {"id": "hall 2", "type": "concrete", "category": "place"}]}, "stage2": ["@id", "S1", ["holds", "W0", ["and", ["isa", "person", "Tom 1"], ["is rel2", "located_at", "Tom 1", "hall 2"]]]], "scope": "initial", "syntax": "supported", "compile": "supported", "clauses": {}},
+    {"id": "S2", "text": "The key is in the hall.", "stage1": {"type": "situation", "entities": [{"id": "key 3", "type": "concrete", "category": "artifact"}, {"id": "hall 2", "type": "concrete", "category": "place"}]}, "stage2": ["@id", "S2", ["holds", "W0", ["is rel2", "located_at", "key 3", "hall 2"]]], "scope": "initial", "syntax": "supported", "compile": "supported", "clauses": {}, "note": "a place, so located_at, not container in (A2.2)"},
+    {"id": "S3", "text": "Tom holds the key.", "stage1": {"type": "situation", "entities": [{"id": "Tom 1", "type": "concrete", "category": "person"}, {"id": "key 3", "type": "concrete", "category": "artifact"}]}, "stage2": ["@id", "S3", ["holds", "W0", ["is rel2", "holding", "Tom 1", "key 3"]]], "scope": "initial", "syntax": "supported", "compile": "supported", "clauses": {}},
+    {"id": "S4", "text": "Tom can walk from the hall to the garden.", "stage1": {"type": "situation", "entities": [{"id": "Tom 1", "type": "concrete", "category": "person"}, {"id": "hall 2", "type": "concrete", "category": "place"}, {"id": "garden 4", "type": "concrete", "category": "place"}], "actions": [{"root": "walk", "mode": "capability", "roles": {"source": "hall 2", "destination": "garden 4"}}], "action_reading": "availability"}, "stage2": ["@id", "S4", ["holds", "W0", ["can", "Tom 1", ["move", "Tom 1", "hall 2", "garden 4", "foot"]]]], "scope": "availability", "syntax": "supported", "compile": "supported", "clauses": {"must_have": [{"role": "availability", "unit": "S4", "lit": ["poss", ["move", "Tom 1", "hall 2", "garden 4", "foot"]], "sign": "+", "situation": "shared_current", "body_absent": ["connected"], "note": "the stated-endpoint path: the rule's conditions, located_at, differ and the hook; no connected literal"}]}, "note": "walk maps to the standard means foot"}
+  ],
+  "queries": [
+    {"id": "Q1", "text": "How can the key get to the garden?", "stage1_reading": "plan_question", "stage2": ["@id", "Q1", ["plan", ["is rel2", "located_at", "key 3", "garden 4"]]], "view": "discovery", "seed": "s^4(0)", "expect": {"outcome": "unsupported_translation", "reason": "unsupported_transport_dependency", "units": ["S2", "S3", "S4"], "evidence": "a held object (S3) with a tracked location (S2) whose holder can move (S4), and a query about the object's location: the library lacks the co-movement transition. Not not_found, which would hide the missing transition."}, "backend": [], "replay": "n/a"},
+    {"id": "Q2", "text": "After Tom walks to the garden, is the key in the hall?", "stage1_reading": "verify_question", "stage2": ["@id", "Q2", ["verify", [["move", "Tom 1", "hall 2", "garden 4", "foot"]], ["is rel2", "located_at", "key 3", "hall 2"]]], "view": "verify", "expect": {"outcome": "unsupported_translation", "reason": "unsupported_transport_dependency", "evidence": "the stale position located_at(key,hall) at W0+1 would be validated at 0.99 by frame_located_at; the route must not answer Yes"}, "backend": [], "replay": "n/a"},
+    {"id": "Q3", "text": "After Tom walks to the garden, is Tom in the garden?", "stage1_reading": "verify_question", "stage2": ["@id", "Q3", ["verify", [["move", "Tom 1", "hall 2", "garden 4", "foot"]], ["is rel2", "located_at", "Tom 1", "garden 4"]]], "view": "verify", "expect": {"answer": "Yes", "evidence": "the query does not depend on the key's location; the dependency check is per query, not per source. S4's permission with its scoped route; eff_move_at."}, "backend": [], "replay": "covered"}
+  ],
+  "variants": [
+    {"id": "possession_only",
+     "text": "Tom is a person. Tom is in the hall. The key is in the hall. Tom has the key. Tom can walk from the hall to the garden.",
+     "units_replace": [
+      {"id": "S3", "text": "Tom has the key.", "stage1": {"type": "situation", "entities": [{"id": "Tom 1", "type": "concrete", "category": "person"}, {"id": "key 3", "type": "concrete", "category": "artifact"}]}, "stage2": ["@id", "S3", ["holds", "W0", ["have", "Tom 1", "key 3"]]], "scope": "initial", "syntax": "supported", "compile": "supported"}],
+     "queries": [
+      {"id": "Q1", "expect": {"outcome": "not_found", "evidence": "possession alone does not imply physical accompaniment (A2.2); no action moves the key; the transport diagnostic applies to a held object only"}},
+      {"id": "Q2", "expect": {"answer": "Yes", "confidence": 0.99, "evidence": "the key's location persists; nothing in the source says the key travels"}},
+      {"id": "Q4", "text": "After Tom walks to the garden, does Tom have the key?", "stage1_reading": "verify_question", "stage2": ["@id", "Q4", ["verify", [["move", "Tom 1", "hall 2", "garden 4", "foot"]], ["have", "Tom 1", "key 3"]]], "view": "verify", "expect": {"answer": "Yes", "confidence": 0.99, "evidence": "frame_have"}, "backend": [], "replay": "covered"}]}
+  ],
+  "candidates": [
+    {"id": "K1", "sequence": [["move", "Tom 1", "hall 2", "garden 4", "foot"]], "states": [{"after": 0, "facts": ["+located_at(Tom,hall)", "+located_at(key,hall)", "+holding(Tom,key)"]}, {"after": 1, "facts": ["+located_at(Tom,garden)", "-located_at(Tom,hall)", "+located_at(key,hall)", "+holding(Tom,key)"]}], "verdict": "not_checked", "reason": "Q1/Q2: the replayed state after step 1 contains a held object whose holder moved; the replay reports the uncovered transport dependency rather than validating the stale key location (A5.1 not_checked)", "step": 1}
+  ],
+  "support": {"syntax": "supported", "compile": "supported; the transport dependency is a query-time diagnostic", "backend_requirements": [], "replay_fragment": "covered except transport"},
+  "explain": "Fable addenda point 10 (accompaniment) with Astra's remedy. The base text has all three ingredients: a tracked key location, holding, and a holder move. Q1 and Q2 concern the key and are diagnosed; Q3 concerns Tom only and is answered. The possession_only variant shows the have/holding distinction: with have there is no transport claim, so the key staying in the hall is the correct reading and Q2 is Yes.",
+  "notes": "holding(Tom,key) uses the same fluent the blocks model uses for a hand; the relation has actor and object slots and handhood constrains only the library's default permission, not every holding fact (REVIEW.md disposition 6). The library's take/put_on laws do not apply to Tom (no isa hand), which is why no plan can move the key either way."
+}

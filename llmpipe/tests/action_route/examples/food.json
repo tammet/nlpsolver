@@ -1,0 +1,318 @@
+{
+ "example": "food",
+ "gold": "p03_food:base",
+ "text": "Ann has an egg, a whisk and a pan. Ann can break the egg. If the egg is broken, Ann can whisk it with the whisk. If the egg is whisked, Ann can cook it in the pan.",
+ "entities": {
+  "Ann 1": "person",
+  "egg 2": "food",
+  "whisk 3": "artifact",
+  "pan 4": "artifact"
+ },
+ "units": [
+  {
+   "id": "S1",
+   "text": "Ann has an egg, a whisk and a pan.",
+   "stage1": {
+    "type": "situation",
+    "entities": [
+     {
+      "id": "Ann 1",
+      "type": "concrete",
+      "category": "person"
+     },
+     {
+      "id": "egg 2",
+      "type": "concrete"
+     },
+     {
+      "id": "whisk 3",
+      "type": "concrete",
+      "category": "artifact"
+     },
+     {
+      "id": "pan 4",
+      "type": "concrete",
+      "category": "artifact"
+     }
+    ]
+   },
+   "stage2": [
+    "@id",
+    "S1",
+    [
+     "holds",
+     "W0",
+     [
+      "and",
+      [
+       "isa",
+       "person",
+       "Ann 1"
+      ],
+      [
+       "isa",
+       "egg",
+       "egg 2"
+      ],
+      [
+       "isa",
+       "whisk",
+       "whisk 3"
+      ],
+      [
+       "isa",
+       "pan",
+       "pan 4"
+      ],
+      [
+       "have",
+       "Ann 1",
+       "egg 2"
+      ],
+      [
+       "have",
+       "Ann 1",
+       "whisk 3"
+      ],
+      [
+       "have",
+       "Ann 1",
+       "pan 4"
+      ]
+     ]
+    ]
+   ]
+  },
+  {
+   "id": "S2",
+   "text": "Ann can break the egg.",
+   "stage1": {
+    "type": "situation",
+    "entities": [
+     {
+      "id": "Ann 1",
+      "type": "concrete",
+      "category": "person"
+     },
+     {
+      "id": "egg 2",
+      "type": "concrete"
+     }
+    ],
+    "actions": [
+     {
+      "root": "break",
+      "mode": "capability",
+      "roles": {
+       "target": "egg 2"
+      }
+     }
+    ],
+    "action_reading": "availability"
+   },
+   "stage2": [
+    "@id",
+    "S2",
+    [
+     "holds",
+     "W0",
+     [
+      "can",
+      "Ann 1",
+      [
+       "change",
+       "Ann 1",
+       "egg 2",
+       "broken",
+       "unspecified"
+      ]
+     ]
+    ]
+   ]
+  },
+  {
+   "id": "S3",
+   "text": "If the egg is broken, Ann can whisk it with the whisk.",
+   "stage1": {
+    "type": "strict_rule",
+    "entities": [
+     {
+      "id": "egg 2",
+      "type": "concrete"
+     },
+     {
+      "id": "Ann 1",
+      "type": "concrete",
+      "category": "person"
+     },
+     {
+      "id": "whisk 3",
+      "type": "concrete",
+      "category": "artifact"
+     }
+    ],
+    "actions": [
+     {
+      "root": "whisk",
+      "mode": "capability",
+      "roles": {
+       "target": "egg 2",
+       "instrument": "whisk 3"
+      }
+     }
+    ],
+    "action_reading": "availability"
+   },
+   "stage2": [
+    "@id",
+    "S3",
+    [
+     "holds",
+     "W0",
+     [
+      "implies",
+      [
+       "and",
+       [
+        "has property",
+        "broken",
+        "egg 2"
+       ],
+       [
+        "have",
+        "Ann 1",
+        "whisk 3"
+       ]
+      ],
+      [
+       "can",
+       "Ann 1",
+       [
+        "change",
+        "Ann 1",
+        "egg 2",
+        "whisked",
+        "whisk 3"
+       ]
+      ]
+     ]
+    ]
+   ]
+  },
+  {
+   "id": "S4",
+   "text": "If the egg is whisked, Ann can cook it in the pan.",
+   "stage1": {
+    "type": "strict_rule",
+    "entities": [
+     {
+      "id": "egg 2",
+      "type": "concrete"
+     },
+     {
+      "id": "Ann 1",
+      "type": "concrete",
+      "category": "person"
+     },
+     {
+      "id": "pan 4",
+      "type": "concrete",
+      "category": "artifact"
+     }
+    ],
+    "actions": [
+     {
+      "root": "cook",
+      "mode": "capability",
+      "roles": {
+       "actor": "Ann 1",
+       "target": "egg 2",
+       "location": "pan 4"
+      }
+     }
+    ],
+    "action_reading": "availability"
+   },
+   "stage2": [
+    "@id",
+    "S4",
+    [
+     "holds",
+     "W0",
+     [
+      "implies",
+      [
+       "and",
+       [
+        "has property",
+        "whisked",
+        "egg 2"
+       ],
+       [
+        "have",
+        "Ann 1",
+        "pan 4"
+       ]
+      ],
+      [
+       "can",
+       "Ann 1",
+       [
+        "change",
+        "Ann 1",
+        "egg 2",
+        "cooked",
+        "pan 4"
+       ]
+      ]
+     ]
+    ]
+   ]
+  }
+ ],
+ "queries": [
+  {
+   "stage2": [
+    "@id",
+    "Q1",
+    [
+     "plan",
+     [
+      "has property",
+      "cooked",
+      "egg 2"
+     ]
+    ]
+   ],
+   "text": "How can Ann get the egg cooked?",
+   "expect": {
+    "outcome": "plan_found",
+    "plan": [
+     [
+      "change",
+      "Ann 1",
+      "egg 2",
+      "broken",
+      "unspecified"
+     ],
+     [
+      "change",
+      "Ann 1",
+      "egg 2",
+      "whisked",
+      "whisk 3"
+     ],
+     [
+      "change",
+      "Ann 1",
+      "egg 2",
+      "cooked",
+      "pan 4"
+     ]
+    ],
+    "reference_shortest_length": 3,
+    "render": "Ann breaks the egg, then whisks the egg with the whisk, then cooks the egg in the pan"
+   }
+  }
+ ]
+}

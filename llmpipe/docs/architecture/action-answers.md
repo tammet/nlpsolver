@@ -17,17 +17,28 @@ replay. Three modules do this work:
 ### The backend
 
 The adapter runs only a registered GK build (`action_gk.BACKENDS`). The default
-build `gk` is the installed prover `../gk/gk` (GK 1.0.11), with the planning
+build `gk` is the installed prover `../gk/gk` (GK 1.1.0), with the planning
 strategy and the pipeline's parameters. Like the ordinary pipeline, the adapter
 does not check which binary is at the path. It records the binary's SHA-256 in
-each evidence record:
+each evidence record, and the hash of each launch's strategy in its launch
+record:
 
 | item | value |
 |---|---|
-| strategy | `{"strategy": ["query_focus"], "query_preference": 1, "equality": 0, "weight_select_ratio": 20, "weight_blocker_const": 2, "weight_ctxt_const": 1}` (`PLANNING_STRATEGY`) |
+| strategy of every launch | `{"strategy": ["query_focus"], "query_preference": 1, "equality": 0, "weight_select_ratio": 20, "weight_blocker_const": 2, "weight_ctxt_const": 1, "blocker_unit_cut": 1, "blocker_unit_cut_guards": 1}` (`PLANNING_STRATEGY`) |
+| added for the plan search (`discovery:positive`) | `{"ground_contextfree_negative_first": 1, "reachable_known_head_first": 1, "permission_pair_first": 1, "eager_condensation": 1}` (`DISCOVERY_KEYS`) |
 | parameters | `-taxonomy -confidence 0.1 -keepconfidence 0.1`, then `-datafolder`, `-detail`, `-outformat json` |
 | time per launch | 30 seconds (`DEFAULT_SECONDS`), or `-seconds`; an external limit of 15 seconds more |
 | validated capabilities | none |
+
+The blocker-unit cut drops a clause whose answers would all get confidence 0,
+so it removes no answer that the answer policy can use. GK counts such answers
+toward its stop on the number of answers, so with the cut a search can run to
+its time limit where it used to stop early. The keys of the plan
+search choose which literal GK resolves first and remove redundant literals
+from new clauses. GK applies them in every primary search and cannot tell a
+plan search from another one, so the adapter adds them only to the positive
+discovery launch. `../gk/Doc/planning.md` describes each key.
 
 The command holds the profile's strategy and parameters and nothing else. It
 reads no ordinary pipeline option, no axiom file and no proof cache. Launches
@@ -62,9 +73,10 @@ A launch that completed with an empty `answers` list runs once more with
 malformed output gets no relaunch. The termination reason of a launch is
 `proof`, `search_limit`, `undetermined`, `timeout` or `error`; it is
 `not_diagnosed` when relaunches are off, `diagnostic_error` when the relaunch
-fails, and `diagnostic_differs` when the relaunch finds an answer that the
-launch did not. `search_limit` and the three diagnostic reasons are
-inconclusive. The relaunch never replaces the launch's result.
+fails, `diagnostic_differs` when the relaunch finds an answer that the
+launch did not, and `diagnostic_not_launched` when a staged file of a
+planning-summary request changed before the relaunch. `search_limit` and the
+four diagnostic reasons are inconclusive. The relaunch never replaces the launch's result.
 
 ### Reading the output
 

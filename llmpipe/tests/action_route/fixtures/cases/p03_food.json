@@ -1,0 +1,585 @@
+{
+  "id": "p03_food",
+  "purpose": "integration regression: the three-step recipe with tool conditions as possession, availability laws at every situation, and change adding without deleting",
+  "contract": [
+    "A8.1 pilot regressions",
+    "A2.2",
+    "A2.3",
+    "A2.5"
+  ],
+  "family": [
+    "Open property values",
+    "Derived state"
+  ],
+  "input_kind": "text",
+  "text": "Ann has an egg, a whisk and a pan. Ann can break the egg. If the egg is broken, Ann can whisk it with the whisk. If the egg is whisked, Ann can cook it in the pan.",
+  "profile": "physical_v1",
+  "entities": {
+    "Ann 1": "person",
+    "egg 2": "food",
+    "whisk 3": "artifact",
+    "pan 4": "artifact"
+  },
+  "units": [
+    {
+      "id": "S1",
+      "text": "Ann has an egg, a whisk and a pan.",
+      "stage1": {
+        "type": "situation",
+        "entities": [
+          {
+            "id": "Ann 1",
+            "type": "concrete",
+            "category": "person"
+          },
+          {
+            "id": "egg 2",
+            "type": "concrete"
+          },
+          {
+            "id": "whisk 3",
+            "type": "concrete",
+            "category": "artifact"
+          },
+          {
+            "id": "pan 4",
+            "type": "concrete",
+            "category": "artifact"
+          }
+        ]
+      },
+      "stage2": [
+        "@id",
+        "S1",
+        [
+          "holds",
+          "W0",
+          [
+            "and",
+            [
+              "isa",
+              "person",
+              "Ann 1"
+            ],
+            [
+              "isa",
+              "egg",
+              "egg 2"
+            ],
+            [
+              "isa",
+              "whisk",
+              "whisk 3"
+            ],
+            [
+              "isa",
+              "pan",
+              "pan 4"
+            ],
+            [
+              "have",
+              "Ann 1",
+              "egg 2"
+            ],
+            [
+              "have",
+              "Ann 1",
+              "whisk 3"
+            ],
+            [
+              "have",
+              "Ann 1",
+              "pan 4"
+            ]
+          ]
+        ]
+      ],
+      "scope": "initial",
+      "syntax": "supported",
+      "compile": "supported",
+      "clauses": {
+        "must_not_have": [
+          {
+            "role": "*",
+            "lit": [
+              "isa",
+              "block",
+              "whisk 3"
+            ],
+            "note": "never invent a block typing to make take applicable (A2.2)"
+          }
+        ]
+      }
+    },
+    {
+      "id": "S2",
+      "text": "Ann can break the egg.",
+      "stage1": {
+        "type": "situation",
+        "entities": [
+          {
+            "id": "Ann 1",
+            "type": "concrete",
+            "category": "person"
+          },
+          {
+            "id": "egg 2",
+            "type": "concrete"
+          }
+        ],
+        "actions": [
+          {
+            "root": "break",
+            "mode": "capability",
+            "roles": {
+              "target": "egg 2"
+            }
+          }
+        ],
+        "action_reading": "availability"
+      },
+      "stage2": [
+        "@id",
+        "S2",
+        [
+          "holds",
+          "W0",
+          [
+            "can",
+            "Ann 1",
+            [
+              "change",
+              "Ann 1",
+              "egg 2",
+              "broken",
+              "unspecified"
+            ]
+          ]
+        ]
+      ],
+      "scope": "availability",
+      "syntax": "supported",
+      "compile": "supported",
+      "clauses": {
+        "must_have": [
+          {
+            "role": "availability",
+            "unit": "S2",
+            "lit": [
+              "poss",
+              [
+                "change",
+                "Ann 1",
+                "egg 2",
+                "broken",
+                "unspecified"
+              ]
+            ],
+            "sign": "+",
+            "situation": "shared_current",
+            "note": "a ground availability is still a law at every situation (A2.3), as in the hand file"
+          }
+        ]
+      }
+    },
+    {
+      "id": "S3",
+      "text": "If the egg is broken, Ann can whisk it with the whisk.",
+      "stage1": {
+        "type": "strict_rule",
+        "entities": [
+          {
+            "id": "egg 2",
+            "type": "concrete"
+          },
+          {
+            "id": "Ann 1",
+            "type": "concrete",
+            "category": "person"
+          },
+          {
+            "id": "whisk 3",
+            "type": "concrete",
+            "category": "artifact"
+          }
+        ],
+        "actions": [
+          {
+            "root": "whisk",
+            "mode": "capability",
+            "roles": {
+              "target": "egg 2",
+              "instrument": "whisk 3"
+            }
+          }
+        ],
+        "action_reading": "availability"
+      },
+      "stage2": [
+        "@id",
+        "S3",
+        [
+          "holds",
+          "W0",
+          [
+            "implies",
+            [
+              "and",
+              [
+                "has property",
+                "broken",
+                "egg 2"
+              ],
+              [
+                "have",
+                "Ann 1",
+                "whisk 3"
+              ]
+            ],
+            [
+              "can",
+              "Ann 1",
+              [
+                "change",
+                "Ann 1",
+                "egg 2",
+                "whisked",
+                "whisk 3"
+              ]
+            ]
+          ]
+        ]
+      ],
+      "scope": "availability",
+      "syntax": "supported",
+      "compile": "supported",
+      "note": "the instrument phrase adds possession of the tool to the conditions (the hand file's reading; A3.2's own example)"
+    },
+    {
+      "id": "S4",
+      "text": "If the egg is whisked, Ann can cook it in the pan.",
+      "stage1": {
+        "type": "strict_rule",
+        "entities": [
+          {
+            "id": "egg 2",
+            "type": "concrete"
+          },
+          {
+            "id": "Ann 1",
+            "type": "concrete",
+            "category": "person"
+          },
+          {
+            "id": "pan 4",
+            "type": "concrete",
+            "category": "artifact"
+          }
+        ],
+        "actions": [
+          {
+            "root": "cook",
+            "mode": "capability",
+            "roles": {
+              "actor": "Ann 1",
+              "target": "egg 2",
+              "location": "pan 4"
+            }
+          }
+        ],
+        "action_reading": "availability"
+      },
+      "stage2": [
+        "@id",
+        "S4",
+        [
+          "holds",
+          "W0",
+          [
+            "implies",
+            [
+              "and",
+              [
+                "has property",
+                "whisked",
+                "egg 2"
+              ],
+              [
+                "have",
+                "Ann 1",
+                "pan 4"
+              ]
+            ],
+            [
+              "can",
+              "Ann 1",
+              [
+                "change",
+                "Ann 1",
+                "egg 2",
+                "cooked",
+                "pan 4"
+              ]
+            ]
+          ]
+        ]
+      ],
+      "scope": "availability",
+      "syntax": "supported",
+      "compile": "supported",
+      "note": "'in the pan' is the instrument, not containment (A2.2)"
+    }
+  ],
+  "queries": [
+    {
+      "id": "Q1",
+      "text": "How can Ann get the egg cooked?",
+      "stage1_reading": "plan_question",
+      "stage2": [
+        "@id",
+        "Q1",
+        [
+          "plan",
+          [
+            "has property",
+            "cooked",
+            "egg 2"
+          ]
+        ]
+      ],
+      "view": "discovery",
+      "seed": "s^4(0)",
+      "expect": {
+        "outcome": "plan_found",
+        "plan": [
+          [
+            "change",
+            "Ann 1",
+            "egg 2",
+            "broken",
+            "unspecified"
+          ],
+          [
+            "change",
+            "Ann 1",
+            "egg 2",
+            "whisked",
+            "whisk 3"
+          ],
+          [
+            "change",
+            "Ann 1",
+            "egg 2",
+            "cooked",
+            "pan 4"
+          ]
+        ],
+        "reference_shortest_length": 3,
+        "render": "Ann breaks the egg, then whisks the egg with the whisk, then cooks the egg in the pan",
+        "evidence": "found in the pilot with axioms_std.js (EXAMPLES.md)"
+      },
+      "backend": [],
+      "replay": "covered"
+    }
+  ],
+  "variants": [
+    {
+      "id": "no_pan",
+      "text": "Ann has an egg and a whisk. Ann can break the egg. If the egg is broken, Ann can whisk it with the whisk. If the egg is whisked, Ann can cook it in the pan.",
+      "units_replace": [
+        {
+          "id": "S1",
+          "text": "Ann has an egg and a whisk.",
+          "stage1": {
+            "type": "situation",
+            "entities": [
+              {
+                "id": "Ann 1",
+                "type": "concrete",
+                "category": "person"
+              },
+              {
+                "id": "egg 2",
+                "type": "concrete"
+              },
+              {
+                "id": "whisk 3",
+                "type": "concrete",
+                "category": "artifact"
+              },
+              {
+                "id": "pan 4",
+                "type": "concrete",
+                "category": "artifact"
+              }
+            ]
+          },
+          "stage2": [
+            "@id",
+            "S1",
+            [
+              "holds",
+              "W0",
+              [
+                "and",
+                [
+                  "isa",
+                  "person",
+                  "Ann 1"
+                ],
+                [
+                  "isa",
+                  "egg",
+                  "egg 2"
+                ],
+                [
+                  "isa",
+                  "whisk",
+                  "whisk 3"
+                ],
+                [
+                  "isa",
+                  "pan",
+                  "pan 4"
+                ],
+                [
+                  "have",
+                  "Ann 1",
+                  "egg 2"
+                ],
+                [
+                  "have",
+                  "Ann 1",
+                  "whisk 3"
+                ]
+              ]
+            ]
+          ],
+          "scope": "initial",
+          "syntax": "supported",
+          "compile": "supported"
+        }
+      ],
+      "queries": [
+        {
+          "id": "Q1",
+          "expect": {
+            "outcome": "not_found",
+            "evidence": "have(Ann,pan) unsupported at every situation (food_nopan.js control)"
+          }
+        }
+      ]
+    },
+    {
+      "id": "after_break_have_pan",
+      "queries": [
+        {
+          "id": "Q2",
+          "text": "After Ann breaks the egg, does Ann still have the pan?",
+          "stage1_reading": "verify_question",
+          "stage2": [
+            "@id",
+            "Q2",
+            [
+              "verify",
+              [
+                [
+                  "change",
+                  "Ann 1",
+                  "egg 2",
+                  "broken",
+                  "unspecified"
+                ]
+              ],
+              [
+                "have",
+                "Ann 1",
+                "pan 4"
+              ]
+            ]
+          ],
+          "view": "verify",
+          "expect": {
+            "answer": "Yes",
+            "confidence": 0.99,
+            "evidence": "frame_have (food_after_break_have_pan.js)"
+          },
+          "backend": [],
+          "replay": "covered"
+        }
+      ]
+    }
+  ],
+  "candidates": [
+    {
+      "id": "K1",
+      "sequence": [
+        [
+          "change",
+          "Ann 1",
+          "egg 2",
+          "broken",
+          "unspecified"
+        ],
+        [
+          "change",
+          "Ann 1",
+          "egg 2",
+          "whisked",
+          "whisk 3"
+        ],
+        [
+          "change",
+          "Ann 1",
+          "egg 2",
+          "cooked",
+          "pan 4"
+        ]
+      ],
+      "states": [
+        {
+          "after": 0,
+          "facts": [
+            "+have(Ann,egg)",
+            "+have(Ann,whisk)",
+            "+have(Ann,pan)"
+          ]
+        },
+        {
+          "after": 1,
+          "facts": [
+            "+broken(egg)",
+            "+have(Ann,whisk)",
+            "+have(Ann,pan)"
+          ]
+        },
+        {
+          "after": 2,
+          "facts": [
+            "+broken(egg)",
+            "+whisked(egg)",
+            "+have(Ann,pan)"
+          ]
+        },
+        {
+          "after": 3,
+          "facts": [
+            "+broken(egg)",
+            "+whisked(egg)",
+            "+cooked(egg)"
+          ]
+        }
+      ],
+      "verdict": "valid",
+      "reason": "independent replay; earlier properties persist because change deletes nothing"
+    }
+  ],
+  "support": {
+    "syntax": "supported",
+    "compile": "supported",
+    "backend_requirements": [],
+    "replay_fragment": "covered"
+  },
+  "explain": "The gold formulas equal the hand translation food.js in meaning; the reviewed points are the possession reading of the instrument phrases and the standing scope of S2. Nothing is taken or put; the library's take law does not apply to the whisk and must not be made to (Astra review 4.3).",
+  "notes": "Hand input: fixtures/gk/food.js. c18 and c28 reuse this text for the binding and view fixtures; c22 for property deletion."
+}

@@ -1,0 +1,30 @@
+{
+  "id": "c16_on_table_red",
+  "purpose": "an initial conditional description evaluates its condition at W0 and its conclusion is a stored fact that persists after the condition stops; an explicit standing law is recomputed instead",
+  "contract": ["C16", "A2.8", "A3.2"],
+  "family": ["Situation scope", "Derived state"],
+  "input_kind": "text",
+  "text": "There is a robot hand. Block a is on the table. Block a is clear. The hand is empty. Every block on the table is red. If a block is on the table, the block is stable.",
+  "profile": "physical_v1",
+  "entities": {"hand 1": "hand", "a 2": "block", "table 3": "table"},
+  "units": [
+    {"id": "S1", "text": "There is a robot hand.", "stage1": {"type": "real", "entities": [{"id": "hand 1", "type": "concrete", "category": "artifact"}]}, "stage2": ["@id", "S1", ["holds", "W0", ["isa", "hand", "hand 1"]]], "scope": "static", "syntax": "supported", "compile": "supported", "clauses": {}},
+    {"id": "S2", "text": "Block a is on the table.", "stage1": {"type": "situation", "entities": [{"id": "a 2", "type": "concrete", "category": "artifact"}, {"id": "table 3", "type": "concrete", "category": "artifact"}]}, "stage2": ["@id", "S2", ["holds", "W0", ["and", ["isa", "block", "a 2"], ["isa", "table", "table 3"], ["is rel2", "on", "a 2", "table 3"]]]], "scope": "initial", "syntax": "supported", "compile": "supported", "clauses": {}},
+    {"id": "S3", "text": "Block a is clear.", "stage1": {"type": "situation", "entities": [{"id": "a 2", "type": "concrete", "category": "artifact"}]}, "stage2": ["@id", "S3", ["holds", "W0", ["has property", "clear_top", "a 2"]]], "scope": "initial", "syntax": "supported", "compile": "supported", "clauses": {}},
+    {"id": "S4", "text": "The hand is empty.", "stage1": {"type": "situation", "entities": [{"id": "hand 1", "type": "concrete", "category": "artifact"}]}, "stage2": ["@id", "S4", ["holds", "W0", ["has property", "empty", "hand 1"]]], "scope": "initial", "syntax": "supported", "compile": "supported", "clauses": {}},
+    {"id": "S5", "text": "Every block on the table is red.", "stage1": {"type": "situation", "entities": [{"id": "table 3", "type": "concrete", "category": "artifact"}, {"id": "block", "type": "generic", "category": "artifact"}]}, "stage2": ["@id", "S5", ["holds", "W0", ["forall", "X", ["implies", ["and", ["isa", "block", "X"], ["is rel2", "on", "X", "table 3"]], ["has property", "red", "X"]]]]], "scope": "initial", "syntax": "supported", "compile": "supported", "clauses": {"must_have": [{"role": "initial_fact", "unit": "S5", "lit": ["has property", "red", "X"], "sign": "+", "situation": "named", "body": [{"lit": ["isa", "block", "X"], "sign": "+", "situation": "none"}, {"lit": ["is rel2", "on", "X", "table 3"], "sign": "+", "situation": "named"}], "note": "both fluent occurrences at W0"}], "must_not_have": [{"role": "derived_no_inertia", "lit": ["derived_property", "red"], "note": "red is a stored property; an initial description does not make it computed"}]}},
+    {"id": "S6", "text": "If a block is on the table, the block is stable.", "stage1": {"type": "strict_rule", "entities": [{"id": "table 3", "type": "concrete", "category": "artifact"}, {"id": "block", "type": "generic", "category": "artifact"}]}, "stage2": ["@id", "S6", ["holds", "W0", ["state_law", ["forall", "X", ["implies", ["and", ["isa", "block", "X"], ["is rel2", "on", "X", "table 3"]], ["has property", "stable", "X"]]]]]], "scope": "standing", "syntax": "supported", "compile": "supported", "clauses": {"must_have": [{"role": "standing_law", "unit": "S6", "lit": ["has property", "stable", "X"], "sign": "+", "situation": "shared_current"}, {"role": "derived_no_inertia", "lit": ["derived_property", "stable"]}]}}
+  ],
+  "queries": [
+    {"id": "Q1", "text": "After the hand takes block a, is block a red?", "stage1_reading": "verify_question", "stage2": ["@id", "Q1", ["verify", [["take", "hand 1", "a 2"]], ["has property", "red", "a 2"]]], "view": "verify", "expect": {"answer": "Yes", "confidence": 0.99, "evidence": "red(a) at W0 from S5; frame_property to W0+1; a is no longer on the table but the description was evaluated at W0"}, "backend": [], "replay": "covered"},
+    {"id": "Q2", "text": "After the hand takes block a, is block a stable?", "stage1_reading": "verify_question", "stage2": ["@id", "Q2", ["verify", [["take", "hand 1", "a 2"]], ["has property", "stable", "a 2"]]], "view": "verify", "expect": {"answer": "Unknown", "evidence": "S6 recomputed at W0+1 with -on(a,table) at W0+1; stable has no inertia", "forbidden_answers": ["Yes", "No"]}, "backend": [], "replay": "covered"},
+    {"id": "Q3", "text": "Is block a red?", "stage2": ["@id", "Q3", ["question", ["has property", "red", "a 2"]]], "view": "snapshot", "expect": {"answer": "Yes", "evidence": "S5 instance at W0 with on(a,table) at W0"}, "backend": [], "replay": "n/a"}
+  ],
+  "variants": [],
+  "candidates": [
+    {"id": "K1", "sequence": [["take", "hand 1", "a 2"]], "states": [{"after": 0, "facts": ["+on(a,table)", "+red(a)", "+clear_top(a)", "+empty(hand)"], "derived": ["stable(a)"]}, {"after": 1, "facts": ["+holding(hand,a)", "-on(a,table)", "-empty(hand)", "+red(a)"], "not_derived": ["stable(a)"]}], "verdict": "valid", "reason": "red persists as a stored fact; stable is recomputed"}
+  ],
+  "support": {"syntax": "supported", "compile": "supported", "backend_requirements": [], "replay_fragment": "covered"},
+  "explain": "The two rules have the same English form and different Stage-2 scope. S5 is an initial description: the compiler evaluates the on-table condition at W0 and stores red(a). S6 has the state_law wrapper, so it is recomputed. The scope is visible in Stage 2, not guessed from the head predicate (Astra response section 2).",
+  "notes": "Astra review 4.1's 'Every block on the table is red' is the initial description here; Fable addenda point 1 listed it as ambiguous, and revision 3 resolved it by the wrapper."
+}

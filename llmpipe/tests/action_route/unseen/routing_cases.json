@@ -1,0 +1,230 @@
+[
+  {
+    "id": "ordinary_skill",
+    "purpose": "Authored routing contrast; no claim about a model's recognition.",
+    "authorship": "authored development example; no model response",
+    "text": "Birds can fly. Can Tweety fly?",
+    "route": "ordinary",
+    "stage1": [
+      {
+        "raw": "Birds can fly.",
+        "units": [
+          {
+            "unit_id": "S1",
+            "text": "Birds can fly.",
+            "type": "normal_rule",
+            "entities": [{"id": "bird", "type": "generic", "category": "animal"}]
+          }
+        ]
+      },
+      {
+        "raw": "Can Tweety fly?",
+        "units": [
+          {
+            "unit_id": "S2",
+            "text": "Can Tweety 1 fly?",
+            "type": "query",
+            "entities": [{"id": "Tweety 1", "type": "concrete", "category": "animal"}]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "how_did",
+    "purpose": "Authored routing contrast; no claim about a model's recognition.",
+    "authorship": "authored development example; no model response",
+    "text": "How did Ann arrive?",
+    "route": "ordinary",
+    "stage1": [
+      {
+        "raw": "How did Ann arrive?",
+        "units": [
+          {
+            "unit_id": "S1",
+            "text": "How did Ann 1 arrive?",
+            "type": "query",
+            "entities": [{"id": "Ann 1", "type": "concrete", "category": "person"}]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "intention",
+    "purpose": "Authored routing contrast; no claim about a model's recognition.",
+    "authorship": "authored development example; no model response",
+    "text": "Ann plans to leave.",
+    "route": "ordinary",
+    "stage1": [
+      {
+        "raw": "Ann plans to leave.",
+        "units": [
+          {
+            "unit_id": "S1",
+            "text": "Ann 1 plans to leave.",
+            "type": "situation",
+            "entities": [{"id": "Ann 1", "type": "concrete", "category": "person"}]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "narrative_location",
+    "purpose": "Authored routing contrast; no claim about a model's recognition.",
+    "authorship": "authored development example; no model response",
+    "text": "Ann travelled to Tallinn. Where is Ann?",
+    "route": "ordinary",
+    "stage1": [
+      {
+        "raw": "Ann travelled to Tallinn.",
+        "units": [
+          {
+            "unit_id": "S1",
+            "text": "Ann 1 travelled to Tallinn 2.",
+            "type": "situation",
+            "entities": [
+              {"id": "Ann 1", "type": "concrete", "category": "person"},
+              {"id": "Tallinn 2", "type": "concrete", "category": "place"}
+            ],
+            "action_reading": "occurrence",
+            "actions": [
+              {
+                "root": "travel",
+                "mode": "event",
+                "roles": {"actor": "Ann 1", "destination": "Tallinn 2"}
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "raw": "Where is Ann?",
+        "units": [
+          {
+            "unit_id": "S2",
+            "text": "Where is Ann 1?",
+            "type": "query",
+            "entities": [{"id": "Ann 1", "type": "concrete", "category": "person"}]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "advice",
+    "purpose": "Authored routing contrast; no claim about a model's recognition.",
+    "authorship": "authored development example; no model response",
+    "text": "Ann should take the bus.",
+    "route": "ordinary",
+    "stage1": [
+      {
+        "raw": "Ann should take the bus.",
+        "units": [
+          {
+            "unit_id": "S1",
+            "text": "Ann 1 should take the bus.",
+            "type": "situation",
+            "entities": [{"id": "Ann 1", "type": "concrete", "category": "person"}]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "optimization",
+    "purpose": "Authored routing contrast; no claim about a model's recognition.",
+    "authorship": "authored development example; no model response",
+    "text": "Find the shortest plan to put b on a.",
+    "route": "diagnostic",
+    "stage1": [
+      {
+        "raw": "Find the shortest plan to put b on a.",
+        "units": [
+          {
+            "unit_id": "S1",
+            "text": "Find the shortest plan to put b 1 on a 2.",
+            "type": "query",
+            "entities": [
+              {"id": "b 1", "type": "concrete", "category": "artifact"},
+              {"id": "a 2", "type": "concrete", "category": "artifact"}
+            ],
+            "action_reading": "plan_question",
+            "action_issue": {"kind": "unsupported", "text": "Find the shortest plan to put b on a.", "detail": "Shortest-plan optimization is outside the bounded planning contract."}
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "goal_without_operator",
+    "purpose": "Authored routing contrast; no claim about a model's recognition.",
+    "authorship": "authored development example; no model response",
+    "text": "Find a plan with b on a.",
+    "route": "actions",
+    "stage1": [
+      {
+        "raw": "Find a plan with b on a.",
+        "units": [
+          {
+            "unit_id": "S1",
+            "text": "Find a plan with b 1 on a 2.",
+            "type": "query",
+            "entities": [
+              {"id": "b 1", "type": "concrete", "category": "artifact"},
+              {"id": "a 2", "type": "concrete", "category": "artifact"}
+            ],
+            "action_reading": "plan_question"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "event_then_goal",
+    "purpose": "Authored routing contrast; no claim about a model's recognition.",
+    "authorship": "authored development example; no model response",
+    "text": "Ann went to Tartu. How can Ann get to Tallinn?",
+    "route": "actions",
+    "stage1": [
+      {
+        "raw": "Ann went to Tartu.",
+        "units": [
+          {
+            "unit_id": "S1",
+            "text": "Ann 1 went to Tartu 3.",
+            "type": "situation",
+            "entities": [
+              {"id": "Ann 1", "type": "concrete", "category": "person"},
+              {"id": "Tartu 3", "type": "concrete", "category": "place"}
+            ],
+            "action_reading": "occurrence",
+            "actions": [
+              {
+                "root": "travel",
+                "mode": "event",
+                "roles": {"actor": "Ann 1", "destination": "Tartu 3"}
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "raw": "How can Ann get to Tallinn?",
+        "units": [
+          {
+            "unit_id": "S2",
+            "text": "How can Ann 1 get to Tallinn 2?",
+            "type": "query",
+            "entities": [
+              {"id": "Ann 1", "type": "concrete", "category": "person"},
+              {"id": "Tallinn 2", "type": "concrete", "category": "place"}
+            ],
+            "action_reading": "plan_question"
+          }
+        ]
+      }
+    ]
+  }
+]

@@ -9,14 +9,17 @@ information.
 
 Binaries for other platforms, current documentation, and complete
 examples are in the [gkreasoner
-repository](https://github.com/tammet/gkreasoner). A browser version is
+repository](https://github.com/tammet/gkreasoner). The binary here is GK
+1.1.0, built from the `planning` branch of the GK source. It adds
+experimental options for planning inputs, all off by default; the
+gkreasoner release is 1.0.11. A browser version is
 available at [logictools.org/commonsense.html](https://logictools.org/commonsense.html).
 
 
 Folder contents
 ---------------
 
-    gk                        Linux x86-64 binary (statically linked)
+    gk                        Linux x86-64 binary (statically linked), GK 1.1.0
     gk_name_number.txt        taxonomy data: name -> number table
     gk_taxonomy_packed.txt    taxonomy data: packed parent graph
     Doc/                      reference copies of the main GK documents
@@ -104,6 +107,8 @@ repository.
   * `Doc/how_gk_works.md` — resolution, confidences, proof support,
     verdict calculation, contradictions, defaults
   * `Doc/strategy_reference.md` — automatic search and strategy files
+  * `Doc/planning.md` — the experimental options for planning inputs
+    that llmpipe's action route uses
 
 In the gkreasoner repository:
 

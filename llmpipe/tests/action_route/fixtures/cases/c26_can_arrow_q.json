@@ -1,0 +1,419 @@
+{
+  "id": "c26_can_arrow_q",
+  "purpose": "an execution restriction mistranslated as can -> Q is rejected as unsupported_capability_restriction; sufficient permissions and explicit denials with can still work",
+  "contract": [
+    "C26",
+    "A2.3",
+    "A3.2",
+    "A4.2"
+  ],
+  "family": [
+    "Necessary/sufficient conditions",
+    "Permission strength"
+  ],
+  "input_kind": "formal_only",
+  "text": "There is a robot hand. Block a is on the table. Block a is clear. The hand is empty. The hand can take a block only if the block is red.",
+  "profile": "physical_v1",
+  "entities": {
+    "hand 1": "hand",
+    "a 2": "block",
+    "table 3": "table"
+  },
+  "units": [
+    {
+      "id": "S1",
+      "text": "There is a robot hand. Block a is on the table. Block a is clear. The hand is empty.",
+      "stage2": [
+        "@id",
+        "S1",
+        [
+          "holds",
+          "W0",
+          [
+            "and",
+            [
+              "isa",
+              "hand",
+              "hand 1"
+            ],
+            [
+              "isa",
+              "block",
+              "a 2"
+            ],
+            [
+              "isa",
+              "table",
+              "table 3"
+            ],
+            [
+              "is rel2",
+              "on",
+              "a 2",
+              "table 3"
+            ],
+            [
+              "has property",
+              "clear_top",
+              "a 2"
+            ],
+            [
+              "has property",
+              "empty",
+              "hand 1"
+            ]
+          ]
+        ]
+      ],
+      "scope": "initial",
+      "syntax": "supported",
+      "compile": "supported",
+      "clauses": {}
+    },
+    {
+      "id": "S2",
+      "text": "The hand can take a block only if the block is red. [MISTRANSLATION under test: can in the antecedent]",
+      "stage1": {
+        "type": "strict_rule",
+        "action_reading": "restriction"
+      },
+      "stage2": [
+        "@id",
+        "S2",
+        [
+          "holds",
+          "W0",
+          [
+            "forall",
+            "X",
+            [
+              "implies",
+              [
+                "can",
+                "hand 1",
+                [
+                  "take",
+                  "hand 1",
+                  "X"
+                ]
+              ],
+              [
+                "has property",
+                "red",
+                "X"
+              ]
+            ]
+          ]
+        ]
+      ],
+      "scope": "restriction",
+      "syntax": "supported",
+      "compile": {
+        "unsupported": "unsupported_capability_restriction",
+        "detail": "a necessary condition on `can`, which has no runtime predicate in v2; not an execution restriction. Read as an ordinary rule it would derive red(X) from the library default and would not demand red before execution (A2.3)."
+      },
+      "clauses": {
+        "must_not_have": [
+          {
+            "role": "restriction_check",
+            "unit": "S2"
+          },
+          {
+            "role": "hook",
+            "constructor": "take",
+            "requires": [
+              "S2"
+            ]
+          },
+          {
+            "role": "*",
+            "unit": "S2",
+            "lit": [
+              "has property",
+              "red",
+              "X"
+            ],
+            "sign": "+",
+            "note": "no clause deriving red from can; no silent rewrite to executable; no compilation as an ordinary sufficient rule"
+          }
+        ]
+      }
+    }
+  ],
+  "queries": [
+    {
+      "id": "Q1",
+      "text": "Can the hand take block a now?",
+      "stage1_reading": "executable_question",
+      "stage2": [
+        "@id",
+        "Q1",
+        [
+          "question",
+          [
+            "executable",
+            [
+              "take",
+              "hand 1",
+              "a 2"
+            ]
+          ]
+        ]
+      ],
+      "view": "snapshot",
+      "expect": {
+        "outcome": "unsupported_translation",
+        "reason": "unsupported_capability_restriction",
+        "unit": "S2",
+        "evidence": "the route stops; with S2 compiled as an ordinary rule the answer would be Yes (red unknown does not block) and red(a) would even become provable from the default"
+      },
+      "backend": [],
+      "replay": "n/a"
+    },
+    {
+      "id": "Q2",
+      "text": "Is block a red?",
+      "stage2": [
+        "@id",
+        "Q2",
+        [
+          "question",
+          [
+            "has property",
+            "red",
+            "a 2"
+          ]
+        ]
+      ],
+      "view": "snapshot",
+      "expect": {
+        "outcome": "unsupported_translation",
+        "reason": "unsupported_capability_restriction",
+        "unit": "S2",
+        "evidence": "the same stop; a naive compilation that read can as poss would answer Yes through the library default poss_take_hand"
+      },
+      "backend": [],
+      "replay": "n/a"
+    }
+  ],
+  "variants": [
+    {
+      "id": "sufficient_permission",
+      "units_replace": [
+        {
+          "id": "S2",
+          "text": "If a block is red, the hand can take it.",
+          "stage1": {
+            "type": "strict_rule",
+            "action_reading": "availability"
+          },
+          "stage2": [
+            "@id",
+            "S2",
+            [
+              "holds",
+              "W0",
+              [
+                "forall",
+                "X",
+                [
+                  "implies",
+                  [
+                    "and",
+                    [
+                      "isa",
+                      "block",
+                      "X"
+                    ],
+                    [
+                      "has property",
+                      "red",
+                      "X"
+                    ]
+                  ],
+                  [
+                    "can",
+                    "hand 1",
+                    [
+                      "take",
+                      "hand 1",
+                      "X"
+                    ]
+                  ]
+                ]
+              ]
+            ]
+          ],
+          "scope": "availability",
+          "syntax": "supported",
+          "compile": "supported",
+          "clauses": {
+            "must_have": [
+              {
+                "role": "availability",
+                "unit": "S2",
+                "lit": [
+                  "poss",
+                  [
+                    "take",
+                    "hand 1",
+                    "X"
+                  ]
+                ],
+                "sign": "+",
+                "situation": "shared_current"
+              }
+            ],
+            "must_not_have": [
+              {
+                "role": "restriction_check",
+                "unit": "S2"
+              }
+            ]
+          }
+        }
+      ],
+      "queries": [
+        {
+          "id": "Q1",
+          "expect": {
+            "answer": "Yes",
+            "evidence": "the library default already permits; S2 adds an alternative permission and restricts nothing (A2.1); red unknown does not matter"
+          }
+        }
+      ]
+    },
+    {
+      "id": "explicit_denial",
+      "units_replace": [
+        {
+          "id": "S2",
+          "text": "The hand cannot take block a.",
+          "stage1": {
+            "type": "situation",
+            "action_reading": "availability"
+          },
+          "stage2": [
+            "@id",
+            "S2",
+            [
+              "holds",
+              "W0",
+              [
+                "not",
+                [
+                  "can",
+                  "hand 1",
+                  [
+                    "take",
+                    "hand 1",
+                    "a 2"
+                  ]
+                ]
+              ]
+            ]
+          ],
+          "scope": "denial",
+          "syntax": "supported",
+          "compile": "supported",
+          "clauses": {
+            "must_have": [
+              {
+                "role": "denial",
+                "unit": "S2",
+                "lit": [
+                  "execution_denied",
+                  [
+                    "take",
+                    "hand 1",
+                    "a 2"
+                  ]
+                ],
+                "sign": "+",
+                "situation": "shared_current"
+              }
+            ]
+          }
+        }
+      ],
+      "queries": [
+        {
+          "id": "Q1",
+          "expect": {
+            "answer": "No",
+            "evidence": "an explicit denial: the marker execution_denied and denied_not_poss; the default is blocked"
+          }
+        }
+      ]
+    },
+    {
+      "id": "correct_form",
+      "units_replace": [
+        {
+          "id": "S2",
+          "text": "The hand can take a block only if the block is red.",
+          "stage1": {
+            "type": "strict_rule",
+            "action_reading": "restriction"
+          },
+          "stage2": [
+            "@id",
+            "S2",
+            [
+              "holds",
+              "W0",
+              [
+                "forall",
+                "X",
+                [
+                  "implies",
+                  [
+                    "executable",
+                    [
+                      "take",
+                      "hand 1",
+                      "X"
+                    ]
+                  ],
+                  [
+                    "has property",
+                    "red",
+                    "X"
+                  ]
+                ]
+              ]
+            ]
+          ],
+          "scope": "restriction",
+          "syntax": "supported",
+          "compile": "supported"
+        }
+      ],
+      "queries": [
+        {
+          "id": "Q1",
+          "expect": {
+            "answer": "Unknown",
+            "evidence": "as c03 base"
+          }
+        },
+        {
+          "id": "Q2",
+          "expect": {
+            "answer": "Unknown",
+            "evidence": "nothing derives red"
+          }
+        }
+      ]
+    }
+  ],
+  "candidates": [],
+  "support": {
+    "syntax": "supported",
+    "compile": "unsupported (base) / supported (variants)",
+    "backend_requirements": [],
+    "replay_fragment": "n/a"
+  },
+  "explain": "Fable addenda point 9, strengthened by Astra: the can -> Q form is not a weaker restriction, it is a different and wrong statement, so it is rejected rather than reinterpreted. The three variants pin that can keeps working in its two legitimate roles, sufficient permission and explicit denial, and show the correct form of the sentence.",
+  "notes": "Formal-only because the gold Stage 2 for the English is the correct_form variant; the base S2 is a labelled mistranslation the validator must catch. Stage-1 reading 'restriction' with a can head is one of the reading/form combinations A7.3 rejects."
+}

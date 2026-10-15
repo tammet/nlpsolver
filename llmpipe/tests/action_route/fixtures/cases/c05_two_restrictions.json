@@ -1,0 +1,3000 @@
+{
+  "id": "c05_two_restrictions",
+  "purpose": "two restrictions on take conjoin through one hook; a known-distinct second hand still needs the general one; a class-scoped restriction keeps its guard and does not reach a non-hand actor; an anonymous hand passes neither by identity nor by dryness",
+  "contract": [
+    "C05",
+    "A4.2",
+    "A4.3",
+    "A8.1 unknown nonmatch"
+  ],
+  "family": [
+    "Restriction composition"
+  ],
+  "input_kind": "text",
+  "text": "There are two robot hands, hand one and hand two. Block a is on the table. Block a is clear. Block a is red. Block a is not dry. Both hands are empty. A block can be taken only if it is red. Hand one can take a block only if the block is dry.",
+  "profile": "physical_v1",
+  "entities": {
+    "hand one 1": "hand",
+    "hand two 2": "hand",
+    "a 3": "block",
+    "table 4": "table",
+    "hand three 5": "hand",
+    "Robo 6": "robot"
+  },
+  "units": [
+    {
+      "id": "S1",
+      "text": "There are two robot hands, hand one and hand two.",
+      "stage1": {
+        "type": "real",
+        "entities": [
+          {
+            "id": "hand one 1",
+            "type": "concrete",
+            "category": "artifact"
+          },
+          {
+            "id": "hand two 2",
+            "type": "concrete",
+            "category": "artifact"
+          }
+        ]
+      },
+      "stage2": [
+        "@id",
+        "S1",
+        [
+          "holds",
+          "W0",
+          [
+            "and",
+            [
+              "isa",
+              "hand",
+              "hand one 1"
+            ],
+            [
+              "isa",
+              "hand",
+              "hand two 2"
+            ]
+          ]
+        ]
+      ],
+      "scope": "static",
+      "syntax": "supported",
+      "compile": "supported",
+      "clauses": {
+        "must_have": [
+          {
+            "role": "distinct",
+            "pairs": [
+              [
+                "hand one 1",
+                "hand two 2"
+              ]
+            ],
+            "note": "two distinct #: ids; both orders (A4.3)"
+          }
+        ]
+      }
+    },
+    {
+      "id": "S2",
+      "text": "Block a is on the table.",
+      "stage1": {
+        "type": "situation",
+        "entities": [
+          {
+            "id": "a 3",
+            "type": "concrete",
+            "category": "artifact"
+          },
+          {
+            "id": "table 4",
+            "type": "concrete",
+            "category": "artifact"
+          }
+        ]
+      },
+      "stage2": [
+        "@id",
+        "S2",
+        [
+          "holds",
+          "W0",
+          [
+            "and",
+            [
+              "isa",
+              "block",
+              "a 3"
+            ],
+            [
+              "isa",
+              "table",
+              "table 4"
+            ],
+            [
+              "is rel2",
+              "on",
+              "a 3",
+              "table 4"
+            ]
+          ]
+        ]
+      ],
+      "scope": "initial",
+      "syntax": "supported",
+      "compile": "supported",
+      "clauses": {}
+    },
+    {
+      "id": "S3",
+      "text": "Block a is clear.",
+      "stage1": {
+        "type": "situation",
+        "entities": [
+          {
+            "id": "a 3",
+            "type": "concrete",
+            "category": "artifact"
+          }
+        ]
+      },
+      "stage2": [
+        "@id",
+        "S3",
+        [
+          "holds",
+          "W0",
+          [
+            "has property",
+            "clear_top",
+            "a 3"
+          ]
+        ]
+      ],
+      "scope": "initial",
+      "syntax": "supported",
+      "compile": "supported",
+      "clauses": {}
+    },
+    {
+      "id": "S4",
+      "text": "Block a is red.",
+      "stage1": {
+        "type": "situation",
+        "entities": [
+          {
+            "id": "a 3",
+            "type": "concrete",
+            "category": "artifact"
+          }
+        ]
+      },
+      "stage2": [
+        "@id",
+        "S4",
+        [
+          "holds",
+          "W0",
+          [
+            "has property",
+            "red",
+            "a 3"
+          ]
+        ]
+      ],
+      "scope": "initial",
+      "syntax": "supported",
+      "compile": "supported",
+      "clauses": {}
+    },
+    {
+      "id": "S5",
+      "text": "Block a is not dry.",
+      "stage1": {
+        "type": "situation",
+        "entities": [
+          {
+            "id": "a 3",
+            "type": "concrete",
+            "category": "artifact"
+          }
+        ]
+      },
+      "stage2": [
+        "@id",
+        "S5",
+        [
+          "holds",
+          "W0",
+          [
+            "not",
+            [
+              "has property",
+              "dry",
+              "a 3"
+            ]
+          ]
+        ]
+      ],
+      "scope": "initial",
+      "syntax": "supported",
+      "compile": "supported",
+      "clauses": {
+        "must_have": [
+          {
+            "role": "initial_fact",
+            "unit": "S5",
+            "lit": [
+              "has property",
+              "dry",
+              "a 3"
+            ],
+            "sign": "-",
+            "situation": "named"
+          }
+        ]
+      }
+    },
+    {
+      "id": "S6",
+      "text": "Both hands are empty.",
+      "stage1": {
+        "type": "situation",
+        "entities": [
+          {
+            "id": "hand one 1",
+            "type": "concrete",
+            "category": "artifact"
+          },
+          {
+            "id": "hand two 2",
+            "type": "concrete",
+            "category": "artifact"
+          }
+        ]
+      },
+      "stage2": [
+        "@id",
+        "S6",
+        [
+          "holds",
+          "W0",
+          [
+            "and",
+            [
+              "has property",
+              "empty",
+              "hand one 1"
+            ],
+            [
+              "has property",
+              "empty",
+              "hand two 2"
+            ]
+          ]
+        ]
+      ],
+      "scope": "initial",
+      "syntax": "supported",
+      "compile": "supported",
+      "clauses": {},
+      "note": "'both' with two named entities enumerates (A3.2); a universal 'every hand is empty' would keep its quantifier and still receive W0"
+    },
+    {
+      "id": "S7",
+      "text": "A block can be taken only if it is red.",
+      "stage1": {
+        "type": "strict_rule",
+        "entities": [],
+        "actions": [
+          {
+            "root": "take",
+            "mode": "capability",
+            "roles": {
+              "target": "block"
+            }
+          }
+        ],
+        "action_reading": "restriction"
+      },
+      "stage2": [
+        "@id",
+        "S7",
+        [
+          "holds",
+          "W0",
+          [
+            "forall",
+            "H",
+            [
+              "forall",
+              "X",
+              [
+                "implies",
+                [
+                  "executable",
+                  [
+                    "take",
+                    "H",
+                    "X"
+                  ]
+                ],
+                [
+                  "has property",
+                  "red",
+                  "X"
+                ]
+              ]
+            ]
+          ]
+        ]
+      ],
+      "scope": "restriction",
+      "syntax": "supported",
+      "compile": "supported",
+      "clauses": {
+        "must_have": [
+          {
+            "role": "restriction_check",
+            "unit": "S7",
+            "constructor": "take",
+            "pattern": [
+              "take",
+              "H",
+              "X"
+            ],
+            "condition": [
+              {
+                "lit": [
+                  "has property",
+                  "red",
+                  "X"
+                ],
+                "sign": "+",
+                "situation": "shared_current"
+              }
+            ],
+            "note": "no class guard: the sentence restricts every taker"
+          },
+          {
+            "role": "necessity_restriction",
+            "unit": "S7",
+            "lit": [
+              "poss",
+              [
+                "take",
+                "H",
+                "X"
+              ]
+            ],
+            "sign": "-",
+            "situation": "shared_current",
+            "body": [
+              {
+                "lit": [
+                  "has property",
+                  "red",
+                  "X"
+                ],
+                "sign": "-",
+                "situation": "shared_current"
+              }
+            ],
+            "body_exact": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "S8",
+      "text": "Hand one can take a block only if the block is dry.",
+      "stage1": {
+        "type": "strict_rule",
+        "entities": [
+          {
+            "id": "hand one 1",
+            "type": "concrete",
+            "category": "artifact"
+          },
+          {
+            "id": "block",
+            "type": "generic",
+            "category": "artifact"
+          }
+        ],
+        "actions": [
+          {
+            "root": "take",
+            "mode": "capability",
+            "roles": {
+              "actor": "hand one 1",
+              "target": "block"
+            }
+          }
+        ],
+        "action_reading": "restriction"
+      },
+      "stage2": [
+        "@id",
+        "S8",
+        [
+          "holds",
+          "W0",
+          [
+            "forall",
+            "X",
+            [
+              "implies",
+              [
+                "executable",
+                [
+                  "take",
+                  "hand one 1",
+                  "X"
+                ]
+              ],
+              [
+                "has property",
+                "dry",
+                "X"
+              ]
+            ]
+          ]
+        ]
+      ],
+      "scope": "restriction",
+      "syntax": "supported",
+      "compile": "supported",
+      "clauses": {
+        "must_have": [
+          {
+            "role": "restriction_check",
+            "unit": "S8",
+            "constructor": "take",
+            "pattern": [
+              "take",
+              "hand one 1",
+              "X"
+            ],
+            "condition": [
+              {
+                "lit": [
+                  "has property",
+                  "dry",
+                  "X"
+                ],
+                "sign": "+",
+                "situation": "shared_current"
+              }
+            ]
+          },
+          {
+            "role": "restriction_check",
+            "unit": "S8",
+            "constructor": "take",
+            "pattern": [
+              "take",
+              "H",
+              "X"
+            ],
+            "condition": [
+              {
+                "lit": [
+                  "differ",
+                  "H",
+                  "hand one 1"
+                ],
+                "sign": "+",
+                "situation": "none"
+              }
+            ],
+            "note": "the nonmatch branch"
+          },
+          {
+            "role": "hook",
+            "constructor": "take",
+            "requires": [
+              "S7",
+              "S8"
+            ],
+            "note": "one ok_take head conjoining both checks; two alternative heads are wrong (A4.2)"
+          },
+          {
+            "role": "necessity_restriction",
+            "unit": "S8",
+            "lit": [
+              "poss",
+              [
+                "take",
+                "hand one 1",
+                "X"
+              ]
+            ],
+            "sign": "-",
+            "situation": "shared_current",
+            "body": [
+              {
+                "lit": [
+                  "has property",
+                  "dry",
+                  "X"
+                ],
+                "sign": "-",
+                "situation": "shared_current"
+              }
+            ]
+          },
+          {
+            "role": "path_coverage",
+            "constructor": "take",
+            "requires": [
+              "S7",
+              "S8"
+            ]
+          }
+        ],
+        "must_not_have": [
+          {
+            "role": "necessity_restriction",
+            "unit": "S8",
+            "lit": [
+              "poss",
+              [
+                "take",
+                "hand two 2",
+                "X"
+              ]
+            ],
+            "sign": "-",
+            "note": "the dry restriction must not be widened to the other hand"
+          }
+        ]
+      }
+    }
+  ],
+  "queries": [
+    {
+      "id": "Q1",
+      "text": "Can hand one take block a now?",
+      "stage1_reading": "executable_question",
+      "stage2": [
+        "@id",
+        "Q1",
+        [
+          "question",
+          [
+            "executable",
+            [
+              "take",
+              "hand one 1",
+              "a 3"
+            ]
+          ]
+        ]
+      ],
+      "view": "snapshot",
+      "expect": {
+        "answer": "No",
+        "evidence": "S8 necessity clause with -dry(a) at W0. Red is true but hand one needs red AND dry."
+      },
+      "backend": [],
+      "replay": "n/a"
+    },
+    {
+      "id": "Q2",
+      "text": "Can hand two take block a now?",
+      "stage1_reading": "executable_question",
+      "stage2": [
+        "@id",
+        "Q2",
+        [
+          "question",
+          [
+            "executable",
+            [
+              "take",
+              "hand two 2",
+              "a 3"
+            ]
+          ]
+        ]
+      ],
+      "view": "snapshot",
+      "expect": {
+        "answer": "Yes",
+        "evidence": "restriction_1_S7 via +red(a) at W0; restriction_1_S8 via the nonmatch branch differ(hand two 2, hand one 1), which exists because both are #: ids (A4.3); mechanical preconditions at W0"
+      },
+      "backend": [],
+      "replay": "n/a"
+    }
+  ],
+  "variants": [
+    {
+      "id": "dry",
+      "text": "There are two robot hands, hand one and hand two. Block a is on the table. Block a is clear. Block a is red. Block a is dry. Both hands are empty. A block can be taken only if it is red. Hand one can take a block only if the block is dry.",
+      "units_replace": [
+        {
+          "id": "S5",
+          "text": "Block a is dry.",
+          "stage1": {
+            "type": "situation",
+            "entities": [
+              {
+                "id": "a 3",
+                "type": "concrete",
+                "category": "artifact"
+              }
+            ]
+          },
+          "stage2": [
+            "@id",
+            "S5",
+            [
+              "holds",
+              "W0",
+              [
+                "has property",
+                "dry",
+                "a 3"
+              ]
+            ]
+          ],
+          "scope": "initial",
+          "syntax": "supported",
+          "compile": "supported",
+          "clauses": {}
+        }
+      ],
+      "queries": [
+        {
+          "id": "Q1",
+          "expect": {
+            "answer": "Yes",
+            "evidence": "red and dry both true at W0; both checks satisfied; one ok_take hook"
+          }
+        },
+        {
+          "id": "Q2",
+          "expect": {
+            "answer": "Yes",
+            "evidence": "S7 via red; S8 via nonmatch"
+          }
+        }
+      ]
+    },
+    {
+      "id": "not_red",
+      "text": "There are two robot hands, hand one and hand two. Block a is on the table. Block a is clear. Block a is not red. Block a is not dry. Both hands are empty. A block can be taken only if it is red. Hand one can take a block only if the block is dry.",
+      "units_replace": [
+        {
+          "id": "S4",
+          "text": "Block a is not red.",
+          "stage1": {
+            "type": "situation",
+            "entities": [
+              {
+                "id": "a 3",
+                "type": "concrete",
+                "category": "artifact"
+              }
+            ]
+          },
+          "stage2": [
+            "@id",
+            "S4",
+            [
+              "holds",
+              "W0",
+              [
+                "not",
+                [
+                  "has property",
+                  "red",
+                  "a 3"
+                ]
+              ]
+            ]
+          ],
+          "scope": "initial",
+          "syntax": "supported",
+          "compile": "supported",
+          "clauses": {}
+        }
+      ],
+      "queries": [
+        {
+          "id": "Q1",
+          "expect": {
+            "answer": "No",
+            "evidence": "either necessity clause: S7 with -red(a) at W0, or S8 with -dry(a) at W0"
+          }
+        },
+        {
+          "id": "Q2",
+          "expect": {
+            "answer": "No",
+            "evidence": "S7 necessity clause with -red(a) at W0; the general restriction applies to hand two"
+          }
+        }
+      ]
+    },
+    {
+      "id": "third_hand",
+      "text": "There are two robot hands, hand one and hand two. There is a third hand, hand three. Block a is on the table. Block a is clear. Block a is red. Block a is not dry. Both hands are empty. Hand three is empty. A block can be taken only if it is red. Hand one can take a block only if the block is dry.",
+      "units_add": [
+        {
+          "id": "S9",
+          "text": "There is a third hand, hand three.",
+          "stage1": {
+            "type": "real",
+            "entities": [
+              {
+                "id": "hand three 5",
+                "type": "concrete",
+                "category": "artifact"
+              }
+            ]
+          },
+          "stage2": [
+            "@id",
+            "S9",
+            [
+              "holds",
+              "W0",
+              [
+                "isa",
+                "hand",
+                "hand three 5"
+              ]
+            ]
+          ],
+          "scope": "static",
+          "syntax": "supported",
+          "compile": "supported",
+          "clauses": {}
+        },
+        {
+          "id": "S10",
+          "text": "Hand three is empty.",
+          "stage1": {
+            "type": "situation",
+            "entities": [
+              {
+                "id": "hand three 5",
+                "type": "concrete",
+                "category": "artifact"
+              }
+            ]
+          },
+          "stage2": [
+            "@id",
+            "S10",
+            [
+              "holds",
+              "W0",
+              [
+                "has property",
+                "empty",
+                "hand three 5"
+              ]
+            ]
+          ],
+          "scope": "initial",
+          "syntax": "supported",
+          "compile": "supported",
+          "clauses": {}
+        }
+      ],
+      "entities_note": "hand three 5 is a distinct #: id, so differ(hand three, hand one) is generated; the 'unknown nonmatch' situation of A8.1 cannot arise between two #: ids under the unique-name policy; it arises for a hand introduced existentially",
+      "queries": [
+        {
+          "id": "Q3",
+          "text": "(formal)",
+          "stage2": [
+            "@id",
+            "Q3",
+            [
+              "question",
+              [
+                "executable",
+                [
+                  "take",
+                  "hand three 5",
+                  "a 3"
+                ]
+              ]
+            ]
+          ],
+          "view": "snapshot",
+          "expect": {
+            "answer": "Yes",
+            "evidence": "as Q2 of the base text: red(a) satisfies S7; differ(hand three 5, hand one 1) satisfies S8's nonmatch branch; hand three is empty (S10)"
+          },
+          "backend": [],
+          "replay": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "existential_hand",
+      "text": "There are two robot hands, hand one and hand two. Block a is on the table. Block a is clear. Block a is red. Block a is not dry. Both hands are empty. Some hand is empty. A block can be taken only if it is red. Hand one can take a block only if the block is dry.",
+      "units_add": [
+        {
+          "id": "S9",
+          "text": "Some hand is empty.",
+          "stage1": {
+            "type": "situation",
+            "entities": [
+              {
+                "id": "hand",
+                "type": "generic",
+                "category": "artifact"
+              }
+            ]
+          },
+          "stage2": [
+            "@id",
+            "S9",
+            [
+              "holds",
+              "W0",
+              [
+                "exists",
+                "H",
+                [
+                  "and",
+                  [
+                    "isa",
+                    "hand",
+                    "H"
+                  ],
+                  [
+                    "has property",
+                    "empty",
+                    "H"
+                  ]
+                ]
+              ]
+            ]
+          ],
+          "scope": "initial",
+          "syntax": "supported",
+          "compile": "supported",
+          "clauses": {}
+        }
+      ],
+      "queries": [
+        {
+          "id": "Q4",
+          "text": "(formal)",
+          "stage2": [
+            "@id",
+            "Q4",
+            [
+              "question",
+              [
+                "exists",
+                "H",
+                [
+                  "and",
+                  [
+                    "isa",
+                    "hand",
+                    "H"
+                  ],
+                  [
+                    "executable",
+                    [
+                      "take",
+                      "H",
+                      "a 3"
+                    ]
+                  ]
+                ]
+              ]
+            ]
+          ],
+          "view": "snapshot",
+          "expect": {
+            "answer": "Yes",
+            "evidence": "positive control: the witness is hand two 2, which satisfies S7 by red(a) and S8 by nonmatch. The Skolem hand of S9 is not needed. This variant does not test the anonymous hand; existential_hand_only does."
+          },
+          "backend": [],
+          "replay": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "existential_hand_only",
+      "text": "There is a robot hand, hand one. Block a is on the table. Block a is clear. Block a is red. Block a is not dry. Hand one is empty. A block can be taken only if it is red. Hand one can take a block only if the block is dry. Some hand is empty.",
+      "units_replace": [
+        {
+          "id": "S1",
+          "text": "There is a robot hand, hand one.",
+          "stage1": {
+            "type": "real",
+            "entities": [
+              {
+                "id": "hand one 1",
+                "type": "concrete",
+                "category": "artifact"
+              }
+            ]
+          },
+          "stage2": [
+            "@id",
+            "S1",
+            [
+              "holds",
+              "W0",
+              [
+                "isa",
+                "hand",
+                "hand one 1"
+              ]
+            ]
+          ],
+          "scope": "static",
+          "syntax": "supported",
+          "compile": "supported",
+          "clauses": {
+            "must_not_have": [
+              {
+                "role": "distinct",
+                "pairs": [
+                  [
+                    "sk_H",
+                    "hand one 1"
+                  ]
+                ],
+                "note": "the Skolem hand of S9 gets no differ fact with hand one (A4.3)"
+              }
+            ]
+          }
+        },
+        {
+          "id": "S6",
+          "text": "Hand one is empty.",
+          "stage1": {
+            "type": "situation",
+            "entities": [
+              {
+                "id": "hand one 1",
+                "type": "concrete",
+                "category": "artifact"
+              }
+            ]
+          },
+          "stage2": [
+            "@id",
+            "S6",
+            [
+              "holds",
+              "W0",
+              [
+                "has property",
+                "empty",
+                "hand one 1"
+              ]
+            ]
+          ],
+          "scope": "initial",
+          "syntax": "supported",
+          "compile": "supported"
+        }
+      ],
+      "units_add": [
+        {
+          "id": "S9",
+          "text": "Some hand is empty.",
+          "stage1": {
+            "type": "situation",
+            "entities": [
+              {
+                "id": "hand",
+                "type": "generic",
+                "category": "artifact"
+              }
+            ]
+          },
+          "stage2": [
+            "@id",
+            "S9",
+            [
+              "holds",
+              "W0",
+              [
+                "exists",
+                "H",
+                [
+                  "and",
+                  [
+                    "isa",
+                    "hand",
+                    "H"
+                  ],
+                  [
+                    "has property",
+                    "empty",
+                    "H"
+                  ]
+                ]
+              ]
+            ]
+          ],
+          "scope": "initial",
+          "syntax": "supported",
+          "compile": "supported"
+        }
+      ],
+      "queries": [
+        {
+          "id": "Q4",
+          "text": "(formal: can some hand take block a now?)",
+          "stage1_reading": "executable_question",
+          "stage2": [
+            "@id",
+            "Q4",
+            [
+              "question",
+              [
+                "exists",
+                "H",
+                [
+                  "and",
+                  [
+                    "isa",
+                    "hand",
+                    "H"
+                  ],
+                  [
+                    "executable",
+                    [
+                      "take",
+                      "H",
+                      "a 3"
+                    ]
+                  ]
+                ]
+              ]
+            ]
+          ],
+          "view": "snapshot",
+          "expect": {
+            "answer": "Unknown",
+            "forbidden_answers": [
+              "Yes",
+              "No"
+            ],
+            "evidence": "hand one fails S8 (-dry(a) at W0). The anonymous hand of S9 satisfies S7 (red) but not S8: dry(a) is false and differ(sk_H, hand one 1) is not available, because unknown nonmatch is not permission (A4.2). No positive witness, so not Yes. Not No: S8's necessity clause concerns hand one 1 only and the anonymous hand is not known to be hand one."
+          },
+          "backend": [],
+          "replay": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "class_scoped_hands",
+      "text": "There are two robot hands, hand one and hand two. Block a is on the table. Block a is clear. Block a is red. Block a is not dry. Both hands are empty. A hand can take a block only if the block is red. Hand one can take a block only if the block is dry.",
+      "units_replace": [
+        {
+          "id": "S7",
+          "text": "A hand can take a block only if the block is red.",
+          "stage1": {
+            "type": "strict_rule",
+            "entities": [
+              {
+                "id": "hand",
+                "type": "generic",
+                "category": "artifact"
+              }
+            ],
+            "actions": [
+              {
+                "root": "take",
+                "mode": "capability",
+                "roles": {
+                  "target": "block"
+                }
+              }
+            ],
+            "action_reading": "restriction"
+          },
+          "stage2": [
+            "@id",
+            "S7",
+            [
+              "holds",
+              "W0",
+              [
+                "forall",
+                "H",
+                [
+                  "forall",
+                  "X",
+                  [
+                    "implies",
+                    [
+                      "and",
+                      [
+                        "isa",
+                        "hand",
+                        "H"
+                      ],
+                      [
+                        "executable",
+                        [
+                          "take",
+                          "H",
+                          "X"
+                        ]
+                      ]
+                    ],
+                    [
+                      "has property",
+                      "red",
+                      "X"
+                    ]
+                  ]
+                ]
+              ]
+            ]
+          ],
+          "scope": "restriction",
+          "syntax": "supported",
+          "compile": "supported",
+          "clauses": {
+            "must_have": [
+              {
+                "role": "restriction_check",
+                "unit": "S7",
+                "constructor": "take",
+                "pattern": [
+                  "take",
+                  "H",
+                  "X"
+                ],
+                "condition": [
+                  {
+                    "lit": [
+                      "has property",
+                      "red",
+                      "X"
+                    ],
+                    "sign": "+",
+                    "situation": "shared_current"
+                  }
+                ],
+                "note": "the satisfied branch: the guard is not needed when the condition holds"
+              },
+              {
+                "role": "restriction_check",
+                "unit": "S7",
+                "constructor": "take",
+                "pattern": [
+                  "take",
+                  "H",
+                  "X"
+                ],
+                "condition": [
+                  {
+                    "lit": [
+                      "isa",
+                      "hand",
+                      "H"
+                    ],
+                    "sign": "-",
+                    "situation": "none"
+                  }
+                ],
+                "note": "the nonmatch branch needs an explicit negative class fact; an unknown class is not nonmatch (A4.2)"
+              },
+              {
+                "role": "necessity_restriction",
+                "unit": "S7",
+                "lit": [
+                  "poss",
+                  [
+                    "take",
+                    "H",
+                    "X"
+                  ]
+                ],
+                "sign": "-",
+                "situation": "shared_current",
+                "body": [
+                  {
+                    "lit": [
+                      "isa",
+                      "hand",
+                      "H"
+                    ],
+                    "sign": "+",
+                    "situation": "none"
+                  },
+                  {
+                    "lit": [
+                      "has property",
+                      "red",
+                      "X"
+                    ],
+                    "sign": "-",
+                    "situation": "shared_current"
+                  }
+                ],
+                "body_exact": true,
+                "note": "the guard stays in the negative clause"
+              },
+              {
+                "role": "path_coverage",
+                "constructor": "take",
+                "requires": [
+                  "S7",
+                  "S8"
+                ]
+              }
+            ],
+            "must_not_have": [
+              {
+                "role": "necessity_restriction",
+                "unit": "S7",
+                "lit": [
+                  "poss",
+                  [
+                    "take",
+                    "H",
+                    "X"
+                  ]
+                ],
+                "sign": "-",
+                "body": [
+                  {
+                    "lit": [
+                      "has property",
+                      "red",
+                      "X"
+                    ],
+                    "sign": "-",
+                    "situation": "shared_current"
+                  }
+                ],
+                "body_exact": true,
+                "note": "a necessity clause that dropped the hand guard would apply the hand-only restriction to every actor (REVIEW.md disposition 9)"
+              }
+            ]
+          }
+        }
+      ],
+      "queries": [
+        {
+          "id": "Q1",
+          "expect": {
+            "answer": "No",
+            "evidence": "S8 necessity clause with -dry(a) at W0; S7's guard holds for hand one but red is true, so S7 is not the reason"
+          }
+        },
+        {
+          "id": "Q2",
+          "expect": {
+            "answer": "Yes",
+            "evidence": "S7 satisfied through red(a); S8 through nonmatch differ(hand two 2, hand one 1)"
+          }
+        }
+      ]
+    },
+    {
+      "id": "class_scoped_robot_red",
+      "text": "There is a robot hand, hand one. Robo is a robot. Block a is on the table. Block a is clear. Block a is red. Block a is not dry. Hand one is empty. Robo holds nothing. Robo can take block a. A hand can take a block only if the block is red. Hand one can take a block only if the block is dry.",
+      "units": [
+        {
+          "id": "S1",
+          "text": "There is a robot hand, hand one.",
+          "stage1": {
+            "type": "real",
+            "entities": [
+              {
+                "id": "hand one 1",
+                "type": "concrete",
+                "category": "artifact"
+              }
+            ]
+          },
+          "stage2": [
+            "@id",
+            "S1",
+            [
+              "holds",
+              "W0",
+              [
+                "isa",
+                "hand",
+                "hand one 1"
+              ]
+            ]
+          ],
+          "scope": "static",
+          "syntax": "supported",
+          "compile": "supported"
+        },
+        {
+          "id": "S2",
+          "text": "Robo is a robot.",
+          "stage1": {
+            "type": "real",
+            "entities": [
+              {
+                "id": "Robo 6",
+                "type": "concrete",
+                "category": "artifact"
+              }
+            ]
+          },
+          "stage2": [
+            "@id",
+            "S2",
+            [
+              "holds",
+              "W0",
+              [
+                "isa",
+                "robot",
+                "Robo 6"
+              ]
+            ]
+          ],
+          "scope": "static",
+          "syntax": "supported",
+          "compile": "supported",
+          "clauses": {
+            "must_not_have": [
+              {
+                "role": "static",
+                "lit": [
+                  "isa",
+                  "hand",
+                  "Robo 6"
+                ],
+                "sign": "+"
+              },
+              {
+                "role": "static",
+                "lit": [
+                  "isa",
+                  "person",
+                  "Robo 6"
+                ],
+                "sign": "+"
+              }
+            ]
+          }
+        },
+        {
+          "id": "S3",
+          "text": "Block a is on the table.",
+          "stage1": {
+            "type": "situation",
+            "entities": [
+              {
+                "id": "a 3",
+                "type": "concrete",
+                "category": "artifact"
+              },
+              {
+                "id": "table 4",
+                "type": "concrete",
+                "category": "artifact"
+              }
+            ]
+          },
+          "stage2": [
+            "@id",
+            "S3",
+            [
+              "holds",
+              "W0",
+              [
+                "and",
+                [
+                  "isa",
+                  "block",
+                  "a 3"
+                ],
+                [
+                  "isa",
+                  "table",
+                  "table 4"
+                ],
+                [
+                  "is rel2",
+                  "on",
+                  "a 3",
+                  "table 4"
+                ]
+              ]
+            ]
+          ],
+          "scope": "initial",
+          "syntax": "supported",
+          "compile": "supported"
+        },
+        {
+          "id": "S4",
+          "text": "Block a is clear.",
+          "stage1": {
+            "type": "situation",
+            "entities": [
+              {
+                "id": "a 3",
+                "type": "concrete",
+                "category": "artifact"
+              }
+            ]
+          },
+          "stage2": [
+            "@id",
+            "S4",
+            [
+              "holds",
+              "W0",
+              [
+                "has property",
+                "clear_top",
+                "a 3"
+              ]
+            ]
+          ],
+          "scope": "initial",
+          "syntax": "supported",
+          "compile": "supported"
+        },
+        {
+          "id": "S5",
+          "text": "Block a is red.",
+          "stage1": {
+            "type": "situation",
+            "entities": [
+              {
+                "id": "a 3",
+                "type": "concrete",
+                "category": "artifact"
+              }
+            ]
+          },
+          "stage2": [
+            "@id",
+            "S5",
+            [
+              "holds",
+              "W0",
+              [
+                "has property",
+                "red",
+                "a 3"
+              ]
+            ]
+          ],
+          "scope": "initial",
+          "syntax": "supported",
+          "compile": "supported"
+        },
+        {
+          "id": "S6",
+          "text": "Block a is not dry.",
+          "stage1": {
+            "type": "situation",
+            "entities": [
+              {
+                "id": "a 3",
+                "type": "concrete",
+                "category": "artifact"
+              }
+            ]
+          },
+          "stage2": [
+            "@id",
+            "S6",
+            [
+              "holds",
+              "W0",
+              [
+                "not",
+                [
+                  "has property",
+                  "dry",
+                  "a 3"
+                ]
+              ]
+            ]
+          ],
+          "scope": "initial",
+          "syntax": "supported",
+          "compile": "supported"
+        },
+        {
+          "id": "S7",
+          "text": "Hand one is empty.",
+          "stage1": {
+            "type": "situation",
+            "entities": [
+              {
+                "id": "hand one 1",
+                "type": "concrete",
+                "category": "artifact"
+              }
+            ]
+          },
+          "stage2": [
+            "@id",
+            "S7",
+            [
+              "holds",
+              "W0",
+              [
+                "has property",
+                "empty",
+                "hand one 1"
+              ]
+            ]
+          ],
+          "scope": "initial",
+          "syntax": "supported",
+          "compile": "supported"
+        },
+        {
+          "id": "S8",
+          "text": "Robo holds nothing.",
+          "stage1": {
+            "type": "situation",
+            "entities": [
+              {
+                "id": "Robo 6",
+                "type": "concrete",
+                "category": "artifact"
+              }
+            ]
+          },
+          "stage2": [
+            "@id",
+            "S8",
+            [
+              "holds",
+              "W0",
+              [
+                "has property",
+                "empty",
+                "Robo 6"
+              ]
+            ]
+          ],
+          "scope": "initial",
+          "syntax": "supported",
+          "compile": "supported",
+          "note": "the reserved value empty is the library's take precondition for any actor (A2.2)"
+        },
+        {
+          "id": "S9",
+          "text": "Robo can take block a.",
+          "stage1": {
+            "type": "situation",
+            "entities": [
+              {
+                "id": "Robo 6",
+                "type": "concrete",
+                "category": "artifact"
+              },
+              {
+                "id": "a 3",
+                "type": "concrete",
+                "category": "artifact"
+              }
+            ],
+            "actions": [
+              {
+                "root": "take",
+                "mode": "capability",
+                "roles": {
+                  "target": "a 3"
+                }
+              }
+            ],
+            "action_reading": "availability"
+          },
+          "stage2": [
+            "@id",
+            "S9",
+            [
+              "holds",
+              "W0",
+              [
+                "can",
+                "Robo 6",
+                [
+                  "take",
+                  "Robo 6",
+                  "a 3"
+                ]
+              ]
+            ]
+          ],
+          "scope": "availability",
+          "syntax": "supported",
+          "compile": "supported",
+          "clauses": {
+            "must_have": [
+              {
+                "role": "availability",
+                "unit": "S9",
+                "lit": [
+                  "poss",
+                  [
+                    "take",
+                    "Robo 6",
+                    "a 3"
+                  ]
+                ],
+                "sign": "+",
+                "situation": "shared_current"
+              }
+            ]
+          }
+        },
+        {
+          "id": "S10",
+          "text": "A hand can take a block only if the block is red.",
+          "stage1": {
+            "type": "strict_rule",
+            "entities": [
+              {
+                "id": "hand",
+                "type": "generic",
+                "category": "artifact"
+              }
+            ],
+            "actions": [
+              {
+                "root": "take",
+                "mode": "capability",
+                "roles": {
+                  "target": "block"
+                }
+              }
+            ],
+            "action_reading": "restriction"
+          },
+          "stage2": [
+            "@id",
+            "S10",
+            [
+              "holds",
+              "W0",
+              [
+                "forall",
+                "H",
+                [
+                  "forall",
+                  "X",
+                  [
+                    "implies",
+                    [
+                      "and",
+                      [
+                        "isa",
+                        "hand",
+                        "H"
+                      ],
+                      [
+                        "executable",
+                        [
+                          "take",
+                          "H",
+                          "X"
+                        ]
+                      ]
+                    ],
+                    [
+                      "has property",
+                      "red",
+                      "X"
+                    ]
+                  ]
+                ]
+              ]
+            ]
+          ],
+          "scope": "restriction",
+          "syntax": "supported",
+          "compile": "supported"
+        },
+        {
+          "id": "S11",
+          "text": "Hand one can take a block only if the block is dry.",
+          "stage1": {
+            "type": "strict_rule",
+            "entities": [
+              {
+                "id": "hand one 1",
+                "type": "concrete",
+                "category": "artifact"
+              }
+            ],
+            "actions": [
+              {
+                "root": "take",
+                "mode": "capability",
+                "roles": {
+                  "target": "block"
+                }
+              }
+            ],
+            "action_reading": "restriction"
+          },
+          "stage2": [
+            "@id",
+            "S11",
+            [
+              "holds",
+              "W0",
+              [
+                "forall",
+                "X",
+                [
+                  "implies",
+                  [
+                    "executable",
+                    [
+                      "take",
+                      "hand one 1",
+                      "X"
+                    ]
+                  ],
+                  [
+                    "has property",
+                    "dry",
+                    "X"
+                  ]
+                ]
+              ]
+            ]
+          ],
+          "scope": "restriction",
+          "syntax": "supported",
+          "compile": "supported"
+        }
+      ],
+      "queries": [
+        {
+          "id": "Q5",
+          "text": "Can Robo take block a now?",
+          "stage1_reading": "executable_question",
+          "stage2": [
+            "@id",
+            "Q5",
+            [
+              "question",
+              [
+                "executable",
+                [
+                  "take",
+                  "Robo 6",
+                  "a 3"
+                ]
+              ]
+            ]
+          ],
+          "view": "snapshot",
+          "expect": {
+            "answer": "Yes",
+            "evidence": "S9's path for take(Robo,a) (template tpl_take; no library default for a robot) with its physical preconditions at W0: isa block a, empty(Robo), clear_top(a), on(a,table); S10's check is satisfied through red(a), whatever Robo's class; S11's check through differ(Robo 6, hand one 1). The hand-only restriction does not reach Robo."
+          },
+          "backend": [],
+          "replay": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "class_scoped_robot_not_red",
+      "text": "There is a robot hand, hand one. Robo is a robot. Block a is on the table. Block a is clear. Block a is not red. Block a is not dry. Hand one is empty. Robo holds nothing. Robo can take block a. A hand can take a block only if the block is red. Hand one can take a block only if the block is dry.",
+      "units": [
+        {
+          "id": "S1",
+          "text": "There is a robot hand, hand one.",
+          "stage1": {
+            "type": "real",
+            "entities": [
+              {
+                "id": "hand one 1",
+                "type": "concrete",
+                "category": "artifact"
+              }
+            ]
+          },
+          "stage2": [
+            "@id",
+            "S1",
+            [
+              "holds",
+              "W0",
+              [
+                "isa",
+                "hand",
+                "hand one 1"
+              ]
+            ]
+          ],
+          "scope": "static",
+          "syntax": "supported",
+          "compile": "supported"
+        },
+        {
+          "id": "S2",
+          "text": "Robo is a robot.",
+          "stage1": {
+            "type": "real",
+            "entities": [
+              {
+                "id": "Robo 6",
+                "type": "concrete",
+                "category": "artifact"
+              }
+            ]
+          },
+          "stage2": [
+            "@id",
+            "S2",
+            [
+              "holds",
+              "W0",
+              [
+                "isa",
+                "robot",
+                "Robo 6"
+              ]
+            ]
+          ],
+          "scope": "static",
+          "syntax": "supported",
+          "compile": "supported",
+          "clauses": {
+            "must_not_have": [
+              {
+                "role": "static",
+                "lit": [
+                  "isa",
+                  "hand",
+                  "Robo 6"
+                ],
+                "sign": "+"
+              },
+              {
+                "role": "static",
+                "lit": [
+                  "isa",
+                  "person",
+                  "Robo 6"
+                ],
+                "sign": "+"
+              }
+            ]
+          }
+        },
+        {
+          "id": "S3",
+          "text": "Block a is on the table.",
+          "stage1": {
+            "type": "situation",
+            "entities": [
+              {
+                "id": "a 3",
+                "type": "concrete",
+                "category": "artifact"
+              },
+              {
+                "id": "table 4",
+                "type": "concrete",
+                "category": "artifact"
+              }
+            ]
+          },
+          "stage2": [
+            "@id",
+            "S3",
+            [
+              "holds",
+              "W0",
+              [
+                "and",
+                [
+                  "isa",
+                  "block",
+                  "a 3"
+                ],
+                [
+                  "isa",
+                  "table",
+                  "table 4"
+                ],
+                [
+                  "is rel2",
+                  "on",
+                  "a 3",
+                  "table 4"
+                ]
+              ]
+            ]
+          ],
+          "scope": "initial",
+          "syntax": "supported",
+          "compile": "supported"
+        },
+        {
+          "id": "S4",
+          "text": "Block a is clear.",
+          "stage1": {
+            "type": "situation",
+            "entities": [
+              {
+                "id": "a 3",
+                "type": "concrete",
+                "category": "artifact"
+              }
+            ]
+          },
+          "stage2": [
+            "@id",
+            "S4",
+            [
+              "holds",
+              "W0",
+              [
+                "has property",
+                "clear_top",
+                "a 3"
+              ]
+            ]
+          ],
+          "scope": "initial",
+          "syntax": "supported",
+          "compile": "supported"
+        },
+        {
+          "id": "S5",
+          "text": "Block a is not red.",
+          "stage1": {
+            "type": "situation",
+            "entities": [
+              {
+                "id": "a 3",
+                "type": "concrete",
+                "category": "artifact"
+              }
+            ]
+          },
+          "stage2": [
+            "@id",
+            "S5",
+            [
+              "holds",
+              "W0",
+              [
+                "not",
+                [
+                  "has property",
+                  "red",
+                  "a 3"
+                ]
+              ]
+            ]
+          ],
+          "scope": "initial",
+          "syntax": "supported",
+          "compile": "supported"
+        },
+        {
+          "id": "S6",
+          "text": "Block a is not dry.",
+          "stage1": {
+            "type": "situation",
+            "entities": [
+              {
+                "id": "a 3",
+                "type": "concrete",
+                "category": "artifact"
+              }
+            ]
+          },
+          "stage2": [
+            "@id",
+            "S6",
+            [
+              "holds",
+              "W0",
+              [
+                "not",
+                [
+                  "has property",
+                  "dry",
+                  "a 3"
+                ]
+              ]
+            ]
+          ],
+          "scope": "initial",
+          "syntax": "supported",
+          "compile": "supported"
+        },
+        {
+          "id": "S7",
+          "text": "Hand one is empty.",
+          "stage1": {
+            "type": "situation",
+            "entities": [
+              {
+                "id": "hand one 1",
+                "type": "concrete",
+                "category": "artifact"
+              }
+            ]
+          },
+          "stage2": [
+            "@id",
+            "S7",
+            [
+              "holds",
+              "W0",
+              [
+                "has property",
+                "empty",
+                "hand one 1"
+              ]
+            ]
+          ],
+          "scope": "initial",
+          "syntax": "supported",
+          "compile": "supported"
+        },
+        {
+          "id": "S8",
+          "text": "Robo holds nothing.",
+          "stage1": {
+            "type": "situation",
+            "entities": [
+              {
+                "id": "Robo 6",
+                "type": "concrete",
+                "category": "artifact"
+              }
+            ]
+          },
+          "stage2": [
+            "@id",
+            "S8",
+            [
+              "holds",
+              "W0",
+              [
+                "has property",
+                "empty",
+                "Robo 6"
+              ]
+            ]
+          ],
+          "scope": "initial",
+          "syntax": "supported",
+          "compile": "supported",
+          "note": "the reserved value empty is the library's take precondition for any actor (A2.2)"
+        },
+        {
+          "id": "S9",
+          "text": "Robo can take block a.",
+          "stage1": {
+            "type": "situation",
+            "entities": [
+              {
+                "id": "Robo 6",
+                "type": "concrete",
+                "category": "artifact"
+              },
+              {
+                "id": "a 3",
+                "type": "concrete",
+                "category": "artifact"
+              }
+            ],
+            "actions": [
+              {
+                "root": "take",
+                "mode": "capability",
+                "roles": {
+                  "target": "a 3"
+                }
+              }
+            ],
+            "action_reading": "availability"
+          },
+          "stage2": [
+            "@id",
+            "S9",
+            [
+              "holds",
+              "W0",
+              [
+                "can",
+                "Robo 6",
+                [
+                  "take",
+                  "Robo 6",
+                  "a 3"
+                ]
+              ]
+            ]
+          ],
+          "scope": "availability",
+          "syntax": "supported",
+          "compile": "supported",
+          "clauses": {
+            "must_have": [
+              {
+                "role": "availability",
+                "unit": "S9",
+                "lit": [
+                  "poss",
+                  [
+                    "take",
+                    "Robo 6",
+                    "a 3"
+                  ]
+                ],
+                "sign": "+",
+                "situation": "shared_current"
+              }
+            ]
+          }
+        },
+        {
+          "id": "S10",
+          "text": "A hand can take a block only if the block is red.",
+          "stage1": {
+            "type": "strict_rule",
+            "entities": [
+              {
+                "id": "hand",
+                "type": "generic",
+                "category": "artifact"
+              }
+            ],
+            "actions": [
+              {
+                "root": "take",
+                "mode": "capability",
+                "roles": {
+                  "target": "block"
+                }
+              }
+            ],
+            "action_reading": "restriction"
+          },
+          "stage2": [
+            "@id",
+            "S10",
+            [
+              "holds",
+              "W0",
+              [
+                "forall",
+                "H",
+                [
+                  "forall",
+                  "X",
+                  [
+                    "implies",
+                    [
+                      "and",
+                      [
+                        "isa",
+                        "hand",
+                        "H"
+                      ],
+                      [
+                        "executable",
+                        [
+                          "take",
+                          "H",
+                          "X"
+                        ]
+                      ]
+                    ],
+                    [
+                      "has property",
+                      "red",
+                      "X"
+                    ]
+                  ]
+                ]
+              ]
+            ]
+          ],
+          "scope": "restriction",
+          "syntax": "supported",
+          "compile": "supported"
+        },
+        {
+          "id": "S11",
+          "text": "Hand one can take a block only if the block is dry.",
+          "stage1": {
+            "type": "strict_rule",
+            "entities": [
+              {
+                "id": "hand one 1",
+                "type": "concrete",
+                "category": "artifact"
+              }
+            ],
+            "actions": [
+              {
+                "root": "take",
+                "mode": "capability",
+                "roles": {
+                  "target": "block"
+                }
+              }
+            ],
+            "action_reading": "restriction"
+          },
+          "stage2": [
+            "@id",
+            "S11",
+            [
+              "holds",
+              "W0",
+              [
+                "forall",
+                "X",
+                [
+                  "implies",
+                  [
+                    "executable",
+                    [
+                      "take",
+                      "hand one 1",
+                      "X"
+                    ]
+                  ],
+                  [
+                    "has property",
+                    "dry",
+                    "X"
+                  ]
+                ]
+              ]
+            ]
+          ],
+          "scope": "restriction",
+          "syntax": "supported",
+          "compile": "supported"
+        }
+      ],
+      "queries": [
+        {
+          "id": "Q5",
+          "text": "Can Robo take block a now?",
+          "stage1_reading": "executable_question",
+          "stage2": [
+            "@id",
+            "Q5",
+            [
+              "question",
+              [
+                "executable",
+                [
+                  "take",
+                  "Robo 6",
+                  "a 3"
+                ]
+              ]
+            ]
+          ],
+          "view": "snapshot",
+          "expect": {
+            "answer": "Unknown",
+            "forbidden_answers": [
+              "Yes",
+              "No"
+            ],
+            "evidence": "S10's satisfied branch needs red(a): false. Its nonmatch branch needs -isa(hand,Robo): not stated. Its necessity clause needs isa(hand,Robo): not stated either. No positive path and no negative proof: Unknown. A No here would apply the hand-only restriction to an actor of unknown class; a Yes would treat unknown class membership as nonmatch (A4.2)."
+          },
+          "backend": [],
+          "replay": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "class_scoped_robot_declared",
+      "text": "There is a robot hand, hand one. Robo is a robot. Block a is on the table. Block a is clear. Block a is not red. Block a is not dry. Hand one is empty. Robo holds nothing. Robo can take block a. A hand can take a block only if the block is red. Hand one can take a block only if the block is dry. Robo is not a hand.",
+      "units": [
+        {
+          "id": "S1",
+          "text": "There is a robot hand, hand one.",
+          "stage1": {
+            "type": "real",
+            "entities": [
+              {
+                "id": "hand one 1",
+                "type": "concrete",
+                "category": "artifact"
+              }
+            ]
+          },
+          "stage2": [
+            "@id",
+            "S1",
+            [
+              "holds",
+              "W0",
+              [
+                "isa",
+                "hand",
+                "hand one 1"
+              ]
+            ]
+          ],
+          "scope": "static",
+          "syntax": "supported",
+          "compile": "supported"
+        },
+        {
+          "id": "S2",
+          "text": "Robo is a robot.",
+          "stage1": {
+            "type": "real",
+            "entities": [
+              {
+                "id": "Robo 6",
+                "type": "concrete",
+                "category": "artifact"
+              }
+            ]
+          },
+          "stage2": [
+            "@id",
+            "S2",
+            [
+              "holds",
+              "W0",
+              [
+                "isa",
+                "robot",
+                "Robo 6"
+              ]
+            ]
+          ],
+          "scope": "static",
+          "syntax": "supported",
+          "compile": "supported",
+          "clauses": {
+            "must_not_have": [
+              {
+                "role": "static",
+                "lit": [
+                  "isa",
+                  "hand",
+                  "Robo 6"
+                ],
+                "sign": "+"
+              },
+              {
+                "role": "static",
+                "lit": [
+                  "isa",
+                  "person",
+                  "Robo 6"
+                ],
+                "sign": "+"
+              }
+            ]
+          }
+        },
+        {
+          "id": "S3",
+          "text": "Block a is on the table.",
+          "stage1": {
+            "type": "situation",
+            "entities": [
+              {
+                "id": "a 3",
+                "type": "concrete",
+                "category": "artifact"
+              },
+              {
+                "id": "table 4",
+                "type": "concrete",
+                "category": "artifact"
+              }
+            ]
+          },
+          "stage2": [
+            "@id",
+            "S3",
+            [
+              "holds",
+              "W0",
+              [
+                "and",
+                [
+                  "isa",
+                  "block",
+                  "a 3"
+                ],
+                [
+                  "isa",
+                  "table",
+                  "table 4"
+                ],
+                [
+                  "is rel2",
+                  "on",
+                  "a 3",
+                  "table 4"
+                ]
+              ]
+            ]
+          ],
+          "scope": "initial",
+          "syntax": "supported",
+          "compile": "supported"
+        },
+        {
+          "id": "S4",
+          "text": "Block a is clear.",
+          "stage1": {
+            "type": "situation",
+            "entities": [
+              {
+                "id": "a 3",
+                "type": "concrete",
+                "category": "artifact"
+              }
+            ]
+          },
+          "stage2": [
+            "@id",
+            "S4",
+            [
+              "holds",
+              "W0",
+              [
+                "has property",
+                "clear_top",
+                "a 3"
+              ]
+            ]
+          ],
+          "scope": "initial",
+          "syntax": "supported",
+          "compile": "supported"
+        },
+        {
+          "id": "S5",
+          "text": "Block a is not red.",
+          "stage1": {
+            "type": "situation",
+            "entities": [
+              {
+                "id": "a 3",
+                "type": "concrete",
+                "category": "artifact"
+              }
+            ]
+          },
+          "stage2": [
+            "@id",
+            "S5",
+            [
+              "holds",
+              "W0",
+              [
+                "not",
+                [
+                  "has property",
+                  "red",
+                  "a 3"
+                ]
+              ]
+            ]
+          ],
+          "scope": "initial",
+          "syntax": "supported",
+          "compile": "supported"
+        },
+        {
+          "id": "S6",
+          "text": "Block a is not dry.",
+          "stage1": {
+            "type": "situation",
+            "entities": [
+              {
+                "id": "a 3",
+                "type": "concrete",
+                "category": "artifact"
+              }
+            ]
+          },
+          "stage2": [
+            "@id",
+            "S6",
+            [
+              "holds",
+              "W0",
+              [
+                "not",
+                [
+                  "has property",
+                  "dry",
+                  "a 3"
+                ]
+              ]
+            ]
+          ],
+          "scope": "initial",
+          "syntax": "supported",
+          "compile": "supported"
+        },
+        {
+          "id": "S7",
+          "text": "Hand one is empty.",
+          "stage1": {
+            "type": "situation",
+            "entities": [
+              {
+                "id": "hand one 1",
+                "type": "concrete",
+                "category": "artifact"
+              }
+            ]
+          },
+          "stage2": [
+            "@id",
+            "S7",
+            [
+              "holds",
+              "W0",
+              [
+                "has property",
+                "empty",
+                "hand one 1"
+              ]
+            ]
+          ],
+          "scope": "initial",
+          "syntax": "supported",
+          "compile": "supported"
+        },
+        {
+          "id": "S8",
+          "text": "Robo holds nothing.",
+          "stage1": {
+            "type": "situation",
+            "entities": [
+              {
+                "id": "Robo 6",
+                "type": "concrete",
+                "category": "artifact"
+              }
+            ]
+          },
+          "stage2": [
+            "@id",
+            "S8",
+            [
+              "holds",
+              "W0",
+              [
+                "has property",
+                "empty",
+                "Robo 6"
+              ]
+            ]
+          ],
+          "scope": "initial",
+          "syntax": "supported",
+          "compile": "supported",
+          "note": "the reserved value empty is the library's take precondition for any actor (A2.2)"
+        },
+        {
+          "id": "S9",
+          "text": "Robo can take block a.",
+          "stage1": {
+            "type": "situation",
+            "entities": [
+              {
+                "id": "Robo 6",
+                "type": "concrete",
+                "category": "artifact"
+              },
+              {
+                "id": "a 3",
+                "type": "concrete",
+                "category": "artifact"
+              }
+            ],
+            "actions": [
+              {
+                "root": "take",
+                "mode": "capability",
+                "roles": {
+                  "target": "a 3"
+                }
+              }
+            ],
+            "action_reading": "availability"
+          },
+          "stage2": [
+            "@id",
+            "S9",
+            [
+              "holds",
+              "W0",
+              [
+                "can",
+                "Robo 6",
+                [
+                  "take",
+                  "Robo 6",
+                  "a 3"
+                ]
+              ]
+            ]
+          ],
+          "scope": "availability",
+          "syntax": "supported",
+          "compile": "supported",
+          "clauses": {
+            "must_have": [
+              {
+                "role": "availability",
+                "unit": "S9",
+                "lit": [
+                  "poss",
+                  [
+                    "take",
+                    "Robo 6",
+                    "a 3"
+                  ]
+                ],
+                "sign": "+",
+                "situation": "shared_current"
+              }
+            ]
+          }
+        },
+        {
+          "id": "S10",
+          "text": "A hand can take a block only if the block is red.",
+          "stage1": {
+            "type": "strict_rule",
+            "entities": [
+              {
+                "id": "hand",
+                "type": "generic",
+                "category": "artifact"
+              }
+            ],
+            "actions": [
+              {
+                "root": "take",
+                "mode": "capability",
+                "roles": {
+                  "target": "block"
+                }
+              }
+            ],
+            "action_reading": "restriction"
+          },
+          "stage2": [
+            "@id",
+            "S10",
+            [
+              "holds",
+              "W0",
+              [
+                "forall",
+                "H",
+                [
+                  "forall",
+                  "X",
+                  [
+                    "implies",
+                    [
+                      "and",
+                      [
+                        "isa",
+                        "hand",
+                        "H"
+                      ],
+                      [
+                        "executable",
+                        [
+                          "take",
+                          "H",
+                          "X"
+                        ]
+                      ]
+                    ],
+                    [
+                      "has property",
+                      "red",
+                      "X"
+                    ]
+                  ]
+                ]
+              ]
+            ]
+          ],
+          "scope": "restriction",
+          "syntax": "supported",
+          "compile": "supported"
+        },
+        {
+          "id": "S11",
+          "text": "Hand one can take a block only if the block is dry.",
+          "stage1": {
+            "type": "strict_rule",
+            "entities": [
+              {
+                "id": "hand one 1",
+                "type": "concrete",
+                "category": "artifact"
+              }
+            ],
+            "actions": [
+              {
+                "root": "take",
+                "mode": "capability",
+                "roles": {
+                  "target": "block"
+                }
+              }
+            ],
+            "action_reading": "restriction"
+          },
+          "stage2": [
+            "@id",
+            "S11",
+            [
+              "holds",
+              "W0",
+              [
+                "forall",
+                "X",
+                [
+                  "implies",
+                  [
+                    "executable",
+                    [
+                      "take",
+                      "hand one 1",
+                      "X"
+                    ]
+                  ],
+                  [
+                    "has property",
+                    "dry",
+                    "X"
+                  ]
+                ]
+              ]
+            ]
+          ],
+          "scope": "restriction",
+          "syntax": "supported",
+          "compile": "supported"
+        },
+        {
+          "id": "S12",
+          "text": "Robo is not a hand.",
+          "stage1": {
+            "type": "real",
+            "entities": [
+              {
+                "id": "Robo 6",
+                "type": "concrete",
+                "category": "artifact"
+              }
+            ]
+          },
+          "stage2": [
+            "@id",
+            "S12",
+            [
+              "holds",
+              "W0",
+              [
+                "not",
+                [
+                  "isa",
+                  "hand",
+                  "Robo 6"
+                ]
+              ]
+            ]
+          ],
+          "scope": "static",
+          "syntax": "supported",
+          "compile": "supported",
+          "clauses": {
+            "must_have": [
+              {
+                "role": "static",
+                "unit": "S12",
+                "lit": [
+                  "isa",
+                  "hand",
+                  "Robo 6"
+                ],
+                "sign": "-",
+                "situation": "none"
+              }
+            ]
+          }
+        }
+      ],
+      "queries": [
+        {
+          "id": "Q5",
+          "text": "Can Robo take block a now?",
+          "stage1_reading": "executable_question",
+          "stage2": [
+            "@id",
+            "Q5",
+            [
+              "question",
+              [
+                "executable",
+                [
+                  "take",
+                  "Robo 6",
+                  "a 3"
+                ]
+              ]
+            ]
+          ],
+          "view": "snapshot",
+          "expect": {
+            "answer": "Yes",
+            "evidence": "with -isa(hand,Robo) explicit, S10's nonmatch branch applies; S11 by differ; S9's path gives poss; physical preconditions at W0. Red is false and does not matter for a non-hand."
+          },
+          "backend": [],
+          "replay": "n/a"
+        }
+      ]
+    }
+  ],
+  "candidates": [
+    {
+      "id": "K1",
+      "sequence": [
+        [
+          "take",
+          "hand two 2",
+          "a 3"
+        ]
+      ],
+      "states": [
+        {
+          "after": 0,
+          "facts": [
+            "+red(a)",
+            "-dry(a)",
+            "+empty(hand two)",
+            "+empty(hand one)",
+            "+clear_top(a)",
+            "+on(a,table)"
+          ]
+        },
+        {
+          "after": 1,
+          "facts": [
+            "+holding(hand two,a)",
+            "-empty(hand two)",
+            "-on(a,table)",
+            "+empty(hand one)",
+            "+red(a)",
+            "-dry(a)"
+          ]
+        }
+      ],
+      "verdict": "valid",
+      "reason": "hand two needs red only (S7); S8 passes by nonmatch"
+    },
+    {
+      "id": "K2",
+      "sequence": [
+        [
+          "take",
+          "hand one 1",
+          "a 3"
+        ]
+      ],
+      "states": [
+        {
+          "after": 0,
+          "facts": [
+            "+red(a)",
+            "-dry(a)"
+          ]
+        }
+      ],
+      "verdict": "invalid",
+      "step": 1,
+      "reason": "S8 explicitly false"
+    },
+    {
+      "id": "K3",
+      "variant": "class_scoped_robot_red",
+      "sequence": [
+        [
+          "take",
+          "Robo 6",
+          "a 3"
+        ]
+      ],
+      "states": [
+        {
+          "after": 0,
+          "facts": [
+            "+red(a)",
+            "-dry(a)",
+            "+empty(Robo)",
+            "+clear_top(a)",
+            "+on(a,table)"
+          ]
+        },
+        {
+          "after": 1,
+          "facts": [
+            "+holding(Robo,a)",
+            "-empty(Robo)",
+            "-on(a,table)",
+            "+red(a)"
+          ]
+        }
+      ],
+      "verdict": "valid",
+      "reason": "S10 satisfied by red(a); S11 by nonmatch; permission from S9"
+    },
+    {
+      "id": "K4",
+      "variant": "class_scoped_robot_not_red",
+      "sequence": [
+        [
+          "take",
+          "Robo 6",
+          "a 3"
+        ]
+      ],
+      "states": [
+        {
+          "after": 0,
+          "facts": [
+            "-red(a)",
+            "+empty(Robo)"
+          ]
+        }
+      ],
+      "verdict": "invalid",
+      "step": 1,
+      "reason": "not validated: S10's condition is false and Robo's class membership is unknown, so neither branch has positive support (A5.1). A validation failure, not a proof of impossibility."
+    }
+  ],
+  "support": {
+    "syntax": "supported",
+    "compile": "supported",
+    "backend_requirements": [],
+    "replay_fragment": "covered: two restrictions on one constructor; class-scoped restriction with explicit guard; anonymous hand"
+  },
+  "explain": "A4.2's worked example as a fixture. The base text has two unscoped restrictions on take: one for every taker (S7) and one for hand one (S8). The structural expectation that matters most is one ok_take hook requiring both restriction checks, with S8 satisfied for other hands only through an explicit differ(H, hand one) branch. The class_scoped_* variants test the guarded form 'A hand can take a block only if the block is red' separately (REVIEW.md disposition 9): the guard stays in the negative clause, the check is satisfied by the condition or by an explicit negative class fact, and an actor of unknown class gets neither the restriction nor a free pass: Robo with a red block is Yes, Robo with a non-red block is Unknown, and Robo declared not a hand is Yes. existential_hand is a positive control whose witness is hand two; existential_hand_only is the unknown-nonmatch row of A8.1: with hand one as the only named hand, the anonymous hand of 'some hand is empty' passes S8 neither by dryness nor by identity, and the existential question is Unknown.",
+  "notes": "Companion c05b_put_on_branches covers the two put_on paths. Amended 2026-09-11 after the independent review (R2): the general restriction lost its hand guard by mistake in the first version; the guarded form now has its own variants. Amended 2026-09-20 (WP04: the forbidden class facts about Robo are positive facts; sign added)."
+}

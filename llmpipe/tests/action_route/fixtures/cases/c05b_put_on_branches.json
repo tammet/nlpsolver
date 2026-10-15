@@ -1,0 +1,46 @@
+{
+  "id": "c05b_put_on_branches",
+  "purpose": "a put_on restriction is checked on the block-target branch and on the surface branch; failure of the block branch's clearance does not refute the surface branch",
+  "contract": ["C05", "A4.2"],
+  "family": ["Restriction composition"],
+  "input_kind": "text",
+  "text": "There is a robot hand. Block a and block b are blocks. The hand holds block a. Block b is on the table. Block b is clear. Block a is not dry. The hand can put a block on something only if the block is dry.",
+  "profile": "physical_v1",
+  "entities": {"hand 1": "hand", "a 2": "block", "b 3": "block", "table 4": "table"},
+  "units": [
+    {"id": "S1", "text": "There is a robot hand.", "stage1": {"type": "real", "entities": [{"id": "hand 1", "type": "concrete", "category": "artifact"}]}, "stage2": ["@id", "S1", ["holds", "W0", ["isa", "hand", "hand 1"]]], "scope": "static", "syntax": "supported", "compile": "supported", "clauses": {}},
+    {"id": "S2", "text": "Block a and block b are blocks.", "stage1": {"type": "real", "entities": [{"id": "a 2", "type": "concrete", "category": "artifact"}, {"id": "b 3", "type": "concrete", "category": "artifact"}]}, "stage2": ["@id", "S2", ["holds", "W0", ["and", ["isa", "block", "a 2"], ["isa", "block", "b 3"]]]], "scope": "static", "syntax": "supported", "compile": "supported", "clauses": {}},
+    {"id": "S3", "text": "The hand holds block a.", "stage1": {"type": "situation", "entities": [{"id": "hand 1", "type": "concrete", "category": "artifact"}, {"id": "a 2", "type": "concrete", "category": "artifact"}]}, "stage2": ["@id", "S3", ["holds", "W0", ["is rel2", "holding", "hand 1", "a 2"]]], "scope": "initial", "syntax": "supported", "compile": "supported", "clauses": {}},
+    {"id": "S4", "text": "Block b is on the table.", "stage1": {"type": "situation", "entities": [{"id": "table 4", "type": "concrete", "category": "artifact"}, {"id": "b 3", "type": "concrete", "category": "artifact"}]}, "stage2": ["@id", "S4", ["holds", "W0", ["and", ["isa", "table", "table 4"], ["is rel2", "on", "b 3", "table 4"]]]], "scope": "initial", "syntax": "supported", "compile": "supported", "clauses": {}},
+    {"id": "S5", "text": "Block b is clear.", "stage1": {"type": "situation", "entities": [{"id": "b 3", "type": "concrete", "category": "artifact"}]}, "stage2": ["@id", "S5", ["holds", "W0", ["has property", "clear_top", "b 3"]]], "scope": "initial", "syntax": "supported", "compile": "supported", "clauses": {}},
+    {"id": "S6", "text": "Block a is not dry.", "stage1": {"type": "situation", "entities": [{"id": "a 2", "type": "concrete", "category": "artifact"}]}, "stage2": ["@id", "S6", ["holds", "W0", ["not", ["has property", "dry", "a 2"]]]], "scope": "initial", "syntax": "supported", "compile": "supported", "clauses": {}},
+    {"id": "S7", "text": "The hand can put a block on something only if the block is dry.", "stage1": {"type": "strict_rule", "entities": [{"id": "hand 1", "type": "concrete", "category": "artifact"}, {"id": "block", "type": "generic", "category": "artifact"}], "actions": [{"root": "put", "mode": "capability", "roles": {"actor": "hand 1", "target": "block", "destination": "something"}}], "action_reading": "restriction"}, "stage2": ["@id", "S7", ["holds", "W0", ["forall", "X", ["forall", "Y", ["implies", ["executable", ["put_on", "hand 1", "X", "Y"]], ["has property", "dry", "X"]]]]]], "scope": "restriction", "syntax": "supported", "compile": "supported", "clauses": {"must_have": [{"role": "restriction_check", "unit": "S7", "constructor": "put_on", "pattern": ["put_on", "hand 1", "X", "Y"], "condition": [{"lit": ["has property", "dry", "X"], "sign": "+", "situation": "shared_current"}]}, {"role": "hook", "constructor": "put_on", "requires": ["S7"], "note": "the hook must be required by BOTH library paths poss_put_on_block and poss_put_on_surface"}, {"role": "necessity_restriction", "unit": "S7", "lit": ["poss", ["put_on", "hand 1", "X", "Y"]], "sign": "-", "situation": "shared_current", "body": [{"lit": ["has property", "dry", "X"], "sign": "-", "situation": "shared_current"}]}], "must_not_have": [{"role": "necessity_restriction", "unit": "library", "lit": ["poss", ["put_on", "H", "X", "Y"]], "sign": "-", "body": [{"lit": ["has property", "clear_top", "Y"], "sign": "-"}], "note": "no clause may conclude -poss(put_on) from -clear_top(Y) alone: the surface branch does not need clearance (A4.2)"}]}}
+  ],
+  "queries": [
+    {"id": "Q1", "text": "Can the hand put block a on block b now?", "stage1_reading": "executable_question", "stage2": ["@id", "Q1", ["question", ["executable", ["put_on", "hand 1", "a 2", "b 3"]]]], "view": "snapshot", "expect": {"answer": "No", "evidence": "S7 necessity with -dry(a) at W0; the block branch would otherwise succeed (holding, isa block b, clear_top b, differ a b)"}, "backend": [], "replay": "n/a"},
+    {"id": "Q2", "text": "Can the hand put block a on the table now?", "stage1_reading": "executable_question", "stage2": ["@id", "Q2", ["question", ["executable", ["put_on", "hand 1", "a 2", "table 4"]]]], "view": "snapshot", "expect": {"answer": "No", "evidence": "the same restriction on the surface branch"}, "backend": [], "replay": "n/a"}
+  ],
+  "variants": [
+    {"id": "dry",
+     "text": "There is a robot hand. Block a and block b are blocks. The hand holds block a. Block b is on the table. Block b is clear. Block a is dry. The hand can put a block on something only if the block is dry.",
+     "units_replace": [
+      {"id": "S6", "text": "Block a is dry.", "stage1": {"type": "situation", "entities": [{"id": "a 2", "type": "concrete", "category": "artifact"}]}, "stage2": ["@id", "S6", ["holds", "W0", ["has property", "dry", "a 2"]]], "scope": "initial", "syntax": "supported", "compile": "supported", "clauses": {}}],
+     "queries": [
+      {"id": "Q1", "expect": {"answer": "Yes", "evidence": "block branch (poss_put_on_hand_block): holding(hand,a), isa block b, clear_top(b) at W0, differ(a,b); S7 via dry(a) at W0"}},
+      {"id": "Q2", "expect": {"answer": "Yes", "evidence": "surface branch (poss_put_on_hand_surface): holding(hand,a) at W0, surface(table) from the library; S7 via dry(a) at W0"}}]},
+    {"id": "dry_b_occupied",
+     "text": "There is a robot hand. Block a and block b are blocks. The hand holds block a. Block b is on the table. Block b is not clear. Block a is dry. The hand can put a block on something only if the block is dry.",
+     "units_replace": [
+      {"id": "S6", "text": "Block a is dry.", "stage1": {"type": "situation", "entities": [{"id": "a 2", "type": "concrete", "category": "artifact"}]}, "stage2": ["@id", "S6", ["holds", "W0", ["has property", "dry", "a 2"]]], "scope": "initial", "syntax": "supported", "compile": "supported", "clauses": {}},
+      {"id": "S5", "text": "Block b is not clear.", "stage1": {"type": "situation", "entities": [{"id": "b 3", "type": "concrete", "category": "artifact"}]}, "stage2": ["@id", "S5", ["holds", "W0", ["not", ["has property", "clear_top", "b 3"]]]], "scope": "initial", "syntax": "supported", "compile": "supported", "clauses": {}}],
+     "queries": [
+      {"id": "Q1", "expect": {"answer": "Unknown", "forbidden_answers": ["Yes", "No"], "evidence": "the block branch fails (-clear_top(b) at W0); the surface branch is not established for a block (surface(b) is not derivable) and not refuted. No clause concludes -poss(put_on) from -clear_top alone, so there is no negative proof. Missing positive proof is not negative proof (A2.3). A library law 'a block is not a surface' would exclude the surface branch but would still not supply -poss, so it would not turn this into No (REVIEW.md disposition 5); no such law is added."}},
+      {"id": "Q2", "expect": {"answer": "Yes", "evidence": "surface branch with dry(a) at W0; b's clearance is irrelevant to the table"}}]}
+  ],
+  "candidates": [
+    {"id": "K1", "variant": "dry_b_occupied", "sequence": [["put_on", "hand 1", "a 2", "b 3"]], "states": [{"after": 0, "facts": ["+holding(hand,a)", "-clear_top(b)", "+dry(a)"]}], "verdict": "invalid", "step": 1, "reason": "replay: block branch needs clear_top(b) (false); surface branch needs surface(b) (unsupported in the finite model). Not validated. The replay's 'invalid' is a validation verdict, not a proof of impossibility."}
+  ],
+  "support": {"syntax": "supported", "compile": "supported", "backend_requirements": [], "replay_fragment": "covered"},
+  "explain": "The library has two poss laws for put_on. A restriction hook added to only one of them leaves a bypass. Q1 and Q2 fail for the same reason on different branches. The dry_b_occupied variant is the A4.2 sentence about branches: Q1 is Unknown, not No, because the surface branch is neither established nor refuted for a block, and no necessity clause mentions clearance. The replay rejects the candidate as not validated (K1), which is a validation result, not an impossibility proof.",
+  "notes": "Amended 2026-09-11: the first version asked whether a 'block is not a surface' law would give No; the review corrected the premise (such a law removes one positive branch and supplies no negative)."
+}

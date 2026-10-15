@@ -1,0 +1,859 @@
+{
+  "id": "x06_permission_strength",
+  "purpose": "a named normal ability with a specific denial; a strict class law; an explicit exception to a class default; namedness does not decide strictness",
+  "contract": [
+    "A2.3",
+    "A4.2"
+  ],
+  "family": [
+    "Permission strength"
+  ],
+  "input_kind": "text",
+  "text": "Ann is a person. Ann is in Haapsalu. There is a bus service from Haapsalu to Tallinn. There is a bus service from Tallinn to Tartu. Ann can normally travel by bus. Ann cannot travel by bus from Haapsalu to Tallinn.",
+  "profile": "physical_v1",
+  "entities": {
+    "Ann 1": "person",
+    "Haapsalu 2": "place",
+    "Tallinn 3": "place",
+    "Tartu 4": "place",
+    "Robo 5": "robot",
+    "Bob 6": "person"
+  },
+  "units": [
+    {
+      "id": "S1",
+      "text": "Ann is a person. Ann is in Haapsalu. There is a bus service from Haapsalu to Tallinn. There is a bus service from Tallinn to Tartu.",
+      "stage1": {
+        "type": "situation",
+        "entities": [
+          {
+            "id": "Ann 1",
+            "type": "concrete",
+            "category": "person"
+          },
+          {
+            "id": "Haapsalu 2",
+            "type": "concrete",
+            "category": "place"
+          },
+          {
+            "id": "Tallinn 3",
+            "type": "concrete",
+            "category": "place"
+          },
+          {
+            "id": "Tartu 4",
+            "type": "concrete",
+            "category": "place"
+          }
+        ]
+      },
+      "stage2": [
+        "@id",
+        "S1",
+        [
+          "holds",
+          "W0",
+          [
+            "and",
+            [
+              "isa",
+              "person",
+              "Ann 1"
+            ],
+            [
+              "is rel2",
+              "located_at",
+              "Ann 1",
+              "Haapsalu 2"
+            ],
+            [
+              "connected",
+              "Haapsalu 2",
+              "Tallinn 3",
+              "bus"
+            ],
+            [
+              "connected",
+              "Tallinn 3",
+              "Tartu 4",
+              "bus"
+            ]
+          ]
+        ]
+      ],
+      "scope": "initial",
+      "syntax": "supported",
+      "compile": "supported",
+      "clauses": {}
+    },
+    {
+      "id": "S2",
+      "text": "Ann can normally travel by bus.",
+      "stage1": {
+        "type": "normal_rule",
+        "entities": [
+          {
+            "id": "Ann 1",
+            "type": "concrete",
+            "category": "person"
+          }
+        ],
+        "actions": [
+          {
+            "root": "travel",
+            "mode": "capability",
+            "roles": {
+              "actor": "Ann 1",
+              "instrument": "bus"
+            }
+          }
+        ],
+        "action_reading": "availability"
+      },
+      "stage2": [
+        "@id",
+        "S2",
+        [
+          "holds",
+          "W0",
+          [
+            "forall",
+            "F",
+            [
+              "forall",
+              "T",
+              [
+                "normally",
+                [
+                  "can",
+                  "Ann 1",
+                  [
+                    "move",
+                    "Ann 1",
+                    "F",
+                    "T",
+                    "bus"
+                  ]
+                ]
+              ]
+            ]
+          ]
+        ]
+      ],
+      "scope": "availability",
+      "syntax": "supported",
+      "compile": "supported",
+      "clauses": {
+        "must_have": [
+          {
+            "role": "availability",
+            "unit": "S2",
+            "lit": [
+              "poss",
+              [
+                "move",
+                "Ann 1",
+                "F",
+                "T",
+                "bus"
+              ]
+            ],
+            "sign": "+",
+            "situation": "shared_current",
+            "defeasible": true,
+            "note": "normally is kept: a named subject does not make the rule strict (A2.3)"
+          }
+        ],
+        "must_not_have": [
+          {
+            "role": "availability",
+            "unit": "S2",
+            "body_absent": [
+              "connected"
+            ],
+            "note": "no stated-endpoint path: fresh universal endpoints: no route"
+          }
+        ]
+      }
+    },
+    {
+      "id": "S3",
+      "text": "Ann cannot travel by bus from Haapsalu to Tallinn.",
+      "stage1": {
+        "type": "situation",
+        "entities": [
+          {
+            "id": "Ann 1",
+            "type": "concrete",
+            "category": "person"
+          },
+          {
+            "id": "Haapsalu 2",
+            "type": "concrete",
+            "category": "place"
+          },
+          {
+            "id": "Tallinn 3",
+            "type": "concrete",
+            "category": "place"
+          }
+        ],
+        "actions": [
+          {
+            "root": "travel",
+            "mode": "capability",
+            "roles": {
+              "actor": "Ann 1",
+              "source": "Haapsalu 2",
+              "destination": "Tallinn 3",
+              "instrument": "bus"
+            }
+          }
+        ],
+        "action_reading": "availability"
+      },
+      "stage2": [
+        "@id",
+        "S3",
+        [
+          "holds",
+          "W0",
+          [
+            "not",
+            [
+              "can",
+              "Ann 1",
+              [
+                "move",
+                "Ann 1",
+                "Haapsalu 2",
+                "Tallinn 3",
+                "bus"
+              ]
+            ]
+          ]
+        ]
+      ],
+      "scope": "denial",
+      "syntax": "supported",
+      "compile": "supported",
+      "clauses": {
+        "must_have": [
+          {
+            "role": "denial",
+            "unit": "S3",
+            "lit": [
+              "execution_denied",
+              [
+                "move",
+                "Ann 1",
+                "Haapsalu 2",
+                "Tallinn 3",
+                "bus"
+              ]
+            ],
+            "sign": "+",
+            "situation": "shared_current",
+            "strict": true
+          }
+        ]
+      }
+    }
+  ],
+  "queries": [
+    {
+      "id": "Q1",
+      "text": "Can Ann take the bus from Haapsalu to Tallinn now?",
+      "stage1_reading": "executable_question",
+      "stage2": [
+        "@id",
+        "Q1",
+        [
+          "question",
+          [
+            "executable",
+            [
+              "move",
+              "Ann 1",
+              "Haapsalu 2",
+              "Tallinn 3",
+              "bus"
+            ]
+          ]
+        ]
+      ],
+      "view": "snapshot",
+      "expect": {
+        "answer": "No",
+        "evidence": "the strict S3 defeats both the library default and the normal S2; necessity clause"
+      },
+      "backend": [],
+      "replay": "n/a"
+    },
+    {
+      "id": "Q3",
+      "text": "How can Ann get to Tartu?",
+      "stage1_reading": "plan_question",
+      "stage2": [
+        "@id",
+        "Q3",
+        [
+          "plan",
+          [
+            "is rel2",
+            "located_at",
+            "Ann 1",
+            "Tartu 4"
+          ]
+        ]
+      ],
+      "view": "discovery",
+      "seed": "s^4(0)",
+      "expect": {
+        "outcome": "not_found",
+        "evidence": "the only way to Tartu passes through the denied leg; the denial is static-conditioned (ground), so no backend requirement",
+        "forbidden_outcomes": [
+          "plan_found"
+        ]
+      },
+      "backend": [],
+      "replay": "covered"
+    }
+  ],
+  "variants": [
+    {
+      "id": "strict_class_law",
+      "text": "Robo is a robot. Robo is in Haapsalu. There is a shuttle from Haapsalu to Tallinn. Every robot can take the shuttle from Haapsalu to Tallinn.",
+      "units": [
+        {
+          "id": "S1",
+          "text": "Robo is a robot. Robo is in Haapsalu. There is a shuttle from Haapsalu to Tallinn.",
+          "stage1": {
+            "type": "situation",
+            "entities": [
+              {
+                "id": "Robo 5",
+                "type": "concrete",
+                "category": "artifact"
+              },
+              {
+                "id": "Haapsalu 2",
+                "type": "concrete",
+                "category": "place"
+              },
+              {
+                "id": "Tallinn 3",
+                "type": "concrete",
+                "category": "place"
+              }
+            ]
+          },
+          "stage2": [
+            "@id",
+            "S1",
+            [
+              "holds",
+              "W0",
+              [
+                "and",
+                [
+                  "isa",
+                  "robot",
+                  "Robo 5"
+                ],
+                [
+                  "is rel2",
+                  "located_at",
+                  "Robo 5",
+                  "Haapsalu 2"
+                ],
+                [
+                  "connected",
+                  "Haapsalu 2",
+                  "Tallinn 3",
+                  "shuttle"
+                ]
+              ]
+            ]
+          ],
+          "scope": "initial",
+          "syntax": "supported",
+          "compile": "supported"
+        },
+        {
+          "id": "S2",
+          "text": "Every robot can take the shuttle from Haapsalu to Tallinn.",
+          "stage1": {
+            "type": "strict_rule",
+            "entities": [
+              {
+                "id": "Haapsalu 2",
+                "type": "concrete",
+                "category": "place"
+              },
+              {
+                "id": "Tallinn 3",
+                "type": "concrete",
+                "category": "place"
+              },
+              {
+                "id": "robot",
+                "type": "generic",
+                "category": "artifact"
+              }
+            ],
+            "actions": [
+              {
+                "root": "take",
+                "mode": "capability",
+                "roles": {
+                  "actor": "robot",
+                  "target": "shuttle",
+                  "source": "Haapsalu 2",
+                  "destination": "Tallinn 3"
+                }
+              }
+            ],
+            "action_reading": "availability"
+          },
+          "stage2": [
+            "@id",
+            "S2",
+            [
+              "holds",
+              "W0",
+              [
+                "forall",
+                "X",
+                [
+                  "implies",
+                  [
+                    "isa",
+                    "robot",
+                    "X"
+                  ],
+                  [
+                    "can",
+                    "X",
+                    [
+                      "move",
+                      "X",
+                      "Haapsalu 2",
+                      "Tallinn 3",
+                      "shuttle"
+                    ]
+                  ]
+                ]
+              ]
+            ]
+          ],
+          "scope": "availability",
+          "syntax": "supported",
+          "compile": "supported",
+          "clauses": {
+            "must_have": [
+              {
+                "role": "availability",
+                "unit": "S2",
+                "lit": [
+                  "poss",
+                  [
+                    "move",
+                    "X",
+                    "Haapsalu 2",
+                    "Tallinn 3",
+                    "shuttle"
+                  ]
+                ],
+                "sign": "+",
+                "situation": "shared_current",
+                "defeasible": false,
+                "note": "an explicitly strict class law is not turned into a default"
+              }
+            ]
+          }
+        }
+      ],
+      "queries": [
+        {
+          "id": "Q1",
+          "text": "How can Robo get to Tallinn?",
+          "stage1_reading": "plan_question",
+          "stage2": [
+            "@id",
+            "Q1",
+            [
+              "plan",
+              [
+                "is rel2",
+                "located_at",
+                "Robo 5",
+                "Tallinn 3"
+              ]
+            ]
+          ],
+          "view": "discovery",
+          "seed": "s^4(0)",
+          "expect": {
+            "outcome": "plan_found",
+            "plan": [
+              [
+                "move",
+                "Robo 5",
+                "Haapsalu 2",
+                "Tallinn 3",
+                "shuttle"
+              ]
+            ],
+            "confidence": 1.0,
+            "evidence": "S2 is a strict class rule: its stated-endpoint path (template tpl_move_stated) gives poss(move(Robo,Haapsalu,Tallinn,shuttle)) at 1.0 without reading the connection; no library default is involved for a robot"
+          },
+          "backend": [],
+          "replay": "covered"
+        }
+      ]
+    },
+    {
+      "id": "class_default_with_exception",
+      "text": "Ann is a person. Bob is a person. Ann and Bob are in Haapsalu. There is a bus service from Haapsalu to Tallinn. People can normally take the bus. Bob cannot take the bus.",
+      "units": [
+        {
+          "id": "S1",
+          "text": "Ann is a person. Bob is a person. Ann and Bob are in Haapsalu. There is a bus service from Haapsalu to Tallinn.",
+          "stage1": {
+            "type": "situation",
+            "entities": [
+              {
+                "id": "Ann 1",
+                "type": "concrete",
+                "category": "person"
+              },
+              {
+                "id": "Bob 6",
+                "type": "concrete",
+                "category": "person"
+              },
+              {
+                "id": "Haapsalu 2",
+                "type": "concrete",
+                "category": "place"
+              },
+              {
+                "id": "Tallinn 3",
+                "type": "concrete",
+                "category": "place"
+              }
+            ]
+          },
+          "stage2": [
+            "@id",
+            "S1",
+            [
+              "holds",
+              "W0",
+              [
+                "and",
+                [
+                  "isa",
+                  "person",
+                  "Ann 1"
+                ],
+                [
+                  "isa",
+                  "person",
+                  "Bob 6"
+                ],
+                [
+                  "is rel2",
+                  "located_at",
+                  "Ann 1",
+                  "Haapsalu 2"
+                ],
+                [
+                  "is rel2",
+                  "located_at",
+                  "Bob 6",
+                  "Haapsalu 2"
+                ],
+                [
+                  "connected",
+                  "Haapsalu 2",
+                  "Tallinn 3",
+                  "bus"
+                ]
+              ]
+            ]
+          ],
+          "scope": "initial",
+          "syntax": "supported",
+          "compile": "supported"
+        },
+        {
+          "id": "S2",
+          "text": "People can normally take the bus.",
+          "stage1": {
+            "type": "normal_rule",
+            "entities": [
+              {
+                "id": "person",
+                "type": "generic",
+                "category": "person"
+              }
+            ],
+            "actions": [
+              {
+                "root": "take",
+                "mode": "capability",
+                "roles": {
+                  "actor": "person",
+                  "target": "bus"
+                }
+              }
+            ],
+            "action_reading": "availability"
+          },
+          "stage2": [
+            "@id",
+            "S2",
+            [
+              "holds",
+              "W0",
+              [
+                "forall",
+                "X",
+                [
+                  "forall",
+                  "F",
+                  [
+                    "forall",
+                    "T",
+                    [
+                      "implies",
+                      [
+                        "isa",
+                        "person",
+                        "X"
+                      ],
+                      [
+                        "normally",
+                        [
+                          "can",
+                          "X",
+                          [
+                            "move",
+                            "X",
+                            "F",
+                            "T",
+                            "bus"
+                          ]
+                        ]
+                      ]
+                    ]
+                  ]
+                ]
+              ]
+            ]
+          ],
+          "scope": "availability",
+          "syntax": "supported",
+          "compile": "supported",
+          "note": "restates the library default; duplicate removal may fold it with provenance for both"
+        },
+        {
+          "id": "S3",
+          "text": "Bob cannot take the bus.",
+          "stage1": {
+            "type": "situation",
+            "entities": [
+              {
+                "id": "Bob 6",
+                "type": "concrete",
+                "category": "person"
+              }
+            ],
+            "actions": [
+              {
+                "root": "take",
+                "mode": "capability",
+                "roles": {
+                  "actor": "Bob 6",
+                  "target": "bus"
+                }
+              }
+            ],
+            "action_reading": "availability"
+          },
+          "stage2": [
+            "@id",
+            "S3",
+            [
+              "holds",
+              "W0",
+              [
+                "forall",
+                "F",
+                [
+                  "forall",
+                  "T",
+                  [
+                    "not",
+                    [
+                      "can",
+                      "Bob 6",
+                      [
+                        "move",
+                        "Bob 6",
+                        "F",
+                        "T",
+                        "bus"
+                      ]
+                    ]
+                  ]
+                ]
+              ]
+            ]
+          ],
+          "scope": "denial",
+          "syntax": "supported",
+          "compile": "supported"
+        }
+      ],
+      "queries": [
+        {
+          "id": "Q1",
+          "text": "How can Ann get to Tallinn?",
+          "stage1_reading": "plan_question",
+          "stage2": [
+            "@id",
+            "Q1",
+            [
+              "plan",
+              [
+                "is rel2",
+                "located_at",
+                "Ann 1",
+                "Tallinn 3"
+              ]
+            ]
+          ],
+          "view": "discovery",
+          "seed": "s^4(0)",
+          "expect": {
+            "outcome": "plan_found",
+            "plan": [
+              [
+                "move",
+                "Ann 1",
+                "Haapsalu 2",
+                "Tallinn 3",
+                "bus"
+              ]
+            ],
+            "evidence": "S2 (or the library default) for Ann; no denial for Ann"
+          },
+          "backend": [],
+          "replay": "covered"
+        },
+        {
+          "id": "Q2",
+          "text": "How can Bob get to Tallinn?",
+          "stage1_reading": "plan_question",
+          "stage2": [
+            "@id",
+            "Q2",
+            [
+              "plan",
+              [
+                "is rel2",
+                "located_at",
+                "Bob 6",
+                "Tallinn 3"
+              ]
+            ]
+          ],
+          "view": "discovery",
+          "seed": "s^4(0)",
+          "expect": {
+            "outcome": "not_found",
+            "evidence": "S3 denies Bob's bus moves for every endpoint pair (execution_denied); the denial is ground in the actor and static in its condition, so no negative fact is carried and no backend requirement applies",
+            "forbidden_outcomes": [
+              "plan_found"
+            ]
+          },
+          "backend": [],
+          "replay": "covered"
+        },
+        {
+          "id": "Q4",
+          "text": "Can Bob take the bus from Haapsalu to Tallinn now?",
+          "stage1_reading": "executable_question",
+          "stage2": [
+            "@id",
+            "Q4",
+            [
+              "question",
+              [
+                "executable",
+                [
+                  "move",
+                  "Bob 6",
+                  "Haapsalu 2",
+                  "Tallinn 3",
+                  "bus"
+                ]
+              ]
+            ]
+          ],
+          "view": "snapshot",
+          "expect": {
+            "answer": "No",
+            "evidence": "S3's denial marker execution_denied(move(Bob,Haapsalu,Tallinn,bus)) at W0; the library's denied_not_poss gives -poss"
+          },
+          "backend": [],
+          "replay": "n/a"
+        }
+      ]
+    }
+  ],
+  "candidates": [
+    {
+      "id": "K1",
+      "sequence": [
+        [
+          "move",
+          "Ann 1",
+          "Haapsalu 2",
+          "Tallinn 3",
+          "bus"
+        ],
+        [
+          "move",
+          "Ann 1",
+          "Tallinn 3",
+          "Tartu 4",
+          "bus"
+        ]
+      ],
+      "states": [
+        {
+          "after": 0,
+          "facts": [
+            "+located_at(Ann,Haapsalu)"
+          ]
+        }
+      ],
+      "verdict": "invalid",
+      "step": 1,
+      "reason": "strict denial S3 for the first leg; the replay documents default-exception checking: a strict denial marker (execution_denied) for the same actor and pattern blocks the default (A5.1)"
+    }
+  ],
+  "support": {
+    "syntax": "supported",
+    "compile": "supported",
+    "backend_requirements": [],
+    "replay_fragment": "covered: named default with a strict ground exception; strict class law; class default with a named exception"
+  },
+  "explain": "Three shapes of permission with the strict/default distinction preserved from Stage 1's type. S2 restating the library default is legitimate; the fixture does not require deduplication but allows it with provenance. The replay's default handling is the documented one: a strict negative for the same actor and action pattern defeats the default; nothing else does.",
+  "notes": "A8.1 family 'Permission strength'. Amended 2026-09-20 (completion review: the invented polarity role removed from both S3 projections; the negation is in the sentence and in the Stage-2 formula). Amended 2026-09-23 (encoding v2, gold review 0.4): base Q2 (ability for the Tallinn-Tartu leg while Ann is in Haapsalu) is removed; the class_default_with_exception variant's Q2 is its own complete plan query and is unchanged."
+}

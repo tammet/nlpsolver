@@ -1,0 +1,53 @@
+{
+  "id": "c17_mixed_scope_rule",
+  "purpose": "a rule with a dynamic condition and a timeless class or connection conclusion is rejected as mixed_scope_rule, also through a helper dependency; static-to-static and fluent-to-fluent rules are unaffected",
+  "contract": ["C17", "A2.8", "A4.1"],
+  "family": ["Situation scope"],
+  "input_kind": "text",
+  "text": "There is a robot hand. Block b is on block a. Block a is on the table. Block b is clear. The hand is empty. A block on the table is a base.",
+  "profile": "physical_v1",
+  "entities": {"hand 1": "hand", "a 2": "block", "b 3": "block", "table 4": "table", "bridge 5": "artifact", "Haapsalu 6": "place", "Tallinn 7": "place"},
+  "units": [
+    {"id": "S1", "text": "There is a robot hand.", "stage1": {"type": "real", "entities": [{"id": "hand 1", "type": "concrete", "category": "artifact"}]}, "stage2": ["@id", "S1", ["holds", "W0", ["isa", "hand", "hand 1"]]], "scope": "static", "syntax": "supported", "compile": "supported", "clauses": {}},
+    {"id": "S2", "text": "Block b is on block a. Block a is on the table.", "stage1": {"type": "situation", "entities": [{"id": "a 2", "type": "concrete", "category": "artifact"}, {"id": "b 3", "type": "concrete", "category": "artifact"}, {"id": "table 4", "type": "concrete", "category": "artifact"}]}, "stage2": ["@id", "S2", ["holds", "W0", ["and", ["isa", "block", "a 2"], ["isa", "block", "b 3"], ["isa", "table", "table 4"], ["is rel2", "on", "b 3", "a 2"], ["is rel2", "on", "a 2", "table 4"]]]], "scope": "initial", "syntax": "supported", "compile": "supported", "clauses": {}},
+    {"id": "S3", "text": "Block b is clear. The hand is empty.", "stage1": {"type": "situation", "entities": [{"id": "b 3", "type": "concrete", "category": "artifact"}, {"id": "hand 1", "type": "concrete", "category": "artifact"}]}, "stage2": ["@id", "S3", ["holds", "W0", ["and", ["has property", "clear_top", "b 3"], ["has property", "empty", "hand 1"]]]], "scope": "initial", "syntax": "supported", "compile": "supported", "clauses": {}},
+    {"id": "S4", "text": "A block on the table is a base.", "stage1": {"type": "strict_rule", "entities": [{"id": "table 4", "type": "concrete", "category": "artifact"}, {"id": "block", "type": "generic", "category": "artifact"}, {"id": "base", "type": "generic"}]}, "stage2": ["@id", "S4", ["holds", "W0", ["state_law", ["forall", "X", ["implies", ["and", ["isa", "block", "X"], ["is rel2", "on", "X", "table 4"]], ["isa", "base", "X"]]]]]], "scope": "standing", "syntax": "supported", "compile": {"unsupported": "mixed_scope_rule", "detail": "fluent antecedent on(X,table) with static consequent isa(base,X)"}, "clauses": {"must_not_have": [{"role": "*", "lit": ["isa", "base", "X"], "note": "no clause concluding isa(base,X) may be emitted; the artifact keeps the source formula marked unsupported"}]}}
+  ],
+  "queries": [
+    {"id": "Q1", "text": "Is block b a base?", "stage2": ["@id", "Q1", ["question", ["isa", "base", "b 3"]]], "view": "snapshot", "expect": {"outcome": "unsupported_translation", "reason": "mixed_scope_rule", "unit": "S4", "evidence": "the route stops before answering; under the leaked encoding (c3_leak.js, 2026-09-09) GK answered Yes at 1.0 through a hypothetical take and put_on"}, "backend": [], "replay": "n/a"}
+  ],
+  "variants": [
+    {"id": "through_helper",
+     "units_replace": [
+      {"id": "S4", "text": "A block on the table is grounded.", "stage1": {"type": "strict_rule", "entities": [{"id": "table 4", "type": "concrete", "category": "artifact"}, {"id": "block", "type": "generic", "category": "artifact"}]}, "stage2": ["@id", "S4", ["holds", "W0", ["state_law", ["forall", "X", ["implies", ["and", ["isa", "block", "X"], ["is rel2", "on", "X", "table 4"]], ["has property", "grounded", "X"]]]]]], "scope": "standing", "syntax": "supported", "compile": "supported"}],
+     "units_add": [
+      {"id": "S5", "text": "A grounded block is a base.", "stage1": {"type": "strict_rule", "entities": [{"id": "block", "type": "generic", "category": "artifact"}, {"id": "base", "type": "generic"}]}, "stage2": ["@id", "S5", ["holds", "W0", ["forall", "X", ["implies", ["and", ["isa", "block", "X"], ["has property", "grounded", "X"]], ["isa", "base", "X"]]]]], "scope": "standing", "syntax": "supported", "compile": {"unsupported": "mixed_scope_rule", "detail": "grounded is a computed fluent (S4); its consumer S5 concludes a static isa. Detected through the helper dependency, not only at the direct rule (A2.8)."}}],
+     "queries": [
+      {"id": "Q1", "expect": {"outcome": "unsupported_translation", "reason": "mixed_scope_rule", "unit": "S5", "evidence": "S5 concludes a static isa from the computed fluent grounded (S4); detected through the helper dependency"}}],
+     "text": "There is a robot hand. Block b is on block a. Block a is on the table. Block b is clear. The hand is empty. A block on the table is grounded. A grounded block is a base."},
+    {"id": "connected_head",
+     "units_replace": [
+      {"id": "S4", "text": "If the bridge is open, Haapsalu is connected to Tallinn by road.", "stage1": {"type": "strict_rule", "entities": [{"id": "bridge 5", "type": "concrete", "category": "artifact"}, {"id": "Haapsalu 6", "type": "concrete", "category": "place"}, {"id": "Tallinn 7", "type": "concrete", "category": "place"}]}, "stage2": ["@id", "S4", ["holds", "W0", ["implies", ["has property", "open", "bridge 5"], ["connected", "Haapsalu 6", "Tallinn 7", "road"]]]], "scope": "standing", "syntax": "supported", "compile": {"unsupported": "mixed_scope_rule", "detail": "fluent antecedent, static connected consequent: opening the bridge would establish an eternal route"}}],
+     "queries": [
+      {"id": "Q1", "expect": {"outcome": "unsupported_translation", "reason": "mixed_scope_rule", "unit": "S4", "evidence": "S4 has a fluent antecedent and a static connected consequent"}}],
+     "text": "There is a robot hand. Block b is on block a. Block a is on the table. Block b is clear. The hand is empty. If the bridge is open, Haapsalu is connected to Tallinn by road."},
+    {"id": "static_to_static",
+     "units_replace": [
+      {"id": "S4", "text": "A block is a solid.", "stage1": {"type": "strict_rule", "entities": [{"id": "block", "type": "generic", "category": "artifact"}, {"id": "solid", "type": "generic"}]}, "stage2": ["@id", "S4", ["holds", "W0", ["forall", "X", ["implies", ["isa", "block", "X"], ["isa", "solid", "X"]]]]], "scope": "static", "syntax": "supported", "compile": "supported", "clauses": {"must_have": [{"role": "static", "unit": "S4", "lit": ["isa", "solid", "X"], "sign": "+", "situation": "none", "body": [{"lit": ["isa", "block", "X"], "sign": "+", "situation": "none"}]}]}}],
+     "queries": [
+      {"id": "Q1", "text": "Is block b a solid?", "stage2": ["@id", "Q1", ["question", ["isa", "solid", "b 3"]]], "view": "snapshot", "expect": {"answer": "Yes", "evidence": "static rule S4 with isa(block,b): no fluent involved, so the mixed-scope check does not apply"}, "backend": [], "replay": "n/a"}],
+     "text": "There is a robot hand. Block b is on block a. Block a is on the table. Block b is clear. The hand is empty. A block is a solid."},
+    {"id": "fluent_to_fluent",
+     "units_replace": [
+      {"id": "S4", "text": "A block on the table is supported.", "stage1": {"type": "strict_rule", "entities": [{"id": "table 4", "type": "concrete", "category": "artifact"}, {"id": "block", "type": "generic", "category": "artifact"}]}, "stage2": ["@id", "S4", ["holds", "W0", ["state_law", ["forall", "X", ["implies", ["and", ["isa", "block", "X"], ["is rel2", "on", "X", "table 4"]], ["has property", "supported", "X"]]]]]], "scope": "standing", "syntax": "supported", "compile": "supported"}],
+     "queries": [
+      {"id": "Q1", "text": "Is block a supported?", "stage2": ["@id", "Q1", ["question", ["has property", "supported", "a 2"]]], "view": "snapshot", "expect": {"answer": "Yes", "evidence": "S4 at W0"}, "backend": [], "replay": "n/a"},
+      {"id": "Q2", "text": "Is block b supported?", "stage2": ["@id", "Q2", ["question", ["has property", "supported", "b 3"]]], "view": "snapshot", "expect": {"answer": "Unknown", "evidence": "b is on a, not on the table, at W0; the snapshot view has no effect clauses that could put b on the table hypothetically", "forbidden_answers": ["Yes", "No"]}, "backend": [], "replay": "n/a"}],
+     "note": "the availability and effect forms must not be rejected by the same check: their heads are special logical forms with explicit scope (Astra response section 3); c06 and c22 cover that side",
+     "text": "There is a robot hand. Block b is on block a. Block a is on the table. Block b is clear. The hand is empty. A block on the table is supported."}
+  ],
+  "candidates": [],
+  "support": {"syntax": "supported", "compile": "unsupported for the mixed variants; supported for the controls", "backend_requirements": [], "replay_fragment": "n/a"},
+  "explain": "The check is syntactic and conservative: any rule whose antecedent contains a fluent (directly or through a computed property) and whose consequent contains a static predicate (isa, connected) is rejected. The two controls pin the boundary so the check does not over-reject. The fluent_to_fluent Q2 also pins the snapshot view: a static-looking question about b cannot be answered through a hypothetical placement.",
+  "notes": "Evidence: elogs/action_contract_checks_2026_09_09/c3_leak.out.json."
+}

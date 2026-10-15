@@ -285,6 +285,21 @@ kept apart from this cap.
 `gk`, the installed prover with the action route's planning strategy). `-seconds` sets its time per launch (default 30 on this
 route).
 
+**`-planning-summary`** — on the action route: a plan answer also gets a
+planning summary. The summary is a list of positive facts that hold after the
+plan and one rough progress number. Both hold only if the plan is executable;
+the summary is no proof of that. The answer, its confidence and its proof do
+not change. The option needs a GK build with the summary module. It selects
+the registered build `gk_summary`, the installed GK with its summary module;
+a named build without the module is refused before any model call. The build counts only for the
+binary its validation record names: another binary at the same path, or a
+missing binary, is refused before any model call. The option is an action key: it is
+dropped on an automatic ordinary call and is an error with `-noactions`.
+A question that is no plan or reachability question runs unchanged. A plan
+question that the compiler cannot summarize also runs unchanged, with the
+reason in its launch record. The format is on the
+[planning summary](../encodings/action-planning-summary.md) page.
+
 ### Output of the action route
 
 The route follows the output levels of the ordinary pipeline. Each level

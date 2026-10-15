@@ -1,0 +1,98 @@
+{
+  "id": "c09_inconsistent_states",
+  "purpose": "established physical conflicts in the initial or a replayed state are inconsistent_action_state, including for the empty plan; missing facts are not conflicts",
+  "contract": ["C09", "A2.7", "A5.1", "A5.3"],
+  "family": ["Actor/object identity", "Physical consistency"],
+  "input_kind": "text",
+  "text": "(each variant supplies its own text)",
+  "profile": "physical_v1",
+  "entities": {"hand 1": "hand", "a 2": "block", "b 3": "block", "table 4": "table", "Ann 5": "person", "Tallinn 6": "place", "Tartu 7": "place", "cup 8": "artifact", "pen 9": "artifact", "Bob 10": "person"},
+  "units": [],
+  "queries": [],
+  "variants": [
+    {"id": "empty_and_holding",
+     "text": "There is a robot hand. Block a is a block. The hand is empty. The hand holds block a.",
+     "units": [
+      {"id": "S1", "text": "There is a robot hand. Block a is a block.", "stage1": {"type": "real", "entities": [{"id": "hand 1", "type": "concrete", "category": "artifact"}, {"id": "a 2", "type": "concrete", "category": "artifact"}]}, "stage2": ["@id", "S1", ["holds", "W0", ["and", ["isa", "hand", "hand 1"], ["isa", "block", "a 2"]]]], "scope": "static", "syntax": "supported", "compile": "supported"},
+      {"id": "S2", "text": "The hand is empty.", "stage1": {"type": "situation", "entities": [{"id": "hand 1", "type": "concrete", "category": "artifact"}]}, "stage2": ["@id", "S2", ["holds", "W0", ["has property", "empty", "hand 1"]]], "scope": "initial", "syntax": "supported", "compile": "supported"},
+      {"id": "S3", "text": "The hand holds block a.", "stage1": {"type": "situation", "entities": [{"id": "hand 1", "type": "concrete", "category": "artifact"}, {"id": "a 2", "type": "concrete", "category": "artifact"}]}, "stage2": ["@id", "S3", ["holds", "W0", ["is rel2", "holding", "hand 1", "a 2"]]], "scope": "initial", "syntax": "supported", "compile": "supported"}],
+     "queries": [
+      {"id": "Q1", "text": "Can the hand hold block a?", "stage1_reading": "plan_question", "stage2": ["@id", "Q1", ["plan", ["is rel2", "holding", "hand 1", "a 2"]]], "view": "discovery", "seed": "s^4(0)", "expect": {"outcome": "inconsistent_action_state", "facts": ["empty(hand,W0)", "holding(hand,a,W0)"], "evidence": "the goal holds at W0 but the empty plan cannot be validated in an inconsistent initial state (A5.3); not goal_already_holds"}, "backend": [], "replay": "covered"}]},
+    {"id": "occupied_and_clear",
+     "text": "Block a and block b are blocks. Block b is on block a. Block a is clear.",
+     "units": [
+      {"id": "S1", "text": "Block a and block b are blocks.", "stage1": {"type": "real", "entities": [{"id": "a 2", "type": "concrete", "category": "artifact"}, {"id": "b 3", "type": "concrete", "category": "artifact"}]}, "stage2": ["@id", "S1", ["holds", "W0", ["and", ["isa", "block", "a 2"], ["isa", "block", "b 3"]]]], "scope": "static", "syntax": "supported", "compile": "supported"},
+      {"id": "S2", "text": "Block b is on block a.", "stage1": {"type": "situation", "entities": [{"id": "b 3", "type": "concrete", "category": "artifact"}, {"id": "a 2", "type": "concrete", "category": "artifact"}]}, "stage2": ["@id", "S2", ["holds", "W0", ["is rel2", "on", "b 3", "a 2"]]], "scope": "initial", "syntax": "supported", "compile": "supported"},
+      {"id": "S3", "text": "Block a is clear.", "stage1": {"type": "situation", "entities": [{"id": "a 2", "type": "concrete", "category": "artifact"}]}, "stage2": ["@id", "S3", ["holds", "W0", ["has property", "clear_top", "a 2"]]], "scope": "initial", "syntax": "supported", "compile": "supported"}],
+     "queries": [
+      {"id": "Q1", "text": "(formal)", "stage2": ["@id", "Q1", ["plan", ["is rel2", "on", "b 3", "a 2"]]], "view": "discovery", "seed": "s^4(0)", "expect": {"outcome": "inconsistent_action_state", "facts": ["on(b,a,W0)", "clear_top(a,W0)", "isa(block,a)"], "evidence": "on(b,a) with clear_top(a) at W0: a block with something on it is not clear (A2.7); both facts are established, not inferred"}, "backend": [], "replay": "covered"}]},
+    {"id": "two_cities_flat",
+     "text": "Ann is a person. Ann is in Tallinn. Ann is in Tartu.",
+     "units": [
+      {"id": "S1", "text": "Ann is a person.", "stage1": {"type": "real", "entities": [{"id": "Ann 5", "type": "concrete", "category": "person"}]}, "stage2": ["@id", "S1", ["holds", "W0", ["isa", "person", "Ann 5"]]], "scope": "static", "syntax": "supported", "compile": "supported"},
+      {"id": "S2", "text": "Ann is in Tallinn.", "stage1": {"type": "situation", "entities": [{"id": "Ann 5", "type": "concrete", "category": "person"}, {"id": "Tallinn 6", "type": "concrete", "category": "place"}]}, "stage2": ["@id", "S2", ["holds", "W0", ["is rel2", "located_at", "Ann 5", "Tallinn 6"]]], "scope": "initial", "syntax": "supported", "compile": "supported"},
+      {"id": "S3", "text": "Ann is in Tartu.", "stage1": {"type": "situation", "entities": [{"id": "Ann 5", "type": "concrete", "category": "person"}, {"id": "Tartu 7", "type": "concrete", "category": "place"}]}, "stage2": ["@id", "S3", ["holds", "W0", ["is rel2", "located_at", "Ann 5", "Tartu 7"]]], "scope": "initial", "syntax": "supported", "compile": "supported"}],
+     "queries": [
+      {"id": "Q1", "text": "(formal)", "stage2": ["@id", "Q1", ["plan", ["is rel2", "located_at", "Ann 5", "Tartu 7"]]], "view": "discovery", "seed": "s^4(0)", "expect": {"outcome": "inconsistent_action_state", "facts": ["located_at(Ann,Tallinn,W0)", "located_at(Ann,Tartu,W0)"], "evidence": "the profile declares Tallinn and Tartu as one flat set of exclusive travel positions (REVIEW.md disposition 2); one actor at two members of the declared set is an established conflict. Without the declaration this is not a conflict; see two_cities_undeclared."}, "backend": [], "replay": "covered"}],
+     "profile": {"name": "physical_v1", "locations": {"flat": ["Tallinn 6", "Tartu 7"]}}},
+    {"id": "two_cities_undeclared",
+     "text": "Ann is a person. Ann is in Tallinn. Ann is in Tartu.",
+     "units": [
+      {"id": "S1", "text": "Ann is a person.", "stage1": {"type": "real", "entities": [{"id": "Ann 5", "type": "concrete", "category": "person"}]}, "stage2": ["@id", "S1", ["holds", "W0", ["isa", "person", "Ann 5"]]], "scope": "static", "syntax": "supported", "compile": "supported"},
+      {"id": "S2", "text": "Ann is in Tallinn.", "stage1": {"type": "situation", "entities": [{"id": "Ann 5", "type": "concrete", "category": "person"}, {"id": "Tallinn 6", "type": "concrete", "category": "place"}]}, "stage2": ["@id", "S2", ["holds", "W0", ["is rel2", "located_at", "Ann 5", "Tallinn 6"]]], "scope": "initial", "syntax": "supported", "compile": "supported"},
+      {"id": "S3", "text": "Ann is in Tartu.", "stage1": {"type": "situation", "entities": [{"id": "Ann 5", "type": "concrete", "category": "person"}, {"id": "Tartu 7", "type": "concrete", "category": "place"}]}, "stage2": ["@id", "S3", ["holds", "W0", ["is rel2", "located_at", "Ann 5", "Tartu 7"]]], "scope": "initial", "syntax": "supported", "compile": "supported"}],
+     "queries": [
+      {"id": "Q1", "text": "(formal)", "stage2": ["@id", "Q1", ["plan", ["is rel2", "located_at", "Ann 5", "Tartu 7"]]], "view": "discovery", "seed": "s^4(0)", "expect": {"outcome": "unsupported_translation", "reason": "unsupported_location_granularity", "units": ["S2", "S3"], "forbidden_outcomes": ["inconsistent_action_state", "plan_found", "goal_already_holds"], "evidence": "one actor at two places with no declared flat set and no stated containment: the source does not say whether Tallinn and Tartu exclude each other. Absence of a containment sentence is not a declaration of flat geography (review R4); the route reports the granularity diagnostic and does not invent a conflict."}, "backend": [], "replay": "n/a"}]},
+    {"id": "two_held",
+     "text": "There is a robot hand. Blocks a and b are blocks. The hand holds block a. The hand holds block b.",
+     "units": [
+      {"id": "S1", "text": "There is a robot hand. Blocks a and b are blocks.", "stage1": {"type": "real", "entities": [{"id": "hand 1", "type": "concrete", "category": "artifact"}, {"id": "a 2", "type": "concrete", "category": "artifact"}, {"id": "b 3", "type": "concrete", "category": "artifact"}]}, "stage2": ["@id", "S1", ["holds", "W0", ["and", ["isa", "hand", "hand 1"], ["isa", "block", "a 2"], ["isa", "block", "b 3"]]]], "scope": "static", "syntax": "supported", "compile": "supported"},
+      {"id": "S2", "text": "The hand holds block a. The hand holds block b.", "stage1": {"type": "situation", "entities": [{"id": "hand 1", "type": "concrete", "category": "artifact"}, {"id": "a 2", "type": "concrete", "category": "artifact"}, {"id": "b 3", "type": "concrete", "category": "artifact"}]}, "stage2": ["@id", "S2", ["holds", "W0", ["and", ["is rel2", "holding", "hand 1", "a 2"], ["is rel2", "holding", "hand 1", "b 3"]]]], "scope": "initial", "syntax": "supported", "compile": "supported"}],
+     "queries": [
+      {"id": "Q1", "text": "(formal)", "stage2": ["@id", "Q1", ["question", ["executable", ["put_on", "hand 1", "a 2", "table 4"]]]], "view": "snapshot", "expect": {"outcome": "inconsistent_action_state", "facts": ["holding(hand,a,W0)", "holding(hand,b,W0)", "differ(a,b)"], "evidence": "one-hand capacity with two known-distinct objects"}, "backend": [], "replay": "covered"}]},
+    {"id": "self_support",
+     "text": "Block a is a block. Block a is on block a.",
+     "units": [
+      {"id": "S1", "text": "Block a is a block. Block a is on block a.", "stage1": {"type": "situation", "entities": [{"id": "a 2", "type": "concrete", "category": "artifact"}]}, "stage2": ["@id", "S1", ["holds", "W0", ["and", ["isa", "block", "a 2"], ["is rel2", "on", "a 2", "a 2"]]]], "scope": "initial", "syntax": "supported", "compile": "supported"}],
+     "queries": [
+      {"id": "Q1", "text": "(formal)", "stage2": ["@id", "Q1", ["plan", ["is rel2", "on", "a 2", "a 2"]]], "view": "discovery", "seed": "s^4(0)", "expect": {"outcome": "inconsistent_action_state", "facts": ["on(a,a,W0)"], "evidence": "on(a,a) at W0: nothing is on itself (A2.7)"}, "backend": [], "replay": "covered"}]},
+    {"id": "support_cycle",
+     "text": "Blocks a and b are blocks. Block a is on block b. Block b is on block a.",
+     "units": [
+      {"id": "S1", "text": "Blocks a and b are blocks. Block a is on block b. Block b is on block a.", "stage1": {"type": "situation", "entities": [{"id": "a 2", "type": "concrete", "category": "artifact"}, {"id": "b 3", "type": "concrete", "category": "artifact"}]}, "stage2": ["@id", "S1", ["holds", "W0", ["and", ["isa", "block", "a 2"], ["isa", "block", "b 3"], ["is rel2", "on", "a 2", "b 3"], ["is rel2", "on", "b 3", "a 2"]]]], "scope": "initial", "syntax": "supported", "compile": "supported"}],
+     "queries": [
+      {"id": "Q1", "text": "(formal)", "stage2": ["@id", "Q1", ["plan", ["is rel2", "on", "a 2", "b 3"]]], "view": "discovery", "seed": "s^4(0)", "expect": {"outcome": "inconsistent_action_state", "facts": ["on(a,b,W0)", "on(b,a,W0)"], "evidence": "on(a,b) and on(b,a) at W0: a support cycle (A2.7)"}, "backend": [], "replay": "covered"}]},
+    {"id": "two_supports",
+     "text": "Blocks a and b are blocks. Block a is on block b. Block a is on the table.",
+     "units": [
+      {"id": "S1", "text": "Blocks a and b are blocks. Block a is on block b. Block a is on the table.", "stage1": {"type": "situation", "entities": [{"id": "a 2", "type": "concrete", "category": "artifact"}, {"id": "b 3", "type": "concrete", "category": "artifact"}, {"id": "table 4", "type": "concrete", "category": "artifact"}]}, "stage2": ["@id", "S1", ["holds", "W0", ["and", ["isa", "block", "a 2"], ["isa", "block", "b 3"], ["isa", "table", "table 4"], ["is rel2", "on", "a 2", "b 3"], ["is rel2", "on", "a 2", "table 4"]]]], "scope": "initial", "syntax": "supported", "compile": "supported"}],
+     "queries": [
+      {"id": "Q1", "text": "(formal)", "stage2": ["@id", "Q1", ["plan", ["is rel2", "on", "a 2", "b 3"]]], "view": "discovery", "seed": "s^4(0)", "expect": {"outcome": "inconsistent_action_state", "facts": ["on(a,b,W0)", "on(a,table,W0)", "differ(b,table)"], "evidence": "at most one direct support"}, "backend": [], "replay": "covered"}]},
+    {"id": "replayed_conflict",
+     "text": "There is a robot hand. Block a is on the table. Block a is clear. The hand is empty. After the hand takes a block, the hand is empty.",
+     "units": [
+      {"id": "S1", "text": "There is a robot hand. Block a is on the table. Block a is clear. The hand is empty.", "stage1": {"type": "situation", "entities": [{"id": "hand 1", "type": "concrete", "category": "artifact"}, {"id": "a 2", "type": "concrete", "category": "artifact"}, {"id": "table 4", "type": "concrete", "category": "artifact"}]}, "stage2": ["@id", "S1", ["holds", "W0", ["and", ["isa", "hand", "hand 1"], ["isa", "block", "a 2"], ["isa", "table", "table 4"], ["is rel2", "on", "a 2", "table 4"], ["has property", "clear_top", "a 2"], ["has property", "empty", "hand 1"]]]], "scope": "initial", "syntax": "supported", "compile": "supported"},
+      {"id": "S2", "text": "After the hand takes a block, the hand is empty.", "stage1": {"type": "strict_rule", "entities": [{"id": "hand 1", "type": "concrete", "category": "artifact"}, {"id": "block", "type": "generic", "category": "artifact"}], "actions": [{"root": "take", "mode": "event", "roles": {"actor": "hand 1", "target": "block"}}], "action_reading": "effect"}, "stage2": ["@id", "S2", ["holds", "W0", ["forall", "X", ["after", ["take", "hand 1", "X"], ["has property", "empty", "hand 1"]]]]], "scope": "effect", "syntax": "supported", "compile": "supported", "clauses": {"must_have": [{"role": "effect", "unit": "S2", "lit": ["has property", "empty", "hand 1"], "sign": "+", "situation": "successor"}, {"role": "effect", "unit": "library", "lit": ["has property", "empty", "hand 1"], "sign": "-", "situation": "successor", "note": "eff_take_not_empty is retained; the text effect does not override it (A2.7)"}]}}],
+     "queries": [
+      {"id": "Q1", "text": "After the hand takes block a, is the hand empty?", "stage1_reading": "verify_question", "stage2": ["@id", "Q1", ["verify", [["take", "hand 1", "a 2"]], ["has property", "empty", "hand 1"]]], "view": "verify", "expect": {"outcome": "inconsistent_action_state", "step": 1, "facts": ["empty(hand,W0+1) [S2]", "-empty(hand,W0+1) [library]", "holding(hand,a,W0+1) [library]"], "evidence": "the replayed successor has both signs of empty and holding+empty; the conflict is reported with its facts, neither write wins by source order"}, "backend": [], "replay": "covered"}]},
+    {"id": "accepting_shared_table",
+     "text": "Blocks a and b are on the table. Ann has a cup and a pen. Ann is in Tallinn. Bob is in Tartu.",
+     "units": [
+      {"id": "S1", "text": "Blocks a and b are on the table.", "stage1": {"type": "situation", "entities": [{"id": "a 2", "type": "concrete", "category": "artifact"}, {"id": "b 3", "type": "concrete", "category": "artifact"}, {"id": "table 4", "type": "concrete", "category": "artifact"}]}, "stage2": ["@id", "S1", ["holds", "W0", ["and", ["isa", "block", "a 2"], ["isa", "block", "b 3"], ["isa", "table", "table 4"], ["is rel2", "on", "a 2", "table 4"], ["is rel2", "on", "b 3", "table 4"]]]], "scope": "initial", "syntax": "supported", "compile": "supported"},
+      {"id": "S2", "text": "Ann has a cup and a pen.", "stage1": {"type": "situation", "entities": [{"id": "Ann 5", "type": "concrete", "category": "person"}, {"id": "cup 8", "type": "concrete", "category": "artifact"}, {"id": "pen 9", "type": "concrete", "category": "artifact"}]}, "stage2": ["@id", "S2", ["holds", "W0", ["and", ["isa", "person", "Ann 5"], ["have", "Ann 5", "cup 8"], ["have", "Ann 5", "pen 9"]]]], "scope": "initial", "syntax": "supported", "compile": "supported"},
+      {"id": "S3", "text": "Ann is in Tallinn. Bob is in Tartu.", "stage1": {"type": "situation", "entities": [{"id": "Ann 5", "type": "concrete", "category": "person"}, {"id": "Tallinn 6", "type": "concrete", "category": "place"}, {"id": "Bob 10", "type": "concrete", "category": "person"}, {"id": "Tartu 7", "type": "concrete", "category": "place"}]}, "stage2": ["@id", "S3", ["holds", "W0", ["and", ["is rel2", "located_at", "Ann 5", "Tallinn 6"], ["isa", "person", "Bob 10"], ["is rel2", "located_at", "Bob 10", "Tartu 7"]]]], "scope": "initial", "syntax": "supported", "compile": "supported"}],
+     "queries": [
+      {"id": "Q1", "text": "(formal)", "stage2": ["@id", "Q1", ["plan", ["is rel2", "on", "a 2", "table 4"]]], "view": "discovery", "seed": "s^4(0)", "expect": {"outcome": "goal_already_holds", "plan": [], "evidence": "consistent initial state: a surface takes several objects; an actor owns several objects; two actors in two places"}, "backend": [], "replay": "covered"}]},
+    {"id": "accepting_no_inference",
+     "text": "Blocks a and b are blocks. Block b is on block a. There is a robot hand.",
+     "units": [
+      {"id": "S1", "text": "Blocks a and b are blocks. Block b is on block a. There is a robot hand.", "stage1": {"type": "situation", "entities": [{"id": "a 2", "type": "concrete", "category": "artifact"}, {"id": "b 3", "type": "concrete", "category": "artifact"}, {"id": "hand 1", "type": "concrete", "category": "artifact"}]}, "stage2": ["@id", "S1", ["holds", "W0", ["and", ["isa", "block", "a 2"], ["isa", "block", "b 3"], ["isa", "hand", "hand 1"], ["is rel2", "on", "b 3", "a 2"]]]], "scope": "initial", "syntax": "supported", "compile": "supported"}],
+     "queries": [
+      {"id": "Q1", "text": "Is the hand empty?", "stage2": ["@id", "Q1", ["question", ["has property", "empty", "hand 1"]]], "view": "snapshot", "expect": {"answer": "Unknown", "evidence": "no holding fact does not establish empty (A2.7)"}, "backend": [], "replay": "n/a"},
+      {"id": "Q2", "text": "Is block b clear?", "stage2": ["@id", "Q2", ["question", ["has property", "clear_top", "b 3"]]], "view": "snapshot", "expect": {"answer": "Unknown", "evidence": "no on(_,b) fact does not establish clear_top"}, "backend": [], "replay": "n/a"}]}
+  ],
+  "candidates": [],
+  "support": {"syntax": "supported", "compile": "supported", "backend_requirements": [], "replay_fragment": "covered: the A2.7 invariant list over the finite initial and replayed states"},
+  "explain": "Each variant is one row of A2.7. The first variant is the reason the check must run even for a zero-action candidate: the goal already holds at W0, and reporting goal_already_holds would validate an impossible state. two_cities_flat declares its flat location set in the profile; the exclusivity check applies only within a declared set. two_cities_undeclared is the same text without the declaration and gets the granularity diagnostic instead of a conflict. The replayed_conflict variant is the only one where the conflict arises after a step; it also pins that a strict text effect and a strict library effect conflicting in the same successor are both preserved and reported. The two accepting variants pin that the check never infers a conflict from absent facts.",
+  "notes": "Amended 2026-09-11 (review R4): the flat location set is a profile declaration, not the set of all located_at places with no stated containment."
+}

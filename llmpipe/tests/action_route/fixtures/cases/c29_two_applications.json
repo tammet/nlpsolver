@@ -1,0 +1,25 @@
+{
+  "id": "c29_two_applications",
+  "purpose": "one uncertain movement rule applied at two plan steps counts once per application: 0.6 for one step, 0.36 for the two-step plan",
+  "contract": ["A2.3", "A2.4", "A6.3"],
+  "family": ["Probability", "Permission strength"],
+  "input_kind": "formal_only",
+  "text": "Robo is a robot. Robo is in Haapsalu. There is a bus service from Haapsalu to Tallinn. There is a bus service from Tallinn to Tartu. Robo can probably travel by bus between any two places.",
+  "profile": "physical_v1",
+  "entities": {"Robo 1": "robot", "Haapsalu 2": "place", "Tallinn 3": "place", "Tartu 4": "place"},
+  "units": [
+    {"id": "S1", "text": "Robo is a robot. Robo is in Haapsalu.", "stage2": ["@id", "S1", ["holds", "W0", ["and", ["isa", "robot", "Robo 1"], ["is rel2", "located_at", "Robo 1", "Haapsalu 2"]]]], "scope": "initial", "syntax": "supported", "compile": "supported", "clauses": {}},
+    {"id": "S2", "text": "There is a bus service from Haapsalu to Tallinn.", "stage2": ["@id", "S2", ["holds", "W0", ["connected", "Haapsalu 2", "Tallinn 3", "bus"]]], "scope": "static", "syntax": "supported", "compile": "supported", "clauses": {}},
+    {"id": "S3", "text": "There is a bus service from Tallinn to Tartu.", "stage2": ["@id", "S3", ["holds", "W0", ["connected", "Tallinn 3", "Tartu 4", "bus"]]], "scope": "static", "syntax": "supported", "compile": "supported", "clauses": {}},
+    {"id": "S4", "text": "Robo can probably travel by bus between any two places.", "stage2": ["@id", "S4", ["and", ["holds", "W0", ["forall", "F", ["forall", "T", ["can", "Robo 1", ["move", "Robo 1", "F", "T", "bus"]]]]], ["@p", "S4", 0.8]]], "scope": "availability", "syntax": "supported", "compile": "supported", "confidence": {"source_probability": 0.8, "compiled_evidence": 0.6, "convention": "e = 2p - 1 for 0.5 < p < 1 (solver/lc_packages.py, _process_assertion)"}, "clauses": {}}
+  ],
+  "queries": [
+    {"id": "Q1", "text": "Can Robo take the bus from Haapsalu to Tallinn now?", "stage1_reading": "executable_question", "stage2": ["@id", "Q1", ["question", ["executable", ["move", "Robo 1", "Haapsalu 2", "Tallinn 3", "bus"]]]], "view": "snapshot", "expect": {"answer": "Yes", "confidence": {"layer": "backend", "value": 0.6, "tolerance": 0.005}, "evidence": "S4's public path at the planning root (located_at, connected, differ, the default hook); one application of S4, whose evidence is 0.6; a robot has no library default"}, "backend": [], "replay": "n/a"},
+    {"id": "Q2", "text": "How can Robo get to Tartu in at most two steps?", "stage1_reading": "plan_question", "stage2": ["@id", "Q2", ["plan", ["is rel2", "located_at", "Robo 1", "Tartu 4"], ["steps", "at_most", 2]]], "view": "discovery", "seed": "s^2(0)", "expect": {"outcome": "plan_found", "answer": "Yes", "plan": [["move", "Robo 1", "Haapsalu 2", "Tallinn 3", "bus"], ["move", "Robo 1", "Tallinn 3", "Tartu 4", "bus"]], "confidence": {"layer": "backend", "value": 0.36, "tolerance": 0.005, "rule": "counting rule: an uncertain rule counts once per action application; two applications of S4 at 0.6 give 0.36; no alternative support and no frame is used"}, "evidence": "the only plan applies S4 at two distinct steps: 0.6 x 0.6 = 0.36. The value is frozen before any run; if GK reports another value, the result memo reports a backend limitation and the expectation stays"}, "backend": ["shared_source_confidence"], "replay": "covered"}
+  ],
+  "variants": [],
+  "candidates": [],
+  "support": {"syntax": "supported", "compile": "supported", "backend_requirements": [], "replay_fragment": "n/a"},
+  "explain": "Encoding v2, migration step 0.5 (two-application control). The actor is a typed robot, so no library default proves a move at 1.0; the unit is the only rule for the action and has universal endpoints, so it takes the public path. The counting rule (Sol's decision on choice 5) is frozen here before any GK run.",
+  "notes": "Written 2026-09-23 before any GK run of the migration (REVIEW.md, encoding v2 rows)."
+}

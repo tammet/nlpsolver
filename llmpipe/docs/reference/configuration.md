@@ -88,8 +88,8 @@ property name per line.
 ## The action route
 
 The action route resolves its own options (`action_pipeline.resolve`). Its
-keys are `-actions`, `-noactions`, `-formal`, `-plan-depth` and
-`-action-backend`
+keys are `-actions`, `-noactions`, `-formal`, `-plan-depth`,
+`-action-backend` and `-planning-summary`
 ([experimental options](experimental-options.md#the-action-route)). The
 ordinary stage switches, the `-pipeline` presets, the representation options
 and the prover options `-axioms`, `-strategy` and `-printlevel` are errors with
