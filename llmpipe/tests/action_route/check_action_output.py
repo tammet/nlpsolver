@@ -56,7 +56,8 @@ def main_with(world, argv):
 
 def action(world, argv):
   world.script = {"a1": [cap.travel_stage1()], "a2": [cap.travel_stage2()]}
-  return main_with(world, ["-action-backend", world.backend] + argv + [TEXT])
+  # the single discovery launch: the fake build answers every launch alike; check_action_plan covers the plan search
+  return main_with(world, ["-action-backend", world.backend, "-noplan-builder"] + argv + [TEXT])
 
 
 def check_levels(w):

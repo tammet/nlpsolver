@@ -481,6 +481,10 @@ def parse_cmd_line():
       opts["formal_flag"] = True
     elif el in ["-planning-summary", "--planning-summary"]:
       opts["planning_summary_flag"] = True
+    elif el in ["-plan-builder", "--plan-builder"]:
+      opts["plan_builder_flag"] = True
+    elif el in ["-noplan-builder", "--noplan-builder"]:
+      opts["noplan_builder_flag"] = True
     elif el in ["-plan-depth", "--plan-depth"]:
       if elpos + 1 >= len(params) or not params[elpos + 1].isdigit():
         print("-plan-depth requires a non-negative whole number of steps")
@@ -786,6 +790,11 @@ experimental action route (reads action and planning texts):
                   (default 4).
  -action-backend NAME : on the action route: a registered GK build (default
                   gk, the installed prover).  -seconds sets its per-launch time (default 30).
+ -plan-builder / -noplan-builder : on the action route: a plan or reachable
+                  question first checks the plans of the plan builder with
+                  GK, then searches with plan filters, then as before
+                  (default on; -noplan-builder runs the single discovery
+                  launch).
  -planning-summary : on the action route (experimental): a plan answer also
                   gets a planning summary, a list of positive facts after
                   the plan and one rough progress number, checked against the

@@ -38,6 +38,8 @@ length of the call (`action_pipeline.call_settings`), and then restores them.
 | effects | `lc_action_effects` | `compile_unit`, `state_policy`, `dependencies`, `query_transport` | effects and markers, the state policy, the dependency record, transport |
 | query compilation | `action_route`, `lc_action_query` | `compile_query`, `query_input`; `selection_of`, `exclusions`, `backend_requirements`, `selected_view`, `obligations` | the selection, the exclusions, the views, the obligations, the backend requirements |
 | proof search | `action_gk` | `run_query`, `extract`, `planned_launches`, `check_prerequisites`, `recording` | one GK launch per question; the typed evidence |
+| plan search | `action_plan` | `solve`, `eligible` | the proposals, their GK checks, the filtered and the single discovery launch of a plan or reachable question |
+| planning model | `plan_model`, `plan_builder`, `plan_state`, `plan_analysis` | `Task`, `build`; `records`, `families`; `Analysis` | the ground model of a discovery input, the plan builder, the `$planstate` records, the `$planfilter` records |
 | decision | `action_answer` | `solve`, `decide`, `paired`, `confidence_parts` | the answer policy over the evidence |
 | replay | `action_replay` | `replay`, `verification`, `evaluate` | the independent check of a plan or a supplied sequence |
 | planning summary (optional) | `lc_action_summary`, `action_summary`, `action_gk`, `action_answer` | `compile_profile`; `load`, `Context.get`, `Context.observe`, `validate`, `term_defect`; `summary_preflight`, `summary_capability`, `extract`; `summary_check` | the profile of one plan question, read from the clauses of its view; the reference interpreter of a profile; the build check and the decoding; the comparison with the reference and the replay |
@@ -71,6 +73,9 @@ operations as a library interface; the checks use them.
 | `action_gk.CUTOFF` | 0.10 | the smallest confidence of a candidate |
 | `action_gk.PLANNING_STRATEGY` | query focus, blocker-unit cut | the GK strategy of every launch |
 | `action_gk.DISCOVERY_KEYS` | literal selection, eager condensation | the keys added for the positive discovery launch (`ROLE_STRATEGY`) |
+| `action_gk.ROLE_STRATEGY` | `discovery:positive`, `discovery:check`, `discovery:filtered` | the keys of each launch role; a check adds `plan_state` and `max_answers` 1, a filtered launch `plan_filters` |
+| `action_plan.MAX_CANDIDATES` | 3 | proposals checked with GK |
+| `action_plan.CHECK_SECONDS` | 60 | seconds per check launch |
 | `action_gk.BACKENDS` | `gk`, `gk_summary` | the registered GK builds; both run the installed GK 1.1.0, and `gk_summary` adds planning summaries |
 | `action_english.PROBABLY` | 0.95 | below this stated confidence the answer says "Probably" |
 

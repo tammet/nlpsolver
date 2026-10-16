@@ -162,7 +162,8 @@ def ordinary(world, tag):
 
 def action(world, a1, a2, options=None, text=TRAVEL_TEXT, collect=None):
   world.script = {"a1": list(a1), "a2": list(a2)}
-  opts = dict({"actions_flag": True, "action_backend": world.backend}, **(options or {}))
+  # the single discovery launch: the fake build answers every launch alike; check_action_plan covers the plan search
+  opts = dict({"actions_flag": True, "action_backend": world.backend, "noplan_builder_flag": True}, **(options or {}))
   collect = {} if collect is None else collect
   ans = quiet(solve.english_to_answer, text, opts, collect)
   return ans, collect

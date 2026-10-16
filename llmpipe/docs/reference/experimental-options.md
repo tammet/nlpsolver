@@ -285,6 +285,15 @@ kept apart from this cap.
 `gk`, the installed prover with the action route's planning strategy). `-seconds` sets its time per launch (default 30 on this
 route).
 
+**`-plan-builder`**, **`-noplan-builder`** — on the action route: the plan
+search of a plan or reachable question, on by default. It first checks the
+plans of the plan builder with GK, then runs a discovery launch with plan
+filters, then the single discovery launch
+([the plan search](../architecture/action-answers.md#the-plan-search)).
+`-noplan-builder` runs the single discovery launch only. `-planning-summary`
+also runs the single launch; `-plan-builder` with it, or with
+`-noplan-builder`, is an error. Both are action keys.
+
 **`-planning-summary`** — on the action route: a plan answer also gets a
 planning summary. The summary is a list of positive facts that hold after the
 plan and one rough progress number. Both hold only if the plan is executable;

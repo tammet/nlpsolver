@@ -181,6 +181,41 @@ goal's reported witnesses and the step bound, until one is valid:
 the depth. It never shows that no plan exists. A plan question then answers
 `No plan found.`, and a reachable question `Unknown.`.
 
+### The plan search
+
+A plan or reachable question runs the plan search (`action_plan.solve`) unless
+`-noplan-builder` is given or a planning summary is requested. A plan of the
+search's own model is a proposal; GK and the replay decide every answer.
+
+1. **The model.** `plan_builder.Task` reads the compiled discovery input: the
+   ground actions, their preconditions and effects, and the goal. A model
+   with an open action functor, an unbounded add effect or a frame clause it
+   could not use gives no proposal.
+2. **The proposals.** The builder (`plan_builder`) finds at most one plan in
+   each of three ways, usually without search, and removes redundant steps.
+   A plan outside the question's step bound is dropped, and so is a plan the
+   replay finds invalid. At most three plans remain, the shortest first.
+3. **The checks.** Each proposal is compiled as the question with the plan's
+   situation in place of the situation variable
+   (`action_route.compile_query(plan_situation=...)`). GK answers it with the
+   plan as its answer binding, so the answer policy reads it as any other
+   discovery. The launch adds one `$planstate` record per state of the plan
+   (`plan_state`) for the fluent families the model covers completely, and
+   runs under the role strategy `discovery:check`: GK drops a clause that
+   needs a fact false in a known state, and stops at its first answer. A check
+   without a proof is repeated once without the records when the model left
+   a family out. The first check that gives a plan the replay validates is
+   the answer.
+4. **The discovery.** When no proposal passed and the model read the whole
+   text (no open atom, no ignored text clause) but found no plan, the single
+   discovery launch decides. Otherwise a discovery launch with the plan
+   filters of `plan_analysis` runs first (role `discovery:filtered`), and the
+   single discovery launch runs only when it found no plan.
+
+When the earlier steps give no plan, the single discovery launch of the
+question runs as without the search. The result's `plan_search` record holds the
+model's status, the builder's plans, each check, the filters and each launch.
+
 ### Confidence
 
 The result's confidence is the GK confidence of the answer used: the Boolean

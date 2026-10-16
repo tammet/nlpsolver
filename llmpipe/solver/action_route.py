@@ -867,7 +867,8 @@ def normalize_backend(backend):
   return {"validated": names}
 
 
-def compile_query(query_logic, source_artifact, limits=None, backend=None, planning_root=None, ambient=None, knower=None):
+def compile_query(query_logic, source_artifact, limits=None, backend=None, planning_root=None, ambient=None, knower=None,
+                  plan_situation=None):
   """Attach one formal query to a source artifact.  No model, no prover.
 
   The source artifact is read, never changed.  An unsupported or invalid
@@ -885,6 +886,11 @@ def compile_query(query_logic, source_artifact, limits=None, backend=None, plann
   `ambient` a location entity whose scope facts the query's views keep;
   `knower` an entity whose knower-scoped facts they keep and whose constant
   replaces the objective knower of the laws.
+
+  `plan_situation`, for a plan or reachable query only, is a ground situation
+  term of `$do` steps on the planning root, in GK spelling.  The discovery
+  question then asks for that one plan (the plan search checks a proposed plan
+  this way); everything else is compiled as without it.
   """
   check_artifact(source_artifact, SOURCE)
   before = canonical(source_artifact)
@@ -895,6 +901,10 @@ def compile_query(query_logic, source_artifact, limits=None, backend=None, plann
                                source_artifact.get("worlds"), planning_root, ambient, knower)
   root = v["planning_root"]
   sel = lc_action_query.selection(root, ambient, knower)
+  if plan_situation is not None:
+    if v["kind"] not in ("plan", "reachable"):
+      raise ArtifactError("a plan situation belongs to a plan or reachable query, not to a %s query" % v["kind"])
+    _check_plan_situation(plan_situation, root)
   q = {"artifact": QUERY, "version": ARTIFACT_VERSION,
        "source": {"source_hash": source_artifact["hashes"]["source"],
                   "artifact_hash": source_artifact["hashes"]["artifact"]},
@@ -907,6 +917,8 @@ def compile_query(query_logic, source_artifact, limits=None, backend=None, plann
        "backend_requirements": None, "selected_clauses": None, "view_hash": None,
        "obligations": None, "seed": None, "joint_positive": None, "obligations_hash": None,
        "passes": [], "pending_passes": [lc_action_query.PASS]}
+  if plan_situation is not None:
+    q["plan_situation"] = copy.deepcopy(plan_situation)
   src = source_artifact["support"]
   if v["status"] == "invalid":
     q["outcome"] = {"outcome": "translation_invalid", "errors": sorted({d["code"] for d in v["diagnostics"] if d["level"] == "invalid"})}
@@ -923,6 +935,23 @@ def compile_query(query_logic, source_artifact, limits=None, backend=None, plann
   if canonical(source_artifact) != before:
     raise ArtifactError("compile_query changed its source artifact")
   return q
+
+
+def _check_plan_situation(t, root):
+  """Raise ArtifactError unless `t` is a ground chain of `$do` steps on `root`."""
+  s = t
+  while isinstance(s, list) and len(s) == 3 and s[0] == "$do":
+    if _has_variable(s[1]):
+      raise ArtifactError("the plan situation has a variable in the action %r" % (s[1],))
+    s = s[2]
+  if s != root:
+    raise ArtifactError("the plan situation is not a chain of $do steps on the planning root %r: %r" % (root, t))
+
+
+def _has_variable(t):
+  if isinstance(t, list):
+    return any(_has_variable(x) for x in t)
+  return isinstance(t, str) and t.startswith("?:")
 
 
 def _attach(q, v, source_artifact, sel, lim):
@@ -988,7 +1017,7 @@ def _query_views(q, source_artifact, sel, units):
                     "pass": lc_action_query.PASS, "detail": missing[0]["detail"]}
     return
   try:
-    ob = lc_action_query.obligations(query, q["search"], sel)
+    ob = lc_action_query.obligations(query, q["search"], sel, q.get("plan_situation"))
   except lc_action_query.Unsupported as e:
     q["outcome"] = {"outcome": "unsupported_translation", "reasons": [e.reason], "units": [query["id"]],
                     "pass": lc_action_query.PASS, "detail": str(e)}

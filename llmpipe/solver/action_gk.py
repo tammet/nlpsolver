@@ -129,7 +129,12 @@ PLANNING_STRATEGY = {"strategy": ["query_focus"], "query_preference": 1, "equali
 # to this role.  ../gk/Doc/planning.md describes each key.
 DISCOVERY_KEYS = {"ground_contextfree_negative_first": 1, "reachable_known_head_first": 1,
                   "permission_pair_first": 1, "eager_condensation": 1}
-ROLE_STRATEGY = {"discovery:positive": DISCOVERY_KEYS}
+# the plan search (action_plan) launches its candidate checks and its filtered discovery under these roles: a check
+# asks for one proposed plan with the known plan states and stops at its first answer; a filtered discovery reads the
+# plan filters of its input
+ROLE_STRATEGY = {"discovery:positive": DISCOVERY_KEYS,
+                 "discovery:check": dict(DISCOVERY_KEYS, plan_state=1, max_answers=1),
+                 "discovery:filtered": dict(DISCOVERY_KEYS, plan_filters=1)}
 PIPELINE_PARAMS = ["-taxonomy", "-confidence", "0.1", "-keepconfidence", "0.1"]
 DATAFOLDER = os.path.join(os.path.dirname(ROOT), "gk")
 
@@ -186,7 +191,7 @@ BACKENDS[SUMMARY_BACKEND]["validated"] = [{
               "hash": "fa3347058f0175b3e2d0907c828eb3d22fc1e2ae25e7f7f9255c4b91b60a4474",
               "roles_hash": "b389587cbcd000318f81c4d16ed03b826e00ee02eb491b47f1ba74161256da2f",
               "templates_hash": "0c49cec76553c3f620a9a78004aad031e538286e985e0db701a8b770f64143a6", "status": "selected"},
-  "strategy_sha256": "cedd9a2dd157cd70832a14bb9565cb49e164d0874cb905f9fe136625cd2a5974",
+  "strategy_sha256": "9b559e9de7a86908464db5c90e2bc6ec5a1ba5baa39eb7844edc76e30d0a07a4",
   "contract": {"profile": "planning_summary_profile/2", "summary": "planning_summary/1", "output": SUMMARY_OUTPUT},
   "evidence": "on this binary, gk 1.1.0, with these strategies: 18 route launches give 6 controls (unstack, "
               "two_leg_travel, ticket_travel, reverse_tower, ystad, witness) equal with and without the summary and "
@@ -351,9 +356,13 @@ def requirements(query_artifact, profile, library):
 
 def normalize_limits(limits):
   """{"seconds": N or {role: N, "default": N}, "max_launches": N or None, "termination": bool, "flags": [...],
-  "keep": directory or None}."""
+  "keep": directory or None, "summary", "summary_choice", "strategy_role", "extra_clauses"}.
+
+  `strategy_role` and `extra_clauses` belong to the plan search: the positive discovery launch runs under that role
+  strategy (a key of the backend's `role_strategy`) and with those clauses added to its input."""
   limits = dict(limits or {})
-  bad = set(limits) - {"seconds", "max_launches", "termination", "flags", "keep", "summary", "summary_choice"}
+  bad = set(limits) - {"seconds", "max_launches", "termination", "flags", "keep", "summary", "summary_choice",
+                       "strategy_role", "extra_clauses"}
   if bad:
     raise AdapterError("unknown limits %s" % sorted(bad))
   secs = limits.get("seconds", DEFAULT_SECONDS)
@@ -366,9 +375,16 @@ def normalize_limits(limits):
   flags = list(limits.get("flags") or [])
   if set(flags) - set(FLAGS):
     raise AdapterError("unknown flags %s; the adapter accepts %s" % (sorted(set(flags) - set(FLAGS)), list(FLAGS)))
+  role = limits.get("strategy_role")
+  if role is not None and not isinstance(role, str):
+    raise AdapterError("strategy_role is the name of a role strategy or None")
+  extra = limits.get("extra_clauses") or []
+  if not (isinstance(extra, list) and all(isinstance(c, dict) and "@logic" in c for c in extra)):
+    raise AdapterError("extra_clauses is a list of GK clause objects")
   return {"seconds": secs, "max_launches": cap, "termination": bool(limits.get("termination", True)),
           "flags": flags, "keep": limits.get("keep"), "summary": bool(limits.get("summary")),
-          "summary_choice": copy.deepcopy(limits.get("summary_choice"))}
+          "summary_choice": copy.deepcopy(limits.get("summary_choice")), "strategy_role": role,
+          "extra_clauses": copy.deepcopy(extra)}
 
 
 def seconds_for(limits, role):
@@ -1179,6 +1195,8 @@ def run_query(source_artifact, query_artifact, backend=None, limits=None, ledger
   ar.same_revision(source_artifact, query_artifact)
   profile = backend_profile(backend)
   lim = normalize_limits(limits)
+  if lim["strategy_role"] and lim["strategy_role"] not in (profile.get("role_strategy") or {}):
+    raise AdapterError("the backend %r has no role strategy %r" % (profile["name"], lim["strategy_role"]))
   library = source_artifact.get("library")
   if query_artifact["outcome"]:
     return _record(query_artifact, source_artifact, profile, lim, [], copy.deepcopy(query_artifact["outcome"]))
@@ -1227,6 +1245,10 @@ def run_query(source_artifact, query_artifact, backend=None, limits=None, ledger
   for oid, pol, role, question in plan:
     objs = ar.query_input(source_artifact, query_artifact, oid, pol)
     tag = "%s:%s" % (role, pol)
+    if role == "discovery" and pol == "positive":
+      objs = objs + copy.deepcopy(lim["extra_clauses"])
+      if lim["strategy_role"]:
+        tag = lim["strategy_role"]
     sidecar, compiled = None, None
     if lim["summary"] and role == "discovery" and pol == "positive":
       # the profile of exactly this input; a query the compiler cannot summarize runs unchanged

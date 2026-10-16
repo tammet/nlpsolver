@@ -1,4 +1,4 @@
-"""Action profile: the planning-summary profile compiler (checkpoint P).
+"""Action profile: the planning-summary profile compiler.
 
 `compile_profile` reads a supported source artifact and one discovery query
 and builds a `planning_summary_profile/2` for `action_summary`.  No model and

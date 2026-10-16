@@ -381,7 +381,15 @@ def _outer_witnesses(goal, names):
   return drop(goal), list(names)
 
 
-def obligations(query, search, sel=None):
+def _replaced(t, var, value):
+  if t == var:
+    return copy.deepcopy(value)
+  if isinstance(t, list):
+    return [_replaced(x, var, value) for x in t]
+  return t
+
+
+def obligations(query, search, sel=None, plan_situation=None):
   """The obligations of a validated, supported query under the selection `sel`.
 
   snapshot    one paired obligation at the root; an `ask` has the positive question
@@ -393,6 +401,10 @@ def obligations(query, search, sel=None):
               a negative final obligation needs the whole sequence.
   discovery   one positive question for a reachable situation with the goal;
               the seed is a query clause.  No negative reachability question.
+              With `plan_situation`, a ground situation term, the definition
+              clauses hold that term in place of the situation variable: the
+              question then asks for that one plan, and GK reports it in the
+              answer binding as it reports a discovered plan.
 
   Returns {"obligations", "seed", "joint_positive"}.
   """
@@ -431,6 +443,9 @@ def obligations(query, search, sel=None):
                                "positive": question(body, qid, "plan:positive", answer=[sit.SIT] + witnesses, extra=[reach],
                                                     context=ctx),
                                "negative": None})
+    if plan_situation is not None:
+      for c in out["obligations"][-1]["positive"]["clauses"]:
+        c["@logic"] = _replaced(c["@logic"], sit.SIT, plan_situation)
   return out
 
 

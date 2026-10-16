@@ -60,6 +60,7 @@ import action_display as ad
 import action_english as aen
 import action_gk as ag
 import action_json as aj
+import action_plan
 import action_route as ar
 import action_prompt as apt
 import action_repair as arep
@@ -81,7 +82,8 @@ assert set(READINGS) == apt.READINGS
 QUERY_KINDS = ("plan", "reachable", "verify", "question", "ask")
 
 # the action route's own option keys; they never enter globals.options
-ACTION_KEYS = ("actions_flag", "plan_depth", "action_backend", "formal_flag", "planning_summary_flag")
+ACTION_KEYS = ("actions_flag", "plan_depth", "action_backend", "formal_flag", "planning_summary_flag",
+               "plan_builder_flag", "noplan_builder_flag")
 STAGE_FLAGS = ("fallback_norm_flag", "fallback_hyp_flag", "critic_flag", "graphtrans_flag", "litbridge_flag",
                "graphbridge_flag")
 CANCEL_FLAGS = ("nofallback_norm_flag", "nofallback_hyp_flag", "nocritic_flag", "nographtrans_flag",
@@ -148,9 +150,18 @@ def resolve(options):
   if summary and not named.get("summary"):
     raise OptionError("-planning-summary needs a build with the planning-summary module; %r has none (the summary "
                       "build is %r)" % (backend, ag.SUMMARY_BACKEND))
+  # the plan search (action_plan) is on unless -noplan-builder; a summary request keeps the single discovery launch,
+  # whose profile is bound to that launch's input
+  if opts.get("plan_builder_flag") and opts.get("noplan_builder_flag"):
+    raise OptionError("-plan-builder and -noplan-builder exclude each other")
+  if summary and opts.get("plan_builder_flag"):
+    raise OptionError("-plan-builder cannot be combined with -planning-summary: a summary request runs the single "
+                      "discovery launch")
+  builder = not opts.get("noplan_builder_flag") and not summary
   seconds = opts["prover_seconds"] if opts.get("prover_seconds_cli") and opts.get("prover_seconds") else ag.DEFAULT_SECONDS
   return {"route": TAG, "plan_depth": depth, "limits": {"search_cap": depth, "explicit": True} if depth is not None else None,
           "backend": backend, "seconds": int(seconds), "formal": bool(opts.get("formal_flag")), "summary": summary,
+          "plan_builder": builder,
           "bundle": DEFAULT_BUNDLE, "disabled_stages": [k[:-5] for k in STAGE_FLAGS],
           "think": bool(opts.get("think_flag")), "nosolve": bool(opts.get("prover_nosolve_flag"))}
 
@@ -1152,7 +1163,8 @@ def run(text, options, collect=None, llm=None, version=None, max_tokens=None):
 
 def solve_one_query(source, query_pkg, prof, rec, ledger, view, selection=None, limits=None):
   """The result of one query, or None under -nosolve (the query is compiled, GK is not launched)."""
-  qa = ar.compile_query(query_pkg, source, limits if limits is not None else prof["limits"], **(selection or {}))
+  limits_used = limits if limits is not None else prof["limits"]
+  qa = ar.compile_query(query_pkg, source, limits_used, **(selection or {}))
   view["queries"].append(qa)
   rec["query"] = {"id": qa["query"]["id"], "kind": qa["query"]["kind"], "hash": qa["hash"],
                   "outcome": qa["outcome"] and qa["outcome"]["outcome"]}
@@ -1161,6 +1173,9 @@ def solve_one_query(source, query_pkg, prof, rec, ledger, view, selection=None, 
   limits = {"seconds": prof["seconds"]}
   if prof.get("summary"):
     limits["summary"] = True          # a discovery question gets its profile; every other question runs unchanged
+  if prof.get("plan_builder") and action_plan.eligible(qa):
+    return action_plan.solve(source, query_pkg, qa, prof["backend"], limits, ledger,
+                             compile_limits=limits_used, selection=selection)
   return aa.solve(source, qa, prof["backend"], limits, ledger)
 
 

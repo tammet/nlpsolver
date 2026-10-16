@@ -1,4 +1,4 @@
-"""Action profile: planning summaries, the reference interpreter (checkpoint P).
+"""Action profile: planning summaries, the reference interpreter.
 
 A planning summary describes an action sequence conditionally on its
 executability: World, a list of positive relevant facts, and Progress, one

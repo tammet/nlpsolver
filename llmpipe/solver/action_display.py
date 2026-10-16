@@ -634,7 +634,8 @@ def summary_record(rec, answer, route_choice=None):
   """The record `-summary` prints for an action-route call."""
   calls = _calls_by_stage(rec.get("translation"))
   results = [r for _, r in _results(rec)]
-  launches = [launch for r in results for launch in ((r.get("evidence") or {}).get("launches") or [])]
+  launches = [launch for r in results for launch in ((r.get("evidence") or {}).get("launches") or [])
+              + ((r.get("plan_search") or {}).get("earlier_launches") or [])]
   by_role = {}
   for launch in launches:
     by_role[launch.get("role")] = by_role.get(launch.get("role"), 0) + 1

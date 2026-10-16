@@ -180,6 +180,18 @@ answers. Without them, a search that used to stop on that count runs to its
 time limit. Verify steps and discoveries that used to end within a second now
 take about 6 seconds, with the same answers.
 
+The plan search ([the plan search](../architecture/action-answers.md#the-plan-search))
+then became the default for plan and reachable questions. On the same 126
+rows, gemini answers from the LLM cache gave 119 correct with the search and
+116 without it:
+
+- rows 41, 43 and 68 are now correct: the builder's plan has one or two
+  steps, where the single discovery launch returned a longer plan;
+- the other 123 rows keep their answer and grade;
+- 39 of the 55 discovery rows were answered by a builder plan that GK
+  checked, in 4 seconds of GK time in total (173 seconds before);
+- GK time over all rows fell from 836 to 686 seconds.
+
 **Decision.** Retained as an experimental pipeline, chosen automatically for
 texts with a strong sign of actions or plans. It does not change the ordinary
 pipeline.
@@ -200,7 +212,8 @@ build comparison (local archive:
 `elogs/gk_build_comparison_2026_10_03/`); the GK 1.1.0 comparison
 (`testresults/old/planning_basic_actions_gk1011_2026_10_15/` and
 `planning_basic_actions_gk1011_part2_2026_10_15/` for GK 1.0.11,
-`planning_basic_actions_gk110_2026_10_15/` for GK 1.1.0).
+`planning_basic_actions_gk110_2026_10_15/` for GK 1.1.0, and
+`planning_basic_actions_planbuilder_2026_10_15/` for the plan search).
 
 ### Multiple-model portfolios and voting
 
