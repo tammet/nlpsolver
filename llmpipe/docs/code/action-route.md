@@ -75,7 +75,7 @@ operations as a library interface; the checks use them.
 | `action_gk.DISCOVERY_KEYS` | literal selection, eager condensation | the keys added for the positive discovery launch (`ROLE_STRATEGY`) |
 | `action_gk.ROLE_STRATEGY` | `discovery:positive`, `discovery:check`, `discovery:filtered` | the keys of each launch role; a check adds `plan_state` and `max_answers` 1, a filtered launch `plan_filters` |
 | `action_plan.MAX_CANDIDATES` | 3 | proposals checked with GK |
-| `action_plan.CHECK_SECONDS` | 60 | seconds per check launch |
+| `action_plan.BUDGET_FACTOR` | 3 | the checks and the filtered launch together: at most this many times `-seconds` |
 | `action_gk.BACKENDS` | `gk`, `gk_summary` | the registered GK builds; both run the installed GK 1.1.0, and `gk_summary` adds planning summaries |
 | `action_english.PROBABLY` | 0.95 | below this stated confidence the answer says "Probably" |
 

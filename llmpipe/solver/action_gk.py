@@ -358,11 +358,12 @@ def normalize_limits(limits):
   """{"seconds": N or {role: N, "default": N}, "max_launches": N or None, "termination": bool, "flags": [...],
   "keep": directory or None, "summary", "summary_choice", "strategy_role", "extra_clauses"}.
 
-  `strategy_role` and `extra_clauses` belong to the plan search: the positive discovery launch runs under that role
-  strategy (a key of the backend's `role_strategy`) and with those clauses added to its input."""
+  `strategy_role`, `extra_clauses` and `launch_label` belong to the plan search: the positive discovery launch runs
+  under that role strategy (a key of the backend's `role_strategy`), with those clauses added to its input, and with
+  the label QUERY.`launch_label` (for -gkin and `keep`) in place of QUERY.plan.positive."""
   limits = dict(limits or {})
   bad = set(limits) - {"seconds", "max_launches", "termination", "flags", "keep", "summary", "summary_choice",
-                       "strategy_role", "extra_clauses"}
+                       "strategy_role", "extra_clauses", "launch_label"}
   if bad:
     raise AdapterError("unknown limits %s" % sorted(bad))
   secs = limits.get("seconds", DEFAULT_SECONDS)
@@ -378,13 +379,16 @@ def normalize_limits(limits):
   role = limits.get("strategy_role")
   if role is not None and not isinstance(role, str):
     raise AdapterError("strategy_role is the name of a role strategy or None")
+  label = limits.get("launch_label")
+  if label is not None and not (isinstance(label, str) and label and all(c.isalnum() or c in "._" for c in label)):
+    raise AdapterError("launch_label is a nonempty string of letters, digits, dots and underscores")
   extra = limits.get("extra_clauses") or []
   if not (isinstance(extra, list) and all(isinstance(c, dict) and "@logic" in c for c in extra)):
     raise AdapterError("extra_clauses is a list of GK clause objects")
   return {"seconds": secs, "max_launches": cap, "termination": bool(limits.get("termination", True)),
           "flags": flags, "keep": limits.get("keep"), "summary": bool(limits.get("summary")),
           "summary_choice": copy.deepcopy(limits.get("summary_choice")), "strategy_role": role,
-          "extra_clauses": copy.deepcopy(extra)}
+          "extra_clauses": copy.deepcopy(extra), "launch_label": label}
 
 
 def seconds_for(limits, role):
@@ -1245,10 +1249,13 @@ def run_query(source_artifact, query_artifact, backend=None, limits=None, ledger
   for oid, pol, role, question in plan:
     objs = ar.query_input(source_artifact, query_artifact, oid, pol)
     tag = "%s:%s" % (role, pol)
+    label = "%s.%s.%s" % (query_artifact["query"]["id"], oid, pol)
     if role == "discovery" and pol == "positive":
       objs = objs + copy.deepcopy(lim["extra_clauses"])
       if lim["strategy_role"]:
         tag = lim["strategy_role"]
+      if lim["launch_label"]:
+        label = "%s.%s" % (query_artifact["query"]["id"], lim["launch_label"])
     sidecar, compiled = None, None
     if lim["summary"] and role == "discovery" and pol == "positive":
       # the profile of exactly this input; a query the compiler cannot summarize runs unchanged
@@ -1262,7 +1269,7 @@ def run_query(source_artifact, query_artifact, backend=None, limits=None, ledger
         break
     try:
       raw = launch(profile, objs, seconds_for(lim, role), tag, lim["flags"], lim["termination"], local, lim["keep"],
-                   label="%s.%s.%s" % (query_artifact["query"]["id"], oid, pol), sidecar=sidecar)
+                   label=label, sidecar=sidecar)
     except SummaryError as e:
       rec["outcome"] = {"outcome": "planning_profile_error", "reason": str(e), "backend": profile["name"],
                         "phase": getattr(e, "phase", "launch"), "launch": tag,

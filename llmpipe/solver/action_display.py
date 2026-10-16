@@ -107,8 +107,11 @@ def units_of(name, src=None):
   return [] if parts[1] in GENERATED else parts[1].split("+")
 
 
+PLAN_RECORDS = ("planstate:", "planfilter:")     # the records the plan search adds to a launch (action_plan)
+
+
 def is_law(name):
-  return not str(name).startswith(("src:", "query:"))
+  return not str(name).startswith(("src:", "query:") + PLAN_RECORDS)
 
 
 def sentences(view):
@@ -454,7 +457,7 @@ def input_lines(objs, sent, library="summary", src=None):
       continue
     units = units_of(name, src)
     head = " ".join(sent.get(u) or u for u in units) if units else "[generated]" if name.startswith("src:") \
-      else "[question]"
+      else "[plan search]" if name.startswith(PLAN_RECORDS) else "[question]"
     if head != prev:
       lines.append("// " + head)
       prev = head
@@ -475,7 +478,7 @@ def _launch_blocks(launches, sent, lv, src=None):
     objs = _launch_objects(launch)
     if objs is not None:
       print("\n=== prover input (JSON), %s ===\n" % tag)
-      base = [o for o in objs if not str(o.get("@name", "")).startswith("query:")]
+      base = [o for o in objs if not str(o.get("@name", "")).startswith(("query:",) + PLAN_RECORDS)]
       if shown is not None and base == shown[1]:
         print("// the source and library clauses of launch %d" % shown[0])
         print("\n".join(input_lines([o for o in objs if o not in base], sent, "none", src)))

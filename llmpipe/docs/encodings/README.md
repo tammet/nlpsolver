@@ -95,6 +95,7 @@ loses or adds distinctions.
 | action clauses: `poss`, `$do`, markers, query questions | the action compiler | [action-clauses.md](action-clauses.md) |
 | the action library `axioms_action.js` | maintained by hand | [action-library.md](action-library.md) |
 | the planning-summary profile, the rendered answer and the annotation | the profile compiler, the summary build of GK, the adapter | [action-planning-summary.md](action-planning-summary.md) |
+| `$planstate` and `$planfilter` records of the plan search | `plan_state`, `plan_analysis` | [the plan search](../architecture/plan-search.md); the GK side in `gk/Doc/planning.md` of the nlpsolver repository |
 | source, query, evidence and result records of the action route | the action compiler, the GK adapter, the answer policy | [action-artifacts.md](action-artifacts.md) |
 | one worked case, end to end | — | [end-to-end-example.md](end-to-end-example.md) |
 | one worked action case, end to end | — | [action-end-to-end-example.md](action-end-to-end-example.md) |

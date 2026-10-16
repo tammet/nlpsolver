@@ -76,6 +76,8 @@ skip those sections until you need to study or enable them.
   views and obligations, and the backend requirements.
 - [Proof search and answers](action-answers.md) — the GK launches, the answer
   policy, the independent replay and the answer text.
+- [The plan search](plan-search.md) — how a plan question is answered: Python
+  proposals, GK checks, filtered discovery, the single discovery launch.
 
 ## Related documentation
 

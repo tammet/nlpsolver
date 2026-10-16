@@ -289,7 +289,9 @@ route).
 search of a plan or reachable question, on by default. It first checks the
 plans of the plan builder with GK, then runs a discovery launch with plan
 filters, then the single discovery launch
-([the plan search](../architecture/action-answers.md#the-plan-search)).
+([the plan search](../architecture/plan-search.md)). Every launch has the
+`-seconds` of the route; the checks and the filtered launch together get at
+most three times that, and the single discovery launch always runs.
 `-noplan-builder` runs the single discovery launch only. `-planning-summary`
 also runs the single launch; `-plan-builder` with it, or with
 `-noplan-builder`, is an error. Both are action keys.
@@ -297,8 +299,9 @@ also runs the single launch; `-plan-builder` with it, or with
 **`-planning-summary`** — on the action route: a plan answer also gets a
 planning summary. The summary is a list of positive facts that hold after the
 plan and one rough progress number. Both hold only if the plan is executable;
-the summary is no proof of that. The answer, its confidence and its proof do
-not change. The option needs a GK build with the summary module. It selects
+the summary is no proof of that. The option runs the single discovery launch,
+without the plan search; against a run with `-noplan-builder`, the answer, its
+confidence and its proof do not change. The option needs a GK build with the summary module. It selects
 the registered build `gk_summary`, the installed GK with its summary module;
 a named build without the module is refused before any model call. The build counts only for the
 binary its validation record names: another binary at the same path, or a

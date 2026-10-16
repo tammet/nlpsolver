@@ -48,8 +48,11 @@ obligation has a positive and a negative question, because one prover launch
 answers one polarity.
 
 **4. Proof search.** GK runs once per obligation and polarity, with the
-action library and the planning strategy. A plan question asks for a
-reachable situation; GK reports the action sequence as an answer term.
+action library and the planning strategy. A plan or reachable question runs
+the [plan search](plan-search.md): plans built in Python are proposed, each
+is proved by GK as the question with the plan in it, and only when none
+passes does GK search, first with plan filters and then as a single
+discovery launch. GK reports the action sequence as an answer term.
 
 **5. Decision and replay.** The answer policy reads every launch. An
 independent replay checks each candidate plan and each supplied sequence

@@ -232,6 +232,7 @@ defines the status, the eligibility of an entry and the candidates.
 | `evidence` | the backend identity of the launches, the requirements, the incomplete launches, and a summary of each launch |
 | `diagnostics` | further findings. An outcome that the route passes through from compilation or from the adapter keeps its record (reasons, units, detail) here as the first diagnostic |
 | `calls` | `{model, gk, gk_by_role}` |
+| `plan_search` | a plan or reachable question with the plan search: the stage that gave the result, the model, the builder's plans, each GK check, the filters, the launches, the time budget, and the query whose launch answered (a candidate query for a builder plan); [the plan search](../architecture/plan-search.md#the-record) lists the fields |
 
 The outcomes:
 

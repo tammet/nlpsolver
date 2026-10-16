@@ -38,8 +38,9 @@ Each call first chooses its pipeline. A text with a strong sign of actions or
 plans, such as "How can Ann get to Tallinn?", goes to the experimental action
 route; every other text takes the ordinary path above. `-actions` and
 `-noactions` decide the choice explicitly. The action route has its own
-prompts, its own compiler with situations and a library of physical laws, a GK
-search for plans, and an independent replay of every plan. It answers with a
+prompts, its own compiler with situations and a library of physical laws, a
+[plan search](architecture/plan-search.md) (plans built in Python, each proved
+by GK, before GK searches itself), and an independent replay of every plan. It answers with a
 plan, a verdict, or `Cannot answer` for a text that it does not model. See
 [The action route](architecture/action-route.md).
 

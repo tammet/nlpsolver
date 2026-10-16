@@ -2,7 +2,10 @@
 
 After compilation, the action route runs GK once per question, decides the
 answer from all launches together, and checks every plan with an independent
-replay. Three modules do this work:
+replay. A plan or reachable question runs the
+[plan search](plan-search.md) instead of a single discovery launch: GK checks
+Python-built plans first and searches only when none passes. Three modules do
+the work on this page:
 
 - `action_gk` runs the launches and reads their output into typed evidence.
   It decides no answer.
@@ -34,11 +37,13 @@ record:
 The blocker-unit cut drops a clause whose answers would all get confidence 0,
 so it removes no answer that the answer policy can use. GK counts such answers
 toward its stop on the number of answers, so with the cut a search can run to
-its time limit where it used to stop early. The keys of the plan
-search choose which literal GK resolves first and remove redundant literals
-from new clauses. GK applies them in every primary search and cannot tell a
-plan search from another one, so the adapter adds them only to the positive
-discovery launch. `../gk/Doc/planning.md` describes each key.
+its time limit where it used to stop early. The discovery keys choose which
+literal GK resolves first and remove redundant literals from new clauses. GK
+applies them in every primary search and cannot tell a plan search from
+another one, so the adapter adds them only to the discovery launches. The
+plan search adds two more roles, `discovery:check` and `discovery:filtered`
+([the plan search](plan-search.md)). The GK keys are described in
+`gk/Doc/planning.md` of the nlpsolver repository.
 
 The command holds the profile's strategy and parameters and nothing else. It
 reads no ordinary pipeline option, no axiom file and no proof cache. Launches
@@ -183,46 +188,10 @@ the depth. It never shows that no plan exists. A plan question then answers
 
 ### The plan search
 
-A plan or reachable question runs the plan search (`action_plan.solve`) unless
-`-noplan-builder` is given or a planning summary is requested. A plan of the
-search's own model is a proposal; GK and the replay decide every answer.
-
-1. **The model.** `plan_builder.Task` reads the compiled discovery input: the
-   ground actions, their preconditions and effects, and the goal. A model
-   with an open action functor, an unbounded add effect or a frame clause it
-   could not use gives no proposal.
-2. **The proposals.** The builder (`plan_builder`) finds at most one plan in
-   each of three ways, usually without search, and removes redundant steps.
-   A plan outside the question's step bound is dropped, and so is a plan the
-   replay finds invalid. At most three plans remain, the shortest first.
-3. **The checks.** Each proposal is compiled as the question with the plan's
-   situation in place of the situation variable
-   (`action_route.compile_query(plan_situation=...)`). GK answers it with the
-   plan as its answer binding, so the answer policy reads it as any other
-   discovery. The launch adds one `$planstate` record per state of the plan
-   (`plan_state`) for the fluent families the model covers completely, and
-   runs under the role strategy `discovery:check`: GK drops a clause that
-   needs a fact false in a known state, and stops at its first answer. A check
-   without a proof is repeated once without the records when the model left
-   a family out. The first check that gives a plan the replay validates is
-   the answer.
-4. **The discovery.** When no proposal passed and the model read the whole
-   text (no open atom, no ignored text clause) but found no plan, the single
-   discovery launch decides. Otherwise a discovery launch with the plan
-   filters of `plan_analysis` runs first (role `discovery:filtered`), and the
-   single discovery launch runs only when it found no plan.
-
-When the earlier steps give no plan, the single discovery launch of the
-question runs as without the search. The result's `plan_search` record holds the
-model's status, the builder's plans, each check, the filters and each launch.
-
-### Confidence
-
-The result's confidence is the GK confidence of the answer used: the Boolean
-candidate, the joint question of a Yes verification, or the plan candidate,
-with the adapter's label. The record also splits the confidence into the part
-of the frame clauses (0.99 per use) and the part of the probabilities that the
-text states.
+A plan or reachable question first runs the [plan search](plan-search.md):
+GK checks plans of the plan builder, then searches with plan filters, then
+runs the single discovery launch above. Each launch's result is decided by
+the policy of this section.
 
 ## The replay
 

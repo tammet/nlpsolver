@@ -15,11 +15,15 @@ A plan of the ground planning model is a proposal; GK and the replay decide.  Th
    that finds no proof while a family was left out or the model has a note runs once more without the records.  The
    first check whose result is a plan the replay validates is the answer.
 4. When no plan passed: if the model covers the text (no open atom, no ignored text clause) and the builder found
-   no plan, today's discovery launch decides.  Otherwise a discovery launch with the plan filters runs first (role
-   `discovery:filtered`), and today's launch only when it found no plan.
+   no plan, the single discovery launch decides.  Otherwise a discovery launch with the plan filters runs first
+   (role `discovery:filtered`), and the single discovery launch only when it found no plan.
 
-Every stage falls through to today's discovery launch, and the answer policy of each launch is unchanged.  The
-result carries `plan_search`, the record of every stage.  docs/architecture/action-answers.md describes the
+Every launch has the per-launch seconds of the query.  The extra stages (steps 1 to 3 and the filtered launch)
+together get at most BUDGET_FACTOR times that; a launch that would not fit is skipped and recorded.  The single
+discovery launch always runs when no earlier step gave a plan, as without the search.  Each launch has its own
+label: QUERY.plan.check<n>, QUERY.plan.check<n>_nostates, QUERY.plan.filtered, QUERY.plan.discovery.
+
+The result carries `plan_search`, the record of every stage.  docs/architecture/plan-search.md describes the
 procedure.
 """
 
@@ -37,7 +41,7 @@ import plan_state as ps
 
 VARIANTS = ("ehc", "agenda", "bfws")
 MAX_CANDIDATES = 3
-CHECK_SECONDS = 60
+BUDGET_FACTOR = 3        # the extra stages together: at most this many times the per-launch seconds
 ACCEPTED = ("plan_found", "goal_already_holds")
 DROPPED_VERDICTS = ("invalid", "inconsistent_action_state")
 IMPOSSIBLE = ("impossible_pair", "impossible_start", "impossible_action")
@@ -134,8 +138,34 @@ def _summary(res):
           "diagnostics": res.get("diagnostics") or []}
 
 
-def _check(source, query_pkg, task, c, query_artifact, backend, ledger, compile_limits, selection, model, results):
-  """(the accepted result or None, the check record); every launch result is appended to `results`"""
+class _Budget:
+  """The time of the extra stages (the model, the proposals, the checks and the filtered launch): at most
+  BUDGET_FACTOR times the per-launch seconds, counted from the start of the plan search.  A launch starts only when
+  it fits in what is left; the single discovery launch is not counted and always runs."""
+
+  def __init__(self, seconds):
+    self.seconds = seconds
+    self.total = BUDGET_FACTOR * seconds
+    self.t0 = time.time()
+    self.skipped = []
+
+  def spent(self):
+    return round(time.time() - self.t0, 3)
+
+  def fits(self, what):
+    if self.spent() + self.seconds <= self.total:
+      return True
+    self.skipped.append(what)
+    return False
+
+  def record(self):
+    return {"seconds": self.seconds, "total": self.total, "spent": self.spent(), "skipped": list(self.skipped)}
+
+
+def _check(source, query_pkg, task, c, n, query_artifact, backend, ledger, compile_limits, selection, model, results,
+           budget):
+  """(the accepted result or None, the check record); every launch result is appended to `results`.  `n` numbers
+  the candidate in the launch labels: QUERY.plan.check<n>, and QUERY.plan.check<n>_nostates for the retry."""
   root = query_artifact["planning_root"]
   cq = ar.compile_query(query_pkg, source, compile_limits, plan_situation=_situation(c["plan_terms"], root),
                         **(selection or {}))
@@ -143,16 +173,19 @@ def _check(source, query_pkg, task, c, query_artifact, backend, ledger, compile_
   if cq["outcome"]:
     rec["attempts"].append({"states": None, "outcome": cq["outcome"]["outcome"]})
     return None, rec
-  recs, info = ps.records(task, c["plan_terms"], root) if model["status"] == "usable" else ([], None)
-  tries = [recs] if recs else [[]]
+  recs, info = ps.records(task, c["plan_terms"], root)
+  tries = [(recs, "plan.check%d" % n)]
   if recs and (info["left_out"] or task.notes):
-    tries.append([])
-  for extra in tries:
-    lim = {"seconds": CHECK_SECONDS, "termination": False, "strategy_role": "discovery:check", "extra_clauses": extra}
+    tries.append(([], "plan.check%d_nostates" % n))
+  for extra, label in tries:
+    if not budget.fits(label):
+      break
+    lim = {"seconds": budget.seconds, "termination": False, "strategy_role": "discovery:check", "extra_clauses": extra,
+           "launch_label": label}
     res = aa.solve(source, cq, backend, lim, ledger)
     results.append(res)
-    rec["attempts"].append(dict(_summary(res), states=len(extra), families=info and info["families"],
-                                left_out=info and info["left_out"]))
+    rec["attempts"].append(dict(_summary(res), label=label, states=len(extra), families=info["families"],
+                                left_out=info["left_out"]))
     if res["outcome"] in ACCEPTED:
       return res, rec
   return None, rec
@@ -198,40 +231,45 @@ def _with_search(res, query_artifact, record, results):
 
 def solve(source, query_pkg, query_artifact, backend, limits, ledger, compile_limits=None, selection=None):
   """The result of one eligible plan or reachable query, by the steps of the module docstring."""
+  budget = _Budget(ag.seconds_for(ag.normalize_limits(limits), "discovery"))
   record = {"version": 1, "stage": None, "model": None, "builder": None, "checks": [], "filters": None,
-            "launches": []}
+            "launches": [], "budget": None}
   results = []
+
+  def finish(res, stage):
+    record["stage"] = stage
+    record["budget"] = budget.record()
+    return _with_search(res, query_artifact, record, results)
+
+  def single(stage):
+    """the single discovery launch of the query, as without the plan search"""
+    res = aa.solve(source, query_artifact, backend, dict(limits or {}, launch_label="plan.discovery"), ledger)
+    results.append(res)
+    record["launches"].append(dict(_summary(res), kind="discovery", label="plan.discovery"))
+    return finish(res, stage)
+
   task, model = _model(source, query_artifact)
   record["model"] = model
   kept = []
   if task is not None and model["status"] == "usable":
     kept, record["builder"] = _proposals(task, source, query_artifact)
-  for c in kept:
-    res, rec = _check(source, query_pkg, task, c, query_artifact, backend, ledger, compile_limits, selection, model,
-                      results)
+  for n, c in enumerate(kept, 1):
+    res, rec = _check(source, query_pkg, task, c, n, query_artifact, backend, ledger, compile_limits, selection, model,
+                      results, budget)
     record["checks"].append(rec)
     if res is not None:
-      record["stage"] = "builder_check"
-      return _with_search(res, query_artifact, record, results)
+      return finish(res, "builder_check")
   if task is not None and _covers_text(task, model) and record["builder"] is not None and not kept \
      and not record["builder"]["dropped"]:
-    res = aa.solve(source, query_artifact, backend, limits, ledger)
-    results.append(res)
-    record["launches"].append(dict(_summary(res), kind="discovery"))
-    record["stage"] = "discovery_model_no_plan"
-    return _with_search(res, query_artifact, record, results)
+    return single("discovery_model_no_plan")
   if task is not None:
     filters, record["filters"] = _filter_records(task)
-    if filters:
-      lim = dict(limits or {}, strategy_role="discovery:filtered", extra_clauses=filters, termination=False)
+    if filters and budget.fits("plan.filtered"):
+      lim = dict(limits or {}, strategy_role="discovery:filtered", extra_clauses=filters, termination=False,
+                 launch_label="plan.filtered")
       res = aa.solve(source, query_artifact, backend, lim, ledger)
       results.append(res)
-      record["launches"].append(dict(_summary(res), kind="filtered"))
+      record["launches"].append(dict(_summary(res), kind="filtered", label="plan.filtered"))
       if res["outcome"] in ACCEPTED:
-        record["stage"] = "filtered_discovery"
-        return _with_search(res, query_artifact, record, results)
-  res = aa.solve(source, query_artifact, backend, limits, ledger)
-  results.append(res)
-  record["launches"].append(dict(_summary(res), kind="discovery"))
-  record["stage"] = "discovery"
-  return _with_search(res, query_artifact, record, results)
+        return finish(res, "filtered_discovery")
+  return single("discovery")

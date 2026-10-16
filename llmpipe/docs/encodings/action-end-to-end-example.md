@@ -102,9 +102,12 @@ default cap, four steps.
 
 ## The GK input
 
-One launch answers the discovery question. Its input holds the source clauses,
-the library clauses of the discovery view, the ordinary view, the seed and the
-question:
+The question runs the [plan search](../architecture/plan-search.md). The plan
+builder proposes one plan, one move from Haapsalu to Tallinn by bus, and the
+replay finds it valid. One check launch (`S3.plan.check1`) asks GK to prove the
+question with that plan in its definition clause. Its input holds the source
+clauses, the library clauses of the discovery view, the ordinary view, the
+seed, the question, and one `$planstate` record for each state of the plan:
 
 ```json
 {"@name": "src:S1:initial_fact:0", "@logic": [["is rel2", "located_at", "#:Ann 1", "#:Haapsalu 2", ["$ctxt", "present", "W0", "?:Fv1", "?:Fv2"]]]}
@@ -113,9 +116,16 @@ question:
 ...
 {"@name": "src:types:static_type:8", "@logic": [["isa", "person", "#:Ann 1"]]}
 {"@name": "query:S3:seed", "@logic": ["reachable", "W0", ["s", ["s", ["s", ["s", "0"]]]]]}
-{"@name": "query:S3:plan:positive:definition:0", "@sourcetype": "question", "@logic": [["-reachable", "?:Sit", "?:N"], ["-is rel2", "located_at", "#:Ann 1", "#:Tallinn 3", ["$ctxt", "present", "?:Sit", "?:Qv1", "?:Qv2"]], ["$defq0", "?:Sit"]]}
+{"@name": "query:S3:plan:positive:definition:0", "@sourcetype": "question", "@logic": [["-reachable", ["$do", ["move", "#:Ann 1", "#:Haapsalu 2", "#:Tallinn 3", "bus"], "W0"], "?:N"], ["-is rel2", "located_at", "#:Ann 1", "#:Tallinn 3", ["$ctxt", "present", ["$do", ["move", "#:Ann 1", "#:Haapsalu 2", "#:Tallinn 3", "bus"], "W0"], "?:Qv1", "?:Qv2"]], ["$defq0", ["$do", ["move", "#:Ann 1", "#:Haapsalu 2", "#:Tallinn 3", "bus"], "W0"]]]}
 {"@name": "query:S3:plan:positive", "@question": ["$defq0", "?:Sit"], "@askvars": 1}
+{"@name": "planstate:s0", "@logic": [["$planstate", "W0", ["$true", ["is rel2", "located_at", "#:Ann 1", "#:Haapsalu 2"]], ["$families", ["$fam", "is rel2", "located_at"]]]]}
+{"@name": "planstate:s1", "@logic": [["$planstate", ["$do", ["move", "#:Ann 1", "#:Haapsalu 2", "#:Tallinn 3", "bus"], "W0"], ["$true", ["is rel2", "located_at", "#:Ann 1", "#:Tallinn 3"]], ["$families", ["$fam", "is rel2", "located_at"]]]]}
 ```
+
+The question still asks for `?:Sit`; the definition clause holds the plan's
+situation in its place. With `-noplan-builder` the definition clause holds
+`?:Sit` and there are no `$planstate` records: GK then searches for the plan
+itself.
 
 The 50 library clauses and the two `V1-core` clauses complete the input. The
 `-details` output replaces them with one comment line that counts them as 52
@@ -123,9 +133,8 @@ laws, and `-debug` prints them.
 
 ## The GK answer
 
-GK accepts one answer. Its `$ans` term is the plan: one move from the root
-`W0`. GK also lists six rejected answers, longer move chains with confidence
-0, which never support a plan.
+GK accepts one answer and stops: the check launch asks for one answer. Its
+`$ans` term is the plan: one move from the root `W0`.
 
 ```json
 "answer": [["$ans", ["$do", ["move", "#:Ann 1", "#:Haapsalu 2", "#:Tallinn 3", "bus"], "W0"]]],
@@ -175,7 +184,7 @@ answer: Plan: Ann goes from Haapsalu to Tallinn by bus.
 pipeline: action route (chosen automatically: a question "How can ...?"; a route or service between places)
 outcome: plan_found   replay: valid   confidence: 1.0
 llm calls: stage1 1 (live 0); stage2 1 (live 0); total 2, live 0
-gk launches: 1 (discovery:positive 1); 0.31 s
+gk launches: 1 (discovery:check 1); 0.11 s
 ```
 
 ## Related pages

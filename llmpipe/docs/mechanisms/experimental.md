@@ -180,7 +180,7 @@ answers. Without them, a search that used to stop on that count runs to its
 time limit. Verify steps and discoveries that used to end within a second now
 take about 6 seconds, with the same answers.
 
-The plan search ([the plan search](../architecture/action-answers.md#the-plan-search))
+The plan search ([the plan search](../architecture/plan-search.md))
 then became the default for plan and reachable questions. On the same 126
 rows, gemini answers from the LLM cache gave 119 correct with the search and
 116 without it:

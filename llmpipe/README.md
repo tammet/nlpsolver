@@ -98,8 +98,9 @@ the experimental action route. Every other text takes the pipeline above.
 `-actions` and `-noactions` decide the choice explicitly.
 
 The action route has its own prompts (`prompts/actions/`), a compiler with
-situations, a library of physical laws (`axioms_action.js`), a GK search for
-plans, and an independent replay that checks every plan. Its answers have
+situations, a library of physical laws (`axioms_action.js`), a plan search
+(plans built in Python, each proved by GK, before GK searches itself), and an
+independent replay that checks every plan. Its answers have
 their own forms: `Plan: ...`, `No plan found.`, `Yes.`, `No.`, `Unknown.`, or
 `Cannot answer: ...` for a text that the route does not model.
 
